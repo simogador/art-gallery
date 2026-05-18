@@ -240,7 +240,7 @@ export function ArtistProfile({ artist, artworks }: Props) {
                     Tous les artistes
                   </Link>
                   <Button variant="ghost" size="md" rightIcon={<ArrowIcon />}>
-                    <Link href="/#galerie">Toute la collection</Link>
+                    <Link href="/galerie">Toute la collection</Link>
                   </Button>
                 </motion.div>
               )}
