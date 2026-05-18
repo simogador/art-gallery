@@ -472,7 +472,7 @@ function ArtworksSection({ artworks }: { artworks: Artwork[] }) {
             <div className="divider mt-4" />
           </div>
           <Button variant="ghost" size="md" rightIcon={<ArrowIcon />}>
-            <Link href="/#galerie">Toute la collection</Link>
+            <Link href="/galerie">Toute la collection</Link>
           </Button>
         </motion.div>
 
