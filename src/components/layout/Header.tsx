@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils/cn'
 import { Button } from '@/components/ui'
 
 const NAV_LINKS = [
-  { href: '/#galerie',    label: 'Galerie' },
+  { href: '/galerie',     label: 'Galerie' },
   { href: '/artistes',    label: 'Artistes' },
   { href: '/expositions',  label: 'Expositions' },
   { href: '/#about',      label: 'À propos' },

@@ -149,9 +149,11 @@ export function Gallery() {
                 Voir tout ({totalForFilter - VISIBLE_DEFAULT} de plus)
               </Button>
             )}
-            <Button variant="primary" size="md" rightIcon={<ArrowIcon />}>
-              Toute la collection
-            </Button>
+            <Link href="/galerie">
+              <Button variant="primary" size="md" rightIcon={<ArrowIcon />}>
+                Toute la collection
+              </Button>
+            </Link>
           </div>
         </motion.div>
       </motion.div>

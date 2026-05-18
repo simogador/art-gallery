@@ -70,7 +70,7 @@ export function ArtworkDetail({ artwork, related }: Props) {
           <ol className="flex items-center gap-2 font-sans text-xs text-neutral-400 uppercase tracking-widest">
             <li><Link href="/" className="hover:text-foreground transition-colors duration-200">Accueil</Link></li>
             <li aria-hidden="true"><ChevronRightIcon /></li>
-            <li><Link href="/#galerie" className="hover:text-foreground transition-colors duration-200">Galerie</Link></li>
+            <li><Link href="/galerie" className="hover:text-foreground transition-colors duration-200">Galerie</Link></li>
             <li aria-hidden="true"><ChevronRightIcon /></li>
             <li className="text-foreground truncate max-w-[200px]">{artwork.title}</li>
           </ol>
