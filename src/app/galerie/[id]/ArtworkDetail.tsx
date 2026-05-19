@@ -6,8 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { formatPrice } from '@/lib/utils/artworks'
 import { Button, Badge, Modal } from '@/components/ui'
-import { ARTISTS } from '@/data/artists'
-import type { Artwork } from '@/lib/types'
+import type { Artwork, Artist } from '@/lib/types'
 
 type Tab = 'oeuvre' | 'artiste' | 'provenance'
 
@@ -37,16 +36,15 @@ const imageVariant = {
 interface Props {
   artwork: Artwork
   related: Artwork[]
+  artist:  Artist | null
 }
 
-export function ArtworkDetail({ artwork, related }: Props) {
+export function ArtworkDetail({ artwork, related, artist }: Props) {
   const [activeTab,    setActiveTab]    = useState<Tab>('oeuvre')
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [contactOpen,  setContactOpen]  = useState(false)
   const [formSent,     setFormSent]     = useState(false)
   const [loading,      setLoading]      = useState(false)
-
-  const artist = ARTISTS.find((a) => a.id === artwork.artistId)
 
   const handleContact = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -419,7 +417,7 @@ function TabOeuvre({ artwork }: { artwork: Artwork }) {
   )
 }
 
-function TabArtiste({ artist, artworkArtist }: { artist: ReturnType<typeof ARTISTS['find']>; artworkArtist: string }) {
+function TabArtiste({ artist, artworkArtist }: { artist: Artist | null | undefined; artworkArtist: string }) {
   if (!artist) {
     return <p className="font-sans text-sm text-neutral-500">{artworkArtist}</p>
   }
@@ -432,7 +430,7 @@ function TabArtiste({ artist, artworkArtist }: { artist: ReturnType<typeof ARTIS
           'bg-gradient-to-br', artist.gradient,
         )}>
           <span className="font-serif text-xl font-light text-background/70">
-            {artist.name.split(' ').map((n) => n[0]).join('')}
+            {artist.name.split(' ').map((n: string) => n[0]).join('')}
           </span>
         </div>
         <div>

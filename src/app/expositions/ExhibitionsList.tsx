@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { Badge, Button } from '@/components/ui'
-import { EXHIBITIONS } from '@/data/exhibitions'
 import type { Exhibition, ExhibitionStatus } from '@/lib/types'
 
 type FilterTab = 'toutes' | ExhibitionStatus
@@ -23,12 +22,6 @@ const STATUS_CONFIG: Record<ExhibitionStatus, { label: string; variant: 'gold' |
   'passee':   { label: 'Passée',    variant: 'dark'    },
 }
 
-const COUNTS = {
-  'en-cours': EXHIBITIONS.filter((e) => e.status === 'en-cours').length,
-  'a-venir':  EXHIBITIONS.filter((e) => e.status === 'a-venir').length,
-  'passee':   EXHIBITIONS.filter((e) => e.status === 'passee').length,
-}
-
 /* ─── Variants ────────────────────────────────────────────────────────────── */
 
 const containerVariants = {
@@ -43,10 +36,20 @@ const fadeUpVariants = {
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 
-export function ExhibitionsList() {
+interface Props {
+  exhibitions: Exhibition[]
+}
+
+export function ExhibitionsList({ exhibitions }: Props) {
+  const counts = {
+    'en-cours': exhibitions.filter((e) => e.status === 'en-cours').length,
+    'a-venir':  exhibitions.filter((e) => e.status === 'a-venir').length,
+    'passee':   exhibitions.filter((e) => e.status === 'passee').length,
+  }
+
   const [activeTab, setActiveTab] = useState<FilterTab>('toutes')
 
-  const filtered   = activeTab === 'toutes' ? EXHIBITIONS : EXHIBITIONS.filter((e) => e.status === activeTab)
+  const filtered   = activeTab === 'toutes' ? exhibitions : exhibitions.filter((e) => e.status === activeTab)
   const featured   = filtered.find((e) => e.featured)
   const gridItems  = featured ? filtered.filter((e) => e.id !== featured.id) : filtered
 
@@ -91,9 +94,9 @@ export function ExhibitionsList() {
             className="flex flex-wrap items-center gap-8 mt-10 pt-8 border-t border-neutral-200"
           >
             {([
-              { label: 'En cours', count: COUNTS['en-cours'], variant: 'gold'    as const },
-              { label: 'À venir',  count: COUNTS['a-venir'],  variant: 'default' as const },
-              { label: 'Passées',  count: COUNTS['passee'],   variant: 'dark'    as const },
+              { label: 'En cours', count: counts['en-cours'], variant: 'gold'    as const },
+              { label: 'À venir',  count: counts['a-venir'],  variant: 'default' as const },
+              { label: 'Passées',  count: counts['passee'],   variant: 'dark'    as const },
             ]).map(({ label, count, variant }) => (
               <div key={label} className="flex items-center gap-3">
                 <Badge variant={variant} dot label={label} />
@@ -117,7 +120,7 @@ export function ExhibitionsList() {
             className="flex items-center gap-1 mb-12 border-b border-neutral-200"
           >
             {TABS.map(({ value, label }) => {
-              const count    = value === 'toutes' ? EXHIBITIONS.length : EXHIBITIONS.filter((e) => e.status === value).length
+              const count    = value === 'toutes' ? exhibitions.length : counts[value as ExhibitionStatus] ?? 0
               const isActive = activeTab === value
               return (
                 <button

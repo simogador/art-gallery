@@ -5,13 +5,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { Badge, Button } from '@/components/ui'
-import { ARTISTS } from '@/data/artists'
 import type { Artist } from '@/lib/types'
-
-const DISCIPLINES = ['Tous', ...Array.from(new Set(ARTISTS.map((a) => a.discipline)))]
-
-const TOTAL_WORKS      = ARTISTS.reduce((s, a) => s + a.worksCount, 0)
-const TOTAL_EXHIBITIONS = ARTISTS.reduce((s, a) => s + a.exhibitions, 0)
 
 /* ─── Variants ────────────────────────────────────────────────────────────── */
 
@@ -27,12 +21,20 @@ const fadeUpVariants = {
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 
-export function ArtistsList() {
+interface Props {
+  artists: Artist[]
+}
+
+export function ArtistsList({ artists }: Props) {
+  const disciplines = ['Tous', ...Array.from(new Set(artists.map((a) => a.discipline)))]
+  const totalWorks = artists.reduce((s, a) => s + a.worksCount, 0)
+  const totalExhibitions = artists.reduce((s, a) => s + a.exhibitions, 0)
+
   const [activeFilter, setActiveFilter] = useState('Tous')
 
   const filtered = activeFilter === 'Tous'
-    ? ARTISTS
-    : ARTISTS.filter((a) => a.discipline === activeFilter)
+    ? artists
+    : artists.filter((a) => a.discipline === activeFilter)
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,9 +76,9 @@ export function ArtistsList() {
             className="flex items-center gap-10 mt-10 pt-8 border-t border-neutral-200"
           >
             {[
-              { value: String(ARTISTS.length),       label: 'Artistes' },
-              { value: `${TOTAL_WORKS}+`,             label: 'Œuvres' },
-              { value: String(TOTAL_EXHIBITIONS),     label: 'Expositions' },
+              { value: String(artists.length),    label: 'Artistes' },
+              { value: `${totalWorks}+`,           label: 'Œuvres' },
+              { value: String(totalExhibitions),   label: 'Expositions' },
             ].map(({ value, label }) => (
               <div key={label} className="flex flex-col">
                 <span className="font-serif text-3xl font-light text-foreground leading-none">{value}</span>
@@ -99,8 +101,8 @@ export function ArtistsList() {
             transition={{ duration: 0.5 }}
             className="flex items-center gap-2 flex-wrap mb-14"
           >
-            {DISCIPLINES.map((d) => {
-              const count   = d === 'Tous' ? ARTISTS.length : ARTISTS.filter((a) => a.discipline === d).length
+            {disciplines.map((d) => {
+              const count   = d === 'Tous' ? artists.length : artists.filter((a) => a.discipline === d).length
               const isActive = activeFilter === d
               return (
                 <button

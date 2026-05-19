@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Artist {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  nationality String
+  birthYear   Int
+  deathYear   Int?
+  bio         String    @db.Text
+  statement   String?   @db.Text
+  imageUrl    String
+  coverUrl    String?
+  website     String?
+  featured    Boolean   @default(false)
+  artworks    Artwork[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([featured])
+}
+
+model Artwork {
+  id          String             @id @default(cuid())
+  slug        String             @unique
+  title       String
+  year        Int
+  medium      String
+  dimensions  String
+  description String             @db.Text
+  imageUrl    String
+  price       Float?
+  available   Boolean            @default(true)
+  featured    Boolean            @default(false)
+  artist      Artist             @relation(fields: [artistId], references: [id])
+  artistId    String
+  exhibitions ArtworkExhibition[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([slug])
+  @@index([artistId])
+  @@index([featured])
+}
+
+model Exhibition {
+  id          String             @id @default(cuid())
+  slug        String             @unique
+  title       String
+  subtitle    String?
+  description String             @db.Text
+  location    String
+  startDate   DateTime
+  endDate     DateTime
+  imageUrl    String
+  featured    Boolean            @default(false)
+  artworks    ArtworkExhibition[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([slug])
+  @@index([startDate, endDate])
+}
+
+model ArtworkExhibition {
+  artwork      Artwork    @relation(fields: [artworkId], references: [id])
+  artworkId    String
+  exhibition   Exhibition @relation(fields: [exhibitionId], references: [id])
+  exhibitionId String
+
+  @@id([artworkId, exhibitionId])
+}

@@ -24,3 +24,5 @@ tsconfig.tsbuildinfo
 .vscode/
 *.swp
 *.swo
+
+/src/generated/prisma

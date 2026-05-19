@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getAllArtworks } from '@/lib/db/artworks'
 import { GalleryPage } from './GalleryPage'
 
 export const metadata: Metadata = {
@@ -6,6 +7,7 @@ export const metadata: Metadata = {
   description: "La collection complète de la galerie — peintures, sculptures, photographies et art numérique, chaque œuvre authentifiée et livrée assurée.",
 }
 
-export default function GaleriePage() {
-  return <GalleryPage />
+export default async function GaleriePage() {
+  const artworks = await getAllArtworks()
+  return <GalleryPage artworks={artworks} artistNames={[...new Set(artworks.map((a) => a.artist))]} />
 }

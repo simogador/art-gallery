@@ -1,19 +1,14 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { ARTISTS } from '@/data/artists'
-import { getArtistById, getArtistArtworks } from '@/lib/utils/artists'
+import { getArtistBySlug, getArtistArtworksBySlug } from '@/lib/db/artists'
 import { ArtistProfile } from './ArtistProfile'
 
 interface Props {
   params: { id: string }
 }
 
-export function generateStaticParams() {
-  return ARTISTS.map((a) => ({ id: a.id }))
-}
-
-export function generateMetadata({ params }: Props): Metadata {
-  const artist = getArtistById(params.id)
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const artist = await getArtistBySlug(params.id)
   if (!artist) return { title: 'Artiste introuvable' }
   return {
     title: artist.name,
@@ -26,10 +21,11 @@ export function generateMetadata({ params }: Props): Metadata {
   }
 }
 
-export default function ArtistPage({ params }: Props) {
-  const artist = getArtistById(params.id)
+export default async function ArtistPage({ params }: Props) {
+  const [artist, artworks] = await Promise.all([
+    getArtistBySlug(params.id),
+    getArtistArtworksBySlug(params.id),
+  ])
   if (!artist) notFound()
-
-  const artworks = getArtistArtworks(artist.id)
   return <ArtistProfile artist={artist} artworks={artworks} />
 }

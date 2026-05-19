@@ -5,14 +5,11 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { Button, Badge } from '@/components/ui'
-import { ARTWORKS } from '@/data/artworks'
-import { ARTISTS } from '@/data/artists'
-import type { Artwork, ArtMedium } from '@/lib/types'
+import type { Artwork, Artist, ArtMedium } from '@/lib/types'
 
 /* ─── Constants ───────────────────────────────────────────────────────────── */
 
 const MEDIUMS: ArtMedium[] = ['Tout', 'Peinture', 'Sculpture', 'Photographie', 'Art numérique']
-const ARTIST_OPTIONS = ['Tous', ...ARTISTS.map((a) => a.name)]
 const SORTS = [
   { value: 'default',    label: 'Défaut' },
   { value: 'price-asc',  label: 'Prix ↑' },
@@ -20,9 +17,6 @@ const SORTS = [
 ] as const
 
 type SortValue = typeof SORTS[number]['value']
-
-const TOTAL_AVAILABLE = ARTWORKS.filter((a) => !a.sold).length
-const TOTAL_MEDIUMS   = new Set(ARTWORKS.map((a) => a.medium)).size
 
 /* ─── Variants ────────────────────────────────────────────────────────────── */
 
@@ -44,7 +38,16 @@ const cardVariants = {
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 
-export function GalleryPage() {
+interface Props {
+  artworks:    Artwork[]
+  artistNames: string[]
+}
+
+export function GalleryPage({ artworks, artistNames }: Props) {
+  const artistOptions = ['Tous', ...artistNames]
+  const totalAvailable = artworks.filter((a) => !a.sold).length
+  const totalMediums   = new Set(artworks.map((a) => a.medium)).size
+
   const [activeMedium,     setActiveMedium]     = useState<ArtMedium>('Tout')
   const [activeArtist,     setActiveArtist]     = useState('Tous')
   const [onlyAvailable,    setOnlyAvailable]    = useState(false)
@@ -52,7 +55,7 @@ export function GalleryPage() {
   const [hovered,          setHovered]          = useState<string | null>(null)
 
   const filtered = useMemo(() => {
-    let list = [...ARTWORKS]
+    let list = [...artworks]
 
     if (activeMedium !== 'Tout')
       list = list.filter((a) => a.medium === activeMedium)
@@ -117,10 +120,10 @@ export function GalleryPage() {
           {/* Stats row */}
           <motion.div variants={fadeUpVariants} className="mt-10 flex flex-wrap gap-8 md:gap-16">
             {[
-              { value: ARTWORKS.length, label: 'Œuvres' },
-              { value: TOTAL_AVAILABLE, label: 'Disponibles' },
-              { value: ARTISTS.length,  label: 'Artistes' },
-              { value: TOTAL_MEDIUMS,   label: 'Médiums' },
+              { value: artworks.length,   label: 'Œuvres' },
+              { value: totalAvailable,   label: 'Disponibles' },
+              { value: artistNames.length, label: 'Artistes' },
+              { value: totalMediums,     label: 'Médiums' },
             ].map(({ value, label }) => (
               <div key={label}>
                 <p className="font-serif text-3xl font-light text-foreground">{value}</p>
@@ -138,7 +141,7 @@ export function GalleryPage() {
           {/* Medium pills */}
           <div className="flex items-center gap-2 flex-wrap">
             {MEDIUMS.map((m) => {
-              const count = m === 'Tout' ? ARTWORKS.length : ARTWORKS.filter((a) => a.medium === m).length
+              const count = m === 'Tout' ? artworks.length : artworks.filter((a) => a.medium === m).length
               const isActive = activeMedium === m
               return (
                 <button
@@ -175,9 +178,8 @@ export function GalleryPage() {
 
             {/* Artist chips */}
             <div className="flex items-center gap-1.5 flex-wrap flex-1">
-              {ARTIST_OPTIONS.map((name) => {
+              {artistOptions.map((name) => {
                 const isActive = activeArtist === name
-                const artist = ARTISTS.find((a) => a.name === name)
                 return (
                   <button
                     key={name}
@@ -192,11 +194,8 @@ export function GalleryPage() {
                         : 'border-neutral-200 text-neutral-400 hover:border-neutral-300 hover:text-neutral-600',
                     )}
                   >
-                    {artist && (
-                      <span className={cn(
-                        'inline-block w-2 h-2 rounded-full bg-gradient-to-br',
-                        artist.gradient,
-                      )} />
+                    {name !== 'Tous' && (
+                      <span className="inline-block w-2 h-2 rounded-full bg-gold/60" />
                     )}
                     {name}
                     {isActive && (
@@ -259,7 +258,7 @@ export function GalleryPage() {
             >
               <p className="font-sans text-xs text-neutral-400">
                 <span className="text-foreground font-medium">{filtered.length}</span> résultat{filtered.length !== 1 ? 's' : ''}
-                {' '}sur {ARTWORKS.length} œuvres
+                {' '}sur {artworks.length} œuvres
               </p>
               <button
                 onClick={resetFilters}
@@ -326,7 +325,7 @@ export function GalleryPage() {
             >
               <p className="font-sans text-sm text-neutral-400">
                 <span className="text-foreground font-medium">{filtered.length}</span> sur{' '}
-                <span className="text-foreground font-medium">{ARTWORKS.length}</span> œuvres
+                <span className="text-foreground font-medium">{artworks.length}</span> œuvres
               </p>
               <Link href="/artistes" className="inline-flex items-center gap-2 font-sans text-sm text-neutral-500 hover:text-foreground transition-colors duration-200">
                 Découvrir les artistes

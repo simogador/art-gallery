@@ -1,24 +1,19 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { EXHIBITIONS } from '@/data/exhibitions'
 import {
-  getExhibitionById,
+  getExhibitionBySlug,
   getRelatedExhibitions,
-  getExhibitionArtworks,
-  getExhibitionArtistData,
-} from '@/lib/utils/exhibitions'
+  getExhibitionArtworksBySlug,
+  getExhibitionArtistsBySlug,
+} from '@/lib/db/exhibitions'
 import { ExhibitionDetail } from './ExhibitionDetail'
 
 interface Props {
   params: { id: string }
 }
 
-export function generateStaticParams() {
-  return EXHIBITIONS.map((e) => ({ id: e.id }))
-}
-
-export function generateMetadata({ params }: Props): Metadata {
-  const exhibition = getExhibitionById(params.id)
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const exhibition = await getExhibitionBySlug(params.id)
   if (!exhibition) return { title: 'Exposition introuvable' }
   return {
     title: exhibition.title,
@@ -31,16 +26,22 @@ export function generateMetadata({ params }: Props): Metadata {
   }
 }
 
-export default function ExhibitionPage({ params }: Props) {
-  const exhibition = getExhibitionById(params.id)
+export default async function ExhibitionPage({ params }: Props) {
+  const exhibition = await getExhibitionBySlug(params.id)
   if (!exhibition) notFound()
+
+  const [artists, artworks, related] = await Promise.all([
+    getExhibitionArtistsBySlug(params.id),
+    getExhibitionArtworksBySlug(params.id),
+    getRelatedExhibitions(params.id),
+  ])
 
   return (
     <ExhibitionDetail
       exhibition={exhibition}
-      artists={getExhibitionArtistData(exhibition)}
-      artworks={getExhibitionArtworks(exhibition)}
-      related={getRelatedExhibitions(exhibition)}
+      artists={artists}
+      artworks={artworks}
+      related={related}
     />
   )
 }
