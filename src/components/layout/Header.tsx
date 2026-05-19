@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
+import type { Session } from 'next-auth'
 import { cn } from '@/lib/utils/cn'
 import { Button } from '@/components/ui'
+import { logout } from '@/app/auth/actions'
 
 const NAV_LINKS = [
   { href: '/galerie',     label: 'Galerie' },
@@ -27,7 +30,11 @@ const navItemVariants = {
   }),
 }
 
-export function Header() {
+interface HeaderProps {
+  session?: Session | null
+}
+
+export function Header({ session }: HeaderProps) {
   const [menuOpen,   setMenuOpen]   = useState(false)
   const [scrolled,   setScrolled]   = useState(false)
   const [activeLink, setActiveLink] = useState('')
@@ -91,9 +98,13 @@ export function Header() {
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-4">
-              <Button variant="ghost" size="sm">
-                Connexion
-              </Button>
+              {session?.user ? (
+                <UserMenu user={session.user} />
+              ) : (
+                <Link href="/auth/connexion">
+                  <Button variant="ghost" size="sm">Connexion</Button>
+                </Link>
+              )}
               <Button variant="gold" size="sm">
                 Contacter
               </Button>
@@ -191,9 +202,22 @@ export function Header() {
               </nav>
 
               <div className="mt-auto flex flex-col gap-3">
-                <Button variant="ghost" size="md" fullWidth onClick={closeMenu}>
-                  Connexion
-                </Button>
+                {session?.user ? (
+                  <>
+                    <p className="font-sans text-xs text-neutral-500 text-center truncate px-2">
+                      {session.user.name ?? session.user.email}
+                    </p>
+                    <form action={logout}>
+                      <Button type="submit" variant="ghost" size="md" fullWidth onClick={closeMenu}>
+                        Se déconnecter
+                      </Button>
+                    </form>
+                  </>
+                ) : (
+                  <Link href="/auth/connexion" onClick={closeMenu}>
+                    <Button variant="ghost" size="md" fullWidth>Connexion</Button>
+                  </Link>
+                )}
                 <Button variant="gold" size="md" fullWidth onClick={closeMenu}>
                   Contacter
                 </Button>
@@ -203,6 +227,99 @@ export function Header() {
         )}
       </AnimatePresence>
     </>
+  )
+}
+
+/* ─── UserMenu ────────────────────────────────────────────────────────────── */
+
+interface UserMenuProps {
+  user: NonNullable<Session['user']>
+}
+
+function UserMenu({ user }: UserMenuProps) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
+  const initials = user.name
+    ? user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
+    : (user.email?.[0] ?? '?').toUpperCase()
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 focus-visible:outline focus-visible:outline-gold rounded-sm"
+        aria-label="Menu utilisateur"
+        aria-expanded={open}
+      >
+        {user.image ? (
+          <Image
+            src={user.image}
+            alt={user.name ?? 'Avatar'}
+            width={32}
+            height={32}
+            className="w-8 h-8 rounded-full object-cover border border-neutral-200"
+          />
+        ) : (
+          <span className="w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center font-sans text-xs font-medium">
+            {initials}
+          </span>
+        )}
+        <span className="font-sans text-xs text-neutral-600 max-w-[100px] truncate hidden lg:block">
+          {user.name ?? user.email}
+        </span>
+        <ChevronIcon open={open} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.18 }}
+            className={cn(
+              'absolute right-0 top-full mt-2 w-52 z-50',
+              'bg-background border border-neutral-200 rounded-sm shadow-premium-sm',
+              'py-2',
+            )}
+          >
+            <div className="px-4 py-2 border-b border-neutral-100 mb-1">
+              <p className="font-sans text-xs font-medium text-foreground truncate">{user.name}</p>
+              <p className="font-sans text-[11px] text-neutral-400 truncate mt-0.5">{user.email}</p>
+            </div>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="w-full text-left px-4 py-2 font-sans text-xs text-neutral-600 hover:text-foreground hover:bg-neutral-50 transition-colors duration-200"
+              >
+                Se déconnecter
+              </button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <motion.svg
+      width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
+      animate={{ rotate: open ? 180 : 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </motion.svg>
   )
 }
 

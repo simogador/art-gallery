@@ -2,7 +2,7 @@
 
 import { AuthError } from 'next-auth'
 import bcrypt from 'bcryptjs'
-import { signIn } from '@/auth'
+import { signIn, signOut } from '@/auth'
 import { prisma } from '@/lib/prisma'
 
 export async function loginWithCredentials(formData: FormData) {
@@ -22,6 +22,10 @@ export async function loginWithCredentials(formData: FormData) {
 
 export async function loginWithGoogle() {
   await signIn('google', { redirectTo: '/' })
+}
+
+export async function logout() {
+  await signOut({ redirectTo: '/' })
 }
 
 export async function register(formData: FormData) {
