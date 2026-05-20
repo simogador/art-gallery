@@ -26,3 +26,4 @@ tsconfig.tsbuildinfo
 *.swo
 
 /src/generated/prisma
+.vercel

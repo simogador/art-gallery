@@ -91,6 +91,7 @@ model User {
   role          String    @default("user")
   accounts      Account[]
   sessions      Session[]
+  orders        Order[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -127,4 +128,24 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// ── Commerce models ──────────────────────────────────────────────────────────
+
+model Order {
+  id                     String   @id @default(cuid())
+  stripeSessionId        String   @unique
+  stripePaymentIntentId  String?  @unique
+  userId                 String?
+  user                   User?    @relation(fields: [userId], references: [id])
+  artworkIds             String   // comma-separated slugs
+  amount                 Float    // in euros
+  currency               String   @default("eur")
+  status                 String   @default("paid")
+  customerEmail          String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stripeSessionId])
 }
