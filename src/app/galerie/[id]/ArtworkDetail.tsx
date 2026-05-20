@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { formatPrice } from '@/lib/utils/artworks'
 import { Button, Badge, Modal } from '@/components/ui'
+import { useCartStore } from '@/lib/store/cart'
 import type { Artwork, Artist } from '@/lib/types'
 
 type Tab = 'oeuvre' | 'artiste' | 'provenance'
@@ -45,6 +46,10 @@ export function ArtworkDetail({ artwork, related, artist }: Props) {
   const [contactOpen,  setContactOpen]  = useState(false)
   const [formSent,     setFormSent]     = useState(false)
   const [loading,      setLoading]      = useState(false)
+  const [addedToCart,  setAddedToCart]  = useState(false)
+
+  const { addItem, removeItem, hasItem } = useCartStore()
+  const inCart = hasItem(artwork.id)
 
   const handleContact = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,6 +57,20 @@ export function ArtworkDetail({ artwork, related, artist }: Props) {
     await new Promise((r) => setTimeout(r, 900))
     setLoading(false)
     setFormSent(true)
+  }
+
+  function handleAddToCart() {
+    addItem({
+      id:          artwork.id,
+      title:       artwork.title,
+      artist:      artwork.artist,
+      artistId:    artwork.artistId,
+      price:       artwork.price,
+      gradient:    artwork.gradient,
+      accentColor: artwork.accentColor,
+    })
+    setAddedToCart(true)
+    setTimeout(() => setAddedToCart(false), 2000)
   }
 
   return (
@@ -230,15 +249,33 @@ export function ArtworkDetail({ artwork, related, artist }: Props) {
               <motion.div custom={6} variants={fadeUp} className="flex flex-col gap-3 mb-10">
                 {!artwork.sold ? (
                   <>
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      fullWidth
-                      onClick={() => setContactOpen(true)}
-                      rightIcon={<ArrowIcon />}
-                    >
-                      Acquérir cette œuvre
-                    </Button>
+                    {inCart ? (
+                      <div className="flex gap-3">
+                        <Link href="/panier" className="flex-1">
+                          <Button variant="primary" size="lg" fullWidth rightIcon={<ArrowIcon />}>
+                            Voir le panier
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="lg"
+                          onClick={() => removeItem(artwork.id)}
+                          aria-label="Retirer du panier"
+                        >
+                          <TrashIcon />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        fullWidth
+                        onClick={handleAddToCart}
+                        rightIcon={addedToCart ? <CheckIcon /> : <CartIcon />}
+                      >
+                        {addedToCart ? 'Ajouté !' : 'Ajouter au panier'}
+                      </Button>
+                    )}
                     <Button variant="ghost" size="md" fullWidth onClick={() => setContactOpen(true)}>
                       Prendre rendez-vous
                     </Button>
@@ -661,3 +698,6 @@ const CertificateIcon    = () => icon('M12 15l-2 5-3-3-5 2 2-5-3-3 5-2 2-5 3 3 5
 const ShieldIcon         = () => icon('M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z')
 const TruckIcon          = () => icon('M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm11 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z')
 const RotateIcon         = () => icon('M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15')
+const CartIcon           = () => icon('M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0')
+const CheckIcon          = () => icon('M20 6 9 17l-5-5')
+const TrashIcon          = () => icon('M3 6h18M19 6l-1 14H6L5 6M9 6V4h6v2')

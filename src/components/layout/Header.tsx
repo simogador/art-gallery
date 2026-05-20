@@ -8,6 +8,7 @@ import type { Session } from 'next-auth'
 import { cn } from '@/lib/utils/cn'
 import { Button } from '@/components/ui'
 import { logout } from '@/app/auth/actions'
+import { useCartStore } from '@/lib/store/cart'
 
 const NAV_LINKS = [
   { href: '/galerie',     label: 'Galerie' },
@@ -39,6 +40,7 @@ export function Header({ session }: HeaderProps) {
   const [scrolled,   setScrolled]   = useState(false)
   const [activeLink, setActiveLink] = useState('')
   const { scrollY } = useScroll()
+  const cartCount = useCartStore((s) => s.items.length)
 
   useMotionValueEvent(scrollY, 'change', (y) => {
     setScrolled(y > 40)
@@ -105,6 +107,19 @@ export function Header({ session }: HeaderProps) {
                   <Button variant="ghost" size="sm">Connexion</Button>
                 </Link>
               )}
+              <Link href="/panier" className="relative" aria-label={`Panier${cartCount > 0 ? ` (${cartCount} article${cartCount > 1 ? 's' : ''})` : ''}`}>
+                <span className={cn(
+                  'flex items-center justify-center w-9 h-9 rounded-sm',
+                  'text-neutral-500 hover:text-foreground transition-colors duration-200',
+                )}>
+                  <CartHeaderIcon />
+                </span>
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gold text-background font-sans text-[9px] font-medium flex items-center justify-center leading-none">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
               <Button variant="gold" size="sm">
                 Contacter
               </Button>
@@ -202,6 +217,14 @@ export function Header({ session }: HeaderProps) {
               </nav>
 
               <div className="mt-auto flex flex-col gap-3">
+                <Link href="/panier" onClick={closeMenu} className="flex items-center justify-between border border-neutral-200 rounded-sm px-4 py-3 hover:border-neutral-400 transition-colors duration-200">
+                  <span className="font-sans text-sm text-foreground">Panier</span>
+                  {cartCount > 0 && (
+                    <span className="w-5 h-5 rounded-full bg-gold text-background font-sans text-[10px] font-medium flex items-center justify-center">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
                 {session?.user ? (
                   <>
                     <p className="font-sans text-xs text-neutral-500 text-center truncate px-2">
@@ -320,6 +343,16 @@ function ChevronIcon({ open }: { open: boolean }) {
     >
       <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </motion.svg>
+  )
+}
+
+function CartHeaderIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </svg>
   )
 }
 
