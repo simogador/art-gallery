@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { getStripe } from '@/lib/stripe'
-import { ARTWORKS } from '@/data/artworks'
+import { prisma } from '@/lib/prisma'
 import type { CartItem } from '@/lib/store/cart'
 
 export async function POST(req: NextRequest) {
@@ -16,17 +16,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Panier vide' }, { status: 400 })
   }
 
-  // Validate prices server-side — never trust the client
+  const slugs = items.map((i) => i.id)
+
+  // Validate prices server-side against DB — never trust the client
+  const dbArtworks = await prisma.artwork.findMany({
+    where:   { slug: { in: slugs } },
+    include: { artist: { select: { name: true } } },
+  })
+
   const lineItems = []
   const validatedIds: string[] = []
 
-  for (const item of items) {
-    const artwork = ARTWORKS.find((a) => a.id === item.id)
+  for (const slug of slugs) {
+    const artwork = dbArtworks.find((a) => a.slug === slug)
+
     if (!artwork) {
-      return NextResponse.json({ error: `Œuvre introuvable : ${item.id}` }, { status: 400 })
+      return NextResponse.json({ error: `Œuvre introuvable : ${slug}` }, { status: 400 })
     }
-    if (artwork.sold) {
+    if (!artwork.available) {
       return NextResponse.json({ error: `"${artwork.title}" n'est plus disponible.` }, { status: 400 })
+    }
+    if (!artwork.price) {
+      return NextResponse.json({ error: `"${artwork.title}" n'a pas de prix défini.` }, { status: 400 })
     }
 
     lineItems.push({
@@ -35,12 +46,12 @@ export async function POST(req: NextRequest) {
         unit_amount: Math.round(artwork.price * 100), // cents
         product_data: {
           name: artwork.title,
-          description: `${artwork.artist} · ${artwork.year} · ${artwork.medium}`,
+          description: `${artwork.artist.name} · ${artwork.year} · ${artwork.medium}`,
         },
       },
       quantity: 1,
     })
-    validatedIds.push(artwork.id)
+    validatedIds.push(artwork.slug)
   }
 
   const baseUrl = process.env.AUTH_URL ?? 'http://localhost:3000'

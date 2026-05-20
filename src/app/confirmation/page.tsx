@@ -2,7 +2,8 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getStripe } from '@/lib/stripe'
-import { ARTWORKS } from '@/data/artworks'
+import { prisma } from '@/lib/prisma'
+import { gradient, accent } from '@/lib/db/mappers'
 import { formatPrice } from '@/lib/utils/artworks'
 import { CartClearer } from './CartClearer'
 import { cn } from '@/lib/utils/cn'
@@ -30,9 +31,17 @@ export default async function ConfirmationPage({ searchParams }: Props) {
   }
 
   const artworkIds = (session.metadata?.artworkIds ?? '').split(',').filter(Boolean)
-  const artworks   = artworkIds.map((id) => ARTWORKS.find((a) => a.id === id)).filter(Boolean)
-  const total      = (session.amount_total ?? 0) / 100
-  const reference  = session_id.slice(-8).toUpperCase()
+  const dbArtworks = await prisma.artwork.findMany({
+    where:   { slug: { in: artworkIds } },
+    include: { artist: { select: { name: true, slug: true } } },
+  })
+  // Preserve order from metadata
+  const artworks = artworkIds
+    .map((id) => dbArtworks.find((a) => a.slug === id))
+    .filter(Boolean) as typeof dbArtworks
+
+  const total     = (session.amount_total ?? 0) / 100
+  const reference = session_id.slice(-8).toUpperCase()
 
   return (
     <>
@@ -83,9 +92,9 @@ export default async function ConfirmationPage({ searchParams }: Props) {
 
             <div className="flex flex-col gap-4">
               {artworks.map((artwork) => {
-                if (!artwork) return null
-                const seed = artwork.id
-                const h    = seed.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+                const g    = gradient(artwork.slug)
+                const col  = accent(artwork.slug)
+                const h    = artwork.slug.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
                 const size = 56
                 const r1   = size * 0.35 + (h % (size * 0.1))
                 const r2   = r1 * 0.6
@@ -94,20 +103,20 @@ export default async function ConfirmationPage({ searchParams }: Props) {
 
                 return (
                   <div
-                    key={artwork.id}
+                    key={artwork.slug}
                     className="flex items-center gap-4 p-4 border border-neutral-200 rounded-sm"
                   >
                     {/* Thumbnail */}
                     <div className={cn(
-                      'w-14 h-18 flex-shrink-0 rounded-sm overflow-hidden flex items-center justify-center',
-                      'bg-gradient-to-br', artwork.gradient,
+                      'w-14 flex-shrink-0 rounded-sm overflow-hidden flex items-center justify-center',
+                      'bg-gradient-to-br', g,
                     )} style={{ height: '4.5rem' }}>
                       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" aria-hidden="true">
-                        <circle cx={cx} cy={cy} r={r1} stroke={artwork.accentColor} strokeWidth="0.8" opacity="0.6" />
-                        <circle cx={cx} cy={cy} r={r2} stroke={artwork.accentColor} strokeWidth="0.5" opacity="0.4" />
-                        <line x1={cx - r1} y1={cy} x2={cx + r1} y2={cy} stroke={artwork.accentColor} strokeWidth="0.4" opacity="0.35" />
-                        <line x1={cx} y1={cy - r1} x2={cx} y2={cy + r1} stroke={artwork.accentColor} strokeWidth="0.4" opacity="0.35" />
-                        <circle cx={cx} cy={cy} r={3} fill={artwork.accentColor} opacity="0.5" />
+                        <circle cx={cx} cy={cy} r={r1} stroke={col} strokeWidth="0.8" opacity="0.6" />
+                        <circle cx={cx} cy={cy} r={r2} stroke={col} strokeWidth="0.5" opacity="0.4" />
+                        <line x1={cx - r1} y1={cy} x2={cx + r1} y2={cy} stroke={col} strokeWidth="0.4" opacity="0.35" />
+                        <line x1={cx} y1={cy - r1} x2={cx} y2={cy + r1} stroke={col} strokeWidth="0.4" opacity="0.35" />
+                        <circle cx={cx} cy={cy} r={3} fill={col} opacity="0.5" />
                       </svg>
                     </div>
 
@@ -115,13 +124,13 @@ export default async function ConfirmationPage({ searchParams }: Props) {
                     <div className="flex-1 min-w-0">
                       <p className="font-serif text-base font-light text-foreground truncate">{artwork.title}</p>
                       <p className="font-sans text-xs text-neutral-400 uppercase tracking-widest mt-0.5 truncate">
-                        {artwork.artist} · {artwork.year}
+                        {artwork.artist.name} · {artwork.year}
                       </p>
                     </div>
 
                     {/* Prix */}
                     <p className="font-serif text-base font-light text-foreground flex-shrink-0">
-                      {formatPrice(artwork.price)}
+                      {artwork.price ? formatPrice(artwork.price) : '—'}
                     </p>
                   </div>
                 )
