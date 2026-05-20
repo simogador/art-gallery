@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils/cn'
 import { formatPrice } from '@/lib/utils/artworks'
 import { Button, Badge, Modal } from '@/components/ui'
 import { useCartStore } from '@/lib/store/cart'
+import { ArtworkImage } from '@/components/ui'
 import type { Artwork, Artist } from '@/lib/types'
 
 type Tab = 'oeuvre' | 'artiste' | 'provenance'
@@ -66,6 +67,7 @@ export function ArtworkDetail({ artwork, related, artist }: Props) {
       artist:      artwork.artist,
       artistId:    artwork.artistId,
       price:       artwork.price,
+      imageUrl:    artwork.imageUrl,
       gradient:    artwork.gradient,
       accentColor: artwork.accentColor,
     })
@@ -113,12 +115,15 @@ export function ArtworkDetail({ artwork, related, artist }: Props) {
                 {/* Main visual */}
                 <div className={cn(
                   'relative overflow-hidden rounded-sm aspect-[4/5]',
-                  'bg-gradient-to-br', artwork.gradient,
                 )}>
-                  {/* Art motif */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <LargeArtMotif color={artwork.accentColor} seed={artwork.id} />
-                  </div>
+                  <ArtworkImage
+                    imageUrl={artwork.imageUrl}
+                    title={artwork.title}
+                    gradient={artwork.gradient}
+                    accentColor={artwork.accentColor}
+                    priority
+                    sizes="(max-width: 768px) 100vw, 55vw"
+                  />
 
                   {/* Hover zoom hint */}
                   <motion.div
@@ -145,20 +150,23 @@ export function ArtworkDetail({ artwork, related, artist }: Props) {
                   )}
                 </div>
 
-                {/* Thumbnail strip (simulated views) */}
+                {/* Thumbnail strip */}
                 <div className="flex gap-2 mt-3">
                   {[0, 1, 2].map((i) => (
                     <div
                       key={i}
                       className={cn(
                         'relative flex-1 aspect-square overflow-hidden rounded-sm cursor-pointer',
-                        'bg-gradient-to-br', artwork.gradient,
-                        i === 0 ? 'ring-1 ring-foreground ring-offset-1' : 'opacity-60 hover:opacity-100 transition-opacity duration-200',
+                        i === 0 ? 'ring-1 ring-foreground ring-offset-1' : 'opacity-50 hover:opacity-80 transition-opacity duration-200',
                       )}
                     >
-                      <div className="absolute inset-0 flex items-center justify-center scale-75 opacity-50">
-                        <LargeArtMotif color={artwork.accentColor} seed={artwork.id + i} />
-                      </div>
+                      <ArtworkImage
+                        imageUrl={i === 0 ? artwork.imageUrl : null}
+                        title={artwork.title}
+                        gradient={artwork.gradient}
+                        accentColor={artwork.accentColor}
+                        sizes="10vw"
+                      />
                     </div>
                   ))}
                 </div>
@@ -354,12 +362,14 @@ export function ArtworkDetail({ artwork, related, artist }: Props) {
         title={artwork.title}
         subtitle={`${artwork.artist} · ${artwork.year}`}
       >
-        <div className={cn(
-          'aspect-[4/3] w-full overflow-hidden rounded-sm',
-          'bg-gradient-to-br', artwork.gradient,
-          'flex items-center justify-center',
-        )}>
-          <LargeArtMotif color={artwork.accentColor} seed={artwork.id} size={300} />
+        <div className="aspect-[4/3] w-full overflow-hidden rounded-sm relative">
+          <ArtworkImage
+            imageUrl={artwork.imageUrl}
+            title={artwork.title}
+            gradient={artwork.gradient}
+            accentColor={artwork.accentColor}
+            sizes="90vw"
+          />
         </div>
       </Modal>
 
@@ -573,13 +583,14 @@ function RelatedSection({ artworks }: { artworks: Artwork[] }) {
             >
               <Link href={`/galerie/${a.id}`} className="group block">
                 {/* Image */}
-                <div className={cn(
-                  'relative aspect-[3/4] overflow-hidden rounded-sm mb-4',
-                  'bg-gradient-to-br', a.gradient,
-                )}>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <LargeArtMotif color={a.accentColor} seed={a.id} size={100} />
-                  </div>
+                <div className="relative aspect-[3/4] overflow-hidden rounded-sm mb-4">
+                  <ArtworkImage
+                    imageUrl={a.imageUrl}
+                    title={a.title}
+                    gradient={a.gradient}
+                    accentColor={a.accentColor}
+                    sizes="(max-width: 640px) 100vw, 33vw"
+                  />
                   <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/8 transition-colors duration-400" />
                   {a.sold && (
                     <div className="absolute top-3 left-3">

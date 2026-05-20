@@ -5,6 +5,7 @@ import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { gradient, accent } from '@/lib/db/mappers'
 import { formatPrice } from '@/lib/utils/artworks'
+import { ArtworkImage } from '@/components/ui'
 import { CartClearer } from './CartClearer'
 import { cn } from '@/lib/utils/cn'
 
@@ -92,14 +93,8 @@ export default async function ConfirmationPage({ searchParams }: Props) {
 
             <div className="flex flex-col gap-4">
               {artworks.map((artwork) => {
-                const g    = gradient(artwork.slug)
-                const col  = accent(artwork.slug)
-                const h    = artwork.slug.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-                const size = 56
-                const r1   = size * 0.35 + (h % (size * 0.1))
-                const r2   = r1 * 0.6
-                const cx   = size / 2
-                const cy   = size / 2
+                const g   = gradient(artwork.slug)
+                const col = accent(artwork.slug)
 
                 return (
                   <div
@@ -107,17 +102,14 @@ export default async function ConfirmationPage({ searchParams }: Props) {
                     className="flex items-center gap-4 p-4 border border-neutral-200 rounded-sm"
                   >
                     {/* Thumbnail */}
-                    <div className={cn(
-                      'w-14 flex-shrink-0 rounded-sm overflow-hidden flex items-center justify-center',
-                      'bg-gradient-to-br', g,
-                    )} style={{ height: '4.5rem' }}>
-                      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" aria-hidden="true">
-                        <circle cx={cx} cy={cy} r={r1} stroke={col} strokeWidth="0.8" opacity="0.6" />
-                        <circle cx={cx} cy={cy} r={r2} stroke={col} strokeWidth="0.5" opacity="0.4" />
-                        <line x1={cx - r1} y1={cy} x2={cx + r1} y2={cy} stroke={col} strokeWidth="0.4" opacity="0.35" />
-                        <line x1={cx} y1={cy - r1} x2={cx} y2={cy + r1} stroke={col} strokeWidth="0.4" opacity="0.35" />
-                        <circle cx={cx} cy={cy} r={3} fill={col} opacity="0.5" />
-                      </svg>
+                    <div className="relative w-14 flex-shrink-0 rounded-sm overflow-hidden" style={{ height: '4.5rem' }}>
+                      <ArtworkImage
+                        imageUrl={artwork.imageUrl}
+                        title={artwork.title}
+                        gradient={g}
+                        accentColor={col}
+                        sizes="56px"
+                      />
                     </div>
 
                     {/* Info */}

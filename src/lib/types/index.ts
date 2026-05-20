@@ -14,6 +14,7 @@ export interface Artwork {
   tags:        string[]
   featured:    boolean
   sold:        boolean
+  imageUrl:    string | null
   /** Tailwind gradient classes used as image placeholder */
   gradient:    string
   accentColor: string

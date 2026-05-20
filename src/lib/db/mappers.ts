@@ -99,6 +99,7 @@ type DbArtwork = {
   medium: string
   dimensions: string
   description: string
+  imageUrl: string
   price: number | null
   available: boolean
   featured: boolean
@@ -120,6 +121,7 @@ export function mapArtwork(w: DbArtwork): Artwork {
     tags: [],
     featured: w.featured,
     sold: !w.available,
+    imageUrl: w.imageUrl ?? null,
     gradient: gradient(w.slug),
     accentColor: accent(w.slug),
   }

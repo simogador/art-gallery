@@ -16,6 +16,7 @@ export const ARTWORKS: Artwork[] = [
     featured: true,
     sold: false,
     gradient: 'from-amber-100 via-yellow-200 to-orange-100',
+    imageUrl: null,
     accentColor: '#C9A84C',
   },
   {
@@ -33,6 +34,7 @@ export const ARTWORKS: Artwork[] = [
     featured: false,
     sold: false,
     gradient: 'from-stone-200 via-neutral-300 to-stone-100',
+    imageUrl: null,
     accentColor: '#6B6B65',
   },
   {
@@ -50,6 +52,7 @@ export const ARTWORKS: Artwork[] = [
     featured: false,
     sold: false,
     gradient: 'from-slate-100 via-blue-50 to-gray-200',
+    imageUrl: null,
     accentColor: '#A8A8A2',
   },
   {
@@ -67,6 +70,7 @@ export const ARTWORKS: Artwork[] = [
     featured: true,
     sold: false,
     gradient: 'from-violet-100 via-purple-200 to-indigo-100',
+    imageUrl: null,
     accentColor: '#7C3AED',
   },
   {
@@ -84,6 +88,7 @@ export const ARTWORKS: Artwork[] = [
     featured: false,
     sold: true,
     gradient: 'from-red-100 via-orange-200 to-rose-100',
+    imageUrl: null,
     accentColor: '#DC2626',
   },
   {
@@ -101,6 +106,7 @@ export const ARTWORKS: Artwork[] = [
     featured: true,
     sold: false,
     gradient: 'from-zinc-200 via-stone-300 to-neutral-200',
+    imageUrl: null,
     accentColor: '#0A0A0A',
   },
   {
@@ -118,6 +124,7 @@ export const ARTWORKS: Artwork[] = [
     featured: false,
     sold: false,
     gradient: 'from-teal-50 via-cyan-100 to-sky-100',
+    imageUrl: null,
     accentColor: '#0891B2',
   },
   {
@@ -135,6 +142,7 @@ export const ARTWORKS: Artwork[] = [
     featured: false,
     sold: false,
     gradient: 'from-emerald-100 via-green-200 to-teal-100',
+    imageUrl: null,
     accentColor: '#059669',
   },
   {
@@ -152,6 +160,7 @@ export const ARTWORKS: Artwork[] = [
     featured: false,
     sold: false,
     gradient: 'from-sky-100 via-blue-200 to-indigo-50',
+    imageUrl: null,
     accentColor: '#3B82F6',
   },
 ]

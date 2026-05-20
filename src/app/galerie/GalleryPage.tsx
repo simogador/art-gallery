@@ -4,8 +4,8 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
-import { Button, Badge } from '@/components/ui'
-import type { Artwork, Artist, ArtMedium } from '@/lib/types'
+import { Button, Badge, ArtworkImage } from '@/components/ui'
+import type { Artwork, ArtMedium } from '@/lib/types'
 
 /* ─── Constants ───────────────────────────────────────────────────────────── */
 
@@ -405,11 +405,13 @@ function ArtworkCard({ artwork, index, hovered, onHover }: ArtworkCardProps) {
         'relative overflow-hidden rounded-sm bg-neutral-100',
         isLarge ? 'aspect-[4/3]' : 'aspect-[3/4]',
       )}>
-        <div className={cn('absolute inset-0 bg-gradient-to-br', artwork.gradient)} />
-
-        <div className="absolute inset-0 flex items-center justify-center opacity-15">
-          <ArtMotif seed={artwork.id} color={artwork.accentColor} />
-        </div>
+        <ArtworkImage
+          imageUrl={artwork.imageUrl}
+          title={artwork.title}
+          gradient={artwork.gradient}
+          accentColor={artwork.accentColor}
+          sizes={isLarge ? '(max-width: 640px) 100vw, 66vw' : '(max-width: 640px) 100vw, 33vw'}
+        />
 
         {/* Hover overlay */}
         <motion.div

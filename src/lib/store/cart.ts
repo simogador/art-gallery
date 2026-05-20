@@ -7,6 +7,7 @@ export interface CartItem {
   artist:      string
   artistId:    string
   price:       number
+  imageUrl:    string | null
   gradient:    string
   accentColor: string
 }

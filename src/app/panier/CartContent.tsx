@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { Button } from '@/components/ui'
 import { useCartStore, type CartItem } from '@/lib/store/cart'
+import { ArtworkImage } from '@/components/ui'
 import { formatPrice } from '@/lib/utils/artworks'
 
 const fadeUp = {
@@ -123,14 +124,6 @@ export function CartContent() {
 /* ─── Cart item row ───────────────────────────────────────────────────────── */
 
 function CartItemRow({ item, onRemove }: { item: CartItem; onRemove: () => void }) {
-  const seed = item.id
-  const h = seed.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  const size = 56
-  const r1 = size * 0.35 + (h % (size * 0.1))
-  const r2 = r1 * 0.6
-  const cx = size / 2
-  const cy = size / 2
-
   return (
     <div className={cn(
       'flex items-start gap-4 p-4',
@@ -139,18 +132,14 @@ function CartItemRow({ item, onRemove }: { item: CartItem; onRemove: () => void 
     )}>
       {/* Artwork thumbnail */}
       <Link href={`/galerie/${item.id}`} className="flex-shrink-0 group" aria-label={item.title}>
-        <div className={cn(
-          'w-16 h-20 rounded-sm overflow-hidden flex items-center justify-center',
-          'bg-gradient-to-br', item.gradient,
-          'group-hover:opacity-80 transition-opacity duration-200',
-        )}>
-          <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" aria-hidden="true">
-            <circle cx={cx} cy={cy} r={r1} stroke={item.accentColor} strokeWidth="0.8" opacity="0.6" />
-            <circle cx={cx} cy={cy} r={r2} stroke={item.accentColor} strokeWidth="0.5" opacity="0.4" />
-            <line x1={cx - r1} y1={cy} x2={cx + r1} y2={cy} stroke={item.accentColor} strokeWidth="0.4" opacity="0.35" />
-            <line x1={cx} y1={cy - r1} x2={cx} y2={cy + r1} stroke={item.accentColor} strokeWidth="0.4" opacity="0.35" />
-            <circle cx={cx} cy={cy} r={3} fill={item.accentColor} opacity="0.5" />
-          </svg>
+        <div className="relative w-16 h-20 rounded-sm overflow-hidden group-hover:opacity-80 transition-opacity duration-200">
+          <ArtworkImage
+            imageUrl={item.imageUrl}
+            title={item.title}
+            gradient={item.gradient}
+            accentColor={item.accentColor}
+            sizes="64px"
+          />
         </div>
       </Link>
 
