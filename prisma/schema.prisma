@@ -21,6 +21,8 @@ model Artist {
   website     String?
   featured    Boolean   @default(false)
   artworks    Artwork[]
+  userId      String?   @unique
+  user        User?     @relation(fields: [userId], references: [id])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -92,6 +94,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   orders        Order[]
+  artist        Artist?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }

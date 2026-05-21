@@ -9,6 +9,7 @@ export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect('/auth/connexion')
 
+  const role = (session.user as any).role
   const { name, email, image } = session.user
   const initials = (name ?? email ?? 'U')
     .split(' ')
@@ -42,6 +43,26 @@ export default async function DashboardPage() {
         </div>
 
         {/* Nav cards */}
+        {role === 'artist' && (
+          <div className="mb-6">
+            <Link
+              href="/dashboard/artiste"
+              className="group flex items-center justify-between p-5 border border-gold/30 bg-gold/5 rounded-sm hover:border-gold/60 transition-colors duration-300"
+            >
+              <div className="flex items-center gap-4">
+                <span className="text-gold"><PaletteIcon /></span>
+                <div>
+                  <p className="font-serif text-lg font-light text-foreground group-hover:text-gold transition-colors duration-300">
+                    Espace artiste
+                  </p>
+                  <p className="font-sans text-xs text-neutral-400 mt-0.5">Gérer vos œuvres et suivre vos ventes</p>
+                </div>
+              </div>
+              <span className="font-sans text-xs text-gold">Accéder →</span>
+            </Link>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
           {[
             { href: '/wishlist', label: 'Ma wishlist',    desc: 'Œuvres sauvegardées',      icon: HeartIcon },
@@ -118,6 +139,18 @@ function GridIcon() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400">
       <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
       <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+    </svg>
+  )
+}
+
+function PaletteIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+      <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+      <circle cx="8.5"  cy="7.5"  r=".5" fill="currentColor" />
+      <circle cx="6.5"  cy="12.5" r=".5" fill="currentColor" />
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
     </svg>
   )
 }
