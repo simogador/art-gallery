@@ -9,35 +9,30 @@ interface Props {
   mobile?: boolean
 }
 
-const navItems = [
-  {
-    href: '/dashboard/artiste',
-    label: 'Vue d\'ensemble',
-    icon: HomeIcon,
-    exact: true,
-  },
-  {
-    href: '/dashboard/artiste/oeuvres',
-    label: 'Mes œuvres',
-    icon: GridIcon,
-    exact: false,
-  },
-  {
-    href: '/dashboard/artiste/oeuvres/nouvelle',
-    label: 'Ajouter',
-    icon: PlusIcon,
-    exact: true,
-  },
-]
+const NAV = [
+  { href: '/dashboard/artiste',                label: "Vue d'ensemble", icon: HomeIcon  },
+  { href: '/dashboard/artiste/oeuvres',         label: 'Mes œuvres',     icon: GridIcon  },
+  { href: '/dashboard/artiste/oeuvres/nouvelle', label: 'Ajouter',       icon: PlusIcon  },
+] as const
 
-export function DashboardNav({ mobile = false }: Props) {
+function isActive(href: string, pathname: string): boolean {
+  if (href === '/dashboard/artiste') return pathname === href
+  if (href === '/dashboard/artiste/oeuvres/nouvelle') return pathname === href
+  // "Mes œuvres" : actif sur la liste ET sur les pages d'édition, pas sur /nouvelle
+  if (href === '/dashboard/artiste/oeuvres') {
+    return pathname.startsWith(href) && pathname !== '/dashboard/artiste/oeuvres/nouvelle'
+  }
+  return false
+}
+
+export function DashboardNav({ artistSlug: _artistSlug, mobile = false }: Props) {
   const pathname = usePathname()
 
   if (mobile) {
     return (
       <nav className="flex items-center justify-around px-4 h-16">
-        {navItems.map(({ href, label, icon: Icon, exact }) => {
-          const active = exact ? pathname === href : pathname.startsWith(href) && !(exact && pathname !== href)
+        {NAV.map(({ href, label, icon: Icon }) => {
+          const active = isActive(href, pathname)
           return (
             <Link
               key={href}
@@ -59,14 +54,9 @@ export function DashboardNav({ mobile = false }: Props) {
   }
 
   return (
-    <nav className="flex flex-col gap-1">
-      <p className="font-sans text-[10px] uppercase tracking-[0.2em] text-neutral-400 mb-4 px-3">
-        Navigation
-      </p>
-      {navItems.map(({ href, label, icon: Icon, exact }) => {
-        const active = exact
-          ? pathname === href
-          : pathname.startsWith(href) && !navItems.find(n => n.exact && n.href !== href && pathname.startsWith(n.href))
+    <nav className="flex flex-col gap-1 flex-1">
+      {NAV.map(({ href, label, icon: Icon }) => {
+        const active = isActive(href, pathname)
         return (
           <Link
             key={href}
@@ -86,7 +76,7 @@ export function DashboardNav({ mobile = false }: Props) {
         )
       })}
 
-      <div className="mt-8 pt-8 border-t border-neutral-100">
+      <div className="mt-auto pt-8 border-t border-neutral-100">
         <Link
           href="/galerie"
           className="flex items-center gap-3 px-3 py-2.5 text-neutral-400 hover:text-foreground transition-colors duration-200"
