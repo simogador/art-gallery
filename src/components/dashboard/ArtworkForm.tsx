@@ -20,8 +20,9 @@ interface ArtworkData {
 }
 
 interface Props {
-  artwork?: ArtworkData
-  mode: 'create' | 'edit'
+  artwork?:  ArtworkData
+  mode:      'create' | 'edit'
+  apiBase?:  string   // default '/api/artiste/oeuvres'
 }
 
 interface FormState {
@@ -33,7 +34,7 @@ interface FormState {
   description: string
 }
 
-export function ArtworkForm({ artwork, mode }: Props) {
+export function ArtworkForm({ artwork, mode, apiBase = '/api/artiste/oeuvres' }: Props) {
   const router = useRouter()
 
   const [form, setForm] = useState<FormState>({
@@ -90,8 +91,8 @@ export function ArtworkForm({ artwork, mode }: Props) {
       }
 
       // Create or update artwork
-      const url    = mode === 'create' ? '/api/artiste/oeuvres' : `/api/artiste/oeuvres/${artwork!.slug}`
-      const method = mode === 'create' ? 'POST' : 'PUT'
+      const url    = mode === 'create' ? apiBase : `${apiBase}/${artwork!.slug}`
+      const method = mode === 'create' ? 'POST'  : 'PUT'
 
       const res  = await fetch(url, {
         method,
@@ -131,7 +132,7 @@ export function ArtworkForm({ artwork, mode }: Props) {
     if (!artwork || !confirm(`Supprimer "${artwork.title}" ? Cette action est irréversible.`)) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/artiste/oeuvres/${artwork.slug}`, { method: 'DELETE' })
+      const res = await fetch(`${apiBase}/${artwork.slug}`, { method: 'DELETE' })
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error ?? 'Erreur lors de la suppression')

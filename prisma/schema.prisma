@@ -20,6 +20,7 @@ model Artist {
   coverUrl    String?
   website     String?
   featured    Boolean   @default(false)
+  active      Boolean   @default(true)
   artworks    Artwork[]
   userId      String?   @unique
   user        User?     @relation(fields: [userId], references: [id])

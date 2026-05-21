@@ -6,8 +6,9 @@ import type { NextRequest } from 'next/server'
 const { auth } = NextAuth(authConfig)
 
 export default auth((req: any) => {
-  const session = req.auth
+  const session  = req.auth
   const { pathname } = req.nextUrl
+  const role     = (session?.user as any)?.role ?? null
 
   if (!session?.user) {
     const loginUrl = new URL('/auth/connexion', req.nextUrl)
@@ -15,10 +16,14 @@ export default auth((req: any) => {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Artist dashboard requires role='artist'
+  if (pathname.startsWith('/dashboard/admin')) {
+    if (role !== 'admin') {
+      return NextResponse.redirect(new URL('/dashboard', req.nextUrl))
+    }
+  }
+
   if (pathname.startsWith('/dashboard/artiste')) {
-    const role = (session.user as any).role
-    if (role !== 'artist') {
+    if (role !== 'artist' && role !== 'admin') {
       return NextResponse.redirect(new URL('/dashboard', req.nextUrl))
     }
   }

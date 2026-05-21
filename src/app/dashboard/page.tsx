@@ -43,6 +43,26 @@ export default async function DashboardPage() {
         </div>
 
         {/* Nav cards */}
+        {role === 'admin' && (
+          <div className="mb-4">
+            <Link
+              href="/dashboard/admin"
+              className="group flex items-center justify-between p-5 border border-red-200/60 bg-red-50/40 rounded-sm hover:border-red-300 transition-colors duration-300"
+            >
+              <div className="flex items-center gap-4">
+                <span className="text-red-500"><ShieldIcon /></span>
+                <div>
+                  <p className="font-serif text-lg font-light text-foreground group-hover:text-red-600 transition-colors duration-300">
+                    Administration
+                  </p>
+                  <p className="font-sans text-xs text-neutral-400 mt-0.5">Gérer artistes, œuvres et utilisateurs</p>
+                </div>
+              </div>
+              <span className="font-sans text-xs text-red-500">Accéder →</span>
+            </Link>
+          </div>
+        )}
+
         {role === 'artist' && (
           <div className="mb-6">
             <Link
@@ -139,6 +159,14 @@ function GridIcon() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400">
       <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
       <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+    </svg>
+  )
+}
+
+function ShieldIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
     </svg>
   )
 }
