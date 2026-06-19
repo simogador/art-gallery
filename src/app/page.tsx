@@ -1,6 +1,4 @@
-export const metadata = {
-  robots: 'noindex, nofollow',
-}
+'use client'
 
 export default function HomePage() {
   return (
@@ -34,15 +32,15 @@ export default function HomePage() {
           fontWeight: 'bold',
         }}>E</div>
         
-        <h1 style={{ color: '#2c2c2c', fontSize: '2.5em', marginBottom: '15px', fontWeight: 700 }}>Errancy</h1>
-        <p style={{ color: '#8b8b8b', fontSize: '1.1em', marginBottom: '10px', fontWeight: 300 }}>Galerie d'art contemporain</p>
+        <h1 style={{ color: '#2c2c2c', fontSize: '2.5em', marginBottom: '15px' }}>Errancy</h1>
+        <p style={{ color: '#8b8b8b', fontSize: '1.1em', marginBottom: '10px' }}>Galerie d'art contemporain</p>
         
         <div style={{
           width: '60px',
           height: '2px',
           background: 'linear-gradient(90deg, transparent, #c4a74a, transparent)',
           margin: '30px auto',
-        }}></div>
+        }} />
         
         <p style={{ color: '#555', fontSize: '0.95em', lineHeight: 1.8, marginBottom: '40px' }}>
           Notre galerie est actuellement en développement. Nous préparons une expérience exceptionnelle pour vous présenter une sélection unique d'œuvres d'art contemporain.
@@ -56,11 +54,10 @@ export default function HomePage() {
           <p style={{ color: '#2c2c2c', marginBottom: '15px', fontWeight: 600 }}>
             Soyez informé du lancement
           </p>
-          <form style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
             <input 
               type="email" 
               placeholder="Votre email" 
-              required
               style={{
                 minWidth: '200px',
                 padding: '12px 16px',
@@ -70,7 +67,6 @@ export default function HomePage() {
               }}
             />
             <button 
-              type="submit"
               style={{
                 padding: '12px 30px',
                 background: 'linear-gradient(135deg, #c4a74a 0%, #8b6f47 100%)',
@@ -84,21 +80,20 @@ export default function HomePage() {
             >
               Me notifier
             </button>
-          </form>
+          </div>
         </div>
 
         <div style={{ marginTop: '40px', paddingTop: '30px', borderTop: '1px solid #e0e0e0' }}>
           <p style={{ color: '#8b8b8b', fontSize: '0.9em', marginBottom: '15px' }}>Suivez-nous</p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
-            <a href="https://instagram.com" style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c4a74a', textDecoration: 'none', fontSize: '18px' }}>📷</a>
-            <a href="https://facebook.com" style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c4a74a', textDecoration: 'none', fontSize: '18px' }}>f</a>
-            <a href="https://twitter.com" style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c4a74a', textDecoration: 'none', fontSize: '18px' }}>𝕏</a>
+            <a href="https://instagram.com">📷</a>
+            <a href="https://facebook.com">f</a>
+            <a href="https://twitter.com">𝕏</a>
           </div>
         </div>
 
-        <div style={{ marginTop: '30px', color: '#c4a74a', fontSize: '0.85em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <div style={{ width: '8px', height: '8px', background: '#c4a74a', borderRadius: '50%' }}></div>
-          <span>En développement</span>
+        <div style={{ marginTop: '30px', color: '#c4a74a', fontSize: '0.85em' }}>
+          En développement
         </div>
       </div>
     </div>
