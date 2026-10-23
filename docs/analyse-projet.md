@@ -40,7 +40,7 @@ src/lib/db/              Accès Prisma + mappers DB → types UI (src/lib/types)
 src/data/                Données statiques historiques (encore utilisées par sections/* et lib/utils/*)
 prisma/                  schema, migrations (init, auth), seed.ts
 scripts/upload-images.ts Import d'images Wikimedia/MET vers Cloudinary
-middleware.ts            Protège /dashboard, /wishlist, /panier ; contrôle des rôles
+src/middleware.ts        Maintenance + protège /dashboard, /wishlist, /panier ; contrôle des rôles
 ```
 
 Modèles Prisma : `Artist` (lié optionnellement à un `User`), `Artwork`, `Exhibition`,
@@ -59,16 +59,19 @@ Rôles : `admin` → /dashboard/admin ; `artist` ou `admin` → /dashboard/artis
 
 ## 5. Constats et points d'attention (à traiter en priorité)
 
-1. **Site en maintenance** — `vercel.json` réécrit *toutes* les URLs vers `/index.html`
-   (`public/index.html`), ce qui court-circuite toute l'application Next.js (API et webhook
-   Stripe compris). De plus `src/app/page.tsx` a été remplacé par une page de maintenance ;
-   l'accueil d'origine est récupérable via `git show 99abbc5^:src/app/page.tsx`.
-   Le formulaire « Me notifier » n'envoie rien.
-2. **Rôle perdu à la connexion par identifiants** — `authorize()` dans `src/auth.ts` ne renvoie
-   pas `role`, donc le callback `jwt` attribue toujours `user` : un artiste/admin connecté par
-   email/mot de passe ne peut pas accéder à son dashboard. Le rôle n'est pas non plus rafraîchi
-   dans le JWT après changement par un admin.
-3. **Middleware** — exige une session pour `/panier` (le panier n'est donc pas consultable
+1. ✅ *Corrigé le 2026-10-23* — **Maintenance** : la réécriture `vercel.json` (qui bloquait
+   toute l'app, API et webhook Stripe compris) est supprimée ; la vraie page d'accueil est
+   restaurée. La maintenance est gérée dans `src/middleware.ts` : active en production Vercel
+   sauf si `MAINTENANCE_MODE=off` (`on` la force partout) ; les préversions et le local montrent le
+   vrai site ; les admins connectés et `/auth/*` passent ; page servie : `public/maintenance.html`
+   (son formulaire « Me notifier » n'envoie rien). `public/robots.txt` interdit toujours
+   l'indexation : à ouvrir au lancement.
+2. ✅ *Corrigé le 2026-10-23* — **Middleware jamais exécuté** : il était à la racine alors que le
+   projet utilise `src/` ; déplacé dans `src/middleware.ts`. Les callbacks `jwt`/`session` sont
+   dans `src/auth.config.ts` (partagé avec le middleware) et la connexion par identifiants
+   transmet le rôle. Reste : le rôle n'est pas rafraîchi dans le JWT après un changement par un
+   admin (l'utilisateur doit se reconnecter).
+3. **Panier** — le middleware exige une session pour `/panier` (panier non consultable
    anonymement) ; typage `any` sur la requête/rôle.
 4. **Données statiques résiduelles** — `src/data/*` est encore importé par
    `components/sections/*` et `lib/utils/*` alors que les pages utilisent Prisma : risque
@@ -92,4 +95,5 @@ BMAD Method v6.12.2 installé (`_bmad/`, skills dans `.claude/skills/bmad-*`), l
 Sorties : `_bmad-output/planning-artifacts` et `_bmad-output/implementation-artifacts`.
 Point de départ suggéré : `bmad-help`, puis `bmad-prd` / `bmad-architecture` sur la base de ce
 document, `bmad-create-epics-and-stories`, `bmad-sprint-planning`, et `bmad-agent-dev` pour
-implémenter les stories.
+implémenter les stories. Feuille de route complète : `docs/strategie-refonte.md` ; décisions du
+porteur : `docs/decisions-porteur.md`.
