@@ -7,11 +7,13 @@
 
 ## 1. Marché et entité vendeuse (bloquant pour le paiement et la logistique)
 
-- **Marché principal** (Maroc, France, international, diaspora…) : …
+- **Marché principal** (Maroc, France, international, diaspora…) : **international et diaspora** (2026-10-23)
 - **Marchés secondaires** : …
 - **Langue(s) du site** (ordre de priorité) : …
 - **Devise(s) affichée(s)** : …
-- **Entité juridique qui vend** (pays, forme) : …
+- **Entité juridique qui vend** (pays, forme) : **l'artiste vend, via le site** — modèle de place de marché : Errancy est l'intermédiaire, l'artiste est le vendeur (2026-10-23)
+- **Entité qui exploite le site et perçoit la commission** (pays, forme) : …
+- **Pays de résidence des artistes** : …
 - **Stripe est-il utilisable par cette entité ?** (oui / non / à vérifier) : …
 - **Zones de livraison** et qui paie la livraison : …
 
@@ -37,7 +39,7 @@
 - **Nombre d'œuvres** prévues au lancement : …
 - **Nombre d'artistes** : …
 - **Fourchette de prix** (min – max) : …
-- **Les œuvres actuellement en base sont-elles réelles ?** (oui / démonstration à remplacer) : …
+- **Les œuvres actuellement en base sont-elles réelles ?** (oui / démonstration à remplacer) : **démonstration, à remplacer** (2026-10-23)
 - **Photos** : disponibles en haute définition ? mises en situation ? qui les produit ? : …
 
 ## 6. Droits et accords artistes
@@ -59,4 +61,22 @@
 
 | Date | Décision | Raison |
 |---|---|---|
-| … | … | … |
+| 2026-10-23 | Marché principal : international et diaspora | Choix du porteur |
+| 2026-10-23 | L'artiste est le vendeur ; Errancy est la plateforme intermédiaire (place de marché) | Choix du porteur |
+| 2026-10-23 | Les œuvres en base sont des données de démonstration, à remplacer avant lancement | Constat du porteur |
+
+## Conséquences à traiter (relevées le 2026-10-23, à valider en PRD et architecture)
+
+- **Paiement de type place de marché** : le paiement actuel (Stripe Checkout encaissé par un seul
+  compte) ne convient plus tel quel. Il faut répartir chaque vente entre l'artiste et la
+  commission d'Errancy (piste : Stripe Connect), avec vérification d'identité des artistes et
+  disponibilité de Stripe dans leurs pays.
+- **Rôle juridique d'Errancy** : intermédiaire, pas vendeur ; CGV et mentions à rédiger en
+  conséquence (responsabilité, rétractation, authenticité, litiges).
+- **Livraison internationale** : qui expédie (l'artiste ou Errancy), droits de douane, assurance,
+  délais affichés sur la fiche œuvre.
+- **Multi-devise et multilingue** : à arbitrer pour un public international et diaspora.
+- **Double vente** : un artiste peut aussi vendre hors du site ; la disponibilité doit pouvoir être
+  mise à jour par l'artiste et réservée pendant un paiement.
+- **Données de démonstration** : à purger ; le lancement suppose un vrai catalogue (photos,
+  prix, dimensions, accords).
