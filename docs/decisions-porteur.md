@@ -14,7 +14,7 @@
 - **Entité juridique qui vend** (pays, forme) : **l'artiste vend, via le site** — modèle de place de marché : Errancy est l'intermédiaire, l'artiste est le vendeur (2026-10-23)
 - **Entité qui exploite le site et perçoit la commission** (pays, forme) : Errancy perçoit la commission — pays et forme juridique encore à préciser
 - **Pays de résidence des artistes** : **tous pays** (2026-10-24)
-- **Stripe est-il utilisable par cette entité ?** (oui / non / à vérifier) : …
+- **Stripe est-il utilisable par cette entité ?** (oui / non / à vérifier) : non pour une société marocaine. Recommandation de l'étude (2026-10-24) : société d'exploitation au Royaume-Uni (ou aux États-Unis) + versements par paliers ; **avis juridique marocain requis avant décision**. Voir `_bmad-output/planning-artifacts/research/technical-paiement-place-de-marche-art-exploitant-2026-10-24/research.md`
 - **Zones de livraison** et qui paie la livraison : **l'artiste expédie l'œuvre** (2026-10-24) ; zones et prise en charge des frais : …
 
 ## 2. Lieu physique
