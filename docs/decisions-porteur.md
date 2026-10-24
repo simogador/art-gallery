@@ -12,10 +12,10 @@
 - **Langue(s) du site** (ordre de priorité) : …
 - **Devise(s) affichée(s)** : …
 - **Entité juridique qui vend** (pays, forme) : **l'artiste vend, via le site** — modèle de place de marché : Errancy est l'intermédiaire, l'artiste est le vendeur (2026-10-23)
-- **Entité qui exploite le site et perçoit la commission** (pays, forme) : …
-- **Pays de résidence des artistes** : …
+- **Entité qui exploite le site et perçoit la commission** (pays, forme) : Errancy perçoit la commission — pays et forme juridique encore à préciser
+- **Pays de résidence des artistes** : **tous pays** (2026-10-24)
 - **Stripe est-il utilisable par cette entité ?** (oui / non / à vérifier) : …
-- **Zones de livraison** et qui paie la livraison : …
+- **Zones de livraison** et qui paie la livraison : **l'artiste expédie l'œuvre** (2026-10-24) ; zones et prise en charge des frais : …
 
 ## 2. Lieu physique
 
@@ -45,7 +45,7 @@
 ## 6. Droits et accords artistes
 
 - **Accords écrits avec les artistes** (oui / en cours / non) : …
-- **Commission ou modèle de rémunération** : …
+- **Commission ou modèle de rémunération** : **30 % pour Errancy** (2026-10-24) ; assiette (prix de l'œuvre seul ou avec livraison) : …
 - **Droits sur les images** (site, réseaux, reproductions) : …
 - **Éditions limitées autorisées** par certains artistes ? : …
 
@@ -64,6 +64,9 @@
 | 2026-10-23 | Marché principal : international et diaspora | Choix du porteur |
 | 2026-10-23 | L'artiste est le vendeur ; Errancy est la plateforme intermédiaire (place de marché) | Choix du porteur |
 | 2026-10-23 | Les œuvres en base sont des données de démonstration, à remplacer avant lancement | Constat du porteur |
+| 2026-10-24 | Les artistes peuvent résider dans tous les pays | Choix du porteur |
+| 2026-10-24 | Commission Errancy : 30 % | Choix du porteur |
+| 2026-10-24 | L'artiste expédie lui-même l'œuvre vendue | Choix du porteur |
 
 ## Conséquences à traiter (relevées le 2026-10-23, à valider en PRD et architecture)
 
@@ -73,8 +76,16 @@
   disponibilité de Stripe dans leurs pays.
 - **Rôle juridique d'Errancy** : intermédiaire, pas vendeur ; CGV et mentions à rédiger en
   conséquence (responsabilité, rétractation, authenticité, litiges).
-- **Livraison internationale** : qui expédie (l'artiste ou Errancy), droits de douane, assurance,
-  délais affichés sur la fiche œuvre.
+- **Livraison internationale** : l'artiste expédie. Il faut lui faire saisir frais et délais
+  d'envoi par œuvre (ou par zone), le numéro de suivi après la vente, et définir qui supporte
+  douane, assurance et casse ; l'acheteur doit voir le prix total et le délai avant de payer.
+- **Artistes dans tous les pays** : aucune solution de paiement fractionné (Stripe Connect compris)
+  ne couvre tous les pays. À étudier (`bmad-deep-recon`, type technical) : pays couverts,
+  solution de repli (versement manuel, autre prestataire), vérification d'identité, fiscalité
+  des versements.
+- **Commission de 30 %** : préciser l'assiette (œuvre seule ou livraison incluse), qui paie les
+  frais de paiement, quand l'artiste est payé (après réception par l'acheteur ?), et comment sont
+  gérés retours et remboursements.
 - **Multi-devise et multilingue** : à arbitrer pour un public international et diaspora.
 - **Double vente** : un artiste peut aussi vendre hors du site ; la disponibilité doit pouvoir être
   mise à jour par l'artiste et réservée pendant un paiement.
