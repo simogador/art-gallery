@@ -64,7 +64,7 @@ La refonte améliore le site existant par étapes, avec possibilité de retour a
 
 - Les acheteurs de décoration à petit prix : Errancy n'est pas une boutique de déco, à la différence de Massinart.
 - Les clients professionnels (location B2B), les commandes sur mesure et les abonnements : ce sont des pilotes ultérieurs.
-- Les artistes non sélectionnés : la place de marché n'est pas ouverte à tous. `[ASSUMPTION]`
+- Les artistes non sélectionnés : la place de marché n'est pas ouverte à tous ; seuls les artistes choisis par Errancy sont publiés.
 - Les acheteurs de reproductions ou d'éditions : aucune ne sera vendue sans autorisation écrite des ayants droit, et pas dans le MVP.
 
 ### 2.3 Parcours clés
@@ -99,7 +99,7 @@ La refonte améliore le site existant par étapes, avec possibilité de retour a
   - **Résolution :** la commande passe à « livrée », ce qui ouvre le délai de retour de 14 jours.
 - **UJ-4. Thomas, à Lyon, demande une visite avant de se décider.**
   - **Point de départ :** Thomas hésite sur une œuvre à 2 400 €.
-  - **Parcours :** sur la fiche, il touche « Réserver une visite » et choisit un créneau en visioconférence avec l'artiste ou un conseiller. `[ASSUMPTION : visite à distance faute de showroom]`
+  - **Parcours :** sur la fiche, il touche « Réserver une visite » et choisit un créneau en visioconférence avec l'artiste ou un conseiller. Il n'y a pas de showroom : les visites se font à distance, ou en atelier si l'artiste l'accepte.
   - **Moment clé :** après l'appel, l'équipe lui envoie le lien de la fiche, et il commande.
 
 ## 3. Glossaire
@@ -219,7 +219,7 @@ Le visiteur laisse son e-mail sur une œuvre `réservée` pour être prévenu si
 
 #### FR-10 : Panier et commande sans compte
 
-Le visiteur ajoute une œuvre au panier et passe commande sans créer de compte. Il peut créer un compte après la commande s'il le souhaite. `[ASSUMPTION : achat en invité]`
+Le visiteur ajoute une œuvre au panier et passe commande sans créer de compte. Il peut créer un compte après la commande s'il le souhaite.
 - `/panier` est accessible sans connexion. C'est un changement : aujourd'hui, le panier exige une session.
 - La commande demande seulement l'e-mail, le nom, l'adresse de livraison et le téléphone.
 
@@ -414,7 +414,7 @@ Le MVP est découpé en deux lots, pour ne pas faire attendre la conversion derr
 ## 7. Ce que la refonte n'est pas
 
 - Ce n'est pas une refonte complète ni un changement de pile, par exemple vers Supabase : le site existant est amélioré.
-- Ce n'est pas une boutique de décoration ni un catalogue ouvert à tous les artistes. `[ASSUMPTION]`
+- Ce n'est pas une boutique de décoration ni un catalogue ouvert à tous les artistes.
 - Ce n'est pas une galerie qui achète et revend : l'artiste vend, Errancy est l'intermédiaire. Si le montage de paiement change cela, la décision revient au porteur.
 - Ce PRD ne choisit ni prestataire de paiement ni entité juridique.
 - La maintenance ne sera pas levée et `robots.txt` ne sera pas ouvert depuis le code.
@@ -426,7 +426,7 @@ Le MVP est découpé en deux lots, pour ne pas faire attendre la conversion derr
 **Principaux**
 - **SM-1 Première vente réelle.**
   - Définition : une commande payée par un acheteur extérieur au cercle du porteur et des artistes, livrée, et passée au-delà du délai de retour sans litige.
-  - Objectif : `[ASSUMPTION]` avant la fin de la phase 4 du calendrier indicatif, soit 12 semaines.
+  - Objectif : dans les 12 semaines du calendrier indicatif, c'est-à-dire avant la fin de la phase 4. Le point de départ sera fixé avec la date de lancement (OQ-11).
   - Valide FR-1 à FR-15 et FR-22.
 - **SM-2 Taux de conversion.**
   - Définition : commandes confirmées divisées par le nombre de visiteurs ayant vu au moins une fiche œuvre, sur 30 jours glissants.
@@ -492,6 +492,7 @@ Le MVP est découpé en deux lots, pour ne pas faire attendre la conversion derr
 7. **OQ-7. Conseil WhatsApp.**
    - **Bloquant pour :** la mise en ligne de FR-7.
    - **Questions à trancher :** quel numéro WhatsApp Business ? Qui répond, à quelles heures, avec quel délai annoncé ?
+   - **État (2026-10-24) :** le porteur ne sait pas encore. Bloquant pour l'ouverture au public, pas pour l'UX ni l'architecture.
 8. **OQ-8. Visites.**
    - **Questions à trancher :** existe-t-il un showroom ? Les visites se font-elles à distance seulement, ou aussi en atelier ? Avec qui (artiste ou conseiller) ?
 9. **OQ-9. Outil d'analytique.**
@@ -500,8 +501,10 @@ Le MVP est découpé en deux lots, pour ne pas faire attendre la conversion derr
 10. **OQ-10. Catalogue de lancement.**
     - **Bloquant pour :** l'ouverture du Lot 1.
     - **Questions à trancher :** combien d'œuvres et d'artistes ? Quelle fourchette de prix ? Les accords écrits sont-ils signés et les droits sur les images obtenus ? Qui prend les photos de mise en situation ?
+    - **État (2026-10-24) :** le porteur ne sait pas encore. Bloquant pour l'ouverture au public, pas pour l'UX ni l'architecture.
 11. **OQ-11. Date de lancement, budget et ressources.**
     - **Questions à trancher :** quelle date de lancement, quel budget mensuel, combien de personnes disponibles pour le conseil et le suivi des commandes ?
+    - **État (2026-10-24) :** le porteur ne sait pas encore. Sans date, l'objectif de SM-1 n'a pas de point de départ.
 12. **OQ-12. Démarrer sans paiement intégré ?**
     - **Questions à trancher :** ouvrir avec un conseil WhatsApp, puis une réservation et un lien de paiement pour les premières ventes, avant que le Lot 2 soit prêt ?
     - **État :** l'étude paiement le recommande (R4) ; c'est une option liée à OQ-1, pas une décision.
@@ -535,17 +538,13 @@ Le MVP est découpé en deux lots, pour ne pas faire attendre la conversion derr
 ## 12. Index des hypothèses
 
 - §1 : les six freins à l'achat sont déduits des sources ; le porteur a renvoyé la question.
-- Enjeu : lancement réel avec de vrais artistes et de l'argent qui circule (non confirmé).
-- §2.2 et §7 : la place de marché n'est ouverte qu'aux artistes sélectionnés.
-- §2.3 : les personnages Yasmine, Karim, Salma et Thomas, et leurs détails (devise affichée, délai d'expédition de 48 h, visite à distance).
+- §2.3 : les personnages Yasmine, Karim, Salma et Thomas, et leurs détails (devise affichée, délai d'expédition de 48 h).
 - FR-3 : pays de livraison déduit, puis modifiable.
 - FR-7 : WhatsApp Web ou QR code sur ordinateur.
-- FR-10 : achat sans compte.
 - FR-12 : durée de réservation d'environ 30 minutes.
 - FR-19 : contenu des pages artistes fourni par l'artiste et validé par Errancy.
 - FR-22 : notification de vente à l'artiste par WhatsApp en plus de l'e-mail.
 - FR-26 : signalement après 48 h sans expédition.
 - NFR-1 : LCP mobile inférieur à 2,5 s.
 - NFR-3 : niveau WCAG 2.1 AA.
-- SM-1 : première vente avant la fin de la phase 4, soit 12 semaines.
 - OQ-5 : frais et délais fixés par l'artiste, zone par zone.
