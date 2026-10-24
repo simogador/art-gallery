@@ -16,9 +16,13 @@ Ce document rassemble ce qui sert aux étapes suivantes (UX, architecture) mais 
 | FR-7 | — | Aucun bouton WhatsApp |
 | FR-10 | `/panier`, `src/middleware.ts` | Le panier et le checkout exigent une session |
 | FR-11, FR-13 | `src/app/api/checkout/route.ts`, `src/app/api/webhooks/stripe/route.ts` | Les prix sont bien relus en base et le webhook est idempotent (à conserver) ; prix en `Float` (préférer des centimes entiers ou `Decimal`) ; `Order.artworkIds` en chaîne CSV |
-| FR-12 | — | Aucune réservation, aucun contrôle de double vente |
+| FR-12, FR-21 | `Artwork.available` (booléen) | Aucune réservation, aucun contrôle de double vente ; un booléen ne porte pas les cinq états de disponibilité |
+| FR-10 | Panier persistant côté navigateur (Zustand) | Ne signale pas une œuvre devenue indisponible |
+| FR-13, FR-32 | `Order` | Montant en euros sans champ devise ; pas d'états après la confirmation |
 | FR-13, FR-8, FR-9 | — | Pas d'e-mails transactionnels (Resend cité comme candidat, rien n'est choisi) |
-| FR-16 | `src/data/*` | Encore importé par `components/sections/*` et `lib/utils/*` |
+| FR-16 | `src/data/*`, `prisma/seed.ts`, images Cloudinary | `src/data/*` est encore importé par `components/sections/*` et `lib/utils/*` ; le seed et les images importées (Wikimedia, MET) doivent être vérifiés pour les droits |
+| FR-34 | `Artist` ↔ `User`, `User.role` | Lien optionnel entre l'artiste et son compte, aucun parcours d'invitation ; contrôle du rôle typé `any` et non testé |
+| FR-35 | Page de maintenance (`src/middleware.ts`) | Le formulaire « Me notifier » n'envoie rien |
 | FR-20, FR-21 | `/dashboard/artiste` (CRUD des œuvres) | Pas de champs de livraison par zone ni d'états de disponibilité détaillés |
 | FR-27 | — | Aucune analytique |
 | NFR-5 | Next.js 14.2.5 | Mise à jour de sécurité nécessaire |
@@ -26,6 +30,8 @@ Ce document rassemble ce qui sert aux étapes suivantes (UX, architecture) mais 
 Autres points :
 - Le rôle n'est pas rafraîchi dans le JWT après un changement par un admin : l'utilisateur doit se reconnecter.
 - Il n'existe ni tests ni CI. Le test de double vente (NFR-4) exigera au moins un test automatisé ciblé.
+- La maintenance est pilotée par la variable Vercel `MAINTENANCE_MODE` ; `public/robots.txt` est fermé. Les deux restent des actes du porteur.
+- `/wishlist` est une page vide réservée aux comptes connectés : hors MVP.
 
 ## B. Options de paiement étudiées — pour information, NON décidées
 
@@ -48,7 +54,17 @@ Source : `_bmad-output/planning-artifacts/research/technical-paiement-place-de-m
 
 **Option de démarrage (R4) :** pas de paiement intégré. Le premier contact passe par un conseil WhatsApp, puis l'œuvre est réservée et l'acheteur paie par un lien.
 
-**Réserve de l'étude :** contrôle des changes marocain, et cas non documenté d'une plateforme marocaine qui reverse à des vendeurs étrangers. L'avis juridique et comptable est un **préalable bloquant**.
+**Réserves de l'étude :**
+- contrôle des changes marocain (« liberté surveillée », banque agréée) ;
+- circulaire 2/2026 sur la vigilance envers les holdings offshore ;
+- fiscalité et facturation des services entre Errancy Maroc et la société d'exploitation ;
+- exception pour les startups labellisées (plafond d'environ 10 MDH par an), non vérifiée ;
+- cas non documenté d'une plateforme marocaine qui reverse à des vendeurs étrangers ;
+- acceptation de l'usage « place de marché d'art » par Stripe, et liste à jour des pays couverts par Global Payouts ;
+- vérification d'identité (KYC) des artistes et fiscalité de leurs versements, qui dépendent du rail retenu ;
+- l'option D (liste d'attente) contredit la décision du porteur « artistes de tous pays ».
+
+L'avis juridique et comptable est un **préalable bloquant**. Plusieurs sources n'ont été lues que par extraits. **Données à revérifier en janvier 2027.**
 
 ## C. Socle concurrentiel des fiches œuvres
 
@@ -62,7 +78,9 @@ Source : `_bmad-output/planning-artifacts/research/competitive-fiches-oeuvres-co
 - **Délais observés :** 5 à 7 jours en national, 10 à 14 jours à l'international (Saatchi).
 - **Commissions des concurrents :** 30 à 50 % chez Singulart, 35 à 40 % chez Saatchi. Les 30 % d'Errancy sont donc un argument pour recruter des artistes.
 - **Motifs de déception chez les acheteurs :** couleurs différentes de l'écran, œuvres abîmées, retards, communication lente.
-- **Différenciation possible pour Errancy :** couleurs fidèles, délais exacts, suivi humain par WhatsApp.
+- **Conseil humain chez les concurrents :** ils en proposent déjà (chat, formulaire, téléphone, conseillers). Le canal WhatsApp avec délai annoncé est absent chez eux : la différenciation est plausible, à confirmer par la mesure.
+- **Différenciation possible pour Errancy :** couleurs fidèles, délais exacts, suivi humain par WhatsApp avant et après la vente.
+- **Questions laissées ouvertes par l'étude :** politique de retour de Singulart (14 ou 30 jours) ; préférence réelle de la diaspora pour WhatsApp ; données de marché récentes (une recherche « user-voice » est possible).
 - **Données à revérifier en janvier 2027.**
 
 ## D. Alternative écartée
