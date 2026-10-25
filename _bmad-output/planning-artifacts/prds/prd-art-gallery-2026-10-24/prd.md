@@ -1,8 +1,8 @@
 ---
 title: "PRD — Refonte d'Errancy"
-status: draft
+status: final
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-25
 ---
 
 # PRD — Refonte d'Errancy
@@ -305,7 +305,7 @@ Le visiteur laisse son e-mail sur une œuvre `réservée`. Si la réservation ex
 - lien de paiement envoyé après une vente assistée ;
 - virement.
 
-Seul FR-14 dépend du montage. Réalise UJ-1, UJ-2 et UJ-4.
+Seuls FR-14 et le paiement en une fois d'un panier à plusieurs artistes (FR-10) dépendent du montage. Réalise UJ-1, UJ-2 et UJ-4.
 
 #### FR-10 : Panier et commande sans compte
 
@@ -439,6 +439,9 @@ L'artiste voit les mêmes informations pour ses ventes.
 #### FR-33 : Clôture
 
 Une commande `livrée` passe en `close` à la fin du délai de retour, si aucune réclamation n'est ouverte. Une commande `annulée` ou `retournée` est close une fois le remboursement effectué.
+
+**Conséquence testable :**
+- La durée du délai de retour suit OQ-4.
 
 ### 4.5 Un vrai catalogue, facile à parcourir
 
@@ -619,7 +622,7 @@ Elle voit aussi les réservations en cours et le journal des réservations. Elle
 - libérer une réservation.
 
 **Conséquence testable :**
-- Le système signale séparément une prise en charge manquante après 48 h et une expédition manquante à la fin du délai de préparation déclaré.
+- Le système signale séparément une prise en charge manquante après 48 h `[ASSUMPTION]` et une expédition manquante à la fin du délai de préparation déclaré.
 
 ### 4.9 Mesurer pour savoir ce qui fait vendre
 
@@ -691,11 +694,12 @@ Le MVP est découpé en deux lots. Le Lot 1 ne dépend pas du montage de paiemen
   - Exigences : FR-1 à FR-9, FR-16 à FR-21, FR-25, FR-27, FR-34 et FR-35.
   - Travaux associés : purge des données de démonstration, publication des premières œuvres réelles, mise à jour de Next.js, mise en place de la mesure.
   - « Acheter » reste masqué (FR-6). Le visiteur passe par le conseil, la visite, ou le parcours retenu en OQ-12.
+  - L'état `réservée` (FR-6, FR-9) et l'annulation de réservation de FR-21 ne s'activent qu'avec FR-12, donc au Lot 2, ou dès le Lot 1 si OQ-12 l'avance.
   - Condition de sortie : SM-4 à 100 %.
 - **Lot 2. Commande et après-vente.**
   - Exigences : FR-10 à FR-15, FR-22 à FR-24, FR-26, FR-28 à FR-33.
   - Bloqués par le montage : FR-14, la partie de FR-23 qui donne l'identité de l'exploitant, et le moyen de rembourser et de verser (FR-31, FR-32). Ils attendent OQ-1.
-  - Le contenu de FR-24 attend OQ-2 et OQ-4.
+  - Le contenu de FR-24 attend OQ-2, OQ-4 et OQ-5 ; FR-30 et FR-33 attendent OQ-4.
 - **Ouverture avant le Lot 2.** Le Lot 1 peut-il ouvrir au public avant le Lot 2, avec des premières ventes assistées (Conseil WhatsApp, réservation par l'équipe Errancy, puis lien de paiement) ? La question dépend du montage et reste ouverte (OQ-12). Si la réponse est oui, FR-12, FR-13 et FR-26 doivent avancer avec le Lot 1.
 
 ### 6.2 Hors MVP
@@ -809,6 +813,7 @@ Le MVP est découpé en deux lots. Le Lot 1 ne dépend pas du montage de paiemen
      - Qui paie le retour vers l'artiste ?
    - **Méthode proposée :** calculer la marge contributive dans les deux cas, puis tester.
 5. **OQ-5. Livraison.**
+   - **Bloquant pour :** le contenu de FR-24 (livraison) et le seuil de FR-29.
    - **Questions à trancher :**
      - Quelles zones de livraison ?
      - Qui paie la livraison ?
