@@ -153,7 +153,8 @@ La refonte améliore le site existant par étapes, avec retour arrière possible
   - l'équipe la pose pour une vente assistée.
 
   Elle a une échéance, et elle expire si la commande n'est pas confirmée à temps.
-- **Commande** : achat d'une ou plusieurs œuvres d'**un seul artiste** par un acheteur. Elle passe par les états suivants :
+- **Panier** : sélection d'œuvres, éventuellement de plusieurs artistes, validée par l'acheteur en un seul passage en caisse. Un panier donne une commande par artiste.
+- **Commande** : achat d'une ou plusieurs œuvres d'**un seul artiste** par un acheteur. Elle a son expédition, son suivi, ses retours et sa somme due à l'artiste. Elle passe par les états suivants :
   - `en attente de paiement` ;
   - `confirmée` ;
   - `prise en charge` ;
@@ -313,7 +314,9 @@ Le visiteur ajoute des œuvres au panier et commande sans créer de compte. Il p
 **Conséquences testables :**
 - `/panier` est accessible sans connexion.
 - La commande demande seulement l'e-mail, le nom, l'adresse de livraison et le téléphone.
-- Une commande ne contient que des œuvres d'un seul artiste. `[ASSUMPTION]` Un panier qui mêle plusieurs artistes donne autant de commandes séparées, que l'acheteur valide une par une. Cette règle laisse ouverte la question du paiement fractionné (OQ-1).
+- Le panier peut contenir des œuvres de plusieurs artistes, et l'acheteur le valide en un seul passage en caisse (même saisie, même récapitulatif). Il produit une commande par artiste, chacune avec son expédition, son suivi, ses retours et sa somme due (décision du 2026-10-25, sur le modèle de Saatchi Art, Singulart et Artmajeur).
+- Le paiement se fait en une fois si le montage retenu le permet. Sinon, l'acheteur règle chaque commande à la suite, dans le même parcours (OQ-1).
+- Le récapitulatif (FR-11) montre le délai et les frais de chaque artiste, et indique que les œuvres arriveront dans des colis séparés.
 - Une œuvre du panier qui n'est plus `disponible` est signalée et ne peut pas être commandée.
 
 #### FR-11 : Récapitulatif avant paiement
@@ -779,7 +782,7 @@ Le MVP est découpé en deux lots. Le Lot 1 ne dépend pas du montage de paiemen
      - Qui encaisse, dans quel pays, sous quelle forme juridique, et avec quel prestataire ?
      - Comment l'artiste est-il payé selon son pays ?
      - Qui supporte une contestation de paiement ?
-     - Une commande avec plusieurs artistes peut-elle être payée en une fois (paiement fractionné) ?
+     - Un panier avec plusieurs artistes peut-il être payé en une fois (paiement fractionné, OQ-16) ?
    - **État :** l'étude recommande une société d'exploitation au Royaume-Uni ou aux États-Unis, avec des versements par paliers. D'autres pistes existent, dont une « solution locale ». Ce ne sont que des recommandations : un avis juridique et comptable marocain est requis avant toute décision.
    - **Décision :** le porteur, après l'avis juridique.
    - **Tensions à arbitrer :**
@@ -854,8 +857,9 @@ Le MVP est découpé en deux lots. Le Lot 1 ne dépend pas du montage de paiemen
       - Errancy peut-elle corriger une fiche déposée par un artiste ?
 15. **OQ-15. Sortie de maintenance.**
     - **Question à trancher :** quels critères le porteur retient-il pour lever `MAINTENANCE_MODE` et ouvrir `robots.txt` ? Par exemple : le Lot 1 complet, le catalogue réel publié, la mesure en place.
-16. **OQ-16. Une seule commande par artiste.**
-    - **Question à trancher :** confirmer qu'une commande ne réunit que les œuvres d'un seul artiste (FR-10), au moins tant que OQ-1 n'est pas tranchée.
+16. **OQ-16. Paniers avec plusieurs artistes.**
+    - **Décidé (2026-10-25) :** un seul panier et un seul passage en caisse, mais une commande par artiste (FR-10). Le porteur a délégué ce choix, qui reprend la pratique des concurrents.
+    - **Reste à trancher, avec OQ-1 :** un seul paiement pour tout le panier, ou un paiement par commande.
 
 ## 11. Conformité et cadre réglementaire
 
@@ -893,7 +897,6 @@ Le MVP est découpé en deux lots. Le Lot 1 ne dépend pas du montage de paiemen
 - **FR-3 :** le pays du visiteur est déduit puis modifiable.
 - **FR-7 :** le délai de réponse affiché tient compte des heures de service.
 - **FR-9 :** les inscrits sont prévenus dans l'ordre, avec un délai de priorité.
-- **FR-10 :** une commande ne réunit que les œuvres d'un seul artiste (OQ-16).
 - **FR-12 :** réservation d'environ 30 min au paiement, et d'environ 48 h pour une vente assistée (UJ-4).
 - **FR-22, FR-26 et UJ-3 :** l'artiste confirme la prise en charge sous 48 h.
 - **FR-29 :** au-delà d'un seuil de prix, l'expédition est assurée avec preuve de livraison (seuil à fixer).
