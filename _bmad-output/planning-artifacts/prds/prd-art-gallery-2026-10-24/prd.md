@@ -21,7 +21,7 @@ Il s'appuie sur :
 
 Le vocabulaire est fixé par le glossaire (§3). Les exigences fonctionnelles (FR) sont numérotées une fois pour toutes et rangées par fonctionnalité. Les détails techniques, les options écartées et les rapports de relecture sont dans `addendum.md` et dans les fichiers `review-*.md` et `reconcile-*.md` de ce dossier.
 
-**Le montage de paiement n'est pas tranché.** Il attend un avis juridique marocain (`docs/decisions-porteur.md` l.17). Ce PRD le traite comme une question ouverte (§9, OQ-1). Toutes les exigences sont écrites pour rester valables, que l'encaissement se fasse par paiement intégré, par lien de paiement ou par virement. Celles qui dépendent du montage sont marquées **« Bloqué par OQ-1 »**. La stratégie demande que ce choix soit fait avant l'architecture (`docs/strategie-refonte.md` l.137 et l.158) : `bmad-architecture` peut traiter tout le reste, mais pas le module d'encaissement et de reversement.
+**Le montage de paiement n'est pas tranché.** Il attend un avis juridique marocain (`docs/decisions-porteur.md` l.17). Ce PRD le traite comme une question ouverte (§10, OQ-1). Toutes les exigences sont écrites pour rester valables, que l'encaissement se fasse par paiement intégré, par lien de paiement ou par virement. Celles qui dépendent du montage sont marquées **« Bloqué par OQ-1 »**. La stratégie demande que ce choix soit fait avant l'architecture (`docs/strategie-refonte.md` l.137 et l.158) : `bmad-architecture` peut traiter tout le reste, mais pas le module d'encaissement et de reversement.
 
 ## 1. Vision
 
@@ -39,7 +39,7 @@ Acheter une œuvre originale à distance est un pari pour l'acheteur. L'hypothè
 - *Est-elle trop chère ?*
 - *Est-ce sérieux ?*
 
-Quand il hésite encore, une personne d'Errancy doit pouvoir lui répondre, avant comme après la vente. Les concurrents étudiés proposent aussi des conseillers, par chat, formulaire ou téléphone. Ce qui distingue Errancy, c'est un conseil **par WhatsApp, avec un délai de réponse annoncé**, que la diaspora utilise déjà au quotidien. S'y ajoutent des couleurs fidèles et des délais exacts. Cette différenciation reste à confirmer par la mesure (SM-3).
+Quand il hésite encore, une personne d'Errancy doit pouvoir lui répondre, avant comme après la vente. Les concurrents étudiés proposent aussi des conseillers, par chat, formulaire ou téléphone. Ce qui distingue Errancy, c'est un conseil **par WhatsApp**, canal que la diaspora utilise déjà au quotidien, **avec un délai de réponse annoncé**. S'y ajoutent des couleurs fidèles et des délais exacts. Cette différenciation reste à confirmer par la mesure (SM-3).
 
 Aujourd'hui, personne ne peut acheter. Deux causes sont des faits constatés :
 1. le site est en maintenance ;
@@ -59,7 +59,7 @@ La refonte améliore le site existant par étapes, avec retour arrière possible
 
 **Acheteur**
 - Trouver une œuvre qui correspond vraiment à son espace, à son goût et à son budget.
-- Être sûr, avant de payer, de la taille réelle, du prix final et du délai.
+- Être sûr, avant de payer, de la taille réelle, du prix total et du délai total.
 - Pouvoir demander l'avis d'une personne avant un achat important, et savoir où en est sa commande après.
 - Savoir que l'œuvre est authentique, et qu'un recours existe si elle arrive abîmée ou ne lui convient pas.
 
@@ -80,7 +80,7 @@ La refonte améliore le site existant par étapes, avec retour arrière possible
 
 ### 2.2 Hors cible du MVP
 
-- **Acheteurs de décoration à petit prix.** Errancy s'inspire de la clarté de Massinart sans en faire une boutique de décoration.
+- **Acheteurs de décoration à petit prix.** Errancy s'inspire de la clarté de Massinart sans devenir une boutique de décoration.
 - **Clients professionnels** (location B2B), commandes sur mesure, abonnements : ce sont des pilotes ultérieurs.
 - **Artistes non sélectionnés** : la place de marché est réservée aux artistes choisis par Errancy.
 - **Acheteurs de reproductions ou d'éditions** : aucune ne sera vendue sans autorisation écrite des ayants droit, et pas dans le MVP.
@@ -109,9 +109,9 @@ La refonte améliore le site existant par étapes, avec retour arrière possible
   - **Point de départ :** il a reçu une invitation d'Errancy et s'est connecté à son espace artiste.
   - **Parcours :**
     1. Il dépose une œuvre avec trois photos en lumière du jour et un gros plan.
-    2. Il renseigne les dimensions, la couleur dominante, ainsi que les frais et délais d'expédition pour trois zones.
+    2. Il renseigne les dimensions, la couleur dominante, ainsi que les frais et délais d'expédition pour trois zones de livraison.
     3. Il s'engage à fournir un certificat signé et un emballage conforme.
-    4. L'équipe Errancy valide la fiche, qui est publiée.
+    4. L'équipe Errancy valide la fiche œuvre, qui est publiée.
     5. Un mois plus tard, il vend l'œuvre à l'atelier et la passe en « vendue ailleurs » depuis son téléphone.
   - **Moment clé :** en moins d'une minute, l'œuvre n'est plus achetable sur Errancy.
   - **Cas limite :** un acheteur était en train de payer cette œuvre sur Errancy.
@@ -130,8 +130,8 @@ La refonte améliore le site existant par étapes, avec retour arrière possible
   - **Parcours :**
     1. Sur la fiche, il touche « Réserver une visite ».
     2. Il propose des créneaux pour une visite à distance, en visioconférence avec un conseiller ou avec l'artiste. Il n'y a pas de showroom.
-    3. L'équipe confirme le créneau dans le délai annoncé.
-  - **Moment clé :** après l'appel, l'équipe réserve l'œuvre pour lui pendant 48 h `[ASSUMPTION]` et lui envoie le lien pour commander.
+    3. L'équipe Errancy confirme le créneau dans le délai annoncé.
+  - **Moment clé :** après l'appel, l'équipe Errancy réserve l'œuvre pour lui pendant 48 h `[ASSUMPTION]` et lui envoie le lien pour commander.
 
 ## 3. Glossaire
 
@@ -179,7 +179,7 @@ La refonte améliore le site existant par étapes, avec retour arrière possible
 
 ### 4.1 Une fiche œuvre qui lève les doutes
 
-**Description :** chaque fiche œuvre répond aux quatre questions sans que l'acheteur ait à demander : l'échelle, le prix final, le délai et le sérieux. Elle raconte aussi l'œuvre en quelques lignes, et propose des actions adaptées à la disponibilité. C'est le cœur de « convertir d'abord ». Réalise UJ-1 et UJ-4.
+**Description :** chaque fiche œuvre répond aux quatre questions sans que l'acheteur ait à demander : l'échelle, le prix total, le délai total et le sérieux. Elle raconte aussi l'œuvre en quelques lignes, et propose des actions adaptées à la disponibilité. C'est le cœur de « convertir d'abord ». Réalise UJ-1 et UJ-4.
 
 #### FR-1 : Dimensions et format lisibles
 
@@ -212,7 +212,7 @@ Le visiteur voit le prix total pour son pays avant d'ajouter l'œuvre au panier.
 **Conséquences testables :**
 - Le pays de livraison est proposé d'office, et le visiteur peut le changer. `[ASSUMPTION]` (OQ-13)
 - Pour un même pays, le prix total affiché est égal au montant demandé à la commande.
-- Si l'artiste ne livre pas le pays choisi, la fiche le dit. Elle propose alors le Conseil WhatsApp au lieu de « Acheter ».
+- Si l'artiste ne livre pas le pays choisi, la fiche le dit. Elle propose alors le Conseil WhatsApp au lieu du bouton « Acheter ».
 - La devise affichée suit OQ-6 : en attendant, c'est l'euro.
 
 #### FR-4 : Délai total annoncé
@@ -287,7 +287,7 @@ Réalise UJ-4.
   - `planifiée` ;
   - `faite` ;
   - `sans suite`.
-- Les coordonnées de l'artiste ne sont jamais communiquées au visiteur. La visite en atelier est organisée par l'équipe Errancy (voir le risque de désintermédiation, §11).
+- Les coordonnées de l'artiste ne sont jamais communiquées au visiteur. La visite en atelier est organisée par l'équipe Errancy (voir le risque de contournement de la commission, §12).
 
 **Hors périmètre :** la prise de rendez-vous en temps réel sur un agenda.
 
@@ -300,7 +300,7 @@ Le visiteur laisse son e-mail sur une œuvre `réservée`. Si la réservation ex
 
 ### 4.3 Commander sans friction et sans double vente
 
-**Description :** de « Acheter » à la confirmation, l'acheteur ne rencontre aucun obstacle inutile, et une même œuvre ne peut jamais être vendue deux fois. Ces exigences valent pour tout mode d'encaissement :
+**Description :** du bouton « Acheter » à la confirmation, l'acheteur ne rencontre aucun obstacle inutile, et une même œuvre ne peut jamais être vendue deux fois. Ces exigences valent pour tout mode d'encaissement :
 - paiement intégré avec notification du prestataire ;
 - lien de paiement envoyé après une vente assistée ;
 - virement.
@@ -314,7 +314,7 @@ Le visiteur ajoute des œuvres au panier et commande sans créer de compte. Il p
 **Conséquences testables :**
 - `/panier` est accessible sans connexion.
 - La commande demande seulement l'e-mail, le nom, l'adresse de livraison et le téléphone.
-- Le panier peut contenir des œuvres de plusieurs artistes, et l'acheteur le valide en un seul passage en caisse (même saisie, même récapitulatif). Il produit une commande par artiste, chacune avec son expédition, son suivi, ses retours et sa somme due (décision du 2026-10-25, sur le modèle de Saatchi Art, Singulart et Artmajeur).
+- Le panier peut contenir des œuvres de plusieurs artistes, et l'acheteur le valide en un seul passage en caisse (même saisie, même récapitulatif). Le panier produit une commande par artiste, chacune avec son expédition, son suivi, ses retours et sa somme due à l'artiste (décision du 2026-10-25, sur le modèle de Saatchi Art, Singulart et Artmajeur).
 - Le paiement se fait en une fois si le montage retenu le permet. Sinon, l'acheteur règle chaque commande à la suite, dans le même parcours (OQ-1).
 - Le récapitulatif (FR-11) montre le délai et les frais de chaque artiste, et indique que les œuvres arriveront dans des colis séparés.
 - Une œuvre du panier qui n'est plus `disponible` est signalée et ne peut pas être commandée.
@@ -335,8 +335,8 @@ Avant de payer, l'acheteur voit pour chaque œuvre :
 #### FR-12 : Réservation
 
 Une œuvre passe en `réservée` dans deux cas :
-- un acheteur commence à payer, et la réservation dure environ 30 minutes `[ASSUMPTION]` ;
-- l'équipe Errancy réserve l'œuvre pour un acheteur identifié, pour une vente assistée, et la réservation dure environ 48 h `[ASSUMPTION]`.
+- un acheteur commence à payer : la réservation dure alors environ 30 minutes `[ASSUMPTION]` ;
+- l'équipe Errancy réserve l'œuvre pour un acheteur identifié, dans le cadre d'une vente assistée : la réservation dure alors environ 48 h `[ASSUMPTION]`.
 
 À l'échéance, la réservation expire et l'œuvre redevient `disponible`.
 
@@ -377,7 +377,7 @@ Le paiement actuel encaisse tout sur un seul compte Stripe Checkout. Il « ne co
 
 #### FR-15 : Suivi de commande pour l'acheteur
 
-L'acheteur voit l'état de sa commande et le numéro de suivi, sans compte, grâce à un lien envoyé par e-mail. Depuis cette page, il peut contacter l'équipe et signaler un problème (FR-30). Réalise UJ-1.
+L'acheteur voit l'état de sa commande et le numéro de suivi, sans compte, grâce à un lien envoyé par e-mail. Depuis cette page, il peut contacter l'équipe Errancy et signaler un problème (FR-30). Réalise UJ-1.
 
 **Conséquences testables :**
 - Le lien contient un jeton aléatoire impossible à deviner, et il expire après la clôture.
@@ -408,13 +408,13 @@ L'acheteur signale un problème depuis sa page de suivi (FR-15), pendant le dél
 L'équipe Errancy traite la réclamation et, si le retour est accepté, organise le renvoi à l'artiste dans l'emballage d'origine.
 
 **Conséquence testable :**
-- La durée du délai, la prise en charge des frais de retour, et le choix entre remboursement et avoir suivent OQ-4. Qui supporte la casse suit OQ-2.
+- La durée du délai de retour, la prise en charge des frais de retour et le choix entre remboursement et avoir suivent OQ-4. Qui supporte la casse suit OQ-2.
 
 #### FR-31 : Remboursement de l'acheteur
 
 L'équipe Errancy déclenche un remboursement total ou partiel dans l'un de ces cas :
 - commande annulée ;
-- œuvre vendue ailleurs ;
+- œuvre passée en `vendue ailleurs` ;
 - paiement reçu après une réservation perdue ;
 - retour accepté.
 
@@ -429,7 +429,7 @@ Le motif est enregistré.
 
 L'équipe Errancy voit, pour chaque commande :
 - la somme due à l'artiste ;
-- la date à partir de laquelle elle est exigible, c'est-à-dire la clôture ;
+- la date à laquelle elle devient exigible, c'est-à-dire la clôture de la commande ;
 - l'état du reversement : `à verser`, `versée`, `bloquée`.
 
 L'artiste voit les mêmes informations pour ses ventes.
@@ -438,7 +438,7 @@ L'artiste voit les mêmes informations pour ses ventes.
 
 #### FR-33 : Clôture
 
-Une commande `livrée` passe en `close` à la fin du délai de retour, si aucune réclamation n'est ouverte. Une commande annulée ou retournée est close une fois le remboursement effectué.
+Une commande `livrée` passe en `close` à la fin du délai de retour, si aucune réclamation n'est ouverte. Une commande `annulée` ou `retournée` est close une fois le remboursement effectué.
 
 ### 4.5 Un vrai catalogue, facile à parcourir
 
@@ -568,7 +568,7 @@ Le visiteur consulte :
 Les CGV indiquent que l'artiste est le vendeur et qu'Errancy est l'intermédiaire.
 
 **Conséquences testables :**
-- Les CGV traitent le droit de rétractation selon le pays de l'acheteur et le statut de l'artiste (§10).
+- Les CGV traitent le droit de rétractation selon le pays de l'acheteur et le statut de l'artiste (§11).
 - L'identité de l'exploitant est reprise du montage retenu. **Bloqué par OQ-1.**
 
 #### FR-24 : Pages de confiance
@@ -644,7 +644,7 @@ Chaque événement porte le slug de l'œuvre et la source d'arrivée.
 
 #### FR-28 : Ventes assistées par le conseil
 
-L'équipe Errancy rattache une commande à un conseil WhatsApp ou à une visite qui l'a précédée. Une commande issue d'une réservation posée par l'équipe (FR-12) y est rattachée automatiquement.
+L'équipe Errancy rattache une commande à un Conseil WhatsApp ou à une visite qui l'a précédée. Une commande issue d'une réservation posée par l'équipe Errancy (FR-12) y est rattachée automatiquement.
 
 #### FR-35 : Contacts de la page de maintenance
 
@@ -653,7 +653,7 @@ Le formulaire « Me notifier » de la page de maintenance enregistre réellement
 ## 5. Exigences non fonctionnelles transverses
 
 - **NFR-1 Performance mobile.** Les fiches œuvres et le catalogue se chargent vite sur mobile en 4G : images au bon format et à la bonne taille, chargées au fil du défilement. `[ASSUMPTION : LCP < 2,5 s, à confirmer par l'architecture]`
-- **NFR-2 Référencement.** Chaque fiche œuvre et chaque page artiste ont des métadonnées, une URL canonique en français et une place dans le sitemap. Tout changement d'URL passe par une redirection 301. La perte de référencement est un risque élevé (§11). L'ouverture de `public/robots.txt` et la levée de la maintenance (`MAINTENANCE_MODE`) sont des actes du porteur, jamais des changements de code.
+- **NFR-2 Référencement.** Chaque fiche œuvre et chaque page artiste ont des métadonnées, une URL canonique en français et une place dans le sitemap. Tout changement d'URL passe par une redirection 301. La perte de référencement est un risque élevé (§12). L'ouverture de `public/robots.txt` et la levée de la maintenance (`MAINTENANCE_MODE`) sont des actes du porteur, jamais des changements de code.
 - **NFR-3 Accessibilité.** Navigation au clavier, contrastes suffisants, formulaires avec libellés, texte alternatif sur les images d'œuvres. `[ASSUMPTION : niveau WCAG 2.1 AA]`
 - **NFR-4 Fiabilité de la vente.**
   - Aucune double vente : la réservation et la confirmation sont atomiques et idempotentes.
@@ -670,7 +670,7 @@ Le formulaire « Me notifier » de la page de maintenance enregistre réellement
   - La collecte est minimale.
   - Le consentement aux cookies de mesure est demandé quand la loi l'exige, par exemple dans l'UE.
   - Une durée de conservation est définie, avec une purge.
-  - Le transfert des adresses d'acheteurs à des artistes hors UE est encadré (§10).
+  - Le transfert des adresses d'acheteurs à des artistes hors UE est encadré (§11).
 - **NFR-7 Migration progressive.** Chaque évolution qui touche aux données ou aux URL est livrée par étapes :
   - sauvegarde restaurable ;
   - correspondance vérifiée entre anciennes et nouvelles données ;
@@ -696,7 +696,7 @@ Le MVP est découpé en deux lots. Le Lot 1 ne dépend pas du montage de paiemen
   - Exigences : FR-10 à FR-15, FR-22 à FR-24, FR-26, FR-28 à FR-33.
   - Bloqués par le montage : FR-14, la partie de FR-23 qui donne l'identité de l'exploitant, et le moyen de rembourser et de verser (FR-31, FR-32). Ils attendent OQ-1.
   - Le contenu de FR-24 attend OQ-2 et OQ-4.
-- **Ouverture avant le Lot 2.** Le Lot 1 peut-il ouvrir au public avant le Lot 2, avec des premières ventes assistées (conseil WhatsApp, réservation par l'équipe, puis lien de paiement) ? La question dépend du montage et reste ouverte (OQ-12). Si la réponse est oui, FR-12, FR-13 et FR-26 doivent avancer avec le Lot 1.
+- **Ouverture avant le Lot 2.** Le Lot 1 peut-il ouvrir au public avant le Lot 2, avec des premières ventes assistées (Conseil WhatsApp, réservation par l'équipe Errancy, puis lien de paiement) ? La question dépend du montage et reste ouverte (OQ-12). Si la réponse est oui, FR-12, FR-13 et FR-26 doivent avancer avec le Lot 1.
 
 ### 6.2 Hors MVP
 
@@ -743,7 +743,7 @@ Le MVP est découpé en deux lots. Le Lot 1 ne dépend pas du montage de paiemen
 
 **Secondaires**
 - **SM-3. Demandes qualifiées et ventes assistées.**
-  - Définition : nombre de conseils WhatsApp et de demandes par semaine, et part des commandes rattachées à un conseil (FR-28).
+  - Définition : nombre de Conseils WhatsApp et de demandes par semaine, et part des commandes rattachées à un conseil (FR-28).
   - Ce qu'il vérifie : l'hypothèse que la diaspora préfère WhatsApp.
 - **SM-4. Complétude des fiches.**
   - Définition : part des œuvres publiées qui ont toutes les informations suivantes :
@@ -769,7 +769,7 @@ Le MVP est découpé en deux lots. Le Lot 1 ne dépend pas du montage de paiemen
   - Ce qu'on compte : les retours, la casse, les couleurs « différentes de l'écran » et les délais dépassés.
   - Ce qu'il protège : SM-2. Trop promettre pour convertir se paie en retours, d'autant que l'artiste expédie lui-même.
 - **SM-C3. Délai réel de réponse au conseil.**
-  - Ce qu'on mesure : l'écart avec le délai annoncé, d'après les statistiques de WhatsApp Business ou un relevé de l'équipe `[ASSUMPTION]`.
+  - Ce qu'on mesure : l'écart avec le délai annoncé, d'après les statistiques de WhatsApp Business ou un relevé de l'équipe Errancy `[ASSUMPTION]`.
   - Ce qu'il protège : SM-3. Un canal lent détruit la promesse qu'il porte.
 
 ## 10. Questions ouvertes
@@ -846,7 +846,7 @@ Le MVP est découpé en deux lots. Le Lot 1 ne dépend pas du montage de paiemen
       - Combien de personnes pour le conseil et le suivi ?
     - **État (2026-10-24) :** le porteur ne le sait pas encore. Sans date, SM-1 n'a pas de point de départ.
 12. **OQ-12. Ouvrir avant le paiement intégré ?**
-    - **Question à trancher :** peut-on ouvrir le Lot 1 au public avec des ventes assistées (conseil WhatsApp, réservation par l'équipe, lien de paiement) avant le Lot 2 ?
+    - **Question à trancher :** peut-on ouvrir le Lot 1 au public avec des ventes assistées (Conseil WhatsApp, réservation par l'équipe Errancy, lien de paiement) avant le Lot 2 ?
     - **État :** l'étude paiement le recommande (R4). C'est une option liée à OQ-1, pas une décision.
 13. **OQ-13. Pays du visiteur.**
     - **Question à trancher :** le pays est-il déduit puis proposé, ou choisi par le visiteur dès sa première visite ?
@@ -854,7 +854,7 @@ Le MVP est découpé en deux lots. Le Lot 1 ne dépend pas du montage de paiemen
     - **Défaut retenu :** la stratégie prévoit des pages artistes « gérées par Errancy ».
     - **Questions à trancher :**
       - Jusqu'où l'artiste rédige-t-il ses pages ?
-      - Errancy peut-elle corriger une fiche déposée par un artiste ?
+      - Errancy peut-elle corriger une fiche œuvre déposée par un artiste ?
 15. **OQ-15. Sortie de maintenance.**
     - **Question à trancher :** quels critères le porteur retient-il pour lever `MAINTENANCE_MODE` et ouvrir `robots.txt` ? Par exemple : le Lot 1 complet, le catalogue réel publié, la mesure en place.
 16. **OQ-16. Paniers avec plusieurs artistes.**
@@ -863,7 +863,7 @@ Le MVP est découpé en deux lots. Le Lot 1 ne dépend pas du montage de paiemen
 
 ## 11. Conformité et cadre réglementaire
 
-*Ce PRD ne fixe aucune exigence sur les points ci-dessous qui dépendent de l'avis juridique. Il les recense pour que le juriste les traite.*
+*Parmi les points ci-dessous, ce PRD ne fixe aucune exigence sur ceux qui dépendent de l'avis juridique. Il les recense pour que le juriste les traite.*
 
 - **Droit de rétractation de 14 jours** pour les acheteurs de l'UE, selon le statut de l'artiste (OQ-2). Il est repris dans les CGV (FR-23).
 - **RGPD.** Consentement aux cookies et durée de conservation des données. Encadrement du transfert des adresses d'acheteurs de l'UE vers des artistes situés hors de l'UE : clause dans l'accord artiste, accès limité dans le temps (FR-22, NFR-6).
