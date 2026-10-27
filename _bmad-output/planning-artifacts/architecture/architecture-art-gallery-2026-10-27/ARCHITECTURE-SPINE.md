@@ -416,7 +416,7 @@ flowchart TD
 
 | Name | Version |
 |---|---|
-| Node.js | **24 LTS** (au minimum 22.12), dans `engines.node` et dans le réglage Node du projet Vercel |
+| Node.js | **24 LTS** : `engines.node` `24.x` (plage bornée, car Vercel applique `engines` en priorité sur le réglage du projet) et réglage Node du projet Vercel en 24.x |
 | Next.js (App Router) | 14.2.5 → **14.2.35** tout de suite, puis **16.x** (16.4.3 au 2026-10-27) dans un epic dédié |
 | React | 18.3, puis 19 avec Next.js 16 |
 | TypeScript, `@types/node` | 5.x (strict), `@types/node` 24 |

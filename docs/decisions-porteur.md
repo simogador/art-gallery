@@ -70,7 +70,7 @@
 | 2026-10-27 | Outil de mesure : PostHog, hébergement UE (OQ-9) | Choix du porteur en architecture (AD-19) |
 | 2026-10-27 | Next.js : passage immédiat à 14.2.35, puis montée vers 16.x dans un epic dédié | Choix du porteur en architecture (Stack) |
 | 2026-10-27 | Tests et CI : Vitest sur un vrai PostgreSQL, GitHub Actions (lint, build, tests) à chaque PR | Choix du porteur en architecture (AD-23) |
-| 2026-10-27 | Node.js 24 LTS (au minimum 22.12) | Node 20 en fin de vie et déprécié par Vercel ; validé par le porteur avec le spine |
+| 2026-10-27 | Node.js 24 LTS, `engines.node` `24.x` (plage bornée, remplace « au minimum 22.12 ») | Node 20 en fin de vie et déprécié par Vercel ; plage bornée car Vercel applique `engines` en priorité sur le réglage du projet ; validé par le porteur (story 1.1, PR #7) |
 
 ## Conséquences à traiter (relevées le 2026-10-23, à valider en PRD et architecture)
 
