@@ -50,7 +50,7 @@ export function identifiantBase(url: string | undefined): string | null {
 
 let avertissementEmis = false
 
-export function ecritureInterdite(env: NodeJS.ProcessEnv = process.env): boolean {
+export function ecritureInterdite(env: Record<string, string | undefined> = process.env): boolean {
   if (env.VERCEL_ENV === 'production') return false
 
   const idProduction = normaliser(env.DATABASE_PRODUCTION_ID ?? '')

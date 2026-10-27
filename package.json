@@ -12,6 +12,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest run",
     "db:migrate": "tsx scripts/verifier-base.ts && prisma migrate deploy",
     "db:seed": "tsx scripts/verifier-base.ts && tsx prisma/seed.ts"
   },
@@ -47,6 +48,7 @@
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",
     "tsx": "^4.22.3",
-    "typescript": "^5.5.2"
+    "typescript": "^5.5.2",
+    "vitest": "~5.0.5"
   }
 }
