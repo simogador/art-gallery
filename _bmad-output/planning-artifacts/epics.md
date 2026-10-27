@@ -266,7 +266,7 @@ afin de ne plus exposer de failles connues ni dépendre d'un environnement dépr
 
 **Étant donné** le projet en Next.js 14.2.5 et sans version de Node déclarée
 **Quand** la story est livrée
-**Alors** `next` et `eslint-config-next` sont en 14.2.35, `engines.node` vaut `>=22.12` (cible 24 LTS), `@types/node` est en 24, et Prisma est épinglé en `~7.10` (AR-1)
+**Alors** `next` et `eslint-config-next` sont en 14.2.35, `engines.node` vaut `24.x` (Node 24 LTS), `@types/node` est en 24, et Prisma est épinglé en `~7.10` (AR-1)
 **Et** `npm run lint` et `npm run build` passent, les `DatabaseNotReachable` sans `DATABASE_URL` n'étant pas un échec (AGENTS.md)
 
 **Étant donné** la préversion Vercel de la PR
