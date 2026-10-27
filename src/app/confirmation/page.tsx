@@ -8,6 +8,7 @@ import { formatPrice } from '@/lib/utils/artworks'
 import { ArtworkImage } from '@/components/ui'
 import { CartClearer } from './CartClearer'
 import { cn } from '@/lib/utils/cn'
+import { lot2Ouvert } from '@/lib/reglages'
 
 export const metadata: Metadata = { title: 'Acquisition confirmée' }
 
@@ -16,6 +17,9 @@ interface Props {
 }
 
 export default async function ConfirmationPage({ searchParams }: Props) {
+  // AD-17 : Lot 2 fermé, aucun appel au prestataire de paiement.
+  if (!lot2Ouvert()) redirect('/panier')
+
   const { session_id } = await searchParams
 
   if (!session_id) redirect('/')

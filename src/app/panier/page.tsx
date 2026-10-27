@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { CartContent } from './CartContent'
+import { lot2Ouvert } from '@/lib/reglages'
 
 export const metadata: Metadata = { title: 'Mon panier' }
 
@@ -27,7 +28,7 @@ export default async function PanierPage() {
           <div className="divider mt-4" />
         </div>
 
-        <CartContent />
+        <CartContent achatOuvert={lot2Ouvert()} />
 
       </div>
     </div>

@@ -10,6 +10,7 @@ Place de marché d'art en ligne : les artistes vendent via le site, Errancy pren
 - Une décision produit ou technique structurante (pile, prestataire de paiement, modèle de données) n'est prise que si elle figure dans `docs/decisions-porteur.md` ou un document BMAD validé ; sinon, la poser comme question ouverte.
 - Ne jamais remplacer la pile existante (ex. migration vers Supabase) : améliorer l'existant, migration progressive avec retour arrière.
 - Ne jamais lever la maintenance ni ouvrir `public/robots.txt` dans le code : la maintenance se pilote par la variable Vercel `MAINTENANCE_MODE`.
+- Ne jamais ouvrir l'achat en ligne (Lot 2) dans le code : il se pilote par la variable Vercel `LOT2_OUVERT` (`oui` = ouvert, sinon fermé), lue uniquement par `lot2Ouvert()` de `src/lib/reglages` (AD-17).
 - Ne jamais modifier `src/generated/prisma/` : il est régénéré par `prisma generate` (lancé au `postinstall`).
 - Ne jamais commiter de secrets : ils vont dans `.env.local` (ignoré par git).
 
@@ -17,7 +18,7 @@ Place de marché d'art en ligne : les artistes vendent via le site, Errancy pren
 
 - Middleware (maintenance, accès par rôle) : `src/middleware.ts`.
 - Auth : `src/auth.config.ts` est partagé avec le middleware (edge) — callbacks `jwt`/`session` ici, sans Prisma ni bcrypt ; les providers et l'adaptateur Prisma vont dans `src/auth.ts`.
-- Paiement : `src/app/api/checkout/route.ts` (prix relus en base, jamais ceux du client) et `src/app/api/webhooks/stripe/route.ts` (doit rester idempotent).
+- Paiement : `src/app/api/checkout/route.ts` (refusé tant que le Lot 2 est fermé ; prix relus en base, jamais ceux du client) et `src/app/api/webhooks/stripe/route.ts` (doit rester idempotent).
 - Lecture du catalogue : `src/lib/db/` + `mappers.ts` vers `src/lib/types` ; `src/data/*` est de la démonstration à supprimer, n'y ajouter aucun nouvel usage.
 - Accès à la base (AD-1) : seuls les modules métier `src/lib/<module>/` listés dans `.eslintrc.js` (`MODULES_METIER`) et `src/auth.ts` importent Prisma ou `pg` (`@/lib/prisma`, `@/generated/prisma*`, `@prisma/client`, `@prisma/adapter-pg`, `pg`), règle `no-restricted-imports` ; un nouveau module s'ajoute à `MODULES_METIER`. Les fichiers existants hors modules sont listés dans `eslint/exceptions-prisma.cjs` : cette liste ne fait que diminuer (la CI échoue sur tout ajout), on en retire un fichier quand il passe par un module.
 
@@ -26,6 +27,7 @@ Place de marché d'art en ligne : les artistes vendent via le site, Errancy pren
 - Avant de pousser : `npx eslint .`, `node scripts/verifier-exceptions-prisma.cjs origin/main` puis `npm run build`, comme la CI — Vercel échoue sur la moindre erreur ESLint.
 - Sans `DATABASE_URL`, `npm run build` réussit mais affiche des `DatabaseNotReachable` Prisma : ce n'est pas un échec.
 - `next start` en local exige `AUTH_SECRET` et `AUTH_TRUST_HOST=true`.
+- Le Lot 2 est fermé par défaut, donc `/panier` n'a pas de bouton de paiement : pour tester le chemin d'achat actuel en local, mettre `LOT2_OUVERT=oui` dans `.env.local`.
 - La CLI Prisma lit `.env.local` (via `prisma.config.ts`), pas `.env`.
 - Migrations (`docs/migrations.md`) : tout changement de `schema.prisma` s'accompagne d'une migration commitée. `prisma migrate deploy` sur la production n'est lancé que par le porteur, jamais dans le build Vercel ni en CI ; `prisma db push` est proscrit sur toute base partagée.
 - CI : `.github/workflows/ci.yml` lance, sous Node 24, `npm ci`, `npx eslint .` puis `npm run build` à chaque PR vers `main`, sans aucun secret ; le job « Migrations » applique toutes les migrations sur un PostgreSQL vide et échoue si `prisma migrate diff` trouve un écart avec `schema.prisma` ; le job « Tests » lance `npm test`. Une PR dont l'un de ces checks (« Lint et build », « Migrations », « Tests ») est rouge ne doit pas être fusionnée ; le blocage automatique dépend de la règle de protection de `main`, réglée par le porteur dans GitHub.

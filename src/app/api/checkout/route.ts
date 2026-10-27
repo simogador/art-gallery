@@ -3,8 +3,17 @@ import { auth } from '@/auth'
 import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import type { CartItem } from '@/lib/store/cart'
+import { lot2Ouvert } from '@/lib/reglages'
 
 export async function POST(req: NextRequest) {
+  // AD-17 : tant que le Lot 2 est fermé, aucune session de paiement n'est créée.
+  if (!lot2Ouvert()) {
+    return NextResponse.json(
+      { error: 'L’achat en ligne n’est pas encore ouvert.', code: 'lot2_ferme' },
+      { status: 403 },
+    )
+  }
+
   const session = await auth()
   if (!session?.user) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
