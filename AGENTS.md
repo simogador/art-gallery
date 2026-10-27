@@ -22,11 +22,12 @@ Place de marché d'art en ligne : les artistes vendent via le site, Errancy pren
 
 ## Running and verifying
 
-- Avant de pousser : `npm run lint` puis `npm run build` — Vercel échoue sur la moindre erreur ESLint.
+- Avant de pousser : `npx eslint .` puis `npm run build`, comme la CI — Vercel échoue sur la moindre erreur ESLint.
 - Sans `DATABASE_URL`, `npm run build` réussit mais affiche des `DatabaseNotReachable` Prisma : ce n'est pas un échec.
 - `next start` en local exige `AUTH_SECRET` et `AUTH_TRUST_HOST=true`.
 - La CLI Prisma lit `.env.local` (via `prisma.config.ts`), pas `.env`.
-- Il n'existe ni tests ni CI : vérifier à la main dans la préversion Vercel de la PR.
+- CI : `.github/workflows/ci.yml` lance, sous Node 24, `npm ci`, `npx eslint .` puis `npm run build` à chaque PR vers `main`, sans aucun secret. Une PR dont ce check (« Lint et build ») est rouge ne doit pas être fusionnée ; le blocage automatique dépend de la règle de protection de `main`, réglée par le porteur dans GitHub.
+- Il n'existe pas encore de tests : vérifier aussi à la main dans la préversion Vercel de la PR.
 
 ## Conventions that differ from defaults
 
