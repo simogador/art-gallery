@@ -1,0 +1,126 @@
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created, ready for development
+#   - in-progress: Developer actively working on implementation
+#   - review: Implementation complete, ready for review
+#   - done: Story completed
+
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when its first story starts (via build's sprint sync)
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates the next story after the previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; the status view surfaces open ones
+generated: 10-27-2026 09:35
+last_updated: 10-27-2026 09:35
+project: art-gallery
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+development_status:
+  epic-1: backlog
+  1-1-correctifs-de-sécurité-et-node-24: backlog
+  1-2-préversions-isolées-de-la-base-de-production: backlog
+  1-3-intégration-continue-lint-et-build-à-chaque-pr: backlog
+  1-4-historique-des-migrations-aligné-sur-la-base-réelle: backlog
+  1-5-tests-automatisés-sur-un-vrai-postgresql: backlog
+  1-6-accès-à-la-base-réservé-aux-modules-métier: backlog
+  1-7-interrupteur-du-lot-2-et-fermeture-du-chemin-d-achat-actuel: backlog
+  1-8-rôle-toujours-à-jour-sans-reconnexion: backlog
+  1-9-contacts-de-la-page-de-maintenance-enregistrés: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-prix-et-dimensions-exacts-au-centime-et-au-millimètre: backlog
+  2-2-publication-et-disponibilité-deux-états-distincts: backlog
+  2-3-zones-de-livraison-gérées-par-l-équipe: backlog
+  2-4-invitation-et-premier-accès-de-l-artiste: backlog
+  2-5-déposer-une-œuvre-photos-informations-dimensions-et-prix: backlog
+  2-6-expédition-par-zone-engagements-et-envoi-en-curation: backlog
+  2-7-curation-par-l-équipe: backlog
+  2-8-l-artiste-tient-la-disponibilité-de-ses-œuvres: backlog
+  2-9-catalogue-réel-uniquement: backlog
+  2-10-suppression-des-anciennes-colonnes: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-une-interface-lisible-et-accessible-partout: backlog
+  3-2-textes-montants-et-unités-au-même-format-partout: backlog
+  3-3-pays-de-livraison-et-prix-total-calculé-en-un-seul-endroit: backlog
+  3-4-journal-d-événements-et-pages-publiques-toujours-fraîches: backlog
+  3-5-fiche-œuvre-photos-et-rangée-taille-prix-livré-délai: backlog
+  3-6-fiche-œuvre-les-quatre-questions-et-les-signes-de-sérieux: backlog
+  3-7-fiche-d-une-œuvre-vendue-ou-retirée: backlog
+  3-8-fiches-et-pages-artistes-bien-référencées: backlog
+  3-9-galerie-filtrée-pour-un-mur-et-un-budget: backlog
+  3-10-accueil-curatorial: backlog
+  3-11-pages-artistes: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-e-mails-transactionnels-fiables: backlog
+  4-2-demande-de-sélection-personnalisée: backlog
+  4-3-demande-de-visite-à-distance-ou-en-atelier: backlog
+  4-4-conseil-whatsapp-contextualisé-avec-repli: backlog
+  4-5-me-prévenir-sur-une-œuvre-réservée: backlog
+  4-6-file-des-demandes-de-l-équipe: backlog
+  4-7-barre-d-actions-de-la-fiche-lot-1: backlog
+  4-8-mesure-du-tunnel-avec-consentement: backlog
+  4-9-annonce-de-l-ouverture-aux-contacts-de-la-maintenance: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-next-js-16-react-19-et-eslint-9: backlog
+  5-2-le-middleware-devient-src-proxy-ts: backlog
+  5-3-répartition-des-événements-par-after: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-passage-en-caisse-et-commandes-par-artiste-aux-montants-figé: backlog
+  6-2-réservation-en-bloc-sans-double-vente: backlog
+  6-3-vente-assistée-réserver-pour-un-acheteur-et-lui-envoyer-son: backlog
+  6-4-paiement-constaté-par-l-équipe-et-confirmation-idempotente: backlog
+  6-5-paiement-tardif-abandon-et-incidents: backlog
+  6-6-vente-ailleurs-pendant-une-réservation: backlog
+  6-7-balayage-et-priorité-me-prévenir: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-pages-légales-et-de-confiance: backlog
+  7-2-panier-sans-compte-une-commande-par-artiste: backlog
+  7-3-coordonnées-sans-compte-et-réservation-affichée-en-heure-fix: backlog
+  7-4-récapitulatif-et-paiement-dans-une-zone-neutre: backlog
+  7-5-encaissement-intégré-par-le-prestataire-retenu-bloqué-par-oq: backlog
+  7-6-confirmation-de-commande: backlog
+  7-7-suivi-des-commandes-par-lien-sans-compte: backlog
+  7-8-ouverture-de-acheter: backlog
+  7-9-retrait-de-l-ancien-modèle-de-commande: backlog
+  epic-7-retrospective: optional
+
+  epic-8: backlog
+  8-1-l-artiste-prend-en-charge-ses-commandes: backlog
+  8-2-l-artiste-expédie-et-saisit-le-suivi: backlog
+  8-3-commandes-et-alertes-de-l-équipe: backlog
+  8-4-livraison-constatée: backlog
+  8-5-réclamation-et-retour: backlog
+  8-6-remboursements-tracés: backlog
+  8-7-clôture-des-commandes: backlog
+  8-8-somme-due-à-l-artiste: backlog
+  epic-8-retrospective: optional
