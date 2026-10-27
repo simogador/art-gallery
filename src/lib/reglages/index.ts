@@ -6,3 +6,7 @@
 export function lot2Ouvert(env: Record<string, string | undefined> = process.env): boolean {
   return env.LOT2_OUVERT?.trim().toLowerCase() === 'oui'
 }
+
+// Limitation des envois du formulaire « Me notifier » de la page de maintenance (FR-35) :
+// au plus `parIp` envois par adresse IP et `parEmail` par e-mail sur `fenetreMinutes`.
+export const LIMITES_INSCRIPTION_OUVERTURE = { fenetreMinutes: 60, parIp: 10, parEmail: 3 } as const

@@ -153,3 +153,23 @@ model Order {
   @@index([userId])
   @@index([stripeSessionId])
 }
+
+// Contacts laissés sur la page de maintenance pour être prévenus de l'ouverture (FR-35).
+// Propriétaire : module demandes. Un e-mail (normalisé en minuscules) n'est inscrit qu'une fois.
+model InscriptionOuverture {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  consentementLe DateTime @db.Timestamptz(3)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+}
+
+// Envois du formulaire d'inscription, pour en limiter le nombre par adresse IP et par e-mail.
+// La clé est une empreinte (« ip:<sha256> » ou « email:<sha256> ») : ni IP ni e-mail en clair.
+model TentativeInscription {
+  id        String   @id @default(cuid())
+  cle       String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([cle, createdAt])
+  @@index([createdAt])
+}

@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/utils/artworks'
 import { acteurCourant } from '@/lib/acces'
+import { compterInscriptionsOuverture } from '@/lib/demandes'
 
 export const metadata: Metadata = { title: 'Admin — Errancy' }
 
@@ -18,6 +19,7 @@ export default async function AdminPage() {
     usersTotal,
     ordersAgg,
     recentOrders,
+    inscritsOuverture,
   ] = await Promise.all([
     prisma.artwork.count(),
     prisma.artwork.count({ where: { available: true  } }),
@@ -33,6 +35,7 @@ export default async function AdminPage() {
         amount: true, customerEmail: true, status: true, createdAt: true,
       },
     }),
+    compterInscriptionsOuverture(),
   ])
 
   const revenue = ordersAgg._sum.amount ?? 0
@@ -79,6 +82,25 @@ export default async function AdminPage() {
             <p className="font-sans text-xs text-neutral-400">{desc}</p>
           </Link>
         ))}
+      </div>
+
+      {/* Contacts de la page de maintenance (FR-35) */}
+      <div className="flex flex-wrap items-center justify-between gap-4 p-5 mb-12 border border-neutral-200 rounded-sm">
+        <div>
+          <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-400 mb-2">
+            Inscrits à l&apos;ouverture
+          </p>
+          <p className="font-serif text-3xl font-light text-foreground">{inscritsOuverture}</p>
+          <p className="font-sans text-[10px] text-neutral-400 mt-1">laissés sur la page de maintenance</p>
+        </div>
+        {inscritsOuverture > 0 && (
+          <a
+            href="/api/admin/inscriptions-ouverture"
+            className="font-sans text-xs uppercase tracking-widest px-4 py-2 border border-neutral-200 rounded-sm hover:border-foreground transition-colors duration-300"
+          >
+            Exporter la liste (CSV)
+          </a>
+        )}
       </div>
 
       {/* Recent orders */}
