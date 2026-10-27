@@ -1,6 +1,7 @@
 # À chaque PR vers main (AD-23) :
 # - « Lint et build » (story 1.3) : aucun secret, le build réussit sans DATABASE_URL
-#   (erreurs DatabaseNotReachable attendues) ;
+#   (erreurs DatabaseNotReachable attendues) ; la liste d'exceptions Prisma ne peut que
+#   raccourcir par rapport à main (story 1.6, AD-1) ;
 # - « Migrations » (story 1.4) : toutes les migrations sur un PostgreSQL jetable, puis
 #   contrôle d'écart avec schema.prisma. Son DATABASE_URL ne vise que ce service jetable ;
 # - « Tests » (story 1.5) : Vitest, chaque fichier crée puis supprime sa propre base sur le
@@ -33,6 +34,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx eslint .
+      - name: Exceptions Prisma (ne font que diminuer)
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          node scripts/verifier-exceptions-prisma.cjs origin/main
       - run: npm run build
 
   migrations:

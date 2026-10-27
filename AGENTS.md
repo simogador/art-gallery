@@ -19,10 +19,11 @@ Place de marché d'art en ligne : les artistes vendent via le site, Errancy pren
 - Auth : `src/auth.config.ts` est partagé avec le middleware (edge) — callbacks `jwt`/`session` ici, sans Prisma ni bcrypt ; les providers et l'adaptateur Prisma vont dans `src/auth.ts`.
 - Paiement : `src/app/api/checkout/route.ts` (prix relus en base, jamais ceux du client) et `src/app/api/webhooks/stripe/route.ts` (doit rester idempotent).
 - Lecture du catalogue : `src/lib/db/` + `mappers.ts` vers `src/lib/types` ; `src/data/*` est de la démonstration à supprimer, n'y ajouter aucun nouvel usage.
+- Accès à la base (AD-1) : seuls les modules métier `src/lib/<module>/` listés dans `.eslintrc.js` (`MODULES_METIER`) et `src/auth.ts` importent Prisma ou `pg` (`@/lib/prisma`, `@/generated/prisma*`, `@prisma/client`, `@prisma/adapter-pg`, `pg`), règle `no-restricted-imports` ; un nouveau module s'ajoute à `MODULES_METIER`. Les fichiers existants hors modules sont listés dans `eslint/exceptions-prisma.cjs` : cette liste ne fait que diminuer (la CI échoue sur tout ajout), on en retire un fichier quand il passe par un module.
 
 ## Running and verifying
 
-- Avant de pousser : `npx eslint .` puis `npm run build`, comme la CI — Vercel échoue sur la moindre erreur ESLint.
+- Avant de pousser : `npx eslint .`, `node scripts/verifier-exceptions-prisma.cjs origin/main` puis `npm run build`, comme la CI — Vercel échoue sur la moindre erreur ESLint.
 - Sans `DATABASE_URL`, `npm run build` réussit mais affiche des `DatabaseNotReachable` Prisma : ce n'est pas un échec.
 - `next start` en local exige `AUTH_SECRET` et `AUTH_TRUST_HOST=true`.
 - La CLI Prisma lit `.env.local` (via `prisma.config.ts`), pas `.env`.
