@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { acteurCourant } from '@/lib/acces'
 
 export const metadata: Metadata = { title: 'Mon espace' }
 
@@ -9,7 +10,9 @@ export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect('/auth/connexion')
 
-  const role = (session.user as any).role
+  const role = (await acteurCourant()).type
+  // Compte supprimé depuis la connexion : la session est encore valide, plus le compte.
+  if (role === 'visiteur') redirect('/auth/connexion')
   const { name, email, image } = session.user
   const initials = (name ?? email ?? 'U')
     .split(' ')
@@ -111,7 +114,7 @@ export default async function DashboardPage() {
           {[
             { label: 'Nom',    value: name  ?? '—' },
             { label: 'Email',  value: email ?? '—' },
-            { label: 'Rôle',   value: (session.user as any).role ?? 'user' },
+            { label: 'Rôle',   value: role },
           ].map(({ label, value }) => (
             <div key={label} className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 last:border-0">
               <span className="font-sans text-xs uppercase tracking-widest text-neutral-400">{label}</span>

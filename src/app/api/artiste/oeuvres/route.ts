@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { acteurCourant } from '@/lib/acces'
 
 function slugify(str: string): string {
   return str
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
   }
-  if ((session.user as any).role !== 'artist') {
+  if ((await acteurCourant()).type !== 'artist') {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   }
 

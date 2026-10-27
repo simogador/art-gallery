@@ -1,10 +1,10 @@
-import { auth } from '@/auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { ArtworkForm } from '@/components/dashboard/ArtworkForm'
 import { ToggleAction } from '@/components/dashboard/ToggleAction'
+import { acteurCourant } from '@/lib/acces'
 
 interface Props { params: Promise<{ slug: string }> }
 
@@ -14,8 +14,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function AdminEditOeuvrePage({ params }: Props) {
-  const session = await auth()
-  if (!session?.user || (session.user as any).role !== 'admin') redirect('/dashboard')
+  if ((await acteurCourant()).type !== 'admin') redirect('/dashboard')
 
   const { slug } = await params
   const artwork  = await prisma.artwork.findUnique({

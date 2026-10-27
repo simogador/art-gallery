@@ -1,11 +1,11 @@
-import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import { AdminNav } from '@/components/dashboard/AdminNav'
+import { acteurCourant } from '@/lib/acces'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth()
-  if (!session?.user) redirect('/auth/connexion')
-  if ((session.user as any).role !== 'admin') redirect('/dashboard')
+  const acteur = await acteurCourant()
+  if (acteur.type === 'visiteur') redirect('/auth/connexion')
+  if (acteur.type !== 'admin') redirect('/dashboard')
 
   return (
     <div className="min-h-screen bg-background pt-16 md:pt-20">

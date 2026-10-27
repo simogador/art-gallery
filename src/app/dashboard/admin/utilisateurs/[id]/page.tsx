@@ -1,10 +1,10 @@
-import { auth } from '@/auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/utils/artworks'
 import { RoleSelect } from '@/components/dashboard/RoleSelect'
+import { acteurCourant } from '@/lib/acces'
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -15,8 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function AdminUserDetailPage({ params }: Props) {
-  const session = await auth()
-  if (!session?.user || (session.user as any).role !== 'admin') redirect('/dashboard')
+  if ((await acteurCourant()).type !== 'admin') redirect('/dashboard')
 
   const { id } = await params
   const user   = await prisma.user.findUnique({

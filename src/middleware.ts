@@ -17,6 +17,8 @@ function maintenanceEnabled() {
 export default auth((req: any) => {
   const session  = req.auth
   const { pathname } = req.nextUrl
+  // Passage des admins pendant la maintenance : rôle du jeton (le middleware tourne en edge,
+  // sans accès à la base), comme avant la story 1.8.
   const role     = (session?.user as any)?.role ?? null
 
   if (maintenanceEnabled() && role !== 'admin' && !pathname.startsWith('/auth')) {
@@ -33,18 +35,9 @@ export default auth((req: any) => {
     return NextResponse.redirect(loginUrl)
   }
 
-  if (pathname.startsWith('/dashboard/admin')) {
-    if (role !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard', req.nextUrl))
-    }
-  }
-
-  if (pathname.startsWith('/dashboard/artiste')) {
-    if (role !== 'artist' && role !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard', req.nextUrl))
-    }
-  }
-
+  // AD-15 : le middleware ne vérifie que la session. Les accès par rôle sont décidés par les
+  // layouts et les routes, à partir du rôle relu en base (src/lib/acces) : le rôle du jeton
+  // peut être périmé après un changement fait par un admin.
   return NextResponse.next()
 })
 

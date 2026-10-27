@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/auth'
 import { cloudinary } from '@/lib/cloudinary'
 import { prisma } from '@/lib/prisma'
+import { acteurCourant } from '@/lib/acces'
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) {
+  const acteur = await acteurCourant()
+  if (acteur.type === 'visiteur') {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
   }
 
@@ -20,6 +20,13 @@ export async function POST(req: NextRequest) {
   const artwork = await prisma.artwork.findUnique({ where: { slug: artworkId } })
   if (!artwork) {
     return NextResponse.json({ error: 'Œuvre introuvable' }, { status: 404 })
+  }
+
+  // Seul l'admin ou l'artiste propriétaire de l'œuvre peut en changer l'image.
+  const autorise =
+    acteur.type === 'admin' || (acteur.type === 'artist' && acteur.artiste?.id === artwork.artistId)
+  if (!autorise) {
+    return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
   }
 
   const bytes  = await file.arrayBuffer()
