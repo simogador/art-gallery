@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fiche œuvre retenue</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFAF8;
+    --ink: #0A0A0A;
+    --n200: #E8E8E4;
+    --n300: #D4D4CF;
+    --n500: #6B6B65;
+    --n600: #4A4A45;
+    --gold: #C9A84C; /* décoratif uniquement : filets */
+    --white: #FFFFFF;
+    --r: 2px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 15px/1.5 Inter, system-ui, sans-serif;
+    padding: 24px 16px 64px;
+  }
+  h1, h2, h3, .serif { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 600; }
+  a { color: var(--ink); }
+  a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .page-head { max-width: 1240px; margin: 0 auto 32px; }
+  .page-head h1 { font-size: 34px; margin: 0 0 8px; line-height: 1.1; }
+  .note {
+    display: inline-block; margin: 0; padding: 8px 12px;
+    border: 1px solid var(--n300); border-left: 3px solid var(--gold);
+    border-radius: var(--r); background: var(--white);
+    color: var(--n600); font-size: 13px;
+  }
+
+  .variants {
+    max-width: 1240px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(3, 375px);
+    justify-content: space-between; gap: 32px;
+  }
+  @media (max-width: 1199px) {
+    .variants { grid-template-columns: minmax(0, 375px); justify-content: center; gap: 56px; }
+  }
+
+  .variant-head { margin-bottom: 14px; min-height: 96px; }
+  .variant-head h2 { font-size: 26px; margin: 0 0 4px; line-height: 1.15; }
+  .variant-head h2 .letter {
+    display: inline-block; width: 30px; height: 30px; margin-right: 8px;
+    border: 1px solid var(--ink); border-radius: var(--r);
+    text-align: center; line-height: 28px; font-size: 20px; vertical-align: 3px;
+  }
+  .variant-head p { margin: 0; color: var(--n600); font-size: 14px; }
+
+  /* Cadre mobile : écran 375 × 812, contenu défilable, barre d'actions fixe en bas */
+  .phone {
+    width: 100%; max-width: 375px; height: 812px;
+    border: 1px solid var(--n500); border-radius: 6px;
+    background: var(--bg); overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .statusbar {
+    flex: none; height: 44px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; border-bottom: 1px solid var(--n200); font-size: 13px; color: var(--n600);
+  }
+  .statusbar .brand { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 18px; color: var(--ink); letter-spacing: .04em; }
+  .scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+  .scroll-inner { padding-bottom: 24px; }
+
+  .ph {
+    background: var(--n200); border: 1px solid var(--n300); border-radius: var(--r);
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    padding: 12px; color: var(--n600); font-size: 13px; line-height: 1.4;
+    position: relative;
+  }
+  .ph::before {
+    content: ""; position: absolute; inset: 0;
+    background:
+      linear-gradient(to top right, transparent calc(50% - .5px), var(--n300) 50%, transparent calc(50% + .5px)),
+      linear-gradient(to top left, transparent calc(50% - .5px), var(--n300) 50%, transparent calc(50% + .5px));
+    pointer-events: none;
+  }
+  .ph span { position: relative; background: var(--n200); padding: 2px 6px; }
+  .ph-hero { height: 420px; border-radius: 0; border-left: 0; border-right: 0; }
+  .ph-mid { height: 220px; }
+  .ph-small { height: 150px; }
+  .dots { display: flex; justify-content: center; gap: 6px; padding: 10px 0 0; }
+  .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--n300); display: block; }
+  .dots i.on { background: var(--ink); }
+  .counter { font-size: 12px; color: var(--n600); text-align: center; margin-top: 4px; }
+
+  .sec { padding: 16px 16px 0; }
+  .sec + .sec { margin-top: 4px; }
+  .rule { height: 0; border: 0; border-top: 1px solid var(--gold); width: 40px; margin: 20px 16px 0; }
+  .title { font-size: 30px; line-height: 1.1; margin: 0; }
+  .artist { margin: 6px 0 0; font-size: 15px; }
+  .meta { margin: 2px 0 0; color: var(--n600); font-size: 14px; }
+  .avail { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 13px; color: var(--n600); }
+  .avail::before { content: ""; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--ink); }
+  h3 { font-size: 21px; margin: 0 0 8px; line-height: 1.2; }
+  .label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--n600); margin: 0; font-weight: 500; }
+  .price { font-size: 22px; font-weight: 600; margin: 2px 0 0; }
+  .small { font-size: 13px; color: var(--n600); margin: 4px 0 0; }
+  .pending { font-style: italic; color: var(--n500); font-size: 13px; margin: 8px 0 0; }
+  .story { margin: 0; font-size: 14px; color: var(--ink); }
+  .link { font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+  .country { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--n600); margin-top: 4px; }
+  .country a { font-size: 13px; }
+
+  .card { border: 1px solid var(--n300); border-radius: var(--r); background: var(--white); padding: 14px; }
+  dl.kv { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; font-size: 14px; }
+  dl.kv dt { color: var(--n600); }
+  dl.kv dd { margin: 0; }
+
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .tile { border: 1px solid var(--n300); border-top: 2px solid var(--gold); border-radius: var(--r); background: var(--white); padding: 10px 8px; }
+  .tile .v { font-size: 14px; font-weight: 600; margin: 4px 0 0; line-height: 1.3; }
+  .tile .s { font-size: 12px; color: var(--n600); margin: 2px 0 0; line-height: 1.35; }
+
+  .badges { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .badges li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+  .badges li::before { content: ""; flex: none; width: 14px; height: 14px; margin-top: 3px; border: 1px solid var(--gold); border-radius: var(--r); }
+  .links { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+
+  .thumbs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  details.q { border-top: 1px solid var(--n300); }
+  details.q:last-of-type { border-bottom: 1px solid var(--n300); }
+  details.q summary {
+    list-style: none; cursor: pointer; padding: 14px 0;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 21px;
+  }
+  details.q summary::-webkit-details-marker { display: none; }
+  details.q summary::after { content: "+"; font-family: Inter, sans-serif; font-weight: 400; font-size: 20px; color: var(--n600); }
+  details.q[open] summary::after { content: "−"; }
+  details.q .body { padding: 0 0 16px; }
+
+  /* Barre d'actions fixe */
+  .actions {
+    flex: none; border-top: 1px solid var(--n300); background: var(--white);
+    padding: 10px 12px 14px; display: grid; gap: 8px;
+  }
+  .btn {
+    font: 500 14px/1.2 Inter, sans-serif; border-radius: var(--r); padding: 10px 12px;
+    text-align: center; cursor: pointer; width: 100%;
+  }
+  .btn-primary { background: var(--ink); color: var(--white); border: 1px solid var(--ink); }
+  .btn-primary .sub { display: block; font-size: 12px; font-weight: 400; color: var(--n200); margin-top: 3px; }
+  .btn-secondary { background: var(--white); color: var(--ink); border: 1px solid var(--ink); }
+  .btn-hidden { background: transparent; color: var(--n600); border: 1.5px dashed var(--n500); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; }
+  .annot { font-size: 11px; line-height: 1.35; color: var(--n600); font-style: italic; margin: 4px 0 0; text-align: center; }
+  /* Fichier retenu : deux cadres côte à côte */
+  .frames {
+    max-width: 840px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(2, 375px);
+    justify-content: space-between; gap: 32px; align-items: start;
+  }
+  @media (max-width: 839px) {
+    .frames { grid-template-columns: minmax(0, 375px); justify-content: center; gap: 56px; }
+  }
+  .page-head, .legend { max-width: 840px; }
+  .variant-head { min-height: 72px; }
+  /* Page dépliée : tout le contenu visible, sans défilement interne */
+  .phone.unfolded { height: auto; }
+  .phone.unfolded .scroll { overflow: visible; }
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <h1>Fiche œuvre — structure retenue</h1>
+  <p class="note" role="note">Maquette filaire basse fidélité — données fictives — état Lot 1 (« Acheter » masqué) — ne tranche pas le montage de paiement (OQ-1).</p>
+</header>
+
+<main class="frames">
+
+  <section aria-labelledby="f1-title">
+    <div class="variant-head">
+      <h2 id="f1-title"><span class="letter" aria-hidden="true">1</span>Haut de page</h2>
+      <p>Ce que l’acheteur voit en arrivant : l’œuvre chez quelqu’un, puis ses trois réponses (taille, prix livré, délai). Le cadre défile.</p>
+    </div>
+    <div class="phone" role="group" aria-label="Écran mobile, haut de page">
+      <div class="statusbar" aria-hidden="true"><span>‹ Galerie</span><span class="brand">ERRANCY</span><span style="width:52px"></span></div>
+      <div class="scroll" tabindex="0" aria-label="Contenu défilable, haut de page">
+        <div class="scroll-inner">
+          <div class="ph ph-hero" style="height:340px" role="img" aria-label="Photo 1 sur 4 : mise en situation avec repère d’échelle"><span>Photo 1/4 : mise en situation, canapé + personne 1,70 m pour l’échelle</span></div>
+          <div class="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
+          <p class="counter">1/4 · balayer pour : l’œuvre de face, gros plan, lumière du jour</p>
+
+          <div class="sec">
+            <div class="tiles">
+              <div class="tile">
+                <p class="label">Taille</p>
+                <p class="v">61 × 76 cm</p>
+                <p class="s">24 × 30 in<br>Portrait, moyen</p>
+              </div>
+              <div class="tile">
+                <p class="label">Prix livré</p>
+                <p class="v">1 450 €</p>
+                <p class="s">Canada <a href="#">Modifier</a></p>
+              </div>
+              <div class="tile">
+                <p class="label">Délai</p>
+                <p class="v">12 à 16 j</p>
+                <p class="s">Livrée chez vous</p>
+              </div>
+            </div>
+            <p class="small">Droits et taxes d’import éventuels non inclus</p>
+          </div>
+
+          <div class="sec">
+            <h3 class="title">Lumière sur la médina</h3>
+            <p class="artist"><a class="link" href="#">Karim B.</a>, Essaouira</p>
+            <p class="meta">Acrylique sur toile, 2025</p>
+            <span class="avail">Disponible</span>
+          </div>
+
+          <div class="sec">
+            <details class="q" open>
+              <summary>Ira-t-elle chez moi ?</summary>
+              <div class="body">
+                <dl class="kv">
+                  <dt>Dimensions</dt><dd>61 × 76 cm · 24 × 30 in</dd>
+                  <dt>Orientation</dt><dd>Portrait</dd>
+                  <dt>Format</dt><dd>Moyen</dd>
+                </dl>
+                <div class="thumbs" style="margin-top:12px">
+                  <div class="ph ph-small" role="img" aria-label="Photo : gros plan matière"><span>Photo : gros plan matière</span></div>
+                  <div class="ph ph-small" role="img" aria-label="Photo : lumière du jour"><span>Photo : lumière du jour</span></div>
+                </div>
+              </div>
+            </details>
+            <details class="q">
+              <summary>Combien au total ?</summary>
+              <div class="body">
+                <dl class="kv">
+                  <dt>Œuvre</dt><dd>1 290 €</dd>
+                  <dt>Livraison Canada</dt><dd>160 € · <a href="#">Modifier le pays</a></dd>
+                  <dt><strong>Total</strong></dt><dd><strong>1 450 €</strong></dd>
+                </dl>
+                <p class="small">Droits et taxes d’import éventuels non inclus.</p>
+              </div>
+            </details>
+            <details class="q">
+              <summary>Quand la recevrai-je ?</summary>
+              <div class="body">
+                <dl class="kv">
+                  <dt>Préparation</dt><dd>par l’artiste, emballage sur mesure</dd>
+                  <dt>Transport</dt><dd>jusqu’à chez vous</dd>
+                  <dt><strong>Au total</strong></dt><dd><strong>12 à 16 jours</strong></dd>
+                </dl>
+                <p class="small">Expédiée depuis Essaouira · numéro de suivi fourni.</p>
+                <p class="small"><a href="#">Comment se passe la livraison</a></p>
+              </div>
+            </details>
+            <details class="q">
+              <summary>Est-ce sérieux ?</summary>
+              <div class="body">
+                <ul class="badges">
+                  <li>Sélectionnée par Errancy</li>
+                  <li>Certificat d’authenticité signé</li>
+                </ul>
+                <p class="story" style="margin-top:10px">Peinte depuis les remparts d’Essaouira, au moment où la lumière du soir dore les façades blanches. Karim B. y travaille par couches fines, laissant la toile respirer.</p>
+                <p class="pending">[Garantie : en attente OQ-2/OQ-4]</p>
+                <ul class="links">
+                  <li><a class="link" href="#">Page de l’artiste : Karim B.</a></li>
+                  <li><a class="link" href="#">Comment nous vérifions l’authenticité</a></li>
+                  <li><a class="link" href="#">Comment se passe la livraison</a></li>
+                </ul>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+      <div class="actions" role="group" aria-label="Actions">
+        <button class="btn btn-primary" type="button">Conseil WhatsApp<span class="sub">Réponse en moins de 2 h · 9 h–19 h</span></button>
+        <div class="row2">
+          <button class="btn btn-secondary" type="button">Réserver une visite</button>
+          <div>
+            <button class="btn btn-hidden" type="button" aria-describedby="annot-1">Acheter</button>
+            <p class="annot" id="annot-1">masqué jusqu’au Lot 2 (OQ-1/OQ-12)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="f2-title">
+    <div class="variant-head">
+      <h2 id="f2-title"><span class="letter" aria-hidden="true">2</span>Page dépliée</h2>
+      <p>La même fiche faite défiler jusqu’au bout, les quatre sections ouvertes. La barre d’actions reste fixe en bas de l’écran.</p>
+    </div>
+    <div class="phone unfolded" role="group" aria-label="Écran mobile, page dépliée">
+      <div class="statusbar" aria-hidden="true"><span>‹ Galerie</span><span class="brand">ERRANCY</span><span style="width:52px"></span></div>
+      <div class="scroll">
+        <div class="scroll-inner">
+          <div class="ph ph-hero" style="height:340px" role="img" aria-label="Photo (dépliée) 1 sur 4 : mise en situation avec repère d’échelle"><span>Photo 1/4 : mise en situation, canapé + personne 1,70 m pour l’échelle</span></div>
+          <div class="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
+          <p class="counter">1/4 · balayer pour : l’œuvre de face, gros plan, lumière du jour</p>
+
+          <div class="sec">
+            <div class="tiles">
+              <div class="tile">
+                <p class="label">Taille</p>
+                <p class="v">61 × 76 cm</p>
+                <p class="s">24 × 30 in<br>Portrait, moyen</p>
+              </div>
+              <div class="tile">
+                <p class="label">Prix livré</p>
+                <p class="v">1 450 €</p>
+                <p class="s">Canada <a href="#">Modifier</a></p>
+              </div>
+              <div class="tile">
+                <p class="label">Délai</p>
+                <p class="v">12 à 16 j</p>
+                <p class="s">Livrée chez vous</p>
+              </div>
+            </div>
+            <p class="small">Droits et taxes d’import éventuels non inclus</p>
+          </div>
+
+          <div class="sec">
+            <h3 class="title">Lumière sur la médina</h3>
+            <p class="artist"><a class="link" href="#">Karim B.</a>, Essaouira</p>
+            <p class="meta">Acrylique sur toile, 2025</p>
+            <span class="avail">Disponible</span>
+          </div>
+
+          <div class="sec">
+            <details class="q" open>
+              <summary>Ira-t-elle chez moi ?</summary>
+              <div class="body">
+                <dl class="kv">
+                  <dt>Dimensions</dt><dd>61 × 76 cm · 24 × 30 in</dd>
+                  <dt>Orientation</dt><dd>Portrait</dd>
+                  <dt>Format</dt><dd>Moyen</dd>
+                </dl>
+                <div class="thumbs" style="margin-top:12px">
+                  <div class="ph ph-small" role="img" aria-label="Photo (dépliée) : gros plan matière"><span>Photo : gros plan matière</span></div>
+                  <div class="ph ph-small" role="img" aria-label="Photo (dépliée) : lumière du jour"><span>Photo : lumière du jour</span></div>
+                </div>
+              </div>
+            </details>
+            <details class="q" open>
+              <summary>Combien au total ?</summary>
+              <div class="body">
+                <dl class="kv">
+                  <dt>Œuvre</dt><dd>1 290 €</dd>
+                  <dt>Livraison Canada</dt><dd>160 € · <a href="#">Modifier le pays</a></dd>
+                  <dt><strong>Total</strong></dt><dd><strong>1 450 €</strong></dd>
+                </dl>
+                <p class="small">Droits et taxes d’import éventuels non inclus.</p>
+              </div>
+            </details>
+            <details class="q" open>
+              <summary>Quand la recevrai-je ?</summary>
+              <div class="body">
+                <dl class="kv">
+                  <dt>Préparation</dt><dd>par l’artiste, emballage sur mesure</dd>
+                  <dt>Transport</dt><dd>jusqu’à chez vous</dd>
+                  <dt><strong>Au total</strong></dt><dd><strong>12 à 16 jours</strong></dd>
+                </dl>
+                <p class="small">Expédiée depuis Essaouira · numéro de suivi fourni.</p>
+                <p class="small"><a href="#">Comment se passe la livraison</a></p>
+              </div>
+            </details>
+            <details class="q" open>
+              <summary>Est-ce sérieux ?</summary>
+              <div class="body">
+                <ul class="badges">
+                  <li>Sélectionnée par Errancy</li>
+                  <li>Certificat d’authenticité signé</li>
+                </ul>
+                <p class="story" style="margin-top:10px">Peinte depuis les remparts d’Essaouira, au moment où la lumière du soir dore les façades blanches. Karim B. y travaille par couches fines, laissant la toile respirer.</p>
+                <p class="pending">[Garantie : en attente OQ-2/OQ-4]</p>
+                <ul class="links">
+                  <li><a class="link" href="#">Page de l’artiste : Karim B.</a></li>
+                  <li><a class="link" href="#">Comment nous vérifions l’authenticité</a></li>
+                  <li><a class="link" href="#">Comment se passe la livraison</a></li>
+                </ul>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+      <div class="actions" role="group" aria-label="Actions">
+        <button class="btn btn-primary" type="button">Conseil WhatsApp<span class="sub">Réponse en moins de 2 h · 9 h–19 h</span></button>
+        <div class="row2">
+          <button class="btn btn-secondary" type="button">Réserver une visite</button>
+          <div>
+            <button class="btn btn-hidden" type="button" aria-describedby="annot-2">Acheter</button>
+            <p class="annot" id="annot-2">masqué jusqu’au Lot 2 (OQ-1/OQ-12)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<aside class="legend" aria-label="Légende">
+  <strong>Légende</strong>
+  <ul>
+    <li>Cadre = écran mobile 375 × 812 px ; à gauche le contenu défile dans le cadre, à droite la page est montrée entière.</li>
+    <li>Sections « + / − » = blocs dépliables ; seule « Ira-t-elle chez moi ? » est ouverte à l’arrivée.</li>
+    <li>Blocs gris barrés = emplacements photo (légende = prise de vue attendue).</li>
+    <li>Filets or = ornement seul ; jamais de texte ni de fond de bouton en or.</li>
+    <li>Contour pointillé = élément prévu mais non affiché au lancement.</li>
+    <li>Pas d’icône favoris : /wishlist hors périmètre.</li>
+  </ul>
+</aside>
+
+</body>
+</html>

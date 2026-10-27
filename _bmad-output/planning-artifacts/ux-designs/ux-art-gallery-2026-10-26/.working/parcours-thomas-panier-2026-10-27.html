@@ -1,0 +1,891 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parcours Thomas panier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFAF8;
+    --ink: #0A0A0A;
+    --n200: #E8E8E4;
+    --n300: #D4D4CF;
+    --n500: #6B6B65;
+    --n600: #4A4A45;
+    --gold: #C9A84C; /* décoratif uniquement : filets */
+    --white: #FFFFFF;
+    --r: 2px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 15px/1.5 Inter, system-ui, sans-serif;
+    padding: 24px 16px 64px;
+  }
+  h1, h2, h3, .serif { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 600; }
+  a { color: var(--ink); }
+  a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .page-head { max-width: 1240px; margin: 0 auto 32px; }
+  .page-head h1 { font-size: 34px; margin: 0 0 8px; line-height: 1.1; }
+  .note {
+    display: inline-block; margin: 0; padding: 8px 12px;
+    border: 1px solid var(--n300); border-left: 3px solid var(--gold);
+    border-radius: var(--r); background: var(--white);
+    color: var(--n600); font-size: 13px;
+  }
+
+  .variants {
+    max-width: 1240px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(3, 375px);
+    justify-content: space-between; gap: 32px;
+  }
+  @media (max-width: 1199px) {
+    .variants { grid-template-columns: minmax(0, 375px); justify-content: center; gap: 56px; }
+  }
+
+  .variant-head { margin-bottom: 14px; min-height: 96px; }
+  .variant-head h2 { font-size: 26px; margin: 0 0 4px; line-height: 1.15; }
+  .variant-head h2 .letter {
+    display: inline-block; width: 30px; height: 30px; margin-right: 8px;
+    border: 1px solid var(--ink); border-radius: var(--r);
+    text-align: center; line-height: 28px; font-size: 20px; vertical-align: 3px;
+  }
+  .variant-head p { margin: 0; color: var(--n600); font-size: 14px; }
+
+  /* Cadre mobile : écran 375 × 812, contenu défilable, barre d'actions fixe en bas */
+  .phone {
+    width: 100%; max-width: 375px; height: 812px;
+    border: 1px solid var(--n500); border-radius: 6px;
+    background: var(--bg); overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .statusbar {
+    flex: none; height: 44px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; border-bottom: 1px solid var(--n200); font-size: 13px; color: var(--n600);
+  }
+  .statusbar .brand { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 18px; color: var(--ink); letter-spacing: .04em; }
+  .scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+  .scroll-inner { padding-bottom: 24px; }
+
+  .ph {
+    background: var(--n200); border: 1px solid var(--n300); border-radius: var(--r);
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    padding: 12px; color: var(--n600); font-size: 13px; line-height: 1.4;
+    position: relative;
+  }
+  .ph::before {
+    content: ""; position: absolute; inset: 0;
+    background:
+      linear-gradient(to top right, transparent calc(50% - .5px), var(--n300) 50%, transparent calc(50% + .5px)),
+      linear-gradient(to top left, transparent calc(50% - .5px), var(--n300) 50%, transparent calc(50% + .5px));
+    pointer-events: none;
+  }
+  .ph span { position: relative; background: var(--n200); padding: 2px 6px; }
+  .ph-hero { height: 420px; border-radius: 0; border-left: 0; border-right: 0; }
+  .ph-mid { height: 220px; }
+  .ph-small { height: 150px; }
+  .dots { display: flex; justify-content: center; gap: 6px; padding: 10px 0 0; }
+  .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--n300); display: block; }
+  .dots i.on { background: var(--ink); }
+  .counter { font-size: 12px; color: var(--n600); text-align: center; margin-top: 4px; }
+
+  .sec { padding: 16px 16px 0; }
+  .sec + .sec { margin-top: 4px; }
+  .rule { height: 0; border: 0; border-top: 1px solid var(--gold); width: 40px; margin: 20px 16px 0; }
+  .title { font-size: 30px; line-height: 1.1; margin: 0; }
+  .artist { margin: 6px 0 0; font-size: 15px; }
+  .meta { margin: 2px 0 0; color: var(--n600); font-size: 14px; }
+  .avail { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 13px; color: var(--n600); }
+  .avail::before { content: ""; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--ink); }
+  h3 { font-size: 21px; margin: 0 0 8px; line-height: 1.2; }
+  .label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--n600); margin: 0; font-weight: 500; }
+  .price { font-size: 22px; font-weight: 600; margin: 2px 0 0; }
+  .small { font-size: 13px; color: var(--n600); margin: 4px 0 0; }
+  .pending { font-style: italic; color: var(--n500); font-size: 13px; margin: 8px 0 0; }
+  .story { margin: 0; font-size: 14px; color: var(--ink); }
+  .link { font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+  .country { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--n600); margin-top: 4px; }
+  .country a { font-size: 13px; }
+
+  .card { border: 1px solid var(--n300); border-radius: var(--r); background: var(--white); padding: 14px; }
+  dl.kv { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; font-size: 14px; }
+  dl.kv dt { color: var(--n600); }
+  dl.kv dd { margin: 0; }
+
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .tile { border: 1px solid var(--n300); border-top: 2px solid var(--gold); border-radius: var(--r); background: var(--white); padding: 10px 8px; }
+  .tile .v { font-size: 14px; font-weight: 600; margin: 4px 0 0; line-height: 1.3; }
+  .tile .s { font-size: 12px; color: var(--n600); margin: 2px 0 0; line-height: 1.35; }
+
+  .badges { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .badges li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+  .badges li::before { content: ""; flex: none; width: 14px; height: 14px; margin-top: 3px; border: 1px solid var(--gold); border-radius: var(--r); }
+  .links { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+
+  .thumbs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  details.q { border-top: 1px solid var(--n300); }
+  details.q:last-of-type { border-bottom: 1px solid var(--n300); }
+  details.q summary {
+    list-style: none; cursor: pointer; padding: 14px 0;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 21px;
+  }
+  details.q summary::-webkit-details-marker { display: none; }
+  details.q summary::after { content: "+"; font-family: Inter, sans-serif; font-weight: 400; font-size: 20px; color: var(--n600); }
+  details.q[open] summary::after { content: "−"; }
+  details.q .body { padding: 0 0 16px; }
+
+  /* Barre d'actions fixe */
+  .actions {
+    flex: none; border-top: 1px solid var(--n300); background: var(--white);
+    padding: 10px 12px 14px; display: grid; gap: 8px;
+  }
+  .btn {
+    font: 500 14px/1.2 Inter, sans-serif; border-radius: var(--r); padding: 10px 12px;
+    text-align: center; cursor: pointer; width: 100%;
+  }
+  .btn-primary { background: var(--ink); color: var(--white); border: 1px solid var(--ink); }
+  .btn-primary .sub { display: block; font-size: 12px; font-weight: 400; color: var(--n200); margin-top: 3px; }
+  .btn-secondary { background: var(--white); color: var(--ink); border: 1px solid var(--ink); }
+  .btn-hidden { background: transparent; color: var(--n600); border: 1.5px dashed var(--n500); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; }
+  .annot { font-size: 11px; line-height: 1.35; color: var(--n600); font-style: italic; margin: 4px 0 0; text-align: center; }
+  /* ===== Parcours : suite d'écrans de gauche à droite ===== */
+  .page-head, .legend { max-width: none; margin-left: 0; margin-right: 0; }
+  .page-head h1 { max-width: 900px; }
+  .flow {
+    display: flex; align-items: flex-start; gap: 0;
+    overflow-x: auto; padding: 8px 4px 24px;
+  }
+  .step { flex: none; width: 375px; }
+  .step-head { min-height: 92px; margin-bottom: 12px; }
+  .step-head h2 { font-size: 24px; margin: 0 0 4px; line-height: 1.15; }
+  .step-head h2 .num {
+    display: inline-block; min-width: 30px; height: 30px; margin-right: 8px; padding: 0 4px;
+    border: 1px solid var(--ink); border-radius: var(--r);
+    text-align: center; line-height: 28px; font-size: 19px; vertical-align: 3px;
+  }
+  .step-head p { margin: 0; color: var(--n600); font-size: 14px; }
+  .key {
+    display: inline-block; margin-bottom: 6px; padding: 2px 8px;
+    border: 1px solid var(--ink); border-bottom: 2px solid var(--gold); border-radius: var(--r);
+    font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; background: var(--white);
+  }
+  .arrow {
+    flex: none; width: 128px; align-self: center; margin-top: 100px;
+    display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 0 10px;
+  }
+  .arrow .glyph { font-size: 28px; line-height: 1; color: var(--n600); }
+  .arrow .glyph .v { display: none; }
+  .arrow .act { font-size: 12px; line-height: 1.4; color: var(--n600); }
+  .arrow.alt .act { font-style: italic; }
+  .arrow.alt .glyph { border: 1.5px dashed var(--n500); border-radius: var(--r); padding: 2px 8px; font-size: 20px; }
+
+  .annot-step { flex: none; width: 260px; align-self: center; margin-top: 100px; }
+  .annot-card {
+    border: 1.5px dashed var(--n500); border-radius: var(--r); background: var(--white);
+    padding: 16px; font-size: 14px;
+  }
+  .annot-card .label { margin-bottom: 6px; }
+  .annot-card p { margin: 0; }
+
+  @media (max-width: 899px) {
+    .flow { flex-direction: column; align-items: center; overflow-x: visible; }
+    .step { width: 100%; max-width: 375px; }
+    .arrow { width: 100%; max-width: 375px; margin: 16px 0; }
+    .arrow .glyph .h { display: none; }
+    .arrow .glyph .v { display: inline; }
+    .annot-step { width: 100%; max-width: 375px; margin-top: 0; }
+    .step-head { min-height: 0; }
+  }
+
+  /* ===== Éléments propres au parcours ===== */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
+    border: 1px solid var(--ink); border-radius: var(--r); background: var(--white); font-size: 13px;
+  }
+  .chip .x { color: var(--n600); }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 13px; color: var(--n600); }
+  .seg { display: inline-flex; border: 1px solid var(--ink); border-radius: var(--r); overflow: hidden; }
+  .seg span { padding: 3px 10px; font-size: 13px; color: var(--ink); background: var(--white); }
+  .seg span.on { background: var(--ink); color: var(--white); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 10px; }
+  .item .ph { height: 120px; }
+  .item.tall .ph { height: 120px; }
+  .item h4 { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 17px; line-height: 1.15; margin: 6px 0 0; }
+  .item p { margin: 2px 0 0; font-size: 12px; color: var(--n600); line-height: 1.35; }
+  .item p.pr { font-size: 13px; color: var(--ink); font-weight: 600; }
+
+  .field { display: grid; gap: 4px; margin-top: 12px; }
+  .field label { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .input {
+    border: 1px solid var(--n500); border-radius: var(--r); background: var(--white);
+    padding: 9px 10px; font: 400 14px/1.4 Inter, system-ui, sans-serif; color: var(--ink); min-height: 40px; width: 100%;
+  }
+  .input.ph-txt { color: var(--n600); }
+  .phone-row { display: grid; grid-template-columns: 92px 1fr; gap: 6px; }
+  .hint { font-size: 12px; color: var(--n600); margin: 0; }
+  .slot { display: flex; justify-content: space-between; align-items: center; }
+  .slot .rm { font-size: 12px; color: var(--n600); text-decoration: underline; }
+
+  .order { border: 1px solid var(--n300); border-top: 2px solid var(--gold); border-radius: var(--r); background: var(--white); padding: 14px; }
+  .order + .order { margin-top: 12px; }
+  .order h3 { font-size: 20px; margin: 0 0 10px; }
+  .order-line { display: grid; grid-template-columns: 72px 1fr; gap: 10px; }
+  .order-line .ph { height: 72px; padding: 4px; font-size: 11px; }
+  .order-line h4 { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 18px; margin: 0; line-height: 1.15; }
+  .order-line p { margin: 2px 0 0; font-size: 13px; color: var(--n600); }
+  .order dl.kv { margin-top: 12px; font-size: 13px; grid-template-columns: 1fr auto; }
+  .order dl.kv dd { text-align: end; }
+  .order .sep { grid-column: 1 / -1; border-top: 1px solid var(--n200); }
+  .order .ship { margin: 10px 0 0; font-size: 13px; }
+  .order .ship strong { font-weight: 600; }
+  .banner {
+    border: 1px solid var(--n300); border-left: 3px solid var(--gold); border-radius: var(--r);
+    background: var(--white); padding: 10px 12px; font-size: 14px;
+  }
+  .total { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0 0; border-top: 1px solid var(--ink); margin-top: 14px; }
+  .total .t { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 22px; }
+  .total .amt { font-size: 22px; font-weight: 600; }
+  .calm { font-size: 14px; color: var(--n600); margin: 10px 0 0; }
+  .gone {
+    border: 1.5px dashed var(--n500); border-radius: var(--r); background: var(--bg); padding: 14px;
+  }
+  .gone h4 { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 18px; margin: 0; color: var(--n600); text-decoration: line-through; }
+  .gone p { margin: 4px 0 0; font-size: 13px; }
+  .mini-thumbs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 10px; }
+  .mini-thumbs .ph { height: 64px; padding: 2px; font-size: 10px; }
+
+  .paybox {
+    height: 260px; border: 1.5px dashed var(--n500); border-radius: var(--r);
+    background: repeating-linear-gradient(45deg, var(--n200) 0 8px, #F1F1EE 8px 16px);
+    display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px;
+  }
+  .paybox span { background: var(--white); border: 1px solid var(--n300); border-radius: var(--r); padding: 10px 12px; font-size: 14px; font-weight: 500; }
+  .pay-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .pay-notes p { margin: 0; font-size: 12px; line-height: 1.4; font-style: italic; color: var(--n600); border: 1px dashed var(--n500); border-radius: var(--r); padding: 8px; background: var(--white); }
+
+  .status { display: inline-block; margin-top: 8px; padding: 3px 8px; border: 1px solid var(--n500); border-radius: var(--r); font-size: 12px; color: var(--ink); background: var(--bg); }
+  ol.track { list-style: none; margin: 12px 0 0; padding: 0; }
+  ol.track li { position: relative; padding: 0 0 14px 24px; font-size: 13px; color: var(--n600); }
+  ol.track li::before { content: ""; position: absolute; left: 3px; top: 4px; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--n500); background: var(--white); }
+  ol.track li::after { content: ""; position: absolute; left: 8px; top: 16px; bottom: 0; border-left: 1px solid var(--n300); }
+  ol.track li:last-child::after { display: none; }
+  ol.track li:last-child { padding-bottom: 0; }
+  ol.track li.done { color: var(--ink); }
+  ol.track li.done::before { background: var(--ink); border-color: var(--ink); }
+  ol.track li.now { color: var(--ink); font-weight: 600; }
+  ol.track li.now::before { background: var(--white); border: 2px solid var(--ink); }
+  ol.track li .d { display: block; font-weight: 400; font-size: 12px; color: var(--n600); }
+  .tapped { outline: 2px solid var(--gold); outline-offset: 3px; }
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <h1>Parcours — Thomas prend deux œuvres de deux artistes</h1>
+  <p class="note" role="note">Basse fidélité · données fictives · état Lot 2 (Acheter visible) · le montage de paiement n’est PAS tranché (OQ-1, OQ-16)</p>
+  <p class="small" style="margin-top:10px">Thomas, Lyon, meuble un grand mur de salon. Une seule journée : accueil → galerie → fiche → visite → panier multi-artistes → suivi. Sur ordinateur, faire défiler horizontalement ; sur mobile, les écrans sont empilés.</p>
+</header>
+
+<main class="flow" aria-label="Suite d’écrans du parcours">
+
+  <!-- ================= 1. ACCUEIL ================= -->
+  <section class="step" aria-labelledby="s1">
+    <div class="step-head">
+      <h2 id="s1"><span class="num">1</span>Accueil curatorial</h2>
+      <p>Thomas arrive par l’accueil : un regard éditorial, une sélection courte, l’accès à la galerie.</p>
+    </div>
+    <div class="phone" role="group" aria-label="Écran 1 : accueil">
+      <div class="statusbar" aria-hidden="true"><span>Menu</span><span class="brand">ERRANCY</span><span>Panier</span></div>
+      <div class="scroll" tabindex="0" aria-label="Contenu défilable, écran 1">
+        <div class="scroll-inner">
+          <div class="ph ph-hero" style="height:280px" role="img" aria-label="Photo : œuvre accrochée dans un intérieur"><span>Photo : une œuvre de la sélection, accrochée dans un intérieur</span></div>
+          <div class="sec">
+            <p class="label">Le regard d’Errancy</p>
+            <h3 class="title" style="margin-top:6px">Peintres du Maroc, choisis un à un</h3>
+            <p class="story" style="margin-top:8px">Chaque œuvre est vue, sélectionnée et accompagnée par notre équipe. Le prix affiché comprend la livraison chez vous.</p>
+          </div>
+          <hr class="rule" aria-hidden="true">
+          <div class="sec">
+            <h3>La sélection du moment</h3>
+            <div class="grid2">
+              <div class="item"><div class="ph" role="img" aria-label="Vignette œuvre"><span>Œuvre</span></div><h4>Les remparts au crépuscule</h4><p>Nadia R., Fès</p></div>
+              <div class="item"><div class="ph" role="img" aria-label="Vignette œuvre"><span>Œuvre</span></div><h4>Bleu de Chefchaouen</h4><p>Karim B., Essaouira</p></div>
+            </div>
+          </div>
+          <div class="sec">
+            <button class="btn btn-secondary tapped" type="button">Parcourir la galerie</button>
+          </div>
+          <hr class="rule" aria-hidden="true">
+          <div class="sec">
+            <h3>Comment ça marche</h3>
+            <ul class="badges">
+              <li>Prix livré affiché, sans surprise</li>
+              <li>Certificat d’authenticité signé</li>
+              <li>Un conseiller répond sur WhatsApp</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="actions" role="group" aria-label="Actions">
+        <button class="btn btn-primary" type="button">Conseil WhatsApp<span class="sub">Réponse en moins de 2 h · 9 h–19 h</span></button>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow" aria-hidden="false"><span class="glyph" aria-hidden="true"><span class="h">→</span><span class="v">↓</span></span><span class="act">Touche « Parcourir la galerie », pose ses filtres pour son mur</span></div>
+
+  <!-- ================= 2. GALERIE ================= -->
+  <section class="step" aria-labelledby="s2">
+    <div class="step-head">
+      <h2 id="s2"><span class="num">2</span>Galerie filtrée</h2>
+      <p>Filtres actifs visibles et retirables ; chaque vignette répond déjà au prix livré et au délai.</p>
+    </div>
+    <div class="phone" role="group" aria-label="Écran 2 : galerie filtrée">
+      <div class="statusbar" aria-hidden="true"><span>‹ Accueil</span><span class="brand">ERRANCY</span><span>Panier</span></div>
+      <div class="scroll" tabindex="0" aria-label="Contenu défilable, écran 2">
+        <div class="scroll-inner">
+          <div class="sec">
+            <h3 class="title" style="font-size:26px">Galerie</h3>
+            <p class="small" style="margin-bottom:10px">Filtres actifs</p>
+            <div class="chips">
+              <span class="chip">Grand format <span class="x" aria-label="Retirer">×</span></span>
+              <span class="chip">Paysage <span class="x" aria-label="Retirer">×</span></span>
+              <span class="chip">Prix total ≤ 3 000 € <span class="x" aria-label="Retirer">×</span></span>
+              <span class="chip">France <span class="x" aria-label="Retirer">×</span></span>
+            </div>
+            <div class="toolbar">
+              <a href="#" class="link" style="font-size:13px">Modifier les filtres</a>
+              <span class="seg" role="group" aria-label="Unité"><span class="on">cm</span><span>in</span></span>
+            </div>
+            <p class="small" style="margin-top:8px">6 œuvres · prix livré France</p>
+          </div>
+          <div class="sec">
+            <div class="grid2">
+              <div class="item tapped"><div class="ph" role="img" aria-label="Vignette"><span>Œuvre</span></div><h4>Les remparts au crépuscule</h4><p>Nadia R. · 100 × 150 cm</p><p class="pr">2 400 € livrée</p><p>8 à 12 j</p></div>
+              <div class="item"><div class="ph" role="img" aria-label="Vignette"><span>Œuvre</span></div><h4>Atlas, matin</h4><p>Youssef A. · 97 × 130 cm</p><p class="pr">2 950 € livrée</p><p>10 à 14 j</p></div>
+              <div class="item"><div class="ph" role="img" aria-label="Vignette"><span>Œuvre</span></div><h4>Dunes, après la pluie</h4><p>Leïla M. · 89 × 116 cm</p><p class="pr">1 980 € livrée</p><p>12 à 16 j</p></div>
+              <div class="item"><div class="ph" role="img" aria-label="Vignette"><span>Œuvre</span></div><h4>Port de pêche</h4><p>Karim B. · 100 × 140 cm</p><p class="pr">2 650 € livrée</p><p>12 à 16 j</p></div>
+              <div class="item"><div class="ph" role="img" aria-label="Vignette"><span>Œuvre</span></div><h4>Terrasses d’ocre</h4><p>Nadia R. · 90 × 120 cm</p><p class="pr">2 100 € livrée</p><p>8 à 12 j</p></div>
+              <div class="item"><div class="ph" role="img" aria-label="Vignette"><span>Œuvre</span></div><h4>Vallée du Drâa</h4><p>Omar T. · 100 × 130 cm</p><p class="pr">2 800 € livrée</p><p>10 à 14 j</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="actions" role="group" aria-label="Actions">
+        <button class="btn btn-primary" type="button">Conseil WhatsApp<span class="sub">Réponse en moins de 2 h · 9 h–19 h</span></button>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow"><span class="glyph" aria-hidden="true"><span class="h">→</span><span class="v">↓</span></span><span class="act">Ouvre « Les remparts au crépuscule »</span></div>
+
+  <!-- ================= 3. FICHE 1 ================= -->
+  <section class="step" aria-labelledby="s3">
+    <div class="step-head">
+      <h2 id="s3"><span class="num">3</span>Fiche « Les remparts au crépuscule »</h2>
+      <p>Même structure que la fiche retenue. Grand format cher : Thomas veut la voir avant de décider.</p>
+    </div>
+    <div class="phone" role="group" aria-label="Écran 3 : fiche Les remparts au crépuscule">
+      <div class="statusbar" aria-hidden="true"><span>‹ Galerie</span><span class="brand">ERRANCY</span><span>Panier</span></div>
+      <div class="scroll" tabindex="0" aria-label="Contenu défilable, écran 3">
+        <div class="scroll-inner">
+          <div class="ph ph-hero" style="height:300px" role="img" aria-label="Photo 1 sur 4 : mise en situation avec repère d’échelle"><span>Photo 1/4 : mise en situation, canapé + personne 1,70 m pour l’échelle</span></div>
+          <div class="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
+          <div class="sec">
+            <div class="tiles">
+              <div class="tile"><p class="label">Taille</p><p class="v">100 × 150 cm</p><p class="s">39 × 59 in<br>Paysage, grand</p></div>
+              <div class="tile"><p class="label">Prix livré</p><p class="v">2 400 €</p><p class="s">France <a href="#">Modifier</a></p></div>
+              <div class="tile"><p class="label">Délai</p><p class="v">8 à 12 j</p><p class="s">Livrée chez vous</p></div>
+            </div>
+            <p class="small">Droits et taxes d’import éventuels non inclus</p>
+          </div>
+          <div class="sec">
+            <h3 class="title">Les remparts au crépuscule</h3>
+            <p class="artist"><a class="link" href="#">Nadia R.</a>, Fès</p>
+            <p class="meta">Huile sur toile, 2025</p>
+            <span class="avail">Disponible</span>
+          </div>
+          <div class="sec">
+            <details class="q" open>
+              <summary>Ira-t-elle chez moi ?</summary>
+              <div class="body">
+                <dl class="kv"><dt>Dimensions</dt><dd>100 × 150 cm · 39 × 59 in</dd><dt>Orientation</dt><dd>Paysage</dd><dt>Format</dt><dd>Grand</dd></dl>
+                <div class="thumbs" style="margin-top:12px">
+                  <div class="ph ph-small" role="img" aria-label="Photo : gros plan matière"><span>Gros plan matière</span></div>
+                  <div class="ph ph-small" role="img" aria-label="Photo : lumière du jour"><span>Lumière du jour</span></div>
+                </div>
+              </div>
+            </details>
+            <details class="q">
+              <summary>Combien au total ?</summary>
+              <div class="body">
+                <dl class="kv"><dt>Œuvre</dt><dd>2 220 €</dd><dt>Livraison France</dt><dd>180 €</dd><dt><strong>Total</strong></dt><dd><strong>2 400 €</strong></dd></dl>
+                <p class="small">Droits et taxes d’import éventuels non inclus.</p>
+              </div>
+            </details>
+            <details class="q">
+              <summary>Quand la recevrai-je ?</summary>
+              <div class="body">
+                <dl class="kv"><dt>Préparation</dt><dd>par l’artiste</dd><dt>Transport</dt><dd>jusqu’à Lyon</dd><dt><strong>Au total</strong></dt><dd><strong>8 à 12 jours</strong></dd></dl>
+                <p class="small">Expédiée depuis Fès · numéro de suivi fourni.</p>
+              </div>
+            </details>
+            <details class="q">
+              <summary>Est-ce sérieux ?</summary>
+              <div class="body">
+                <ul class="badges"><li>Sélectionnée par Errancy</li><li>Certificat d’authenticité signé</li></ul>
+                <p class="story" style="margin-top:10px">Les murs ocre de Fès au moment où le soleil s’efface, peints sur le motif pendant trois semaines.</p>
+                <p class="pending">[Garantie : en attente OQ-2/OQ-4]</p>
+                <ul class="links"><li><a class="link" href="#">Page de l’artiste : Nadia R.</a></li><li><a class="link" href="#">Comment nous vérifions l’authenticité</a></li></ul>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+      <div class="actions" role="group" aria-label="Actions">
+        <button class="btn btn-primary" type="button">Conseil WhatsApp<span class="sub">Réponse en moins de 2 h · 9 h–19 h</span></button>
+        <div class="row2">
+          <button class="btn btn-secondary tapped" type="button">Réserver une visite</button>
+          <button class="btn btn-secondary" type="button">Ajouter au panier</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow"><span class="glyph" aria-hidden="true"><span class="h">→</span><span class="v">↓</span></span><span class="act">Touche « Réserver une visite »</span></div>
+
+  <!-- ================= 4. DEMANDE DE VISITE ================= -->
+  <section class="step" aria-labelledby="s4">
+    <div class="step-head">
+      <h2 id="s4"><span class="num">4</span>Demande de visite</h2>
+      <p>Thomas propose 2 à 3 créneaux en visio ; l’équipe confirme. Pas d’agenda en temps réel.</p>
+    </div>
+    <div class="phone" role="group" aria-label="Écran 4 : demande de visite">
+      <div class="statusbar" aria-hidden="true"><span>‹ Fiche</span><span class="brand">ERRANCY</span><span>Panier</span></div>
+      <div class="scroll" tabindex="0" aria-label="Contenu défilable, écran 4">
+        <div class="scroll-inner">
+          <div class="sec">
+            <h3 class="title" style="font-size:26px">Voir l’œuvre en visio</h3>
+            <p class="small">Les remparts au crépuscule · Nadia R. · 100 × 150 cm</p>
+            <p class="story" style="margin-top:10px">Un membre de l’équipe vous montre l’œuvre en direct, de près et dans la lumière du jour. Environ 20 minutes, gratuit.</p>
+          </div>
+          <div class="sec">
+            <p class="label">Vos créneaux (2 ou 3)</p>
+            <div class="field"><label for="c1">Créneau 1</label><div class="slot"><input class="input" id="c1" style="flex:1" value="jeu. 29 oct. · 18 h–19 h"></div></div>
+            <div class="field"><label for="c2">Créneau 2</label><div class="slot"><input class="input" id="c2" style="flex:1" value="ven. 30 oct. · 12 h–13 h"></div></div>
+            <div class="field"><label for="c3">Créneau 3 (facultatif)</label><input class="input" id="c3" placeholder="Choisir un jour et une heure"></div>
+            <p class="hint" style="margin-top:6px">Heure de Paris. Nous confirmons l’un de vos créneaux.</p>
+          </div>
+          <div class="sec">
+            <p class="label">Vos coordonnées</p>
+            <div class="field"><label for="v-nom">Nom</label><input class="input" id="v-nom" value="Thomas Morel"></div>
+            <div class="field"><label for="v-mail">E-mail</label><input class="input" id="v-mail" value="thomas.morel@exemple.fr"></div>
+            <div class="field"><label for="v-tel">Téléphone (pour la visio WhatsApp)</label><div class="phone-row"><input class="input" aria-label="Indicatif pays" value="+33 FR"><input class="input" id="v-tel" value="6 12 34 56 78"></div></div>
+          </div>
+          <div class="sec">
+            <button class="btn btn-primary tapped" type="button">Envoyer ma demande</button>
+          </div>
+          <div class="sec">
+            <p class="label">Après envoi</p>
+            <div class="banner" style="margin-top:6px"><strong>Demande reçue.</strong> Nous vous répondons sous 24 h pour confirmer le créneau.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow"><span class="glyph" aria-hidden="true"><span class="h">→</span><span class="v">↓</span></span><span class="act">Envoie sa demande</span></div>
+
+  <!-- ================= 5. ANNOTATION ================= -->
+  <section class="annot-step" aria-labelledby="s5">
+    <div class="annot-card">
+      <p class="label" id="s5">5 · Hors écran</p>
+      <p>Visite en visio menée par l’équipe ; l’œuvre lui est réservée 48 h ; il reçoit un lien pour commander.</p>
+    </div>
+  </section>
+
+  <div class="arrow"><span class="glyph" aria-hidden="true"><span class="h">→</span><span class="v">↓</span></span><span class="act">Ouvre le lien : « Les remparts » entre dans son panier. Il repart en galerie et ouvre « Bleu de Chefchaouen »</span></div>
+
+  <!-- ================= 6. FICHE 2 ================= -->
+  <section class="step" aria-labelledby="s6">
+    <div class="step-head">
+      <h2 id="s6"><span class="num">6</span>Fiche « Bleu de Chefchaouen »</h2>
+      <p>Un second artiste, une autre ville d’expédition, un autre délai.</p>
+    </div>
+    <div class="phone" role="group" aria-label="Écran 6 : fiche Bleu de Chefchaouen">
+      <div class="statusbar" aria-hidden="true"><span>‹ Galerie</span><span class="brand">ERRANCY</span><span>Panier (1)</span></div>
+      <div class="scroll" tabindex="0" aria-label="Contenu défilable, écran 6">
+        <div class="scroll-inner">
+          <div class="ph ph-hero" style="height:300px" role="img" aria-label="Photo 1 sur 4 : mise en situation avec repère d’échelle"><span>Photo 1/4 : mise en situation, console + personne 1,70 m pour l’échelle</span></div>
+          <div class="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
+          <div class="sec">
+            <div class="tiles">
+              <div class="tile"><p class="label">Taille</p><p class="v">50 × 50 cm</p><p class="s">20 × 20 in<br>Carré, petit</p></div>
+              <div class="tile"><p class="label">Prix livré</p><p class="v">680 €</p><p class="s">France <a href="#">Modifier</a></p></div>
+              <div class="tile"><p class="label">Délai</p><p class="v">12 à 16 j</p><p class="s">Livrée chez vous</p></div>
+            </div>
+            <p class="small">Droits et taxes d’import éventuels non inclus</p>
+          </div>
+          <div class="sec">
+            <h3 class="title">Bleu de Chefchaouen</h3>
+            <p class="artist"><a class="link" href="#">Karim B.</a>, Essaouira</p>
+            <p class="meta">Acrylique sur toile, 2025</p>
+            <span class="avail">Disponible</span>
+          </div>
+          <div class="sec">
+            <details class="q" open>
+              <summary>Ira-t-elle chez moi ?</summary>
+              <div class="body"><dl class="kv"><dt>Dimensions</dt><dd>50 × 50 cm · 20 × 20 in</dd><dt>Orientation</dt><dd>Carré</dd><dt>Format</dt><dd>Petit</dd></dl></div>
+            </details>
+            <details class="q">
+              <summary>Combien au total ?</summary>
+              <div class="body"><dl class="kv"><dt>Œuvre</dt><dd>620 €</dd><dt>Livraison France</dt><dd>60 €</dd><dt><strong>Total</strong></dt><dd><strong>680 €</strong></dd></dl></div>
+            </details>
+            <details class="q">
+              <summary>Quand la recevrai-je ?</summary>
+              <div class="body"><p class="story">12 à 16 jours (préparation par l’artiste + transport).</p><p class="small">Expédiée depuis Essaouira · numéro de suivi fourni.</p></div>
+            </details>
+            <details class="q">
+              <summary>Est-ce sérieux ?</summary>
+              <div class="body"><ul class="badges"><li>Sélectionnée par Errancy</li><li>Certificat d’authenticité signé</li></ul><p class="pending">[Garantie : en attente OQ-2/OQ-4]</p></div>
+            </details>
+          </div>
+        </div>
+      </div>
+      <div class="actions" role="group" aria-label="Actions">
+        <button class="btn btn-primary" type="button">Conseil WhatsApp<span class="sub">Réponse en moins de 2 h · 9 h–19 h</span></button>
+        <div class="row2">
+          <button class="btn btn-secondary" type="button">Réserver une visite</button>
+          <button class="btn btn-secondary tapped" type="button">Ajouter au panier</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow"><span class="glyph" aria-hidden="true"><span class="h">→</span><span class="v">↓</span></span><span class="act">Touche « Ajouter au panier », ouvre le panier</span></div>
+
+  <!-- ================= 7. PANIER ================= -->
+  <section class="step" aria-labelledby="s7">
+    <div class="step-head">
+      <span class="key">Moment clé</span>
+      <h2 id="s7"><span class="num">7</span>Panier : deux artistes, deux commandes</h2>
+      <p>Thomas doit comprendre sans effort qu’il recevra deux colis, de deux villes, à deux dates.</p>
+    </div>
+    <div class="phone" role="group" aria-label="Écran 7 : panier">
+      <div class="statusbar" aria-hidden="true"><span>‹ Continuer</span><span class="brand">ERRANCY</span><span>Panier (2)</span></div>
+      <div class="scroll" tabindex="0" aria-label="Contenu défilable, écran 7">
+        <div class="scroll-inner">
+          <div class="sec">
+            <h3 class="title" style="font-size:28px">Votre panier</h3>
+            <div class="banner" style="margin-top:10px">2 colis séparés, 2 délais : 8 à 12 j et 12 à 16 j</div>
+          </div>
+          <div class="sec">
+            <div class="order">
+              <h3>Commande 1 · Nadia R. (Fès)</h3>
+              <div class="order-line">
+                <div class="ph" role="img" aria-label="Vignette : Les remparts au crépuscule"><span>Œuvre</span></div>
+                <div><h4>Les remparts au crépuscule</h4><p>100 × 150 cm · huile sur toile</p></div>
+              </div>
+              <dl class="kv">
+                <dt>Œuvre</dt><dd>2 220 €</dd>
+                <dt>Livraison France</dt><dd>180 €</dd>
+                <dt class="sep" aria-hidden="true"></dt>
+                <dt><strong>Sous-total</strong></dt><dd><strong>2 400 €</strong></dd>
+              </dl>
+              <p class="ship"><strong>8 à 12 jours</strong> · Expédiée séparément par l’artiste, depuis Fès</p>
+              <p class="pending">Garanties : [en attente OQ-2]</p>
+            </div>
+            <div class="order">
+              <h3>Commande 2 · Karim B. (Essaouira)</h3>
+              <div class="order-line">
+                <div class="ph" role="img" aria-label="Vignette : Bleu de Chefchaouen"><span>Œuvre</span></div>
+                <div><h4>Bleu de Chefchaouen</h4><p>50 × 50 cm · acrylique sur toile</p></div>
+              </div>
+              <dl class="kv">
+                <dt>Œuvre</dt><dd>620 €</dd>
+                <dt>Livraison France</dt><dd>60 €</dd>
+                <dt class="sep" aria-hidden="true"></dt>
+                <dt><strong>Sous-total</strong></dt><dd><strong>680 €</strong></dd>
+              </dl>
+              <p class="ship"><strong>12 à 16 jours</strong> · Expédiée séparément par l’artiste, depuis Essaouira</p>
+              <p class="pending">Garanties : [en attente OQ-2]</p>
+            </div>
+          </div>
+          <div class="sec">
+            <div class="total"><span class="t">Total général</span><span class="amt">3 080 €</span></div>
+            <p class="small">2 400 € + 680 € · livraisons comprises · droits et taxes d’import éventuels non inclus</p>
+            <p class="calm">Œuvres réservées pour vous jusqu’à 15 h 42.</p>
+          </div>
+          <div class="sec">
+            <p class="small">Une question avant de valider ? <a href="#">Écrire sur WhatsApp</a> · réponse en moins de 2 h</p>
+          </div>
+        </div>
+      </div>
+      <div class="actions" role="group" aria-label="Actions">
+        <button class="btn btn-primary tapped" type="button">Continuer<span class="sub">Total 3 080 € · 2 commandes</span></button>
+        <button class="btn btn-secondary" type="button">Conseil WhatsApp</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow alt"><span class="glyph" aria-hidden="true"><span class="h">→</span><span class="v">↓</span></span><span class="act">Variante d’état : une œuvre est vendue entre-temps</span></div>
+
+  <!-- ================= 7b. PANIER, ŒUVRE INDISPONIBLE ================= -->
+  <section class="step" aria-labelledby="s7b">
+    <div class="step-head">
+      <h2 id="s7b"><span class="num">7b</span>Panier : une œuvre indisponible</h2>
+      <p>L’annonce est factuelle, sans alarme ; le reste du panier est intact et le total recalculé.</p>
+    </div>
+    <div class="phone" role="group" aria-label="Écran 7b : panier avec une œuvre indisponible">
+      <div class="statusbar" aria-hidden="true"><span>‹ Continuer</span><span class="brand">ERRANCY</span><span>Panier (1)</span></div>
+      <div class="scroll" tabindex="0" aria-label="Contenu défilable, écran 7b">
+        <div class="scroll-inner">
+          <div class="sec">
+            <h3 class="title" style="font-size:28px">Votre panier</h3>
+            <div class="banner" style="margin-top:10px">1 colis · délai 8 à 12 j</div>
+          </div>
+          <div class="sec">
+            <div class="order">
+              <h3>Commande 1 · Nadia R. (Fès)</h3>
+              <div class="order-line">
+                <div class="ph" role="img" aria-label="Vignette : Les remparts au crépuscule"><span>Œuvre</span></div>
+                <div><h4>Les remparts au crépuscule</h4><p>100 × 150 cm · huile sur toile</p></div>
+              </div>
+              <dl class="kv">
+                <dt>Œuvre</dt><dd>2 220 €</dd>
+                <dt>Livraison France</dt><dd>180 €</dd>
+                <dt class="sep" aria-hidden="true"></dt>
+                <dt><strong>Sous-total</strong></dt><dd><strong>2 400 €</strong></dd>
+              </dl>
+              <p class="ship"><strong>8 à 12 jours</strong> · Expédiée séparément par l’artiste, depuis Fès</p>
+              <p class="pending">Garanties : [en attente OQ-2]</p>
+            </div>
+            <div class="gone" style="margin-top:12px" role="status">
+              <p class="label">Commande 2 · Karim B. (Essaouira)</p>
+              <h4 style="margin-top:6px">Bleu de Chefchaouen</h4>
+              <p>Vendue entre-temps — retirée de votre commande.</p>
+              <p style="margin-top:8px"><a class="link" href="#">Voir des œuvres proches de Karim B.</a></p>
+              <div class="mini-thumbs">
+                <div class="ph" role="img" aria-label="Œuvre proche"><span>Œuvre</span></div>
+                <div class="ph" role="img" aria-label="Œuvre proche"><span>Œuvre</span></div>
+                <div class="ph" role="img" aria-label="Œuvre proche"><span>Œuvre</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="sec">
+            <div class="total"><span class="t">Total général</span><span class="amt">2 400 €</span></div>
+            <p class="small">Livraison comprise · droits et taxes d’import éventuels non inclus</p>
+            <p class="calm">Œuvre réservée pour vous jusqu’à 15 h 42.</p>
+          </div>
+        </div>
+      </div>
+      <div class="actions" role="group" aria-label="Actions">
+        <button class="btn btn-primary" type="button">Continuer<span class="sub">Total 2 400 € · 1 commande</span></button>
+        <button class="btn btn-secondary" type="button">Conseil WhatsApp</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow"><span class="glyph" aria-hidden="true"><span class="h">→</span><span class="v">↓</span></span><span class="act">Cas nominal (écran 7) : touche « Continuer »</span></div>
+
+  <!-- ================= 8. COORDONNÉES ================= -->
+  <section class="step" aria-labelledby="s8">
+    <div class="step-head">
+      <h2 id="s8"><span class="num">8</span>Coordonnées, sans compte</h2>
+      <p>Libellés toujours visibles ; aucun mot de passe. Le suivi se fera par un lien envoyé par e-mail.</p>
+    </div>
+    <div class="phone" role="group" aria-label="Écran 8 : coordonnées">
+      <div class="statusbar" aria-hidden="true"><span>‹ Panier</span><span class="brand">ERRANCY</span><span>Étape 1/2</span></div>
+      <div class="scroll" tabindex="0" aria-label="Contenu défilable, écran 8">
+        <div class="scroll-inner">
+          <div class="sec">
+            <h3 class="title" style="font-size:26px">Vos coordonnées</h3>
+            <p class="small">Pas besoin de créer un compte : vous suivrez vos commandes grâce au lien envoyé par e-mail.</p>
+            <div class="field"><label for="f-mail">E-mail</label><input class="input" id="f-mail" type="email" value="thomas.morel@exemple.fr"></div>
+            <div class="field"><label for="f-nom">Prénom et nom</label><input class="input" id="f-nom" value="Thomas Morel"></div>
+          </div>
+          <div class="sec">
+            <p class="label">Adresse de livraison</p>
+            <div class="field"><label for="f-adr">Adresse</label><input class="input" id="f-adr" value="14 rue Sainte-Catherine"></div>
+            <div class="field"><label for="f-adr2">Complément (facultatif)</label><input class="input" id="f-adr2" placeholder="Bâtiment, étage, digicode"></div>
+            <div class="phone-row" style="grid-template-columns:110px 1fr">
+              <div class="field"><label for="f-cp">Code postal</label><input class="input" id="f-cp" value="69001"></div>
+              <div class="field"><label for="f-ville">Ville</label><input class="input" id="f-ville" value="Lyon"></div>
+            </div>
+            <div class="field"><label for="f-pays">Pays</label><input class="input" id="f-pays" value="France"></div>
+            <p class="hint" style="margin-top:4px">Changer de pays recalcule la livraison des deux commandes.</p>
+          </div>
+          <div class="sec">
+            <div class="field">
+              <label for="f-tel">Téléphone (pour le transporteur)</label>
+              <div class="phone-row"><input class="input" aria-label="Indicatif pays" value="+33 FR"><input class="input" id="f-tel" type="tel" value="6 12 34 56 78"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="actions" role="group" aria-label="Actions">
+        <button class="btn btn-primary tapped" type="button">Continuer vers le paiement<span class="sub">Total 3 080 € · 2 commandes</span></button>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow"><span class="glyph" aria-hidden="true"><span class="h">→</span><span class="v">↓</span></span><span class="act">Touche « Continuer vers le paiement »</span></div>
+
+  <!-- ================= 9. PAIEMENT (ZONE NEUTRE) ================= -->
+  <section class="step" aria-labelledby="s9">
+    <div class="step-head">
+      <h2 id="s9"><span class="num">9</span>Paiement — zone neutre</h2>
+      <p>Le montage n’est pas tranché : l’écran réserve la place sans préjuger d’un prestataire ni d’un nombre d’encaissements.</p>
+    </div>
+    <div class="phone" role="group" aria-label="Écran 9 : paiement, zone neutre">
+      <div class="statusbar" aria-hidden="true"><span>‹ Coordonnées</span><span class="brand">ERRANCY</span><span>Étape 2/2</span></div>
+      <div class="scroll" tabindex="0" aria-label="Contenu défilable, écran 9">
+        <div class="scroll-inner">
+          <div class="sec">
+            <h3 class="title" style="font-size:26px">Paiement</h3>
+            <div class="card" style="margin-top:8px">
+              <dl class="kv" style="grid-template-columns:1fr auto">
+                <dt>Commande 1 · Nadia R.</dt><dd style="text-align:end">2 400 €</dd>
+                <dt>Commande 2 · Karim B.</dt><dd style="text-align:end">680 €</dd>
+                <dt><strong>Total</strong></dt><dd style="text-align:end"><strong>3 080 €</strong></dd>
+              </dl>
+              <p class="small">Livraison à Lyon, France · <a href="#">Modifier</a></p>
+            </div>
+          </div>
+          <div class="sec">
+            <div class="paybox" role="img" aria-label="Zone de paiement, montage non tranché"><span>Zone de paiement — montage non tranché (OQ-1 / OQ-16)</span></div>
+            <div class="pay-notes">
+              <p>Si paiement unique : un seul encaissement de 3 080 €</p>
+              <p>Si paiement par commande : deux encaissements enchaînés dans le même parcours (2 400 € puis 680 €)</p>
+            </div>
+          </div>
+          <div class="sec">
+            <p class="small">Une question ? <a href="#">Écrire sur WhatsApp</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow"><span class="glyph" aria-hidden="true"><span class="h">→</span><span class="v">↓</span></span><span class="act">Paiement accepté</span></div>
+
+  <!-- ================= 10. CONFIRMATION ================= -->
+  <section class="step" aria-labelledby="s10">
+    <div class="step-head">
+      <h2 id="s10"><span class="num">10</span>Confirmation</h2>
+      <p>Deux commandes distinctes, chacune avec son artiste, son délai et son statut.</p>
+    </div>
+    <div class="phone" role="group" aria-label="Écran 10 : confirmation">
+      <div class="statusbar" aria-hidden="true"><span></span><span class="brand">ERRANCY</span><span></span></div>
+      <div class="scroll" tabindex="0" aria-label="Contenu défilable, écran 10">
+        <div class="scroll-inner">
+          <div class="sec">
+            <h3 class="title">Merci, Thomas</h3>
+            <p class="story" style="margin-top:8px">Vos deux œuvres sont commandées. Chaque artiste prépare et expédie la sienne.</p>
+          </div>
+          <hr class="rule" aria-hidden="true">
+          <div class="sec">
+            <div class="order">
+              <p class="label">Commande n° ER-24817</p>
+              <h3 style="margin-top:4px">Les remparts au crépuscule</h3>
+              <p class="small" style="margin:0">Nadia R. (Fès) · 2 400 € · livrée sous 8 à 12 jours</p>
+              <span class="status">En préparation chez l’artiste</span>
+            </div>
+            <div class="order">
+              <p class="label">Commande n° ER-24818</p>
+              <h3 style="margin-top:4px">Bleu de Chefchaouen</h3>
+              <p class="small" style="margin:0">Karim B. (Essaouira) · 680 € · livrée sous 12 à 16 jours</p>
+              <span class="status">En préparation chez l’artiste</span>
+            </div>
+          </div>
+          <div class="sec">
+            <div class="banner">Un e-mail de confirmation vous a été envoyé à thomas.morel@exemple.fr.</div>
+          </div>
+          <div class="sec">
+            <p class="small">Le lien ci-dessous suffit : aucun compte n’est nécessaire.</p>
+          </div>
+        </div>
+      </div>
+      <div class="actions" role="group" aria-label="Actions">
+        <button class="btn btn-primary tapped" type="button">Suivre mes commandes</button>
+        <button class="btn btn-secondary" type="button">Conseil WhatsApp</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="arrow"><span class="glyph" aria-hidden="true"><span class="h">→</span><span class="v">↓</span></span><span class="act">Quelques jours plus tard, ouvre le lien de suivi reçu par e-mail</span></div>
+
+  <!-- ================= 11. SUIVI ================= -->
+  <section class="step" aria-labelledby="s11">
+    <div class="step-head">
+      <h2 id="s11"><span class="num">11</span>Suivi par lien</h2>
+      <p>Page ouverte par un lien à jeton, sans compte : une frise d’états par commande.</p>
+    </div>
+    <div class="phone" role="group" aria-label="Écran 11 : suivi des commandes">
+      <div class="statusbar" aria-hidden="true"><span></span><span class="brand">ERRANCY</span><span></span></div>
+      <div class="scroll" tabindex="0" aria-label="Contenu défilable, écran 11">
+        <div class="scroll-inner">
+          <div class="sec">
+            <h3 class="title" style="font-size:26px">Vos commandes</h3>
+            <p class="small">Livraison : Thomas Morel, Lyon</p>
+          </div>
+          <div class="sec">
+            <div class="order">
+              <p class="label">ER-24817 · Nadia R. (Fès)</p>
+              <h3 style="margin-top:4px">Les remparts au crépuscule</h3>
+              <ol class="track">
+                <li class="done">Confirmée<span class="d">lun. 26 oct.</span></li>
+                <li class="done">Prise en charge par l’artiste<span class="d">mar. 27 oct.</span></li>
+                <li class="now">Expédiée<span class="d">sam. 31 oct. · n° de suivi <a href="#">1Z 84F 2C9 041</a></span></li>
+                <li>Livrée<span class="d">prévue entre le 3 et le 7 nov.</span></li>
+              </ol>
+            </div>
+            <div class="order">
+              <p class="label">ER-24818 · Karim B. (Essaouira)</p>
+              <h3 style="margin-top:4px">Bleu de Chefchaouen</h3>
+              <ol class="track">
+                <li class="done">Confirmée<span class="d">lun. 26 oct.</span></li>
+                <li class="now">Prise en charge par l’artiste<span class="d">mer. 28 oct.</span></li>
+                <li>Expédiée<span class="d">n° de suivi communiqué à l’expédition</span></li>
+                <li>Livrée<span class="d">prévue entre le 7 et le 11 nov.</span></li>
+              </ol>
+            </div>
+          </div>
+          <div class="sec">
+            <a class="link" href="#">Signaler un problème</a>
+          </div>
+        </div>
+      </div>
+      <div class="actions" role="group" aria-label="Actions">
+        <button class="btn btn-primary" type="button">Conseil WhatsApp<span class="sub">Réponse en moins de 2 h · 9 h–19 h</span></button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<aside class="legend" aria-label="Légende">
+  <strong>Légende</strong>
+  <ul>
+    <li>Cadre = écran mobile 375 × 812 px ; le contenu défile dans le cadre, la barre d’actions reste fixe en bas.</li>
+    <li>Flèche + texte entre deux écrans = action de Thomas ; cadre pointillé = variante d’état ou étape hors écran.</li>
+    <li>Contour or autour d’un bouton ou d’une vignette = élément touché pour passer à l’écran suivant (repère de lecture, pas un style).</li>
+    <li>Blocs gris barrés = emplacements photo ; zone hachurée = emplacement réservé, contenu non décidé.</li>
+    <li>Réservation : simple heure de fin, pas de compte à rebours ; aucune couleur d’alerte.</li>
+    <li>Totaux : 2 400 € + 680 € = 3 080 €. Seul l’euro est affiché (OQ-6 ouverte).</li>
+    <li>Pas d’icône favoris : /wishlist hors périmètre.</li>
+  </ul>
+</aside>
+
+</body>
+</html>
