@@ -26,7 +26,8 @@ Place de marché d'art en ligne : les artistes vendent via le site, Errancy pren
 - Sans `DATABASE_URL`, `npm run build` réussit mais affiche des `DatabaseNotReachable` Prisma : ce n'est pas un échec.
 - `next start` en local exige `AUTH_SECRET` et `AUTH_TRUST_HOST=true`.
 - La CLI Prisma lit `.env.local` (via `prisma.config.ts`), pas `.env`.
-- CI : `.github/workflows/ci.yml` lance, sous Node 24, `npm ci`, `npx eslint .` puis `npm run build` à chaque PR vers `main`, sans aucun secret. Une PR dont ce check (« Lint et build ») est rouge ne doit pas être fusionnée ; le blocage automatique dépend de la règle de protection de `main`, réglée par le porteur dans GitHub.
+- Migrations (`docs/migrations.md`) : tout changement de `schema.prisma` s'accompagne d'une migration commitée. `prisma migrate deploy` sur la production n'est lancé que par le porteur, jamais dans le build Vercel ni en CI ; `prisma db push` est proscrit sur toute base partagée.
+- CI : `.github/workflows/ci.yml` lance, sous Node 24, `npm ci`, `npx eslint .` puis `npm run build` à chaque PR vers `main`, sans aucun secret ; un second job (« Migrations ») applique toutes les migrations sur un PostgreSQL vide et échoue si `prisma migrate diff` trouve un écart avec `schema.prisma`. Une PR dont l'un de ces checks (« Lint et build », « Migrations ») est rouge ne doit pas être fusionnée ; le blocage automatique dépend de la règle de protection de `main`, réglée par le porteur dans GitHub.
 - Il n'existe pas encore de tests : vérifier aussi à la main dans la préversion Vercel de la PR.
 
 ## Conventions that differ from defaults

@@ -12,7 +12,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:push": "tsx scripts/verifier-base.ts && prisma db push",
+    "db:migrate": "tsx scripts/verifier-base.ts && prisma migrate deploy",
     "db:seed": "tsx scripts/verifier-base.ts && tsx prisma/seed.ts"
   },
   "dependencies": {
