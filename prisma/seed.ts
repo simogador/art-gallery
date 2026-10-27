@@ -4,6 +4,9 @@ config({ path: ".env.local" });
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { ecritureInterdite, EcritureProductionInterdite } from "../src/lib/garde-production";
+
+if (ecritureInterdite()) throw new EcritureProductionInterdite();
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);

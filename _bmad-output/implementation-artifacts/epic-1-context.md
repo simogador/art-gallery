@@ -30,7 +30,7 @@ Donner au porteur un socle sûr avant tout travail fonctionnel : une pile corrig
 ## Technical Decisions
 
 - Pile conservée : Next.js 14 App Router (14.2.5 → 14.2.35 maintenant ; 16.x seulement dans l'epic 5), React 18.3, ESLint 8 via `next lint`, TypeScript 5 strict, NextAuth 5 beta, Prisma + `@prisma/adapter-pg` sur Neon.
-- Node 24 LTS (minimum 22.12) déclaré dans `engines.node` et dans le réglage Node du projet Vercel ; `@types/node` 24.
+- Node 24 LTS : `engines.node` `24.x` (plage bornée, car Vercel applique `engines` en priorité) et réglage Node du projet Vercel en 24.x ; `@types/node` 24.
 - Dépendances épinglées, jamais `@latest` (le tag `latest` de Prisma peut pointer sur une version candidate) ; Prisma en `~7.10`.
 - Modules métier `src/lib/<module>/` avec API publique dans `index.ts` ; seuls ces modules et `src/auth.ts` importent Prisma (règle ESLint `no-restricted-imports`, liste d'exceptions qui ne fait que diminuer).
 - Migrations : une ligne de base d'abord (`Order`, `Artist.userId`), `prisma migrate deploy` à un seul endroit explicite, jamais dans le build Vercel ni par `db push` sur une base partagée.
