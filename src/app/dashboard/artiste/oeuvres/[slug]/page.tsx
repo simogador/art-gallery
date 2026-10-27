@@ -1,9 +1,9 @@
-import { auth } from '@/auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { ArtworkForm } from '@/components/dashboard/ArtworkForm'
+import { acteurCourant } from '@/lib/acces'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -15,13 +15,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function EditOeuvrePage({ params }: Props) {
-  const session = await auth()
-  if (!session?.user) redirect('/auth/connexion')
+  // Rôle relu à chaque page : le layout n'est pas réexécuté lors d'une navigation interne.
+  const acteur = await acteurCourant()
+  if (acteur.type === 'visiteur') redirect('/auth/connexion')
+  if (acteur.type !== 'artist') redirect('/dashboard')
 
   const { slug } = await params
 
   const artist = await prisma.artist.findFirst({
-    where: { userId: session.user.id },
+    where: { userId: acteur.userId },
     select: { id: true },
   })
   if (!artist) redirect('/dashboard/artiste')

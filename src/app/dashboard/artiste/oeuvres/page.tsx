@@ -1,4 +1,3 @@
-import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -6,15 +5,18 @@ import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/utils/artworks'
 import { ArtworkImage } from '@/components/ui'
 import { gradient, accent } from '@/lib/db/mappers'
+import { acteurCourant } from '@/lib/acces'
 
 export const metadata: Metadata = { title: 'Mes œuvres — Errancy' }
 
 export default async function OeuvresPage() {
-  const session = await auth()
-  if (!session?.user) redirect('/auth/connexion')
+  // Rôle relu à chaque page : le layout n'est pas réexécuté lors d'une navigation interne.
+  const acteur = await acteurCourant()
+  if (acteur.type === 'visiteur') redirect('/auth/connexion')
+  if (acteur.type !== 'artist') redirect('/dashboard')
 
   const artist = await prisma.artist.findFirst({
-    where: { userId: session.user.id },
+    where: { userId: acteur.userId },
     select: { id: true, slug: true, name: true },
   })
 

@@ -16,7 +16,8 @@ Place de marché d'art en ligne : les artistes vendent via le site, Errancy pren
 
 ## Where things are
 
-- Middleware (maintenance, accès par rôle) : `src/middleware.ts`.
+- Middleware (maintenance, session sur les pages protégées) : `src/middleware.ts`. Il ne décide d'aucun accès par rôle.
+- Accès par rôle (AD-15) : `acteurCourant()` de `src/lib/acces` relit le rôle en base et renvoie un acteur typé (`visiteur`, `user`, `artist` avec son artiste, `admin`). Toute page, layout ou route protégée l'utilise ; ne jamais décider d'un accès avec `session.user.role`, qui vient du jeton et peut être périmé.
 - Auth : `src/auth.config.ts` est partagé avec le middleware (edge) — callbacks `jwt`/`session` ici, sans Prisma ni bcrypt ; les providers et l'adaptateur Prisma vont dans `src/auth.ts`.
 - Paiement : `src/app/api/checkout/route.ts` (refusé tant que le Lot 2 est fermé ; prix relus en base, jamais ceux du client) et `src/app/api/webhooks/stripe/route.ts` (doit rester idempotent).
 - Lecture du catalogue : `src/lib/db/` + `mappers.ts` vers `src/lib/types` ; `src/data/*` est de la démonstration à supprimer, n'y ajouter aucun nouvel usage.
@@ -43,6 +44,6 @@ Place de marché d'art en ligne : les artistes vendent via le site, Errancy pren
 
 - Un `middleware.ts` à la racine est ignoré car le projet utilise `src/` : il doit rester dans `src/middleware.ts`.
 - Une apostrophe brute dans du texte JSX français casse le build (`react/no-unescaped-entities`) : écrire `&apos;`.
-- Après un changement de rôle par un admin, le JWT garde l'ancien rôle : l'utilisateur doit se reconnecter.
+- Après un changement de rôle par un admin, le JWT garde l'ancien rôle. Les accès n'en dépendent plus (rôle relu en base par `acces`), sauf le passage des admins pendant la maintenance, décidé en edge par le middleware à partir du jeton : un nouvel admin doit se reconnecter pour voir le site en maintenance, et un admin rétrogradé la contourne encore jusqu'à l'expiration de son jeton.
 
 <!-- /bmad:context -->

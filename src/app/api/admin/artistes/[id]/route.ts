@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { acteurCourant } from '@/lib/acces'
 
 async function requireAdmin() {
-  const session = await auth()
-  if (!session?.user || (session.user as any).role !== 'admin') return null
-  return session
+  return (await acteurCourant()).type === 'admin'
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

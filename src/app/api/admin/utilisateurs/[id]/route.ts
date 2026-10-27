@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { acteurCourant } from '@/lib/acces'
 
 const VALID_ROLES = ['user', 'artist', 'admin'] as const
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth()
-  if (!session?.user || (session.user as any).role !== 'admin')
+  if ((await acteurCourant()).type !== 'admin')
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
   const { id } = await params

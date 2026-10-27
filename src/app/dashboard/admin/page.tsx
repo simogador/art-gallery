@@ -1,15 +1,14 @@
-import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/utils/artworks'
+import { acteurCourant } from '@/lib/acces'
 
 export const metadata: Metadata = { title: 'Admin — Errancy' }
 
 export default async function AdminPage() {
-  const session = await auth()
-  if (!session?.user || (session.user as any).role !== 'admin') redirect('/dashboard')
+  if ((await acteurCourant()).type !== 'admin') redirect('/dashboard')
 
   const [
     artworksTotal,

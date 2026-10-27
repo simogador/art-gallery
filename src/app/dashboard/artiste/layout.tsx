@@ -1,23 +1,17 @@
-import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
-import { prisma } from '@/lib/prisma'
 import { DashboardNav } from '@/components/dashboard/DashboardNav'
+import { acteurCourant } from '@/lib/acces'
 
 export default async function ArtisteDashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
-  if (!session?.user) redirect('/auth/connexion')
+  const acteur = await acteurCourant()
+  if (acteur.type === 'visiteur') redirect('/auth/connexion')
+  if (acteur.type !== 'artist') redirect('/dashboard')
 
-  const role = (session.user as any).role
-  if (role !== 'artist') redirect('/dashboard')
-
-  const artist = await prisma.artist.findFirst({
-    where: { userId: session.user.id },
-    select: { id: true, slug: true, name: true },
-  })
+  const artist = acteur.artiste
 
   return (
     // pt-16 mobile (header h-16), pt-20 desktop (header h-20)

@@ -1,4 +1,3 @@
-import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -8,12 +7,12 @@ import { ArtworkImage } from '@/components/ui'
 import { gradient, accent } from '@/lib/db/mappers'
 import { ToggleAction } from '@/components/dashboard/ToggleAction'
 import { DeleteButton } from '@/components/dashboard/DeleteButton'
+import { acteurCourant } from '@/lib/acces'
 
 export const metadata: Metadata = { title: 'Œuvres — Admin Errancy' }
 
 export default async function AdminOeuvresPage() {
-  const session = await auth()
-  if (!session?.user || (session.user as any).role !== 'admin') redirect('/dashboard')
+  if ((await acteurCourant()).type !== 'admin') redirect('/dashboard')
 
   const artworks = await prisma.artwork.findMany({
     orderBy: [{ createdAt: 'desc' }],
