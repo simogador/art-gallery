@@ -6,6 +6,8 @@ import { defineConfig } from 'vitest/config'
 config({ path: '.env.local', quiet: true })
 
 export default defineConfig({
+  // tsconfig garde jsx: preserve pour Next.js ; les tests compilent le JSX eux-mêmes.
+  oxc: { jsx: { runtime: 'automatic' } },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

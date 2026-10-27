@@ -17,7 +17,7 @@ const fadeUp = {
   }),
 }
 
-export function CartContent() {
+export function CartContent({ achatOuvert }: { achatOuvert: boolean }) {
   const [mounted,         setMounted]         = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [checkoutError,   setCheckoutError]   = useState<string | null>(null)
@@ -99,22 +99,31 @@ export function CartContent() {
         </div>
 
         <div className="px-6 pb-6 flex flex-col gap-3">
-          {checkoutError && (
-            <p className="font-sans text-xs text-red-500 text-center">{checkoutError}</p>
+          {achatOuvert ? (
+            <>
+              {checkoutError && (
+                <p className="font-sans text-xs text-red-500 text-center">{checkoutError}</p>
+              )}
+              <Button
+                variant="gold"
+                size="md"
+                fullWidth
+                loading={checkoutLoading}
+                onClick={handleCheckout}
+                rightIcon={checkoutLoading ? undefined : <ArrowIcon />}
+              >
+                {checkoutLoading ? 'Redirection…' : 'Procéder au paiement'}
+              </Button>
+              <p className="font-sans text-[10px] text-neutral-400 text-center leading-relaxed">
+                Paiement sécurisé · SSL · Remboursement 14j
+              </p>
+            </>
+          ) : (
+            // AD-17 : Lot 2 fermé, pas de bouton de paiement.
+            <p className="font-sans text-xs text-neutral-500 text-center leading-relaxed">
+              {'L’achat en ligne ouvrira prochainement. En attendant, notre équipe vous accompagne pour toute acquisition.'}
+            </p>
           )}
-          <Button
-            variant="gold"
-            size="md"
-            fullWidth
-            loading={checkoutLoading}
-            onClick={handleCheckout}
-            rightIcon={checkoutLoading ? undefined : <ArrowIcon />}
-          >
-            {checkoutLoading ? 'Redirection…' : 'Procéder au paiement'}
-          </Button>
-          <p className="font-sans text-[10px] text-neutral-400 text-center leading-relaxed">
-            Paiement sécurisé · SSL · Remboursement 14j
-          </p>
         </div>
       </motion.div>
     </div>
