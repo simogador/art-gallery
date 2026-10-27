@@ -129,6 +129,35 @@
             transform: translateY(0);
         }
 
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .consentement {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            flex-basis: 100%;
+            max-width: 420px;
+            margin: 4px auto 0;
+            font-size: 0.8em;
+            color: #666;
+            text-align: left;
+            line-height: 1.5;
+        }
+
+        .consentement input {
+            margin-top: 3px;
+        }
+
+        .error-message {
+            display: none;
+            margin-top: 12px;
+            color: #b42318;
+            font-size: 0.9em;
+        }
+
         .social-links {
             margin-top: 40px;
             padding-top: 30px;
@@ -241,17 +270,25 @@
             <p style="color: #2c2c2c; margin-bottom: 15px; font-weight: 600;">
                 Soyez informé du lancement
             </p>
-            <form id="notificationForm" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                <input 
-                    type="email" 
-                    placeholder="Votre email" 
+            <form id="notificationForm" novalidate style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                <input
+                    type="email"
+                    name="email"
+                    placeholder="Votre email"
+                    aria-label="Votre adresse e-mail"
+                    autocomplete="email"
                     required
                     style="min-width: 200px;"
                 >
                 <button type="submit">Me notifier</button>
+                <label class="consentement">
+                    <input type="checkbox" name="consentement" required>
+                    <span>J'accepte qu'Errancy conserve mon e-mail pour me prévenir de l'ouverture, et seulement pour cela.</span>
+                </label>
             </form>
-            <div class="success-message" id="successMessage">
-                ✓ Merci ! Vous serez notifié au lancement.
+            <div class="error-message" id="errorMessage" role="alert"></div>
+            <div class="success-message" id="successMessage" role="status">
+                ✓ Merci ! Nous vous écrirons à l'ouverture.
             </div>
         </div>
 
@@ -271,21 +308,41 @@
     </div>
 
     <script>
-        document.getElementById('notificationForm').addEventListener('submit', function(e) {
+        // Enregistre l'inscription (FR-35). En cas d'erreur, la saisie est conservée.
+        const formulaire = document.getElementById('notificationForm');
+        const erreur = document.getElementById('errorMessage');
+        const succes = document.getElementById('successMessage');
+
+        formulaire.addEventListener('submit', async function (e) {
             e.preventDefault();
-            
-            const emailInput = this.querySelector('input[type="email"]');
-            const email = emailInput.value;
-            
-            console.log('Email inscrit:', email);
-            
-            document.getElementById('successMessage').style.display = 'block';
-            
-            this.reset();
-            
-            setTimeout(() => {
-                document.getElementById('successMessage').style.display = 'none';
-            }, 5000);
+            erreur.style.display = 'none';
+            succes.style.display = 'none';
+
+            const bouton = formulaire.querySelector('button');
+            bouton.disabled = true;
+            try {
+                const reponse = await fetch('/api/inscription-ouverture', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: formulaire.email.value,
+                        consentement: formulaire.consentement.checked,
+                    }),
+                });
+                const donnees = await reponse.json().catch(() => ({}));
+                if (reponse.ok && donnees.ok) {
+                    succes.style.display = 'block';
+                    formulaire.reset();
+                } else {
+                    erreur.textContent = donnees.message || 'Inscription momentanément indisponible, réessayez plus tard.';
+                    erreur.style.display = 'block';
+                }
+            } catch {
+                erreur.textContent = 'Connexion impossible, réessayez dans un instant.';
+                erreur.style.display = 'block';
+            } finally {
+                bouton.disabled = false;
+            }
         });
     </script>
 </body>

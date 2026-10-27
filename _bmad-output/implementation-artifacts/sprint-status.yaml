@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-27-2026 09:35
-last_updated: 10-27-2026 22:40
+last_updated: 10-27-2026 23:02
 project: art-gallery
 project_key: NOKEY
 tracking_system: file-system
@@ -44,7 +44,7 @@ development_status:
   1-6-accès-à-la-base-réservé-aux-modules-métier: review
   1-7-interrupteur-du-lot-2-et-fermeture-du-chemin-d-achat-actuel: review
   1-8-rôle-toujours-à-jour-sans-reconnexion: review
-  1-9-contacts-de-la-page-de-maintenance-enregistrés: backlog
+  1-9-contacts-de-la-page-de-maintenance-enregistrés: review
   epic-1-retrospective: optional
 
   epic-2: backlog
