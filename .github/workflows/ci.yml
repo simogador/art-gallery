@@ -1,5 +1,8 @@
-# Lint et build à chaque PR vers main (story 1.3, AD-23).
-# Aucun secret : le build réussit sans DATABASE_URL (erreurs DatabaseNotReachable attendues).
+# À chaque PR vers main (AD-23) :
+# - « Lint et build » (story 1.3) : aucun secret, le build réussit sans DATABASE_URL
+#   (erreurs DatabaseNotReachable attendues) ;
+# - « Migrations » (story 1.4) : toutes les migrations sur un PostgreSQL jetable, puis
+#   contrôle d'écart avec schema.prisma. Son DATABASE_URL ne vise que ce service jetable.
 name: CI
 
 on:
@@ -29,3 +32,36 @@ jobs:
       - run: npm ci
       - run: npx eslint .
       - run: npm run build
+
+  migrations:
+    name: Migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Base jetable de la CI : appliquer les migrations ici n'est pas un déploiement (story 1.4, AD-20).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: errancy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/errancy
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json # engines.node (24.x)
+          cache: npm
+      - run: npm ci
+      - name: Appliquer toutes les migrations sur une base vide
+        run: npx prisma migrate deploy
+      - name: Vérifier que les migrations correspondent au schéma
+        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
