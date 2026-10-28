@@ -38,3 +38,7 @@ Cette déclaration n'écrit qu'une ligne par migration dans `_prisma_migrations`
 2. Après la fusion : point de restauration Neon (branche datée à partir de `main`).
 3. `npx prisma migrate deploy` avec la chaîne directe de la production, depuis votre poste.
 4. `npx prisma migrate status` : « Database schema is up to date ».
+
+## Journal des bases partagées
+
+- 2026-10-28 : sur `production` puis sur la branche `preview`, la ligne de base `20261027150000_ligne_de_base` a été déclarée (sans exécution) et `20261027230000_inscriptions_ouverture` appliquée, en une transaction depuis l'éditeur SQL de Neon (SQL de la migration et empreintes SHA-256 identiques à celles de Prisma). Point de restauration : branche `avant-migrations-28-10` (expire le 2026-11-04).
