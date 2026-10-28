@@ -29,22 +29,22 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-27-2026 09:35
-last_updated: 10-27-2026 23:39
+last_updated: 10-28-2026 22:15
 project: art-gallery
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
 development_status:
-  epic-1: in-progress
+  epic-1: done
   1-1-correctifs-de-sécurité-et-node-24: done
-  1-2-préversions-isolées-de-la-base-de-production: review
-  1-3-intégration-continue-lint-et-build-à-chaque-pr: review
+  1-2-préversions-isolées-de-la-base-de-production: done
+  1-3-intégration-continue-lint-et-build-à-chaque-pr: done
   1-4-historique-des-migrations-aligné-sur-la-base-réelle: done
-  1-5-tests-automatisés-sur-un-vrai-postgresql: review
-  1-6-accès-à-la-base-réservé-aux-modules-métier: review
-  1-7-interrupteur-du-lot-2-et-fermeture-du-chemin-d-achat-actuel: review
-  1-8-rôle-toujours-à-jour-sans-reconnexion: review
-  1-9-contacts-de-la-page-de-maintenance-enregistrés: review
+  1-5-tests-automatisés-sur-un-vrai-postgresql: done
+  1-6-accès-à-la-base-réservé-aux-modules-métier: done
+  1-7-interrupteur-du-lot-2-et-fermeture-du-chemin-d-achat-actuel: done
+  1-8-rôle-toujours-à-jour-sans-reconnexion: done
+  1-9-contacts-de-la-page-de-maintenance-enregistrés: done
   epic-1-retrospective: optional
 
   epic-2: backlog

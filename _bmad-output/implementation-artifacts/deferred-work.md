@@ -11,3 +11,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-9-contacts-maintenance.md`
   summary: Décider avec le porteur la durée de conservation et la purge des inscrits, le moyen de se désinscrire, les mentions de confidentialité du formulaire et une éventuelle double confirmation par e-mail (double opt-in).
   evidence: La story 1.9 enregistre l'e-mail et la date du consentement, sans désinscription ni purge ni lien de confidentialité (NFR-6, AQ-6). Une adresse peut être inscrite par un tiers sans double confirmation ; l'e-mail d'ouverture est prévu en story 4.9 (module notifications), qui pourra porter le lien de désinscription.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-2-previews-isolees-de-la-base-de-production.md`
+  summary: Après une inscription sur une préversion, le site renvoie vers `errancy.art` (production) au lieu de rester sur l'adresse de la préversion.
+  evidence: Constaté le 2026-10-28 en vérifiant la story 1.8 : le compte est bien créé dans la base `preview`, mais la redirection qui suit part vers la production. Cause probable : une variable d'URL d'authentification (`AUTH_URL` ou `NEXTAUTH_URL`) fixée à `https://errancy.art` aussi pour « Preview » dans Vercel. À vérifier par le porteur ; sans conséquence sur les données.
