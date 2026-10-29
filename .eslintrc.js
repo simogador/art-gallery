@@ -4,9 +4,8 @@ const EXCEPTIONS_PRISMA = require('./eslint/exceptions-prisma.cjs')
 const echapperGlob = (chemin) => chemin.replace(/[[\]]/g, '\\$&')
 
 // AD-1 : seuls les modules métier et src/auth.ts accèdent à la base.
-// Modules (AD-8) : `db` (lecture actuelle du catalogue, à migrer) et les modules prévus.
+// Modules (AD-8) : `catalogue` (lectures du catalogue, ex-src/lib/db depuis la story 2.1) et les modules prévus.
 const MODULES_METIER = [
-  'db',
   'catalogue',
   'curation',
   'disponibilite',

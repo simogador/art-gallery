@@ -5,12 +5,28 @@ import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { ecritureInterdite, EcritureProductionInterdite } from "../src/lib/garde-production";
+import { DEVISE, lireDimensions, prixEnCentimes } from "../src/lib/catalogue/conversions";
 
 if (ecritureInterdite()) throw new EcritureProductionInterdite();
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter } as any);
+
+// Story 2.1 : colonnes exactes remplies avec les mêmes conversions que l'application, aussi
+// en mise à jour (base déjà amorcée).
+// Prix au-delà d'une colonne INTEGER (21 474 836,47 €) ou dimensions illisibles : laissés vides.
+function exactes(price: number | null, dimensions: string) {
+  const prix = prixEnCentimes(price);
+  const d = lireDimensions(dimensions);
+  return {
+    prixCentimes: prix.ok ? prix.centimes : null,
+    devise: DEVISE,
+    hauteurMm: d?.hauteurMm ?? null,
+    largeurMm: d?.largeurMm ?? null,
+    profondeurMm: d?.profondeurMm ?? null,
+  };
+}
 
 async function main() {
   console.log("Seeding Errancy Gallery...");
@@ -113,7 +129,7 @@ async function main() {
     // Rothko
     prisma.artwork.upsert({
       where: { slug: "no-61-rust-and-blue" },
-      update: {},
+      update: exactes(4800000, "294.6 × 232.1 cm"),
       create: {
         slug: "no-61-rust-and-blue",
         title: "No. 61 (Rust and Blue)",
@@ -123,6 +139,7 @@ async function main() {
         description: "Cette œuvre monumentale incarne la maturité du style de Rothko : deux rectangles flottants dans des tons de rouille et de bleu profond créent une tension émotionnelle puissante. La peinture invite le spectateur à une expérience méditative de la couleur pure.",
         imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/No_61_Rust_and_Blue.jpg/800px-No_61_Rust_and_Blue.jpg",
         price: 4800000,
+        ...exactes(4800000, "294.6 × 232.1 cm"),
         available: false,
         featured: true,
         artistId: rothko.id,
@@ -131,7 +148,7 @@ async function main() {
 
     prisma.artwork.upsert({
       where: { slug: "orange-red-yellow" },
-      update: {},
+      update: exactes(86900000, "236.2 × 206.4 cm"),
       create: {
         slug: "orange-red-yellow",
         title: "Orange, Red, Yellow",
@@ -141,6 +158,7 @@ async function main() {
         description: "L'une des œuvres les plus célèbres de Rothko, vendue 86,9 millions de dollars en 2012. Les champs de couleur lumineux — orange, rouge, jaune — semblent rayonner de l'intérieur, créant une présence quasi spirituelle.",
         imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Mark_Rothko%2C_1961%2C_Orange%2C_Red%2C_Yellow%2C_oil_on_canvas%2C_236.2_x_206.4_cm%2C_Christie%27s.jpg/800px-Mark_Rothko%2C_1961%2C_Orange%2C_Red%2C_Yellow%2C_oil_on_canvas%2C_236.2_x_206.4_cm%2C_Christie%27s.jpg",
         price: 86900000,
+        ...exactes(86900000, "236.2 × 206.4 cm"),
         available: false,
         featured: true,
         artistId: rothko.id,
@@ -150,7 +168,7 @@ async function main() {
     // Kusama
     prisma.artwork.upsert({
       where: { slug: "infinity-nets-1958" },
-      update: {},
+      update: exactes(7100000, "106.7 × 106.7 cm"),
       create: {
         slug: "infinity-nets-1958",
         title: "Infinity Nets",
@@ -160,6 +178,7 @@ async function main() {
         description: "Cette première œuvre de la série «Infinity Nets» établit le motif répétitif emblématique de Kusama. Des milliers de petits arcs peints à la main créent un réseau infini qui abolit la frontière entre fond et figure, reflétant l'expérience hallucinatoire de l'artiste.",
         imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Kusama_Infinity_Net.jpg/800px-Kusama_Infinity_Net.jpg",
         price: 7100000,
+        ...exactes(7100000, "106.7 × 106.7 cm"),
         available: false,
         featured: true,
         artistId: kusama.id,
@@ -168,7 +187,7 @@ async function main() {
 
     prisma.artwork.upsert({
       where: { slug: "pumpkin-yellow-1994" },
-      update: {},
+      update: exactes(3500000, "130.3 × 162.1 cm"),
       create: {
         slug: "pumpkin-yellow-1994",
         title: "Pumpkin (Yellow)",
@@ -178,6 +197,7 @@ async function main() {
         description: "La citrouille est le motif le plus emblématique de Kusama, symbole de sa connexion profonde avec la nature et l'agriculture de son enfance. Ce motif familier, recouvert de pois noirs, est transformé en une icône de l'art contemporain.",
         imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Yayoi_Kusama_Pumpkin.jpg/800px-Yayoi_Kusama_Pumpkin.jpg",
         price: 3500000,
+        ...exactes(3500000, "130.3 × 162.1 cm"),
         available: false,
         featured: false,
         artistId: kusama.id,
@@ -187,7 +207,7 @@ async function main() {
     // Basquiat
     prisma.artwork.upsert({
       where: { slug: "untitled-skull-1981" },
-      update: {},
+      update: exactes(110500000, "205.7 × 175.9 cm"),
       create: {
         slug: "untitled-skull-1981",
         title: "Untitled (Skull)",
@@ -197,6 +217,7 @@ async function main() {
         description: "Ce crâne monumental est l'une des œuvres les plus puissantes de Basquiat. Combinant imagery corporelle, texte griffonné et couleurs expressives, il explore la mortalité, l'identité noire et la violence systémique avec une urgence viscérale.",
         imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Jean-Michel_Basquiat%2C_Untitled%2C_1982.jpg/800px-Jean-Michel_Basquiat%2C_Untitled%2C_1982.jpg",
         price: 110500000,
+        ...exactes(110500000, "205.7 × 175.9 cm"),
         available: false,
         featured: true,
         artistId: basquiat.id,
@@ -205,7 +226,7 @@ async function main() {
 
     prisma.artwork.upsert({
       where: { slug: "hollywood-africans-1983" },
-      update: {},
+      update: exactes(18000000, "213.4 × 213.4 cm"),
       create: {
         slug: "hollywood-africans-1983",
         title: "Hollywood Africans",
@@ -215,6 +236,7 @@ async function main() {
         description: "Peint lors d'un séjour à Los Angeles, Hollywood Africans examine les stéréotypes raciaux dans l'industrie du cinéma. Basquiat inclut des portraits de lui-même avec Toxic et Rammellzee, entourés de mots et de symboles dénonçant le racisme dans l'entertainment.",
         imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Jean-Michel_Basquiat_Hollywood_Africans_1983.jpg/800px-Jean-Michel_Basquiat_Hollywood_Africans_1983.jpg",
         price: 18000000,
+        ...exactes(18000000, "213.4 × 213.4 cm"),
         available: false,
         featured: false,
         artistId: basquiat.id,
@@ -224,7 +246,7 @@ async function main() {
     // Martin
     prisma.artwork.upsert({
       where: { slug: "friendship-1963" },
-      update: {},
+      update: exactes(28000000, "188 × 188 cm"),
       create: {
         slug: "friendship-1963",
         title: "Friendship",
@@ -234,6 +256,7 @@ async function main() {
         description: "Cette œuvre emblématique d'Agnes Martin présente une grille délicate incisée dans un fond doré. La répétition minutieuse des lignes crée un effet méditatif profond, évoquant la paix et la sérénité que l'artiste cherchait à transmettre.",
         imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Agnes_Martin_Friendship_1963.jpg/800px-Agnes_Martin_Friendship_1963.jpg",
         price: 28000000,
+        ...exactes(28000000, "188 × 188 cm"),
         available: false,
         featured: false,
         artistId: martin.id,
@@ -243,7 +266,7 @@ async function main() {
     // Walker
     prisma.artwork.upsert({
       where: { slug: "a-subtlety-2014" },
-      update: {},
+      update: exactes(null, "11 × 7.9 × 23 m"),
       create: {
         slug: "a-subtlety-2014",
         title: "A Subtlety",
@@ -253,6 +276,7 @@ async function main() {
         description: "Cette installation monumentale dans la Domino Sugar Factory de Brooklyn a attiré plus de 130 000 visiteurs. La Sphinx de sucre, sphinx noire recouvert de sucre blanc, explore l'histoire de l'esclavage dans la production de sucre aux Amériques.",
         imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Kara_Walker_A_Subtlety.jpg/800px-Kara_Walker_A_Subtlety.jpg",
         price: null,
+        ...exactes(null, "11 × 7.9 × 23 m"),
         available: false,
         featured: true,
         artistId: walker.id,

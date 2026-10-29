@@ -45,14 +45,14 @@ export async function POST(req: NextRequest) {
     if (!artwork.available) {
       return NextResponse.json({ error: `"${artwork.title}" n'est plus disponible.` }, { status: 400 })
     }
-    if (!artwork.price) {
+    if (artwork.prixCentimes === null || artwork.prixCentimes <= 0) {
       return NextResponse.json({ error: `"${artwork.title}" n'a pas de prix défini.` }, { status: 400 })
     }
 
     lineItems.push({
       price_data: {
-        currency: 'eur',
-        unit_amount: Math.round(artwork.price * 100), // cents
+        currency: artwork.devise.toLowerCase(),
+        unit_amount: artwork.prixCentimes, // centimes exacts (AD-5), sans arrondi
         product_data: {
           name: artwork.title,
           description: `${artwork.artist.name} · ${artwork.year} · ${artwork.medium}`,

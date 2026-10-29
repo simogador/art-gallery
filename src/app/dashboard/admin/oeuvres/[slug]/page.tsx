@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { ArtworkForm } from '@/components/dashboard/ArtworkForm'
+import { versOeuvreAEditer } from '@/lib/catalogue'
 import { ToggleAction } from '@/components/dashboard/ToggleAction'
 import { acteurCourant } from '@/lib/acces'
 
@@ -69,17 +70,8 @@ export default async function AdminEditOeuvrePage({ params }: Props) {
       <ArtworkForm
         mode="edit"
         apiBase="/api/admin/oeuvres"
-        artwork={{
-          slug:        artwork.slug,
-          title:       artwork.title,
-          year:        artwork.year,
-          medium:      artwork.medium,
-          dimensions:  artwork.dimensions ?? '',
-          price:       artwork.price,
-          description: artwork.description,
-          imageUrl:    artwork.imageUrl ?? null,
-          available:   artwork.available,
-        }}
+        // Prix et dimensions lus dans les colonnes exactes ; l'ancien texte seulement s'il est illisible.
+        artwork={versOeuvreAEditer(artwork)}
       />
     </div>
   )

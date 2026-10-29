@@ -386,7 +386,7 @@ function ArtworkCard({ artwork, index }: { artwork: Artwork; index: number }) {
               {artwork.title}
             </h3>
             <p className="font-sans text-xs text-neutral-500 uppercase tracking-widest mt-0.5">
-              {artwork.size} · {artwork.year}
+              {artwork.size ? `${artwork.size} · ` : ''}{artwork.year}
             </p>
           </div>
           <div className="text-right flex-shrink-0">

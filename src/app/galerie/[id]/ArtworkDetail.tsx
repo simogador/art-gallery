@@ -245,7 +245,7 @@ export function ArtworkDetail({ artwork, related, artist }: Props) {
                   { label: 'Format',     value: artwork.size },
                   { label: 'Médium',     value: artwork.medium },
                   { label: 'Année',      value: String(artwork.year) },
-                ].map(({ label, value }) => (
+                ].filter(({ value }) => value).map(({ label, value }) => (
                   <div key={label} className="bg-neutral-50 border border-neutral-100 rounded-sm px-4 py-3">
                     <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{label}</p>
                     <p className="font-sans text-sm text-foreground mt-0.5 leading-snug">{value}</p>

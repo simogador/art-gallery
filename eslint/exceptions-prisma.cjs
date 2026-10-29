@@ -20,8 +20,5 @@ module.exports = [
   'src/app/dashboard/admin/page.tsx',
   'src/app/dashboard/admin/utilisateurs/[id]/page.tsx',
   'src/app/dashboard/admin/utilisateurs/page.tsx',
-  'src/app/dashboard/artiste/oeuvres/[slug]/page.tsx',
   'src/app/dashboard/artiste/oeuvres/nouvelle/page.tsx',
-  'src/app/dashboard/artiste/oeuvres/page.tsx',
-  'src/app/dashboard/artiste/page.tsx',
 ]

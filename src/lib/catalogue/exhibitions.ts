@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { mapExhibition, mapArtwork, mapArtist } from '@/lib/db/mappers'
+import { mapExhibition, mapArtwork, mapArtist } from './mappers'
 import type { Exhibition, Artwork, Artist } from '@/lib/types'
 
 const ARTWORK_INCLUDE = {

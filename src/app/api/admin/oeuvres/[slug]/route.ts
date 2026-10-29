@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { acteurCourant } from '@/lib/acces'
+import { champsDimensionsModifiees, champsPrix } from '@/lib/catalogue/conversions'
 
 async function requireAdmin() {
   return (await acteurCourant()).type === 'admin'
@@ -18,8 +19,19 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
   if (typeof body.title        === 'string')  data.title        = body.title.trim()
   if (typeof body.year         === 'number')  data.year         = body.year
   if (typeof body.technique    === 'string')  data.medium       = body.technique.trim()
-  if (typeof body.dimensions   === 'string')  data.dimensions   = body.dimensions.trim()
-  if (body.price !== undefined)               data.price        = body.price ? parseFloat(body.price) : null
+  // Double écriture (AD-20) : anciennes et nouvelles colonnes, cohérentes ; refus si illisible.
+  if (typeof body.dimensions === 'string') {
+    const actuelle = await prisma.artwork.findUnique({ where: { slug }, select: { dimensions: true } })
+    if (!actuelle) return NextResponse.json({ error: 'Œuvre introuvable' }, { status: 404 })
+    const taille = champsDimensionsModifiees(body.dimensions, actuelle.dimensions)
+    if (!taille.ok) return NextResponse.json({ error: taille.erreur }, { status: 400 })
+    Object.assign(data, taille.champs)
+  }
+  if (body.price !== undefined) {
+    const prix = champsPrix(body.price)
+    if (!prix.ok) return NextResponse.json({ error: prix.erreur }, { status: 400 })
+    Object.assign(data, prix.champs)
+  }
   if (typeof body.description  === 'string')  data.description  = body.description.trim()
 
   if (Object.keys(data).length === 0)
