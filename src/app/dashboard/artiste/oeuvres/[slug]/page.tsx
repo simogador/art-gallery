@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { prisma } from '@/lib/prisma'
+import { oeuvreAEditer } from '@/lib/catalogue'
 import { ArtworkForm } from '@/components/dashboard/ArtworkForm'
 import { acteurCourant } from '@/lib/acces'
 
@@ -22,23 +22,11 @@ export default async function EditOeuvrePage({ params }: Props) {
 
   const { slug } = await params
 
-  const artist = await prisma.artist.findFirst({
-    where: { userId: acteur.userId },
-    select: { id: true },
-  })
-  if (!artist) redirect('/dashboard/artiste')
+  if (!acteur.artiste) redirect('/dashboard/artiste')
 
-  const artwork = await prisma.artwork.findUnique({
-    where:  { slug },
-    select: {
-      id: true, slug: true, title: true, year: true,
-      medium: true, dimensions: true, price: true,
-      description: true, imageUrl: true, available: true,
-      artistId: true,
-    },
-  })
-
-  if (!artwork || artwork.artistId !== artist.id) notFound()
+  // null si l'œuvre n'existe pas ou appartient à un autre artiste.
+  const artwork = await oeuvreAEditer(acteur.userId, slug)
+  if (!artwork) notFound()
 
   return (
     <div>
@@ -62,7 +50,7 @@ export default async function EditOeuvrePage({ params }: Props) {
               {artwork.title}
             </h1>
             <p className="font-sans text-sm text-neutral-400 mt-2">
-              {artwork.year}{artwork.dimensions ? ` · ${artwork.dimensions}` : ''}
+              {artwork.year}{artwork.dimensionsLues ? ` · ${artwork.dimensionsLues}` : ''}
             </p>
           </div>
 
@@ -96,7 +84,7 @@ export default async function EditOeuvrePage({ params }: Props) {
           title:       artwork.title,
           year:        artwork.year,
           medium:      artwork.medium,
-          dimensions:  artwork.dimensions ?? '',
+          dimensions:  artwork.dimensions,
           price:       artwork.price,
           description: artwork.description,
           imageUrl:    artwork.imageUrl ?? null,

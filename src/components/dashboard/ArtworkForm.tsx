@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { cn } from '@/lib/utils/cn'
 import { Button, Input } from '@/components/ui'
-import { gradient, accent } from '@/lib/db/mappers'
+import { gradient, accent } from '@/lib/catalogue/mappers'
+import { EXEMPLE_DIMENSIONS } from '@/lib/catalogue/conversions'
 
 interface ArtworkData {
   slug: string
@@ -86,7 +87,8 @@ export function ArtworkForm({ artwork, mode, apiBase = '/api/artiste/oeuvres' }:
         year:        parseInt(form.year, 10),
         technique:   form.technique.trim(),
         dimensions:  form.dimensions.trim(),
-        price:       form.price ? parseFloat(form.price) : null,
+        // Texte tel que saisi (« 1 250,50 ») : le serveur le convertit en centimes, sans Float.
+        price:       form.price.trim() || null,
         description: form.description.trim(),
       }
 
@@ -194,7 +196,8 @@ export function ArtworkForm({ artwork, mode, apiBase = '/api/artiste/oeuvres' }:
           <Input
             name="dimensions"
             label="Dimensions"
-            placeholder="120 × 90 cm"
+            placeholder={EXEMPLE_DIMENSIONS}
+            hint="Hauteur × largeur (× profondeur), en cm ou en mm"
             value={form.dimensions}
             onChange={handleChange}
             disabled={loading || success}
@@ -207,10 +210,9 @@ export function ArtworkForm({ artwork, mode, apiBase = '/api/artiste/oeuvres' }:
               <span className="absolute left-3 font-sans text-sm text-neutral-400 pointer-events-none">€</span>
               <input
                 name="price"
-                type="number"
-                min={0}
-                step={100}
-                placeholder="0"
+                type="text"
+                inputMode="decimal"
+                placeholder="1 250,50"
                 value={form.price}
                 onChange={handleChange}
                 disabled={loading || success}

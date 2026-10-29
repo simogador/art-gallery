@@ -41,6 +41,13 @@ model Artwork {
   description String             @db.Text
   imageUrl    String
   price       Float?
+  // AD-20 (story 2.1) : valeurs exactes. price et dimensions restent écrites jusqu'à la
+  // story 2.10 ; colonnes facultatives pour que l'ancien code insère encore sans elles.
+  prixCentimes Int?
+  devise       String             @default("EUR")
+  hauteurMm    Int?
+  largeurMm    Int?
+  profondeurMm Int?
   available   Boolean            @default(true)
   featured    Boolean            @default(false)
   artist      Artist             @relation(fields: [artistId], references: [id])

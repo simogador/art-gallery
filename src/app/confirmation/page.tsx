@@ -3,7 +3,8 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
-import { gradient, accent } from '@/lib/db/mappers'
+import { gradient, accent } from '@/lib/catalogue/mappers'
+import { centimesEnEuros } from '@/lib/catalogue/conversions'
 import { formatPrice } from '@/lib/utils/artworks'
 import { ArtworkImage } from '@/components/ui'
 import { CartClearer } from './CartClearer'
@@ -126,7 +127,7 @@ export default async function ConfirmationPage({ searchParams }: Props) {
 
                     {/* Prix */}
                     <p className="font-serif text-base font-light text-foreground flex-shrink-0">
-                      {artwork.price ? formatPrice(artwork.price) : '—'}
+                      {artwork.prixCentimes !== null ? formatPrice(centimesEnEuros(artwork.prixCentimes)!) : '—'}
                     </p>
                   </div>
                 )

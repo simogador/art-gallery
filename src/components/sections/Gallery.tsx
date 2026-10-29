@@ -253,7 +253,7 @@ function ArtworkCard({ artwork, index, hovered, onHover }: ArtworkCardProps) {
             {artwork.title}
           </h3>
           <p className="font-sans text-xs text-neutral-500 mt-0.5 uppercase tracking-widest">
-            {artwork.artist} · {artwork.size}
+            {artwork.artist}{artwork.size ? ` · ${artwork.size}` : ''}
           </p>
         </div>
         <div className="text-right flex-shrink-0">

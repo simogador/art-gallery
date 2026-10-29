@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { acteurCourant } from '@/lib/acces'
+import { champsDimensionsModifiees, champsPrix } from '@/lib/catalogue/conversions'
 
 async function getArtistArtwork(userId: string, slug: string) {
   const artist = await prisma.artist.findFirst({ where: { userId } })
@@ -38,14 +39,20 @@ export async function PUT(
     return NextResponse.json({ error: 'Titre, année et technique sont requis' }, { status: 400 })
   }
 
+  // Double écriture (AD-20) : anciennes et nouvelles colonnes, cohérentes ; refus si illisible.
+  const prix = champsPrix(price)
+  if (!prix.ok) return NextResponse.json({ error: prix.erreur }, { status: 400 })
+  const taille = champsDimensionsModifiees(dimensions, artwork.dimensions)
+  if (!taille.ok) return NextResponse.json({ error: taille.erreur }, { status: 400 })
+
   const updated = await prisma.artwork.update({
     where: { slug },
     data: {
       title:       title.trim(),
       year:        parseInt(year, 10),
       medium:      technique.trim(),
-      dimensions:  dimensions?.trim() ?? '',
-      price:       price ? parseFloat(price) : null,
+      ...prix.champs,
+      ...taille.champs,
       description: description?.trim() ?? '',
     },
   })

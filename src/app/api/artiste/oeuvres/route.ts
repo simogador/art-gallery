@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { acteurCourant } from '@/lib/acces'
+import { champsDimensions, champsPrix } from '@/lib/catalogue/conversions'
 
 function slugify(str: string): string {
   return str
@@ -44,6 +45,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Titre, année et technique sont requis' }, { status: 400 })
   }
 
+  // Double écriture (AD-20) : anciennes et nouvelles colonnes, cohérentes ; refus si illisible.
+  const prix = champsPrix(price)
+  if (!prix.ok) return NextResponse.json({ error: prix.erreur }, { status: 400 })
+  const taille = champsDimensions(dimensions)
+  if (!taille.ok) return NextResponse.json({ error: taille.erreur }, { status: 400 })
+
   const baseSlug = await uniqueSlug(`${slugify(title)}-${year}`)
 
   const artwork = await prisma.artwork.create({
@@ -52,8 +59,8 @@ export async function POST(req: NextRequest) {
       title:       title.trim(),
       year:        parseInt(year, 10),
       medium:      technique.trim(),
-      dimensions:  dimensions?.trim() ?? '',
-      price:       price ? parseFloat(price) : null,
+      ...prix.champs,
+      ...taille.champs,
       description: description?.trim() ?? '',
       imageUrl:    '',
       available:   true,

@@ -1,4 +1,5 @@
 import type { Artist, Artwork, Exhibition, ArtMedium, ExhibitionStatus } from '@/lib/types'
+import { centimesEnEuros, formaterDimensions } from './conversions'
 
 /* ── Visual palettes (deterministic from slug) ─────────────────────────── */
 
@@ -97,10 +98,13 @@ type DbArtwork = {
   title: string
   year: number
   medium: string
-  dimensions: string
   description: string
   imageUrl: string
-  price: number | null
+  // Story 2.1 : prix et dimensions lus dans les colonnes exactes, jamais dans price ni dimensions.
+  prixCentimes: number | null
+  hauteurMm: number | null
+  largeurMm: number | null
+  profondeurMm: number | null
   available: boolean
   featured: boolean
   artist: { slug: string; name: string }
@@ -115,8 +119,9 @@ export function mapArtwork(w: DbArtwork): Artwork {
     year: w.year,
     medium: toArtMedium(w.medium),
     technique: w.medium,
-    price: w.price ?? 0,
-    size: w.dimensions,
+    price: centimesEnEuros(w.prixCentimes) ?? 0,
+    // Dimensions illisibles (colonnes vides) : aucune taille affichée.
+    size: formaterDimensions(w),
     description: w.description,
     tags: [],
     featured: w.featured,

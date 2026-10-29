@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { mapArtist, mapArtwork } from '@/lib/db/mappers'
+import { mapArtist, mapArtwork } from './mappers'
 import type { Artist, Artwork } from '@/lib/types'
 
 export async function getAllArtists(): Promise<Artist[]> {

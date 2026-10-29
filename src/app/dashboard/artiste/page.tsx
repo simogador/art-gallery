@@ -1,10 +1,9 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/utils/artworks'
 import { ArtworkImage } from '@/components/ui'
-import { gradient, accent } from '@/lib/db/mappers'
+import { accueilArtiste, centimesEnEuros, gradient, accent } from '@/lib/catalogue'
 import { acteurCourant } from '@/lib/acces'
 
 export const metadata: Metadata = { title: 'Espace artiste — Errancy' }
@@ -15,22 +14,9 @@ export default async function ArtisteDashboardPage() {
   if (acteur.type === 'visiteur') redirect('/auth/connexion')
   if (acteur.type !== 'artist') redirect('/dashboard')
 
-  const artist = await prisma.artist.findFirst({
-    where: { userId: acteur.userId },
-    include: {
-      artworks: {
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        select: {
-          id: true, slug: true, title: true, year: true, price: true,
-          available: true, imageUrl: true, medium: true,
-        },
-      },
-      _count: { select: { artworks: true } },
-    },
-  })
+  const accueil = await accueilArtiste(acteur.userId)
 
-  if (!artist) {
+  if (!accueil) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center">
         <p className="font-serif text-2xl font-light text-neutral-400">Profil non configuré</p>
@@ -41,16 +27,13 @@ export default async function ArtisteDashboardPage() {
     )
   }
 
-  const totalArtworks = artist._count.artworks
+  const artist        = { ...accueil.artiste, artworks: accueil.recentes }
+  const totalArtworks = accueil.total
   const soldCount     = artist.artworks.filter((w) => !w.available).length
   const availCount    = artist.artworks.filter((w) =>  w.available).length
 
-  // Revenue: sum of prices for all sold artworks
-  const soldArtworks = await prisma.artwork.findMany({
-    where: { artistId: artist.id, available: false },
-    select: { price: true },
-  })
-  const revenue = soldArtworks.reduce((sum, w) => sum + (w.price ?? 0), 0)
+  // Chiffre d'affaires : somme exacte en centimes des œuvres vendues.
+  const revenue = centimesEnEuros(accueil.chiffreAffairesCentimes) ?? 0
 
   const stats = [
     { label: 'Œuvres total',      value: totalArtworks,      unit: '' },
@@ -141,9 +124,9 @@ export default async function ArtisteDashboardPage() {
                     <span className={`w-1.5 h-1.5 rounded-full ${artwork.available ? 'bg-emerald-500' : 'bg-neutral-400'}`} />
                     {artwork.available ? 'Disponible' : 'Vendue'}
                   </span>
-                  {artwork.price && (
+                  {artwork.prix !== null && (
                     <p className="font-serif text-sm font-light text-foreground hidden sm:block">
-                      {formatPrice(artwork.price)}
+                      {formatPrice(artwork.prix)}
                     </p>
                   )}
                 </div>

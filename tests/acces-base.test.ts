@@ -39,12 +39,13 @@ describe('règle AD-1 : accès à la base', () => {
   it('refuse les dossiers de src/lib qui ne sont pas des modules métier', async () => {
     expect(await refuse('src/lib/store/essai.ts', "import { prisma } from '../prisma'")).toBe(true)
     expect(await refuse('src/lib/essai.ts', "import { prisma } from './prisma'")).toBe(true)
+    // Story 2.1 : l'ancien dossier db est devenu le module catalogue.
+    expect(await refuse('src/lib/db/essai.ts', "import { prisma } from '@/lib/prisma'")).toBe(true)
   })
 
   it('accepte les modules métier, src/auth.ts et les exceptions existantes', async () => {
     const code = "import { prisma } from '@/lib/prisma'"
     expect(await refuse('src/lib/catalogue/essai.ts', code)).toBe(false)
-    expect(await refuse('src/lib/db/essai.ts', code)).toBe(false)
     expect(await refuse('src/auth.ts', code)).toBe(false)
     expect(await refuse('src/app/api/checkout/route.ts', code)).toBe(false)
   })

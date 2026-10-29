@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getAllArtworks } from '@/lib/db/artworks'
+import { getAllArtworks } from '@/lib/catalogue'
 import { GalleryPage } from './GalleryPage'
 
 export const metadata: Metadata = {

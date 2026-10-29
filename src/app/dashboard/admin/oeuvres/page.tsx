@@ -4,7 +4,8 @@ import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/utils/artworks'
 import { ArtworkImage } from '@/components/ui'
-import { gradient, accent } from '@/lib/db/mappers'
+import { centimesEnEuros } from '@/lib/catalogue/conversions'
+import { gradient, accent } from '@/lib/catalogue/mappers'
 import { ToggleAction } from '@/components/dashboard/ToggleAction'
 import { DeleteButton } from '@/components/dashboard/DeleteButton'
 import { acteurCourant } from '@/lib/acces'
@@ -73,7 +74,7 @@ export default async function AdminOeuvresPage() {
 
             {/* Price */}
             <p className="font-serif text-sm font-light text-foreground hidden lg:block">
-              {artwork.price ? formatPrice(artwork.price) : '—'}
+              {artwork.prixCentimes !== null ? formatPrice(centimesEnEuros(artwork.prixCentimes)!) : '—'}
             </p>
 
             {/* Status toggle */}

@@ -1,10 +1,9 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/utils/artworks'
 import { ArtworkImage } from '@/components/ui'
-import { gradient, accent } from '@/lib/db/mappers'
+import { oeuvresDeLArtiste, gradient, accent } from '@/lib/catalogue'
 import { acteurCourant } from '@/lib/acces'
 
 export const metadata: Metadata = { title: 'Mes œuvres — Errancy' }
@@ -15,23 +14,9 @@ export default async function OeuvresPage() {
   if (acteur.type === 'visiteur') redirect('/auth/connexion')
   if (acteur.type !== 'artist') redirect('/dashboard')
 
-  const artist = await prisma.artist.findFirst({
-    where: { userId: acteur.userId },
-    select: { id: true, slug: true, name: true },
-  })
-
-  if (!artist) redirect('/dashboard/artiste')
-
-  const artworks = await prisma.artwork.findMany({
-    where:   { artistId: artist.id },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true, slug: true, title: true, year: true,
-      medium: true, dimensions: true, price: true,
-      available: true, featured: true, imageUrl: true,
-      createdAt: true,
-    },
-  })
+  const lues = await oeuvresDeLArtiste(acteur.userId)
+  if (!lues) redirect('/dashboard/artiste')
+  const artworks = lues.oeuvres
 
   const available = artworks.filter((w) =>  w.available).length
   const sold      = artworks.filter((w) => !w.available).length
@@ -113,7 +98,7 @@ export default async function OeuvresPage() {
 
               {/* Price */}
               <p className="font-serif text-sm font-light text-foreground hidden md:block">
-                {artwork.price ? formatPrice(artwork.price) : '—'}
+                {artwork.prix !== null ? formatPrice(artwork.prix) : '—'}
               </p>
 
               {/* Status */}

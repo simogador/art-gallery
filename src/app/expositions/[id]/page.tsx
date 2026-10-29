@@ -5,7 +5,7 @@ import {
   getRelatedExhibitions,
   getExhibitionArtworksBySlug,
   getExhibitionArtistsBySlug,
-} from '@/lib/db/exhibitions'
+} from '@/lib/catalogue'
 import { ExhibitionDetail } from './ExhibitionDetail'
 
 interface Props {

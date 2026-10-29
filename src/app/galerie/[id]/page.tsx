@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getArtworkBySlug, getRelatedArtworks } from '@/lib/db/artworks'
-import { getArtistBySlug } from '@/lib/db/artists'
+import { getArtworkBySlug, getRelatedArtworks, getArtistBySlug } from '@/lib/catalogue'
 import { ArtworkDetail } from './ArtworkDetail'
 
 interface Props {
