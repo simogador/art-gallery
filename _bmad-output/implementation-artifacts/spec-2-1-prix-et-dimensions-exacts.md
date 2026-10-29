@@ -2,8 +2,9 @@
 title: 'Story 2.1 — Prix et dimensions exacts au centime et au millimètre'
 type: 'feature'
 created: '2026-10-29'
-status: 'draft'
+status: 'in-progress'
 route: 'dispatch'
+baseline_commit: '785f346f06a0b317091f00f42ac738244ab34736'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md', '{project-root}/docs/migrations.md']
 ---
