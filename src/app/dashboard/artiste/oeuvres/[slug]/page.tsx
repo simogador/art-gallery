@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { oeuvreAEditer } from '@/lib/catalogue'
 import { ArtworkForm } from '@/components/dashboard/ArtworkForm'
 import { acteurCourant } from '@/lib/acces'
+import { StatusBadge } from '@/components/dashboard/StatusBadge'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -55,22 +56,18 @@ export default async function EditOeuvrePage({ params }: Props) {
           </div>
 
           <div className="flex items-center gap-3 flex-shrink-0">
-            <span className={`inline-flex items-center gap-1.5 font-sans text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-sm ${
-              artwork.available
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                : 'bg-neutral-100 text-neutral-500 border border-neutral-200'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${artwork.available ? 'bg-emerald-500' : 'bg-neutral-400'}`} />
-              {artwork.available ? 'Disponible' : 'Vendue'}
-            </span>
-            <Link
-              href={`/galerie/${artwork.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200"
-            >
-              Voir ↗
-            </Link>
+            <StatusBadge etat={artwork.etat} libelle={artwork.libelleEtat} />
+            {/* Fiche publique seulement pour une œuvre visible (sinon 404 ou redirection). */}
+            {artwork.visible && (
+              <Link
+                href={`/galerie/${artwork.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200"
+              >
+                Voir ↗
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -88,7 +85,6 @@ export default async function EditOeuvrePage({ params }: Props) {
           price:       artwork.price,
           description: artwork.description,
           imageUrl:    artwork.imageUrl ?? null,
-          available:   artwork.available,
         }}
       />
     </div>

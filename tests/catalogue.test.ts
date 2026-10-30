@@ -24,6 +24,8 @@ const SQL_RECOPIE = readFileSync(path.resolve('scripts/sql/recopie-prix-dimensio
 const SQL_ILLISIBLES = readFileSync(path.resolve('scripts/sql/dimensions-illisibles.sql'), 'utf8')
 const SQL_PRIX_NON_RECOPIES = readFileSync(path.resolve('scripts/sql/prix-non-recopies.sql'), 'utf8')
 const SQL_ECARTS = readFileSync(path.resolve('scripts/sql/ecarts-prix-dimensions.sql'), 'utf8')
+// Story 2.2 : le catalogue ne lit que des œuvres publiées ; base migrée et recopiée.
+const SQL_RECOPIE_ETATS = readFileSync(path.resolve('scripts/sql/recopie-publication-disponibilite.sql'), 'utf8')
 
 // Textes de dimensions communs au test TypeScript et au test SQL : les deux lectures doivent s'accorder.
 const DIMENSIONS_ECHANTILLON = [
@@ -279,6 +281,7 @@ describe('base : recopie, lectures et écritures', () => {
       `UPDATE "Artwork" SET "prixCentimes" = 125050, "hauteurMm" = 600, "largeurMm" = 800 WHERE slug = 'exacte'`,
     )
     await ancienneOeuvre('illisible', 'environ 1 m', 2)
+    await db.query(SQL_RECOPIE_ETATS)
 
     const { getArtworkBySlug, getAllArtworks } = await import('@/lib/catalogue')
     expect(await getArtworkBySlug('exacte')).toMatchObject({ price: 1250.5, size: '60 × 80 cm' })
@@ -292,6 +295,7 @@ describe('base : recopie, lectures et écritures', () => {
     await ancienneOeuvre('vendue-2', 'variable', 1, false)
     await db.query(`UPDATE "Artwork" SET "prixCentimes" = 10, "hauteurMm" = 100, "largeurMm" = 100 WHERE slug = 'vendue-1'`)
     await db.query(`UPDATE "Artwork" SET "prixCentimes" = 20 WHERE slug = 'vendue-2'`)
+    await db.query(SQL_RECOPIE_ETATS)
 
     const { accueilArtiste, oeuvresDeLArtiste, oeuvreAEditer } = await import('@/lib/catalogue')
     expect((await accueilArtiste(UTILISATEUR))?.chiffreAffairesCentimes).toBe(30)

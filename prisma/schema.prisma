@@ -49,6 +49,11 @@ model Artwork {
   largeurMm    Int?
   profondeurMm Int?
   available   Boolean            @default(true)
+  // AD-6, AD-20 (story 2.2) : deux axes distincts. Écrits seulement par les modules curation
+  // (publication) et disponibilite (disponibilite) ; available reste écrit jusqu'à la story 2.10.
+  // Facultatives, sans valeur par défaut : l'ancien code insère encore sans elles.
+  publication   Publication?
+  disponibilite Disponibilite?
   featured    Boolean            @default(false)
   artist      Artist             @relation(fields: [artistId], references: [id])
   artistId    String
@@ -59,6 +64,23 @@ model Artwork {
   @@index([slug])
   @@index([artistId])
   @@index([featured])
+  @@index([publication, disponibilite])
+}
+
+// Story 2.2 : publication d'une œuvre (curation).
+enum Publication {
+  brouillon
+  en_curation
+  publiee
+}
+
+// Story 2.2 : disponibilité d'une œuvre à la vente.
+enum Disponibilite {
+  disponible
+  reservee
+  vendue
+  vendue_ailleurs
+  retiree
 }
 
 model Exhibition {

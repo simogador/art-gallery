@@ -286,6 +286,19 @@ async function main() {
 
   console.log(`✓ ${artworks.length} œuvres créées`);
 
+  // Story 2.2 : publication et disponibilité, mêmes règles que
+  // scripts/sql/recopie-publication-disponibilite.sql (available true → publiée + disponible,
+  // false → publiée + vendue). Ne remplit que les colonnes vides, aussi sur une base déjà amorcée.
+  await prisma.artwork.updateMany({ where: { publication: null }, data: { publication: "publiee" } });
+  await prisma.artwork.updateMany({
+    where: { disponibilite: null, available: true },
+    data: { disponibilite: "disponible" },
+  });
+  await prisma.artwork.updateMany({
+    where: { disponibilite: null, available: false },
+    data: { disponibilite: "vendue" },
+  });
+
   // ── Expositions ───────────────────────────────────────────────────────────
   const exhibitions = await Promise.all([
     prisma.exhibition.upsert({

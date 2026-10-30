@@ -5,6 +5,7 @@ import { formatPrice } from '@/lib/utils/artworks'
 import { ArtworkImage } from '@/components/ui'
 import { accueilArtiste, centimesEnEuros, gradient, accent } from '@/lib/catalogue'
 import { acteurCourant } from '@/lib/acces'
+import { StatusBadge } from '@/components/dashboard/StatusBadge'
 
 export const metadata: Metadata = { title: 'Espace artiste — Errancy' }
 
@@ -29,8 +30,9 @@ export default async function ArtisteDashboardPage() {
 
   const artist        = { ...accueil.artiste, artworks: accueil.recentes }
   const totalArtworks = accueil.total
-  const soldCount     = artist.artworks.filter((w) => !w.available).length
-  const availCount    = artist.artworks.filter((w) =>  w.available).length
+  // États calculés par le module disponibilite (story 2.2).
+  const soldCount     = artist.artworks.filter((w) => w.vendue).length
+  const availCount    = artist.artworks.filter((w) => w.disponible).length
 
   // Chiffre d'affaires : somme exacte en centimes des œuvres vendues.
   const revenue = centimesEnEuros(accueil.chiffreAffairesCentimes) ?? 0
@@ -116,14 +118,7 @@ export default async function ArtisteDashboardPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">
-                  <span className={`inline-flex items-center gap-1.5 font-sans text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-sm ${
-                    artwork.available
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-neutral-100 text-neutral-500 border border-neutral-200'
-                  }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${artwork.available ? 'bg-emerald-500' : 'bg-neutral-400'}`} />
-                    {artwork.available ? 'Disponible' : 'Vendue'}
-                  </span>
+                  <StatusBadge etat={artwork.etat} libelle={artwork.libelleEtat} />
                   {artwork.prix !== null && (
                     <p className="font-serif text-sm font-light text-foreground hidden sm:block">
                       {formatPrice(artwork.prix)}

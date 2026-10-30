@@ -5,6 +5,7 @@ import { formatPrice } from '@/lib/utils/artworks'
 import { ArtworkImage } from '@/components/ui'
 import { oeuvresDeLArtiste, gradient, accent } from '@/lib/catalogue'
 import { acteurCourant } from '@/lib/acces'
+import { StatusBadge } from '@/components/dashboard/StatusBadge'
 
 export const metadata: Metadata = { title: 'Mes œuvres — Errancy' }
 
@@ -18,8 +19,9 @@ export default async function OeuvresPage() {
   if (!lues) redirect('/dashboard/artiste')
   const artworks = lues.oeuvres
 
-  const available = artworks.filter((w) =>  w.available).length
-  const sold      = artworks.filter((w) => !w.available).length
+  // États calculés par le module disponibilite (story 2.2).
+  const available = artworks.filter((w) => w.disponible).length
+  const sold      = artworks.filter((w) => w.vendue).length
 
   return (
     <div>
@@ -103,7 +105,7 @@ export default async function OeuvresPage() {
 
               {/* Status */}
               <div className="hidden md:flex">
-                <StatusBadge available={artwork.available} />
+                <StatusBadge etat={artwork.etat} libelle={artwork.libelleEtat} />
               </div>
 
               {/* Edit link */}
@@ -119,19 +121,6 @@ export default async function OeuvresPage() {
         </div>
       )}
     </div>
-  )
-}
-
-function StatusBadge({ available }: { available: boolean }) {
-  return (
-    <span className={`inline-flex items-center gap-1.5 font-sans text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-sm ${
-      available
-        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-        : 'bg-neutral-100 text-neutral-500 border border-neutral-200'
-    }`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${available ? 'bg-emerald-500' : 'bg-neutral-400'}`} />
-      {available ? 'Disponible' : 'Vendue'}
-    </span>
   )
 }
 

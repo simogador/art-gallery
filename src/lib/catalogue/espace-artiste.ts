@@ -1,19 +1,44 @@
 import { prisma } from '@/lib/prisma'
+import {
+  CHAMPS_ETAT, VENDUE, codeEtat, estDisponible, estVendue, estVisible, libelleEtat, type CodeEtat, type EtatOeuvre,
+} from '@/lib/disponibilite'
 import { centimesEnEuros, formaterDimensions } from './conversions'
 
-// Lectures de l'espace artiste (story 2.1) : prix et dimensions viennent des colonnes exactes.
+// Lectures de l'espace artiste (story 2.1) : prix et dimensions viennent des colonnes exactes ;
+// état (story 2.2) calculé par le module disponibilite.
 // L'appelant a vérifié l'acteur (acteurCourant) ; userId est celui de l'acteur `artist`.
 
 const CHAMPS_OEUVRE = {
   id: true, slug: true, title: true, year: true, medium: true,
   prixCentimes: true, hauteurMm: true, largeurMm: true, profondeurMm: true,
-  available: true, featured: true, imageUrl: true, createdAt: true,
+  featured: true, imageUrl: true, createdAt: true, ...CHAMPS_ETAT,
 } as const
 
 type OeuvreLue = {
   id: string; slug: string; title: string; year: number; medium: string
   prixCentimes: number | null; hauteurMm: number | null; largeurMm: number | null; profondeurMm: number | null
-  available: boolean; featured: boolean; imageUrl: string; createdAt: Date
+  featured: boolean; imageUrl: string; createdAt: Date
+} & EtatOeuvre
+
+/** État affiché à l'artiste (story 2.2), calculé par le module disponibilite. */
+export type EtatAffiche = {
+  /** Code des sept états : brouillon, en_curation, disponible, reservee, vendue, vendue_ailleurs, retiree. */
+  etat: CodeEtat
+  /** « Brouillon », « En curation », « Disponible », « Réservée », « Vendue », « Vendue ailleurs », « Retirée ». */
+  libelleEtat: string
+  /** Publiée et disponible à la vente. */
+  disponible: boolean
+  /** Visible dans la galerie (publiée, non retirée) : sa fiche publique existe. */
+  visible: boolean
+  /** Vendue (même règle que le chiffre d'affaires). */
+  vendue: boolean
+}
+
+function etatAffiche(e: EtatOeuvre): EtatAffiche {
+  return {
+    etat: codeEtat(e), libelleEtat: libelleEtat(e),
+    disponible: estDisponible(e), visible: estVisible(e), vendue: estVendue(e),
+  }
 }
 
 export type OeuvreArtiste = {
@@ -26,18 +51,18 @@ export type OeuvreArtiste = {
   prix: number | null
   /** « 120 × 90 cm », vide si les dimensions sont illisibles. */
   dimensions: string
-  available: boolean
   featured: boolean
   imageUrl: string
   createdAt: Date
-}
+} & EtatAffiche
 
 function versOeuvreArtiste(w: OeuvreLue): OeuvreArtiste {
   return {
     id: w.id, slug: w.slug, title: w.title, year: w.year, medium: w.medium,
     prix: centimesEnEuros(w.prixCentimes),
     dimensions: formaterDimensions(w),
-    available: w.available, featured: w.featured, imageUrl: w.imageUrl, createdAt: w.createdAt,
+    featured: w.featured, imageUrl: w.imageUrl, createdAt: w.createdAt,
+    ...etatAffiche(w),
   }
 }
 
@@ -61,7 +86,7 @@ export async function accueilArtiste(userId: string): Promise<AccueilArtiste | n
   if (!artiste) return null
 
   const vendues = await prisma.artwork.aggregate({
-    where: { artistId: artiste.id, available: false },
+    where: { artistId: artiste.id, ...VENDUE },
     _sum: { prixCentimes: true },
   })
 
@@ -103,29 +128,29 @@ export type OeuvreAEditer = {
   price: number | null
   description: string
   imageUrl: string
-  available: boolean
-}
+} & EtatAffiche
 
 // Formulaire d'édition : seule lecture des anciennes colonnes, pour ne rien perdre d'une valeur
 // pas encore recopiée (prix) ou illisible (dimensions, à corriger à la main).
 export function versOeuvreAEditer(w: {
   slug: string; title: string; year: number; medium: string; description: string; imageUrl: string
-  available: boolean; dimensions: string; price: number | null
+  dimensions: string; price: number | null
   prixCentimes: number | null; hauteurMm: number | null; largeurMm: number | null; profondeurMm: number | null
-}): OeuvreAEditer {
+} & EtatOeuvre): OeuvreAEditer {
   const dimensionsLues = formaterDimensions(w)
   return {
     slug: w.slug, title: w.title, year: w.year, medium: w.medium,
     dimensions: dimensionsLues || w.dimensions,
     dimensionsLues,
     price: centimesEnEuros(w.prixCentimes) ?? w.price,
-    description: w.description, imageUrl: w.imageUrl, available: w.available,
+    description: w.description, imageUrl: w.imageUrl,
+    ...etatAffiche(w),
   }
 }
 
 const CHAMPS_EDITION = {
   slug: true, title: true, year: true, medium: true, description: true, imageUrl: true,
-  available: true, dimensions: true, price: true, artistId: true,
+  dimensions: true, price: true, artistId: true, ...CHAMPS_ETAT,
   prixCentimes: true, hauteurMm: true, largeurMm: true, profondeurMm: true,
 } as const
 

@@ -17,7 +17,6 @@ interface ArtworkData {
   price: number | null
   description: string
   imageUrl: string | null
-  available: boolean
 }
 
 interface Props {
