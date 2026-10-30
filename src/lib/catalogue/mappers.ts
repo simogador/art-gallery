@@ -1,5 +1,7 @@
 import type { Artist, Artwork, Exhibition, ArtMedium, ExhibitionStatus } from '@/lib/types'
 import { centimesEnEuros, formaterDimensions } from './conversions'
+// Partie pure du module disponibilite : ce fichier reste importable par un composant client.
+import { estDisponible, type EtatOeuvre } from '@/lib/disponibilite/etats'
 
 /* ── Visual palettes (deterministic from slug) ─────────────────────────── */
 
@@ -105,10 +107,9 @@ type DbArtwork = {
   hauteurMm: number | null
   largeurMm: number | null
   profondeurMm: number | null
-  available: boolean
   featured: boolean
   artist: { slug: string; name: string }
-}
+} & EtatOeuvre
 
 export function mapArtwork(w: DbArtwork): Artwork {
   return {
@@ -125,7 +126,8 @@ export function mapArtwork(w: DbArtwork): Artwork {
     description: w.description,
     tags: [],
     featured: w.featured,
-    sold: !w.available,
+    // Story 2.2 : « vendue » pour l'UI = non disponible (réservée, vendue ailleurs… comprises).
+    sold: !estDisponible(w),
     imageUrl: w.imageUrl ?? null,
     gradient: gradient(w.slug),
     accentColor: accent(w.slug),

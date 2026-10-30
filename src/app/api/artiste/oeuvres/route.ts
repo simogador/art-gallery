@@ -3,6 +3,8 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { acteurCourant } from '@/lib/acces'
 import { champsDimensions, champsPrix } from '@/lib/catalogue/conversions'
+import { publicationInitiale } from '@/lib/curation'
+import { disponibiliteInitiale } from '@/lib/disponibilite'
 
 function slugify(str: string): string {
   return str
@@ -53,6 +55,9 @@ export async function POST(req: NextRequest) {
 
   const baseSlug = await uniqueSlug(`${slugify(title)}-${year}`)
 
+  // Story 2.2 : brouillon + disponible, absente du catalogue jusqu'à sa publication par l'équipe.
+  const initiale = publicationInitiale()
+
   const artwork = await prisma.artwork.create({
     data: {
       slug:        baseSlug,
@@ -63,7 +68,8 @@ export async function POST(req: NextRequest) {
       ...taille.champs,
       description: description?.trim() ?? '',
       imageUrl:    '',
-      available:   true,
+      ...initiale,
+      ...disponibiliteInitiale(initiale),
       featured:    false,
       artistId:    artist.id,
     },

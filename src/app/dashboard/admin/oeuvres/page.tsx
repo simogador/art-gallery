@@ -9,6 +9,9 @@ import { gradient, accent } from '@/lib/catalogue/mappers'
 import { ToggleAction } from '@/components/dashboard/ToggleAction'
 import { DeleteButton } from '@/components/dashboard/DeleteButton'
 import { acteurCourant } from '@/lib/acces'
+import {
+  basculePossible, estDisponible, estMarqueeDisponible, estPubliee, estRecopiee, estVendue, libelleEtat,
+} from '@/lib/disponibilite'
 
 export const metadata: Metadata = { title: 'Œuvres — Admin Errancy' }
 
@@ -20,8 +23,10 @@ export default async function AdminOeuvresPage() {
     include: { artist: { select: { name: true, slug: true } } },
   })
 
-  const available = artworks.filter((w) =>  w.available).length
-  const sold      = artworks.filter((w) => !w.available).length
+  // Story 2.2 : états lus par le module disponibilite.
+  const available   = artworks.filter((w) => estDisponible(w)).length
+  const sold        = artworks.filter((w) => estVendue(w)).length
+  const nonPubliees = artworks.filter((w) => !estPubliee(w)).length
 
   return (
     <div>
@@ -31,21 +36,21 @@ export default async function AdminOeuvresPage() {
           Œuvres
         </h1>
         <p className="font-sans text-sm text-neutral-400 mt-2">
-          {artworks.length} œuvre{artworks.length > 1 ? 's' : ''} · {available} disponibles · {sold} vendues
+          {artworks.length} œuvre{artworks.length > 1 ? 's' : ''} · {available} disponibles · {sold} vendues · {nonPubliees} non publiées
         </p>
       </div>
 
       {/* Column headers */}
-      <div className="hidden lg:grid grid-cols-[56px_1fr_140px_90px_90px_80px] gap-4 px-4 mb-2">
-        {['', 'Titre', 'Artiste', 'Prix', 'Statut', ''].map((h) => (
-          <span key={h} className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{h}</span>
+      <div className="hidden lg:grid grid-cols-[56px_1fr_140px_90px_110px_90px_80px] gap-4 px-4 mb-2">
+        {['', 'Titre', 'Artiste', 'Prix', 'Publication', 'Statut', ''].map((h, i) => (
+          <span key={i} className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{h}</span>
         ))}
       </div>
 
       <div className="flex flex-col gap-2">
         {artworks.map((artwork) => (
           <div key={artwork.slug}
-            className="grid grid-cols-[48px_1fr_auto] lg:grid-cols-[56px_1fr_140px_90px_90px_80px] gap-4 items-center p-4 border border-neutral-200 rounded-sm hover:border-neutral-300 transition-colors duration-200 group">
+            className="grid grid-cols-[48px_1fr_auto] lg:grid-cols-[56px_1fr_140px_90px_110px_90px_80px] gap-4 items-center p-4 border border-neutral-200 rounded-sm hover:border-neutral-300 transition-colors duration-200 group">
 
             {/* Thumbnail */}
             <div className="relative w-12 h-14 rounded-sm overflow-hidden flex-shrink-0">
@@ -77,16 +82,33 @@ export default async function AdminOeuvresPage() {
               {artwork.prixCentimes !== null ? formatPrice(centimesEnEuros(artwork.prixCentimes)!) : '—'}
             </p>
 
-            {/* Status toggle */}
+            {/* Publication toggle (module curation) */}
             <div className="hidden lg:block">
+              {estRecopiee(artwork) ? (
               <ToggleAction
-                value={artwork.available}
+                value={estPubliee(artwork)}
+                apiUrl={`/api/admin/oeuvres/${artwork.slug}`}
+                field="publiee"
+                labelOn="Publiée"
+                labelOff="Brouillon"
+                colorOn="blue"
+              />
+              ) : <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{libelleEtat(artwork)}</span>}
+            </div>
+
+            {/* Status toggle (module disponibilite) : seulement entre disponible et vendue ;
+                réservée, vendue ailleurs, retirée ou non recopiée en lecture seule. */}
+            <div className="hidden lg:block" title={libelleEtat(artwork)}>
+              {basculePossible(artwork) ? (
+              <ToggleAction
+                value={estMarqueeDisponible(artwork)}
                 apiUrl={`/api/admin/oeuvres/${artwork.slug}`}
                 field="available"
                 labelOn="Dispo"
                 labelOff="Vendue"
                 colorOn="green"
               />
+              ) : <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{libelleEtat(artwork)}</span>}
             </div>
 
             {/* Actions */}

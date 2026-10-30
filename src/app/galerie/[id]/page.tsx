@@ -1,6 +1,6 @@
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getArtworkBySlug, getRelatedArtworks, getArtistBySlug } from '@/lib/catalogue'
+import { getArtworkBySlug, getRelatedArtworks, getArtistBySlug, artisteDOeuvreRetiree } from '@/lib/catalogue'
 import { ArtworkDetail } from './ArtworkDetail'
 
 interface Props {
@@ -22,8 +22,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ArtworkPage({ params }: Props) {
+  // Story 2.2 : fiche des seules œuvres visibles. Retirée : redirection permanente vers son
+  // artiste ; non publiée (brouillon, en curation) ou inconnue : 404.
   const artwork = await getArtworkBySlug(params.id)
-  if (!artwork) notFound()
+  if (!artwork) {
+    const artiste = await artisteDOeuvreRetiree(params.id)
+    if (artiste) permanentRedirect(`/artistes/${artiste}`)
+    notFound()
+  }
 
   const [related, artist] = await Promise.all([
     getRelatedArtworks(artwork),

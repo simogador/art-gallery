@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
+import { marquerVendues } from '@/lib/disponibilite'
 import type Stripe from 'stripe'
 
 // Raw body required for Stripe signature verification — do NOT parse as JSON
@@ -46,10 +47,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   const slugs = artworkIds.split(',').filter(Boolean)
 
-  const { count } = await prisma.artwork.updateMany({
-    where: { slug: { in: slugs } },
-    data:  { available: false },
-  })
+  // Story 2.2 : `vendue` (et `available` = false, double écriture), idempotent.
+  const count = await marquerVendues(slugs)
 
   console.log(`[webhook] ${count} œuvre(s) marquée(s) vendue(s) :`, slugs)
 
@@ -98,10 +97,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
   const slugs = artworkIds.split(',').filter(Boolean)
 
-  await prisma.artwork.updateMany({
-    where: { slug: { in: slugs } },
-    data:  { available: false },
-  })
+  await marquerVendues(slugs)
 
   await prisma.order.create({
     data: {

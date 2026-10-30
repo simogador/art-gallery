@@ -1,16 +1,19 @@
 import { prisma } from '@/lib/prisma'
+import { VISIBLE } from '@/lib/disponibilite'
 import { mapExhibition, mapArtwork, mapArtist } from './mappers'
 import type { Exhibition, Artwork, Artist } from '@/lib/types'
 
+// Pages publiques (story 2.2) : seules les œuvres visibles sont listées et comptées.
 const ARTWORK_INCLUDE = {
   artworks: {
+    where: { artwork: VISIBLE },
     include: {
       artwork: {
         include: { artist: { select: { slug: true, name: true } } },
       },
     },
   },
-  _count: { select: { artworks: true } },
+  _count: { select: { artworks: { where: { artwork: VISIBLE } } } },
 } as const
 
 export async function getAllExhibitions(): Promise<Exhibition[]> {
@@ -34,6 +37,7 @@ export async function getExhibitionArtworksBySlug(slug: string): Promise<Artwork
     where: { slug },
     include: {
       artworks: {
+        where: { artwork: VISIBLE },
         include: {
           artwork: { include: { artist: { select: { slug: true, name: true } } } },
         },
@@ -48,13 +52,15 @@ export async function getExhibitionArtistsBySlug(slug: string): Promise<Artist[]
     where: { slug },
     include: {
       artworks: {
+        where: { artwork: VISIBLE },
         include: {
           artwork: {
             include: {
               artist: {
                 include: {
-                  _count: { select: { artworks: true } },
+                  _count: { select: { artworks: { where: VISIBLE } } },
                   artworks: {
+                    where: VISIBLE,
                     select: {
                       medium: true,
                       exhibitions: { select: { exhibitionId: true } },

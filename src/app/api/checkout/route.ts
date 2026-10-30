@@ -4,6 +4,7 @@ import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import type { CartItem } from '@/lib/store/cart'
 import { lot2Ouvert } from '@/lib/reglages'
+import { estDisponible } from '@/lib/disponibilite'
 
 export async function POST(req: NextRequest) {
   // AD-17 : tant que le Lot 2 est fermé, aucune session de paiement n'est créée.
@@ -42,7 +43,8 @@ export async function POST(req: NextRequest) {
     if (!artwork) {
       return NextResponse.json({ error: `Œuvre introuvable : ${slug}` }, { status: 400 })
     }
-    if (!artwork.available) {
+    // Story 2.2 : définition unique de « disponible » (publiée et disponible).
+    if (!estDisponible(artwork)) {
       return NextResponse.json({ error: `"${artwork.title}" n'est plus disponible.` }, { status: 400 })
     }
     if (artwork.prixCentimes === null || artwork.prixCentimes <= 0) {

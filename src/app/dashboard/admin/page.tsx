@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/utils/artworks'
 import { acteurCourant } from '@/lib/acces'
 import { compterInscriptionsOuverture } from '@/lib/demandes'
+import { compterOeuvres } from '@/lib/disponibilite'
 
 export const metadata: Metadata = { title: 'Admin — Errancy' }
 
@@ -12,18 +13,15 @@ export default async function AdminPage() {
   if ((await acteurCourant()).type !== 'admin') redirect('/dashboard')
 
   const [
-    artworksTotal,
-    artworksAvailable,
-    artworksSold,
+    oeuvres,
     artistsTotal,
     usersTotal,
     ordersAgg,
     recentOrders,
     inscritsOuverture,
   ] = await Promise.all([
-    prisma.artwork.count(),
-    prisma.artwork.count({ where: { available: true  } }),
-    prisma.artwork.count({ where: { available: false } }),
+    // Story 2.2 : comptages par le module disponibilite.
+    compterOeuvres(),
     prisma.artist.count(),
     prisma.user.count(),
     prisma.order.aggregate({ _sum: { amount: true } }),
@@ -41,7 +39,7 @@ export default async function AdminPage() {
   const revenue = ordersAgg._sum.amount ?? 0
 
   const stats = [
-    { label: 'Œuvres',        value: artworksTotal,         sub: `${artworksAvailable} dispo · ${artworksSold} vendues` },
+    { label: 'Œuvres',        value: oeuvres.total,         sub: `${oeuvres.disponibles} dispo · ${oeuvres.vendues} vendues · ${oeuvres.nonPubliees} non publiées` },
     { label: 'Artistes',      value: artistsTotal,          sub: 'profils actifs' },
     { label: 'Utilisateurs',  value: usersTotal,            sub: 'comptes inscrits' },
     { label: "Chiffre d'aff.", value: formatPrice(revenue), sub: `${recentOrders.length} commande${recentOrders.length > 1 ? 's' : ''}` },
