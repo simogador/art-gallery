@@ -2,8 +2,9 @@
 title: 'Story 2.2 — Publication et disponibilité, deux états distincts'
 type: 'feature'
 created: '2026-10-30'
-status: 'draft'
+status: 'in-progress'
 route: 'dispatch'
+baseline_commit: '9f49b476f681ff4f6d4a72471096272a70a69c90'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md', '{project-root}/docs/migrations.md', '{project-root}/_bmad-output/implementation-artifacts/spec-2-1-prix-et-dimensions-exacts.md']
 ---
