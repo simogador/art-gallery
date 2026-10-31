@@ -4,8 +4,11 @@ import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { ArtworkForm } from '@/components/dashboard/ArtworkForm'
 import { acteurCourant } from '@/lib/acces'
+import { listerZones } from '@/lib/livraison'
+import { SectionExpedition } from './SectionExpedition'
 
 export const metadata: Metadata = { title: 'Nouvelle œuvre — Errancy' }
+export const dynamic = 'force-dynamic'
 
 export default async function NouvelleOeuvrePage() {
   // Rôle relu à chaque page : le layout n'est pas réexécuté lors d'une navigation interne.
@@ -18,6 +21,7 @@ export default async function NouvelleOeuvrePage() {
     select: { id: true },
   })
   if (!artist) redirect('/dashboard/artiste')
+  const zones = await listerZones()
 
   return (
     <div>
@@ -44,6 +48,8 @@ export default async function NouvelleOeuvrePage() {
       <div className="divider mb-10" />
 
       <ArtworkForm mode="create" />
+
+      <SectionExpedition zones={zones.map((z) => z.nom)} />
     </div>
   )
 }
