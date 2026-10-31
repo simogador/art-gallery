@@ -15,7 +15,7 @@
 - **Entité qui exploite le site et perçoit la commission** (pays, forme) : Errancy perçoit la commission — pays et forme juridique encore à préciser
 - **Pays de résidence des artistes** : **tous pays** (2026-10-24)
 - **Stripe est-il utilisable par cette entité ?** (oui / non / à vérifier) : non pour une société marocaine. Recommandation de l'étude (2026-10-24) : société d'exploitation au Royaume-Uni (ou aux États-Unis) + versements par paliers ; **avis juridique marocain requis avant décision**. Voir `_bmad-output/planning-artifacts/research/technical-paiement-place-de-marche-art-exploitant-2026-10-24/research.md`
-- **Zones de livraison** et qui paie la livraison : **l'artiste expédie l'œuvre** (2026-10-24) ; zones et prise en charge des frais : …
+- **Zones de livraison** et qui paie la livraison : **l'artiste expédie l'œuvre** (2026-10-24) ; **zones de départ : Maroc, Union européenne, Europe hors UE, Amérique du Nord, Reste du monde** (2026-10-31, OQ-5, composition seule) ; prise en charge des frais, douane, seuil d'assurance et casse : … (avant le Lot 2)
 
 ## 2. Lieu physique
 
@@ -73,6 +73,7 @@
 | 2026-10-27 | Node.js 24 LTS, `engines.node` `24.x` (plage bornée, remplace « au minimum 22.12 ») | Node 20 en fin de vie et déprécié par Vercel ; plage bornée car Vercel applique `engines` en priorité sur le réglage du projet ; validé par le porteur (story 1.1, PR #7) |
 | 2026-10-29 | Neon : plan gratuit conservé. Avant chaque migration de données, branche de sauvegarde datée, puis répétition d'abord sur la branche `preview` ; le porteur applique le SQL depuis l'éditeur SQL de Neon (AQ-4) | Choix du porteur avant la story 2.1 (première migration de données) ; procédure dans `docs/migrations.md` |
 | 2026-10-30 | Œuvre retirée : redirection permanente en 308 (`permanentRedirect` de Next.js) au lieu du 301 prévu par FR-6 / NFR-2 | Même effet permanent pour les moteurs de recherche ; une 301 stricte demanderait un mécanisme à part ; validé par le porteur (story 2.2, PR #21) |
+| 2026-10-31 | Zones de livraison de départ (OQ-5, composition seule) : Maroc, Union européenne, Europe hors UE (Royaume-Uni, Suisse, Norvège…), Amérique du Nord (États-Unis, Canada), Reste du monde explicite. Données modifiables par l'équipe dans l'administration (AD-12), pas du code ; le porteur expédie ses propres tableaux depuis le Maroc | Zones regroupant frais, délais et régime douanier comparables ; « Reste du monde » explicite pour qu'un artiste puisse y livrer ou cocher « je ne livre pas ». Payeur de la livraison, douane, seuil d'assurance et casse restent ouverts jusqu'au Lot 2 (choix du porteur, story 2.3) |
 
 ## Conséquences à traiter (relevées le 2026-10-23, à valider en PRD et architecture)
 
