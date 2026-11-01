@@ -58,6 +58,7 @@ model Artwork {
   artist      Artist             @relation(fields: [artistId], references: [id])
   artistId    String
   exhibitions ArtworkExhibition[]
+  offresLivraison OffreLivraison[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
@@ -201,4 +202,45 @@ model TentativeInscription {
 
   @@index([cle, createdAt])
   @@index([createdAt])
+}
+
+// ── Livraison (AD-12, story 2.3) ─────────────────────────────────────────────
+// Zones gérées par l'équipe (module livraison), jamais codées en dur. Le code pays (ISO 3166-1
+// alpha-2) est la clé de ZonePays : un pays appartient au plus à une zone.
+
+model Zone {
+  id        String           @id @default(cuid())
+  nom       String           @unique
+  pays      ZonePays[]
+  offres    OffreLivraison[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model ZonePays {
+  codePays String @id @db.VarChar(2)
+  zone     Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  zoneId   String
+
+  @@index([zoneId])
+}
+
+// Une offre par œuvre et par zone acceptée (saisie en story 2.6) ; « je ne livre pas » = pas d'offre.
+// Restrict : une zone utilisée par une offre ne peut pas être supprimée, même hors application.
+model OffreLivraison {
+  id                String   @id @default(cuid())
+  artwork           Artwork  @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  artworkId         String
+  zone              Zone     @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  zoneId            String
+  fraisCentimes     Int
+  devise            String   @default("EUR")
+  preparationJours  Int
+  transportMinJours Int
+  transportMaxJours Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([artworkId, zoneId])
+  @@index([zoneId])
 }

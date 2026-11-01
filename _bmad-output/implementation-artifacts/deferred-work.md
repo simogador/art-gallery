@@ -20,3 +20,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-1-prix-et-dimensions-exacts.md`
   summary: Ajouter des contraintes `CHECK` en base (`prixCentimes` > 0, millimètres ≥ 1, devise sur trois lettres) une fois les anciennes colonnes retirées.
   evidence: Les règles ne vivent que dans `conversions.ts` et le SQL de recopie ; une écriture hors application pourrait stocker une valeur invalide. À faire avec la story 2.10.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-3-zones-de-livraison.md`
+  summary: Ajouter à `OffreLivraison` des contraintes `CHECK` (frais ≥ 0, délais ≥ 0, transport min ≤ max, devise sur trois lettres) avec la story 2.6, qui écrit la table.
+  evidence: Revue de la story 2.3 : la table est créée sans contrainte de valeur ; vide jusqu'à la story 2.6. Vérifier que `prisma migrate diff` de la CI tolère des `CHECK` écrits à la main.
