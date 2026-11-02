@@ -2,8 +2,9 @@
 title: 'Story 2.4 — Invitation et premier accès de l''artiste'
 type: 'feature'
 created: '2026-11-02'
-status: 'draft'
+status: 'in-progress'
 route: 'dispatch'
+baseline_commit: '285b6f5b932ddd542564fe658aea1b51ca3ade21'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md', '{project-root}/docs/migrations.md']
 ---
@@ -66,19 +67,33 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `prisma/schema.prisma` + migration `<horodatage>_invitations_artistes` -- deux tables, sans écart.
-- [ ] `src/lib/acces/jetons.ts`, `invitations.ts`, `index.ts` -- module.
-- [ ] `src/lib/reglages/index.ts` -- réglages.
-- [ ] `src/app/dashboard/admin/artistes/*` -- invitation.
-- [ ] `src/app/auth/invitation/*` -- ouverture et activation.
-- [ ] Espace artiste -- navigation et pages vides.
-- [ ] `tests/invitations.test.ts` -- matrice I/O, dont double envoi concurrent et cloisonnement.
-- [ ] `docs/migrations.md` (story 2.4) et `AGENTS.md` (jetons et invitations).
-- [ ] `scripts/sql/fiche-artiste-porteur.sql` -- modèle de création de la fiche du porteur (valeurs à compléter), hors code applicatif.
+- [x] `prisma/schema.prisma` + migration `20261102013809_invitations_artistes` -- deux tables, sans écart.
+- [x] `src/lib/acces/jetons.ts`, `invitations.ts`, `index.ts` -- module.
+- [x] `src/lib/reglages/index.ts` -- réglages.
+- [x] `src/app/dashboard/admin/artistes/*` -- invitation.
+- [x] `src/app/auth/invitation/*` -- ouverture et activation.
+- [x] Espace artiste -- navigation et pages vides.
+- [x] `tests/invitations.test.ts` -- matrice I/O, dont double envoi concurrent et cloisonnement.
+- [x] `docs/migrations.md` (story 2.4) et `AGENTS.md` (jetons et invitations).
+- [x] `scripts/sql/fiche-artiste-porteur.sql` -- modèle de création de la fiche du porteur (valeurs à compléter), hors code applicatif.
 
 **Acceptance Criteria:**
 - Given la base, when on lit `Jeton`, then aucune valeur en clair n'y figure.
 - Given la migration appliquée, when on revient au commit précédent, then le site fonctionne (tables ignorées).
+
+## Implementation Notes
+
+- Migration `20261102013809_invitations_artistes` : produite par `prisma migrate dev --create-only` contre PostgreSQL 16 local ; enum `UsageJeton`, tables `Jeton` (empreinte unique, index `usage, cible`) et `Invitation` (cascade sur `Artist`). Aucune colonne ajoutée aux tables existantes.
+- `acces/jetons.ts` : `randomBytes(32)` en base64url (43 caractères, format vérifié avant toute lecture), empreinte SHA-256 hexadécimale ; `consommerJeton` = mise à jour conditionnelle (`consommeLe` et `revoqueLe` nuls, échéance future), donc un seul gagnant sous deux envois simultanés (testé).
+- `acces/invitations.ts` : e-mail normalisé (minuscules) ; refus `deja_relie`, `email_utilise`, `email_invalide`, `introuvable`, `acces_refuse`. Réinvitation : révoque les jetons des invitations non acceptées de l'artiste. Activation : contrôles de saisie, puis une transaction (consommation, création du `User` `artist`, rattachement conditionnel `userId IS NULL`, charte datée et versionnée) ; toute erreur annule la consommation (e-mail pris entre-temps → `email_utilise`, jeton toujours valable, testé).
+- Charte provisoire dans `acces/charte.ts` (7 articles, version `2026-11-02-provisoire`) ; durée (7 jours) et `CONTACT_EQUIPE` dans `reglages`.
+- Admin : `InvitationArtiste` sous chaque artiste sans compte (« Inviter » / « Renvoyer une invitation », invitation en attente affichée), lien construit sur l'origine de la requête (`x-forwarded-host`/`host`, `x-forwarded-proto`), montré une fois avec « Copier ».
+- `/auth/invitation/[jeton]` (GET, 303) : cookie `invitation` httpOnly, `Secure` en https, `SameSite=Lax`, chemin `/auth/invitation`, expire à l'échéance ; lien invalide → cookie effacé. `Referrer-Policy: no-referrer` posé par la route et par `next.config.mjs` (`/auth/invitation` et sous-chemins) ; `referrer` aussi dans les métadonnées de la page. Constantes du cookie dans `cookie.ts` et vue « lien expiré » dans `LienExpire.tsx` (Next.js n'admet que ses propres exports dans `route.ts` et `page.tsx`).
+- Activation : `signIn('credentials')` vers `/dashboard/artiste` après effacement du cookie ; en cas d'échec de connexion, message « Votre accès est créé. Connectez-vous… ».
+- Espace artiste : `DashboardNav` à quatre onglets texte, `aria-current`, basse sous `lg` (bordure haute 2 px sur l'onglet courant), latérale à partir de `lg` ; accueil réduit au bloc « Mes œuvres » (total exact ; les anciens compteurs « disponibles / vendues » et le chiffre d'affaires ne portaient que sur les 5 œuvres récentes et sont retirés) ; pages vides `commandes` et `paiements`.
+- `scripts/sql/fiche-artiste-porteur.sql` : modèle à compléter, idempotent (`ON CONFLICT (slug) DO NOTHING`).
+- Vérification dans le navigateur (`next start` local) : invitation par l'admin, ouverture du lien sur mobile (URL nettoyée, `no-referrer` sur les deux réponses), erreur de charte reliée au champ, création de l'accès et arrivée sur l'accueil (4 onglets, « Accueil » courant), page Commandes, second usage du lien → « Ce lien d'invitation a expiré. ». Aucune erreur de console.
+- Liste d'exceptions Prisma inchangée (19) ; les nouveaux fichiers passent par `acces`.
 
 ## Verification
 

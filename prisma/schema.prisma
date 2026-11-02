@@ -22,6 +22,7 @@ model Artist {
   featured    Boolean   @default(false)
   active      Boolean   @default(true)
   artworks    Artwork[]
+  invitations Invitation[]
   userId      String?   @unique
   user        User?     @relation(fields: [userId], references: [id])
   createdAt   DateTime  @default(now())
@@ -243,4 +244,39 @@ model OffreLivraison {
 
   @@unique([artworkId, zoneId])
   @@index([zoneId])
+}
+
+// ── Accès (AD-14, story 2.4) ─────────────────────────────────────────────────
+// Jetons créés et vérifiés seulement par le module acces : seule l'empreinte SHA-256 est stockée.
+// Les autres usages d'AD-14 (suivi, desinscription, commande_assistee) viendront avec leurs epics.
+
+enum UsageJeton {
+  invitation
+}
+
+model Jeton {
+  id         String     @id @default(cuid())
+  empreinte  String     @unique
+  usage      UsageJeton
+  cible      String
+  echeance   DateTime
+  consommeLe DateTime?
+  revoqueLe  DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@index([usage, cible])
+}
+
+// Invitation d'un artiste existant (FR-34) ; le jeton qui la porte a pour cible son id.
+model Invitation {
+  id            String    @id @default(cuid())
+  artist        Artist    @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  artistId      String
+  email         String
+  creeParId     String?
+  accepteeLe    DateTime?
+  charteVersion String?
+  createdAt     DateTime  @default(now())
+
+  @@index([artistId])
 }

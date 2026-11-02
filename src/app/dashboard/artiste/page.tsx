@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { formatPrice } from '@/lib/utils/artworks'
 import { ArtworkImage } from '@/components/ui'
-import { accueilArtiste, centimesEnEuros, gradient, accent } from '@/lib/catalogue'
+import { accueilArtiste, gradient, accent } from '@/lib/catalogue'
 import { acteurCourant } from '@/lib/acces'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
 
@@ -28,51 +28,25 @@ export default async function ArtisteDashboardPage() {
     )
   }
 
-  const artist        = { ...accueil.artiste, artworks: accueil.recentes }
-  const totalArtworks = accueil.total
-  // États calculés par le module disponibilite (story 2.2).
-  const soldCount     = artist.artworks.filter((w) => w.vendue).length
-  const availCount    = artist.artworks.filter((w) => w.disponible).length
-
-  // Chiffre d'affaires : somme exacte en centimes des œuvres vendues.
-  const revenue = centimesEnEuros(accueil.chiffreAffairesCentimes) ?? 0
-
-  const stats = [
-    { label: 'Œuvres total',      value: totalArtworks,      unit: '' },
-    { label: 'Disponibles',        value: availCount,         unit: '' },
-    { label: 'Vendues',            value: soldCount,          unit: '' },
-    { label: "Chiffre d'affaires",  value: formatPrice(revenue), unit: '' },
-  ]
+  const artist  = { ...accueil.artiste, artworks: accueil.recentes }
 
   return (
     <div>
       {/* Header */}
       <div className="mb-10">
         <p className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3">
-          Vue d&apos;ensemble
+          Accueil
         </p>
         <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
           Bonjour, {artist.name.split(' ')[0]}
         </h1>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-        {stats.map(({ label, value, unit }) => (
-          <div key={label} className="border border-neutral-200 rounded-sm p-5">
-            <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-400 mb-2">{label}</p>
-            <p className="font-serif text-3xl font-light text-foreground">
-              {value}{unit}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* Recent artworks */}
-      <div className="mb-10">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-sans text-xs uppercase tracking-[0.2em] text-neutral-500">
-            Œuvres récentes
+      {/* Bloc « Mes œuvres » (story 2.4) ; « À expédier » et « Ce qu'on vous doit » viendront au Lot 2. */}
+      <section aria-labelledby="mes-oeuvres" className="mb-10">
+        <div className="flex items-center justify-between mb-2">
+          <h2 id="mes-oeuvres" className="font-sans text-xs uppercase tracking-[0.2em] text-neutral-500">
+            Mes œuvres
           </h2>
           <Link
             href="/dashboard/artiste/oeuvres"
@@ -81,6 +55,9 @@ export default async function ArtisteDashboardPage() {
             Tout voir
           </Link>
         </div>
+        <p className="font-sans text-sm text-neutral-500 mb-6">
+          {accueil.total} œuvre{accueil.total > 1 ? 's' : ''} au total{accueil.total > artist.artworks.length ? ' · les plus récentes :' : ''}
+        </p>
 
         {artist.artworks.length === 0 ? (
           <div className="py-16 border border-dashed border-neutral-200 rounded-sm text-center">
@@ -129,67 +106,14 @@ export default async function ArtisteDashboardPage() {
             ))}
           </div>
         )}
-      </div>
 
-      {/* Quick actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link
           href="/dashboard/artiste/oeuvres/nouvelle"
-          className="group flex items-center gap-4 p-5 border border-neutral-200 rounded-sm hover:border-foreground transition-colors duration-300"
+          className="mt-6 inline-flex items-center min-h-[44px] px-6 border border-neutral-300 rounded-sm font-sans text-xs uppercase tracking-widest text-foreground hover:border-foreground transition-colors duration-300"
         >
-          <div className="w-10 h-10 rounded-sm border border-neutral-200 group-hover:border-gold group-hover:bg-gold/5 flex items-center justify-center transition-all duration-300">
-            <PlusIcon />
-          </div>
-          <div>
-            <p className="font-serif text-base font-light text-foreground group-hover:text-gold transition-colors duration-300">
-              Ajouter une œuvre
-            </p>
-            <p className="font-sans text-xs text-neutral-400 mt-0.5">
-              Titre, technique, prix, image
-            </p>
-          </div>
+          Ajouter une œuvre
         </Link>
-
-        <Link
-          href={`/artistes/${artist.slug}`}
-          className="group flex items-center gap-4 p-5 border border-neutral-200 rounded-sm hover:border-foreground transition-colors duration-300"
-        >
-          <div className="w-10 h-10 rounded-sm border border-neutral-200 group-hover:border-gold group-hover:bg-gold/5 flex items-center justify-center transition-all duration-300">
-            <ExternalIcon />
-          </div>
-          <div>
-            <p className="font-serif text-base font-light text-foreground group-hover:text-gold transition-colors duration-300">
-              Voir mon profil public
-            </p>
-            <p className="font-sans text-xs text-neutral-400 mt-0.5">
-              Page visible par les collectionneurs
-            </p>
-          </div>
-        </Link>
-      </div>
+      </section>
     </div>
-  )
-}
-
-function PlusIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-      className="text-neutral-400">
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  )
-}
-
-function ExternalIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-      className="text-neutral-400">
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-      <polyline points="15 3 21 3 21 9" />
-      <line x1="10" y1="14" x2="21" y2="3" />
-    </svg>
   )
 }

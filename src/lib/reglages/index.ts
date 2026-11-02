@@ -10,3 +10,8 @@ export function lot2Ouvert(env: Record<string, string | undefined> = process.env
 // Limitation des envois du formulaire « Me notifier » de la page de maintenance (FR-35) :
 // au plus `parIp` envois par adresse IP et `parEmail` par e-mail sur `fenetreMinutes`.
 export const LIMITES_INSCRIPTION_OUVERTURE = { fenetreMinutes: 60, parIp: 10, parEmail: 3 } as const
+
+// Invitation des artistes (story 2.4, UXQ-8, décision du porteur du 2026-11-02) : durée de
+// validité du lien, et adresse de « Écrire à l'équipe ».
+export const DUREE_INVITATION_JOURS = 7
+export const CONTACT_EQUIPE = 'contact@errancy.art'
