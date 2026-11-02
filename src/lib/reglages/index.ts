@@ -15,3 +15,12 @@ export const LIMITES_INSCRIPTION_OUVERTURE = { fenetreMinutes: 60, parIp: 10, pa
 // validité du lien, et adresse de « Écrire à l'équipe ».
 export const DUREE_INVITATION_JOURS = 7
 export const CONTACT_EQUIPE = 'contact@errancy.art'
+
+// Passage pendant la maintenance, décidé en edge par le middleware à partir du rôle du jeton :
+// les admins voient tout ; les artistes seulement leur espace privé, pour déposer leurs œuvres
+// avant l'ouverture (décision du porteur du 2026-11-02, story 2.4). Les pages /auth restent ouvertes.
+export function passeLaMaintenance(role: string | null, chemin: string): boolean {
+  if (chemin === '/auth' || chemin.startsWith('/auth/')) return true
+  if (role === 'admin') return true
+  return role === 'artist' && (chemin === '/dashboard/artiste' || chemin.startsWith('/dashboard/artiste/'))
+}

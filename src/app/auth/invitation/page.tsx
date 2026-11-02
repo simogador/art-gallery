@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
+import { auth } from '@/auth'
 import { CHARTE_ARTISTE, lireInvitation } from '@/lib/acces'
 import { COOKIE_INVITATION } from './cookie'
 import { FormulaireActivation } from './FormulaireActivation'
@@ -15,6 +16,8 @@ export const dynamic = 'force-dynamic'
 export default async function InvitationPage() {
   const jeton = cookies().get(COOKIE_INVITATION)?.value
   const invitation = jeton ? await lireInvitation(jeton) : null
+  // Une session déjà ouverte (par exemple l'admin qui s'invite lui-même) sera remplacée.
+  const sessionOuverte = invitation ? (await auth())?.user?.email ?? null : null
 
   return (
     <main className="min-h-full flex justify-center px-4 py-12 sm:py-20">
@@ -30,6 +33,12 @@ export default async function InvitationPage() {
               <p className="font-sans text-sm text-neutral-600 mb-8">
                 Bienvenue, {invitation.artiste}. Choisissez votre mot de passe et lisez la charte artiste.
               </p>
+              {sessionOuverte && (
+                <p role="status" className="font-sans text-sm text-amber-800 border border-amber-200 bg-amber-50 rounded-sm px-4 py-3 mb-6">
+                  Vous êtes connecté en tant que {sessionOuverte}. En créant cet accès, vous serez déconnecté de ce
+                  compte et connecté à votre espace artiste.
+                </p>
+              )}
               <FormulaireActivation email={invitation.email} charte={CHARTE_ARTISTE} />
             </>
           ) : (

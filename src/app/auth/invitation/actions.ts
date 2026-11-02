@@ -12,10 +12,13 @@ export type EtatActivation = {
   message: string
   champ: 'motDePasse' | 'confirmation' | 'charte' | null
   expire: boolean
+  /** Accès créé, mais la connexion automatique a échoué : il reste à se connecter. */
+  cree?: boolean
 } | null
 
 const CHAMP: Partial<Record<RefusActivation['code'], 'motDePasse' | 'confirmation' | 'charte'>> = {
   mot_de_passe_court: 'motDePasse',
+  mot_de_passe_long: 'motDePasse',
   mots_de_passe_differents: 'confirmation',
   charte_non_acceptee: 'charte',
 }
@@ -38,7 +41,12 @@ export async function actionActiver(_etat: EtatActivation, formData: FormData): 
     await signIn('credentials', { email: resultat.email, password: motDePasse, redirectTo: '/dashboard/artiste' })
   } catch (erreur) {
     if (erreur instanceof AuthError) {
-      return { message: 'Votre accès est créé. Connectez-vous avec votre e-mail et votre mot de passe.', champ: null, expire: false }
+      return {
+        message: 'Votre accès est créé. Connectez-vous avec votre e-mail et votre mot de passe.',
+        champ: null,
+        expire: false,
+        cree: true,
+      }
     }
     throw erreur
   }

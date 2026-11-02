@@ -31,7 +31,7 @@ function BoutonCreer() {
 }
 
 function LienUnique({ lien, echeance }: { lien: string; echeance: string }) {
-  const [copie, setCopie] = useState(false)
+  const [copie, setCopie] = useState<'oui' | 'manuelle' | null>(null)
   return (
     <div role="status" className="flex flex-col gap-2 border border-green-200 bg-green-50 rounded-sm p-3">
       <label htmlFor="lien-invitation" className="font-sans text-xs text-green-800">
@@ -48,14 +48,23 @@ function LienUnique({ lien, echeance }: { lien: string; echeance: string }) {
         <button
           type="button"
           onClick={async () => {
-            await navigator.clipboard.writeText(lien)
-            setCopie(true)
+            // Presse-papiers indisponible (http, permission refusée) : le lien est sélectionné à la main.
+            try {
+              await navigator.clipboard.writeText(lien)
+              setCopie('oui')
+            } catch {
+              ;(document.getElementById('lien-invitation') as HTMLInputElement | null)?.select()
+              setCopie('manuelle')
+            }
           }}
           className="min-h-[44px] px-4 border border-neutral-300 rounded-sm font-sans text-xs uppercase tracking-widest bg-white"
         >
-          {copie ? 'Copié' : 'Copier'}
+          {copie === 'oui' ? 'Copié' : 'Copier'}
         </button>
       </div>
+      {copie === 'manuelle' && (
+        <p className="font-sans text-xs text-green-800">Copie automatique impossible : le lien est sélectionné, copiez-le avec le clavier.</p>
+      )}
     </div>
   )
 }
@@ -70,7 +79,7 @@ export function InvitationArtiste({ artistId, nom, enAttente }: Props) {
     <div className="flex flex-col gap-2">
       {enAttente && !ouvert && (
         <p className="font-sans text-xs text-neutral-500">
-          Invitation envoyée à {enAttente.email}, valable jusqu’au {dateLongue(enAttente.echeance)}.
+          Lien créé pour {enAttente.email}, valable jusqu’au {dateLongue(enAttente.echeance)}.
         </p>
       )}
       {ouvert ? (

@@ -3,7 +3,9 @@ import { lireInvitation } from '@/lib/acces'
 import { CHEMIN_COOKIE_INVITATION, COOKIE_INVITATION } from '../cookie'
 
 // Ouverture d'un lien d'invitation (AD-14, story 2.4) : le jeton est échangé contre un cookie
-// httpOnly, puis l'URL est redirigée sans jeton. Jamais de jeton dans les journaux.
+// httpOnly, puis l'URL est redirigée sans jeton. Le code ne journalise jamais le jeton ; seule cette
+// première requête le porte dans son chemin, que les journaux de requêtes de l'hébergeur peuvent
+// conserver (limite d'AD-14, atténuée par l'usage unique et l'échéance).
 
 export const dynamic = 'force-dynamic'
 

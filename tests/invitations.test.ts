@@ -4,16 +4,20 @@ import { Client } from 'pg'
 import { createElement, isValidElement, type ReactElement, type ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { AuthError } from 'next-auth'
+import { CHARTE_ARTISTE, CHARTE_ARTISTE_VERSION } from '@/lib/acces/charte'
 import { messageRefusActivation, messageRefusInvitation } from '@/lib/acces/messages'
+import { passeLaMaintenance } from '@/lib/reglages'
 import { creerBaseJetable, type BaseJetable } from './utils/base-jetable'
 
 // Story 2.4 (FR-34, AD-14) : invitation et premier accès de l'artiste.
 
 const ADMIN = { type: 'admin', userId: 'admin-1' }
+const EMPREINTE_CHARTE = '2f9ca1d6471a367735d21d9081a579eabc94aa9866a285ab2b114c61a0ec2180'
 const acteur = vi.hoisted(() => ({ courant: { type: 'visiteur' } as Record<string, unknown> }))
 const session = vi.hoisted(() => ({ userId: null as string | null }))
 const signIn = vi.hoisted(() => vi.fn())
-const jar = vi.hoisted(() => ({ valeurs: new Map<string, string>(), supprimes: [] as string[] }))
+const jar = vi.hoisted(() => ({ valeurs: new Map<string, string>(), supprimes: [] as { name: string; path?: string }[] }))
 const entetes = vi.hoisted(() => ({ valeurs: new Map<string, string>() }))
 
 vi.mock('@/auth', () => ({
@@ -30,7 +34,7 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 vi.mock('next/headers', () => ({
   cookies: () => ({
     get: (nom: string) => (jar.valeurs.has(nom) ? { name: nom, value: jar.valeurs.get(nom) } : undefined),
-    delete: (c: string | { name: string }) => jar.supprimes.push(typeof c === 'string' ? c : c.name),
+    delete: (c: string | { name: string; path?: string }) => jar.supprimes.push(typeof c === 'string' ? { name: c } : c),
   }),
   headers: () => ({ get: (nom: string) => entetes.valeurs.get(nom) ?? null }),
 }))
@@ -56,9 +60,31 @@ function trouverElement(n: ReactNode, predicat: (e: ReactElement) => boolean): R
   return trouverElement((n.props as { children?: ReactNode }).children, predicat)
 }
 
+describe('règles pures', () => {
+  it('maintenance : admins partout, artistes seulement dans leur espace, /auth ouvert à tous', () => {
+    expect(passeLaMaintenance('admin', '/galerie')).toBe(true)
+    expect(passeLaMaintenance('artist', '/dashboard/artiste')).toBe(true)
+    expect(passeLaMaintenance('artist', '/dashboard/artiste/oeuvres/nouvelle')).toBe(true)
+    expect(passeLaMaintenance('artist', '/galerie')).toBe(false)
+    expect(passeLaMaintenance('artist', '/dashboard/artistes-faux')).toBe(false)
+    expect(passeLaMaintenance('artist', '/dashboard/admin')).toBe(false)
+    expect(passeLaMaintenance('user', '/dashboard/artiste')).toBe(false)
+    expect(passeLaMaintenance(null, '/auth/invitation')).toBe(true)
+    expect(passeLaMaintenance(null, '/authentique')).toBe(false)
+    expect(passeLaMaintenance(null, '/')).toBe(false)
+  })
+
+  it('la version de la charte change avec son texte', () => {
+    // Si ce test échoue après une modification de la charte : changer CHARTE_ARTISTE_VERSION, puis
+    // reporter ici la nouvelle empreinte.
+    const empreinte = createHash('sha256').update(JSON.stringify(CHARTE_ARTISTE)).digest('hex')
+    expect({ version: CHARTE_ARTISTE_VERSION, empreinte }).toEqual({ version: CHARTE_ARTISTE_VERSION, empreinte: EMPREINTE_CHARTE })
+  })
+})
+
 describe('messages', () => {
   it('un texte en français pour chaque refus', () => {
-    for (const code of ['acces_refuse', 'introuvable', 'email_invalide', 'deja_relie', 'email_utilise'] as const) {
+    for (const code of ['acces_refuse', 'introuvable', 'email_invalide', 'deja_relie', 'email_utilise', 'email_invite_ailleurs'] as const) {
       expect(messageRefusInvitation(code)).toMatch(/\.$/)
     }
     expect(messageRefusActivation('invalide')).toBe('Ce lien d’invitation a expiré.')
@@ -145,6 +171,13 @@ describe('base : invitations', () => {
     expect(await inviterArtiste(ADMIN as never, 'inconnu', 'k@exemple.test')).toEqual({ ok: false, code: 'introuvable' })
     expect(await inviterArtiste(ADMIN as never, 'artiste-a', 'pas-un-email')).toEqual({ ok: false, code: 'email_invalide' })
     expect(await inviterArtiste(ADMIN as never, 'artiste-a', '  B@Exemple.TEST ')).toEqual({ ok: false, code: 'email_utilise' })
+    await db.query(
+      `INSERT INTO "Artist" (id, slug, name, nationality, "birthYear", bio, "imageUrl", "updatedAt") VALUES ('artiste-c', 'artiste-c', 'Artiste C', 'MA', 1990, 'Bio', '', now())`,
+    )
+    expect((await inviterArtiste(ADMIN as never, 'artiste-c', 'commun@exemple.test')).ok).toBe(true)
+    expect(await inviterArtiste(ADMIN as never, 'artiste-a', 'Commun@exemple.test')).toEqual({ ok: false, code: 'email_invite_ailleurs' })
+    await db.query('DELETE FROM "Jeton"')
+    await db.query('DELETE FROM "Invitation"')
     expect(await compter('Invitation')).toBe(0)
     expect(await compter('Jeton')).toBe(0)
   })
@@ -193,6 +226,8 @@ describe('base : invitations', () => {
     expect(await activerInvitation(r.jeton, { ...SAISIE, motDePasse: 'court', confirmation: 'court' })).toEqual({ ok: false, code: 'mot_de_passe_court' })
     expect(await activerInvitation(r.jeton, { ...SAISIE, confirmation: 'autre-mot-de-passe' })).toEqual({ ok: false, code: 'mots_de_passe_differents' })
     expect(await activerInvitation(r.jeton, { ...SAISIE, charteAcceptee: false })).toEqual({ ok: false, code: 'charte_non_acceptee' })
+    const long = 'é'.repeat(37) // 74 octets : bcrypt en ignorerait la fin.
+    expect(await activerInvitation(r.jeton, { ...SAISIE, motDePasse: long, confirmation: long })).toEqual({ ok: false, code: 'mot_de_passe_long' })
     expect(await compter('User')).toBe(1)
     expect(await lireInvitation(r.jeton)).not.toBeNull()
   })
@@ -204,6 +239,17 @@ describe('base : invitations', () => {
     expect(await activerInvitation(r.jeton, SAISIE)).toEqual({ ok: false, code: 'email_utilise' })
     await db.query(`DELETE FROM "User" WHERE id = 'autre'`)
     expect(await lireInvitation(r.jeton)).not.toBeNull()
+  })
+
+  it('fiche reliée après l’invitation : le lien ne sert plus et ne déplace jamais la fiche', async () => {
+    const { activerInvitation, lireInvitation } = await import('@/lib/acces/invitations')
+    const r = await inviter()
+    await db.query(`UPDATE "Artist" SET "userId" = NULL WHERE id = 'artiste-b'`)
+    await db.query(`UPDATE "Artist" SET "userId" = 'artiste-b-user' WHERE id = 'artiste-a'`)
+    expect(await lireInvitation(r.jeton)).toBeNull()
+    expect((await activerInvitation(r.jeton, SAISIE)).ok).toBe(false)
+    expect((await db.query(`SELECT "userId" FROM "Artist" WHERE id = 'artiste-a'`)).rows[0].userId).toBe('artiste-b-user')
+    expect(await compter('User')).toBe(1)
   })
 
   it('double envoi simultané : un seul compte', async () => {
@@ -237,7 +283,12 @@ describe('base : invitations', () => {
       const jeton = 'y'.repeat(43)
       const reponse = await GET(new NextRequest(`https://errancy.test/auth/invitation/${jeton}`), { params: { jeton } })
       expect(reponse.headers.get('location')).toBe('https://errancy.test/auth/invitation')
-      expect(reponse.headers.get('set-cookie') ?? '').not.toContain(jeton)
+      const cookie = reponse.headers.get('set-cookie') ?? ''
+      expect(cookie).not.toContain(jeton)
+      // Effacement effectif : même nom et même chemin que le cookie posé, expiré.
+      expect(cookie).toMatch(/^invitation=;/)
+      expect(cookie).toMatch(/Path=\/auth\/invitation/)
+      expect(cookie).toMatch(/Expires=Thu, 01 Jan 1970/)
     })
 
     it('page : formulaire si le cookie porte un jeton valable, sinon « lien expiré » et « Écrire à l’équipe »', async () => {
@@ -253,6 +304,13 @@ describe('base : invitations', () => {
       jar.valeurs.set('invitation', r.jeton)
       const formulaire = trouverElement(await Page(), (e) => e.type === FormulaireActivation)
       expect(formulaire?.props).toMatchObject({ email: 'karim@exemple.test' })
+      expect(trouverElement(await Page(), (e) => e.props?.role === 'status')).toBeNull()
+      // Session déjà ouverte : elle sera remplacée, la page le dit.
+      session.userId = 'artiste-b-user'
+      const { auth } = await import('@/auth')
+      vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'artiste-b-user', email: 'b@exemple.test' } } as never)
+      const avertissement = trouverElement(await Page(), (e) => e.props?.role === 'status')
+      expect(renderToStaticMarkup(avertissement as ReactElement)).toContain('Vous êtes connecté en tant que b@exemple.test')
     })
   })
 
@@ -260,8 +318,8 @@ describe('base : invitations', () => {
     it('invitation : lien construit sur l’origine de la requête (préversion ou production)', async () => {
       const { actionInviter } = await import('@/app/dashboard/admin/artistes/actions')
       acteur.courant = ADMIN
-      entetes.valeurs.set('host', 'errancy-git-x.vercel.app')
-      entetes.valeurs.set('x-forwarded-proto', 'https')
+      entetes.valeurs.set('x-forwarded-host', 'errancy-git-x.vercel.app, proxy.interne')
+      entetes.valeurs.set('x-forwarded-proto', 'https,http')
       const f = new FormData()
       f.set('email', 'karim@exemple.test')
       const etat = await actionInviter('artiste-a', null, f)
@@ -289,9 +347,27 @@ describe('base : invitations', () => {
         password: 'motdepasse-solide',
         redirectTo: '/dashboard/artiste',
       })
-      expect(jar.supprimes).toContain('invitation')
+      expect(jar.supprimes).toContainEqual({ name: 'invitation', path: '/auth/invitation' })
       jar.valeurs.clear()
       expect(await actionActiver(null, f)).toMatchObject({ expire: true })
+    })
+
+    it('accès créé mais connexion impossible : le dire et proposer de se connecter', async () => {
+      const { actionActiver } = await import('@/app/auth/invitation/actions')
+      const r = await inviter()
+      jar.valeurs.set('invitation', r.jeton)
+      signIn.mockRejectedValueOnce(new AuthError())
+      const f = new FormData()
+      f.set('motDePasse', 'motdepasse-solide')
+      f.set('confirmation', 'motdepasse-solide')
+      f.set('charte', 'oui')
+      expect(await actionActiver(null, f)).toEqual({
+        message: 'Votre accès est créé. Connectez-vous avec votre e-mail et votre mot de passe.',
+        champ: null,
+        expire: false,
+        cree: true,
+      })
+      expect((await db.query(`SELECT role FROM "User" WHERE email = 'karim@exemple.test'`)).rows[0].role).toBe('artist')
     })
   })
 

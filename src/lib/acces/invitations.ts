@@ -4,24 +4,31 @@ import { DUREE_INVITATION_JOURS } from '@/lib/reglages'
 import type { Acteur } from './acteur'
 import { CHARTE_ARTISTE_VERSION } from './charte'
 import { consommerJeton, emettreJeton, lireJetonValide, revoquerJetons } from './jetons'
+import { LONGUEUR_MIN_MOT_DE_PASSE, OCTETS_MAX_MOT_DE_PASSE } from './regles'
 
 // Invitation des artistes (FR-34, AD-14, story 2.4) : l'équipe invite un artiste existant ; le lien
 // personnel (jeton `invitation`, cible = id de l'invitation) crée son compte `artist`, rattaché à
 // sa fiche. Aucun e-mail n'est envoyé : le lien est montré une seule fois à l'admin.
 
-export const LONGUEUR_MIN_MOT_DE_PASSE = 8
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export type RefusInvitation = {
   ok: false
-  code: 'acces_refuse' | 'introuvable' | 'email_invalide' | 'deja_relie' | 'email_utilise'
+  code: 'acces_refuse' | 'introuvable' | 'email_invalide' | 'deja_relie' | 'email_utilise' | 'email_invite_ailleurs'
 }
 
 export type ResultatInvitation = { ok: true; jeton: string; echeance: Date } | RefusInvitation
 
 export type RefusActivation = {
   ok: false
-  code: 'invalide' | 'mot_de_passe_court' | 'mots_de_passe_differents' | 'charte_non_acceptee' | 'deja_relie' | 'email_utilise'
+  code:
+    | 'invalide'
+    | 'mot_de_passe_court'
+    | 'mot_de_passe_long'
+    | 'mots_de_passe_differents'
+    | 'charte_non_acceptee'
+    | 'deja_relie'
+    | 'email_utilise'
 }
 
 export type ResultatActivation = { ok: true; email: string } | RefusActivation
@@ -62,8 +69,15 @@ export async function inviterArtiste(
     return { ok: false, code: 'email_utilise' }
   }
 
+  // Une même adresse ne peut viser qu'un artiste à la fois : la seconde activation échouerait.
+  const ailleurs = await invitationsEnAttenteParEmail(email, maintenant)
+  if (ailleurs.some((artiste) => artiste !== artistId)) return { ok: false, code: 'email_invite_ailleurs' }
+
   const echeance = new Date(maintenant.getTime() + DUREE_INVITATION_JOURS * 24 * 60 * 60 * 1000)
   const jeton = await prisma.$transaction(async (tx) => {
+    // Verrou sur la fiche : deux invitations simultanées du même artiste se suivent, et la seconde
+    // révoque bien le lien de la première.
+    await tx.$queryRaw`SELECT 1 FROM "Artist" WHERE "id" = ${artistId} FOR UPDATE`
     const precedentes = await tx.invitation.findMany({
       where: { artistId, accepteeLe: null },
       select: { id: true },
@@ -76,6 +90,26 @@ export async function inviterArtiste(
     return emettreJeton(tx, { usage: 'invitation', cible: invitation.id, echeance })
   })
   return { ok: true, jeton, echeance }
+}
+
+// Artistes visés par une invitation encore valable à cette adresse.
+async function invitationsEnAttenteParEmail(email: string, maintenant: Date): Promise<string[]> {
+  const invitations = await prisma.invitation.findMany({
+    where: { email, accepteeLe: null },
+    select: { id: true, artistId: true },
+  })
+  if (invitations.length === 0) return []
+  const valables = await prisma.jeton.findMany({
+    where: {
+      usage: 'invitation',
+      cible: { in: invitations.map((i) => i.id) },
+      consommeLe: null,
+      revoqueLe: null,
+      echeance: { gt: maintenant },
+    },
+    select: { cible: true },
+  })
+  return invitations.filter((i) => valables.some((j) => j.cible === i.id)).map((i) => i.artistId)
 }
 
 export type InvitationLue = { email: string; artiste: string; echeance: Date }
@@ -130,6 +164,7 @@ export async function activerInvitation(
   maintenant = new Date(),
 ): Promise<ResultatActivation> {
   if (saisie.motDePasse.length < LONGUEUR_MIN_MOT_DE_PASSE) return { ok: false, code: 'mot_de_passe_court' }
+  if (Buffer.byteLength(saisie.motDePasse, 'utf8') > OCTETS_MAX_MOT_DE_PASSE) return { ok: false, code: 'mot_de_passe_long' }
   if (saisie.motDePasse !== saisie.confirmation) return { ok: false, code: 'mots_de_passe_differents' }
   if (!saisie.charteAcceptee) return { ok: false, code: 'charte_non_acceptee' }
   if (!(await lireInvitation(jeton, maintenant))) return { ok: false, code: 'invalide' }

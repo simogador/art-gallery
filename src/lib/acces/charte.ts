@@ -28,7 +28,7 @@ export const CHARTE_ARTISTE: { titre: string; texte: string }[] = [
   {
     titre: 'La reprise en cas de retour',
     texte:
-      'Vous acceptez de reprendre une œuvre retournée dans les conditions de retour affichées sur le site.',
+      'Vous acceptez de reprendre une œuvre retournée, dans les conditions de retour qu’Errancy vous communiquera avant l’ouverture des ventes en ligne.',
   },
   {
     titre: 'La commission d’Errancy',

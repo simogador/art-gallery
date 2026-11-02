@@ -28,7 +28,6 @@ export {
   invitationsEnAttente,
   inviterArtiste,
   lireInvitation,
-  LONGUEUR_MIN_MOT_DE_PASSE,
   type InvitationLue,
   type RefusActivation,
   type RefusInvitation,
@@ -37,3 +36,4 @@ export {
 } from './invitations'
 export { CHARTE_ARTISTE, CHARTE_ARTISTE_VERSION } from './charte'
 export { messageRefusActivation, messageRefusInvitation } from './messages'
+export { LONGUEUR_MIN_MOT_DE_PASSE, OCTETS_MAX_MOT_DE_PASSE } from './regles'

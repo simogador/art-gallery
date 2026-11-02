@@ -16,7 +16,7 @@ Place de marché d'art en ligne : les artistes vendent via le site, Errancy pren
 
 ## Where things are
 
-- Middleware (maintenance, session sur les pages protégées) : `src/middleware.ts`. Il ne décide d'aucun accès par rôle.
+- Middleware (maintenance, session sur les pages protégées) : `src/middleware.ts`. Il ne décide d'aucun accès par rôle, sauf le passage pendant la maintenance (`passeLaMaintenance` de `src/lib/reglages`, à partir du rôle du jeton : admins partout, artistes seulement dans `/dashboard/artiste`, décision du porteur du 2026-11-02).
 - Accès par rôle (AD-15) : `acteurCourant()` de `src/lib/acces` relit le rôle en base et renvoie un acteur typé (`visiteur`, `user`, `artist` avec son artiste, `admin`). Toute page, layout ou route protégée l'utilise ; ne jamais décider d'un accès avec `session.user.role`, qui vient du jeton et peut être périmé.
 - Auth : `src/auth.config.ts` est partagé avec le middleware (edge) — callbacks `jwt`/`session` ici, sans Prisma ni bcrypt ; les providers et l'adaptateur Prisma vont dans `src/auth.ts`.
 - Paiement : `src/app/api/checkout/route.ts` (refusé tant que le Lot 2 est fermé ; prix relus en base, jamais ceux du client) et `src/app/api/webhooks/stripe/route.ts` (doit rester idempotent).

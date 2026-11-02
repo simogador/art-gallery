@@ -1,6 +1,8 @@
 'use client'
 
+import Link from 'next/link'
 import { useFormState, useFormStatus } from 'react-dom'
+import { LONGUEUR_MIN_MOT_DE_PASSE } from '@/lib/acces/regles'
 import { actionActiver, type EtatActivation } from './actions'
 
 // Formulaire d'activation (story 2.4) : e-mail prérempli en lecture seule, mot de passe, charte.
@@ -28,6 +30,20 @@ export function FormulaireActivation({ email, charte }: Props) {
   const [etat, envoyer] = useFormState(actionActiver, null as EtatActivation)
   const erreur = (champ: 'motDePasse' | 'confirmation' | 'charte') => (etat?.champ === champ ? etat.message : null)
 
+  if (etat?.cree) {
+    return (
+      <div role="status" className="flex flex-col items-start gap-4">
+        <p className="font-sans text-sm text-neutral-700">{etat.message}</p>
+        <Link
+          href="/auth/connexion"
+          className="inline-flex items-center min-h-[44px] px-6 bg-foreground text-background font-sans text-xs uppercase tracking-widest rounded-sm"
+        >
+          Se connecter
+        </Link>
+      </div>
+    )
+  }
+
   if (etat?.expire) {
     return (
       <p role="alert" className="font-sans text-sm text-red-700">
@@ -44,13 +60,13 @@ export function FormulaireActivation({ email, charte }: Props) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="motDePasse" className={LIBELLE}>Mot de passe (8 caractères au moins)</label>
+        <label htmlFor="motDePasse" className={LIBELLE}>Mot de passe ({LONGUEUR_MIN_MOT_DE_PASSE} caractères au moins)</label>
         <input
           id="motDePasse"
           name="motDePasse"
           type="password"
           required
-          minLength={8}
+          minLength={LONGUEUR_MIN_MOT_DE_PASSE}
           autoComplete="new-password"
           aria-invalid={Boolean(erreur('motDePasse'))}
           aria-describedby={erreur('motDePasse') ? 'erreur-motDePasse' : undefined}

@@ -1,13 +1,14 @@
 import NextAuth from 'next-auth'
 import { authConfig } from '@/auth.config'
 import { NextResponse } from 'next/server'
+import { passeLaMaintenance } from '@/lib/reglages'
 
 const { auth } = NextAuth(authConfig)
 
 const PROTECTED = ['/dashboard', '/wishlist', '/panier']
 
 // Maintenance is on in Vercel production unless MAINTENANCE_MODE=off.
-// Previews and local dev show the real site. Admins always bypass it.
+// Previews and local dev show the real site. Admins bypass it; artists reach their own space.
 function maintenanceEnabled() {
   if (process.env.MAINTENANCE_MODE === 'off') return false
   if (process.env.MAINTENANCE_MODE === 'on')  return true
@@ -17,11 +18,11 @@ function maintenanceEnabled() {
 export default auth((req: any) => {
   const session  = req.auth
   const { pathname } = req.nextUrl
-  // Passage des admins pendant la maintenance : rôle du jeton (le middleware tourne en edge,
-  // sans accès à la base), comme avant la story 1.8.
+  // Passage pendant la maintenance (admins partout, artistes dans leur espace) : rôle du jeton (le
+  // middleware tourne en edge, sans accès à la base), comme avant la story 1.8.
   const role     = (session?.user as any)?.role ?? null
 
-  if (maintenanceEnabled() && role !== 'admin' && !pathname.startsWith('/auth')) {
+  if (maintenanceEnabled() && !passeLaMaintenance(role, pathname)) {
     return NextResponse.rewrite(new URL('/maintenance.html', req.nextUrl))
   }
 

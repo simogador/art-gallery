@@ -12,10 +12,13 @@ export type EtatInvitation =
   | { ok: false; message: string }
   | null
 
+// Un proxy peut enchaîner plusieurs valeurs (« a, b ») : seule la première est celle du client.
+const premiere = (valeur: string | null) => valeur?.split(',')[0]?.trim() || null
+
 function origine(): string {
   const h = headers()
-  const hote = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000'
-  const protocole = h.get('x-forwarded-proto') ?? (hote.startsWith('localhost') ? 'http' : 'https')
+  const hote = premiere(h.get('x-forwarded-host')) ?? premiere(h.get('host')) ?? 'localhost:3000'
+  const protocole = premiere(h.get('x-forwarded-proto')) ?? (hote.startsWith('localhost') ? 'http' : 'https')
   return `${protocole}://${hote}`
 }
 

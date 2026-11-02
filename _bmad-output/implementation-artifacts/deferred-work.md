@@ -23,3 +23,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-3-zones-de-livraison.md`
   summary: Ajouter à `OffreLivraison` des contraintes `CHECK` (frais ≥ 0, délais ≥ 0, transport min ≤ max, devise sur trois lettres) avec la story 2.6, qui écrit la table.
   evidence: Revue de la story 2.3 : la table est créée sans contrainte de valeur ; vide jusqu'à la story 2.6. Vérifier que `prisma migrate diff` de la CI tolère des `CHECK` écrits à la main.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-4-invitation-artiste.md`
+  summary: Archiver le texte de chaque version de la charte artiste acceptée et permettre à l'artiste de la relire depuis son espace.
+  evidence: Revue de la story 2.4 : seule la version (`Invitation.charteVersion`) est enregistrée ; les textes antérieurs ne vivent que dans l'historique git. À faire avant que la charte ne soit définitive (relecture juridique).
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-4-invitation-artiste.md`
+  summary: Purger les jetons consommés, révoqués ou échus et ceux des invitations supprimées.
+  evidence: Revue de la story 2.4 : `Jeton.cible` n'a pas de clé étrangère (table générique d'AD-14) ; aucune purge n'existe. À rattacher au balayage d'AD-11.

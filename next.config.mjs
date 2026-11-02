@@ -11,11 +11,8 @@ const nextConfig = {
   // Story 2.4 (AD-14) : les pages d'invitation ne transmettent jamais leur URL en référent.
   async headers() {
     return [
-      {
-        source: '/auth/invitation/:path*',
-        headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
-      },
-      { source: '/auth/invitation', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
+      // `:path*` couvre aussi /auth/invitation (zéro segment).
+      { source: '/auth/invitation/:path*', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
     ]
   },
   experimental: {

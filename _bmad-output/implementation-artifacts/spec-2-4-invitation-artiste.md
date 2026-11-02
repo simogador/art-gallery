@@ -2,7 +2,7 @@
 title: 'Story 2.4 — Invitation et premier accès de l''artiste'
 type: 'feature'
 created: '2026-11-02'
-status: 'in-progress'
+status: 'done'
 route: 'dispatch'
 baseline_commit: '285b6f5b932ddd542564fe658aea1b51ca3ade21'
 review_loop_iteration: 0
@@ -94,6 +94,33 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 - `scripts/sql/fiche-artiste-porteur.sql` : modèle à compléter, idempotent (`ON CONFLICT (slug) DO NOTHING`).
 - Vérification dans le navigateur (`next start` local) : invitation par l'admin, ouverture du lien sur mobile (URL nettoyée, `no-referrer` sur les deux réponses), erreur de charte reliée au champ, création de l'accès et arrivée sur l'accueil (4 onglets, « Accueil » courant), page Commandes, second usage du lien → « Ce lien d'invitation a expiré. ». Aucune erreur de console.
 - Liste d'exceptions Prisma inchangée (19) ; les nouveaux fichiers passent par `acces`.
+
+## Review Triage Log
+
+- En production sous maintenance, l'artiste activé est redirigé vers `/dashboard/artiste`, réécrit en page de maintenance (deux relecteurs) — high : vrai (`middleware.ts` ne laissait passer que `admin`) ; intent gap posé au porteur, qui a décidé (2026-11-02) de laisser les artistes accéder à leur seul espace ; patch (`passeLaMaintenance`, testée).
+- Garde « fiche reliée après l'invitation » non testée (verification-gap) — vrai ; patch (test).
+- Effacement du cookie non vérifié (route) et chemin ignoré par la simulation (action) (verification-gap) — vrai ; patch (assertions sur `Set-Cookie` et sur le chemin).
+- Repli `AuthError` après création du compte non testé, formulaire laissé affiché (deux relecteurs) — medium : vrai ; patch (état `cree`, lien « Se connecter », test).
+- Pages Commandes et Paiements absentes du test de rôle par page (verification-gap) — vrai ; patch (`tests/acces.test.ts`).
+- Session déjà ouverte remplacée sans avertissement (le porteur s'invitera depuis son navigateur admin) — medium : vrai ; patch (avertissement sur la page, testé).
+- Deux invitations simultanées du même artiste laissent deux liens valables — low : vrai (lecture sans verrou) ; patch (`SELECT … FOR UPDATE` sur la fiche).
+- Même adresse invitée pour deux artistes : la seconde activation échoue après envoi — low : vrai ; patch (refus `email_invite_ailleurs`, testé).
+- Mot de passe au-delà de 72 octets tronqué par bcrypt sans le dire — low : vrai ; patch (`mot_de_passe_long`, testé).
+- Longueur minimale écrite en dur dans le formulaire et le message — low : vrai ; patch (`acces/regles.ts`, pur).
+- `x-forwarded-host` / `x-forwarded-proto` à valeurs multiples : lien affiché une fois malformé — low : vrai ; patch (première valeur, testé).
+- Copie dans le presse-papiers sans repli (http, permission refusée) — low : vrai ; patch (sélection et message).
+- « Invitation envoyée » alors qu'aucun e-mail n'est envoyé — low : vrai ; patch (« Lien créé pour… »).
+- Refus « Écrivez à l'équipe » sans adresse — low : vrai ; patch (adresse dans le message).
+- Version de la charte non liée à son texte — low : vrai ; patch (test qui épingle l'empreinte du texte avec la version).
+- Article « reprise » renvoyant à des conditions de retour non publiées (OQ-2/OQ-4 ouvertes) — low : vrai ; patch (conditions « communiquées avant l'ouverture des ventes en ligne »), à relire par le porteur.
+- Jeton présent dans le chemin de la première requête, donc dans les journaux de l'hébergeur — low : vrai, inhérent à AD-14 (lien dans l'URL) ; commentaire corrigé, atténué par l'usage unique et l'échéance.
+- Règle d'en-tête en double dans `next.config.mjs` — low : vrai (`:path*` couvre zéro segment) ; patch.
+- Modèle SQL de la fiche exécutable à moitié rempli — low : vrai ; patch (bloc `DO` qui refuse tant qu'il reste un « < », répété en local).
+- Aucune copie archivée du texte accepté, pas de relecture de la charte dans l'espace artiste — medium : vrai, mais la charte est provisoire et le texte versionné est dans git ; defer.
+- Jetons orphelins ou échus jamais purgés, `cible` et `creeParId` sans clé étrangère — low : vrai ; defer (nettoyage avec le balayage d'AD-11).
+- Agrégat `chiffreAffairesCentimes` encore calculé alors que l'accueil ne l'affiche plus ; lien « Voir mon profil public » retiré — low : l'agrégat sert les tests de 2.1/2.2 et reviendra avec « Ce qu'on vous doit » (Lot 2) ; le retrait du lien suit le critère (bloc « Mes œuvres » seul) ; rejeté.
+- Artiste désactivé invitable — low : choix de l'admin (réactivation prévue) ; rejeté.
+- Ids `gen_random_uuid()` dans le modèle SQL — low : colonne texte sans format imposé ; rejeté.
 
 ## Verification
 
