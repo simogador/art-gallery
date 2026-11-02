@@ -5,15 +5,24 @@ import { champAvailable, estRecopiee, lireEtatVerrouille, type Publication } fro
 // Module curation (AD-6, story 2.2) : seul module qui écrit l'axe publication (`publication`).
 // En attendant la file de curation (story 2.7), un admin publie ou dépublie depuis
 // l'administration. La règle d'accord signé (FR-16) viendra avec les stories 2.4 et 2.7.
+// Story 2.5 : propriétaire du descriptif, des dimensions et des photos ; dépôt par l'artiste
+// (./depot, ./photos), règles pures partagées avec le formulaire (./depot-regles).
+
+export {
+  enregistrerChamp,
+  lireDepot,
+  publicationInitiale,
+  type DepotLu,
+  type PhotoDepot,
+  type RefusDepot,
+  type ResultatDepot,
+} from './depot'
+export { enregistrerPhoto, preparerEnvoiPhoto, type EnvoiSigne, type ResultatEnvoi, type ResultatPhoto } from './photos'
+export * from './depot-regles'
 
 export type ResultatPublication =
   | { ok: true }
   | { ok: false; code: 'acces_refuse' | 'introuvable' | 'non_recopiee' }
-
-/** Publication d'une œuvre que l'artiste vient de créer : brouillon, absente du catalogue. */
-export function publicationInitiale(): { publication: Publication } {
-  return { publication: 'brouillon' }
-}
 
 /**
  * Publie (`publiee`) ou dépublie (`brouillon`) une œuvre ; réservé aux admins, refusé pour une

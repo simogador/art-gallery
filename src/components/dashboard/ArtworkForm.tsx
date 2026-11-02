@@ -19,9 +19,11 @@ interface ArtworkData {
   imageUrl: string | null
 }
 
+// Story 2.5 : la création passe par le formulaire de dépôt (/dashboard/artiste/oeuvres/nouvelle) ;
+// ce formulaire ne sert plus qu'à modifier une œuvre sortie du brouillon (artiste) ou en administration.
 interface Props {
-  artwork?:  ArtworkData
-  mode:      'create' | 'edit'
+  artwork:   ArtworkData
+  mode:      'edit'
   apiBase?:  string   // default '/api/artiste/oeuvres'
 }
 
@@ -91,12 +93,8 @@ export function ArtworkForm({ artwork, mode, apiBase = '/api/artiste/oeuvres' }:
         description: form.description.trim(),
       }
 
-      // Create or update artwork
-      const url    = mode === 'create' ? apiBase : `${apiBase}/${artwork!.slug}`
-      const method = mode === 'create' ? 'POST'  : 'PUT'
-
-      const res  = await fetch(url, {
-        method,
+      const res  = await fetch(`${apiBase}/${artwork.slug}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
@@ -258,7 +256,7 @@ export function ArtworkForm({ artwork, mode, apiBase = '/api/artiste/oeuvres' }:
             loading={loading}
             disabled={success}
           >
-            {success ? 'Enregistré ✓' : mode === 'create' ? 'Publier l\'œuvre' : 'Enregistrer'}
+            {success ? 'Enregistré ✓' : 'Enregistrer'}
           </Button>
 
           {mode === 'edit' && (

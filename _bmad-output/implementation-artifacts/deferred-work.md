@@ -29,3 +29,16 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-4-invitation-artiste.md`
   summary: Purger les jetons consommés, révoqués ou échus et ceux des invitations supprimées.
   evidence: Revue de la story 2.4 : `Jeton.cible` n'a pas de clé étrangère (table générique d'AD-14) ; aucune purge n'existe. À rattacher au balayage d'AD-11.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-5-deposer-une-oeuvre.md`
+  summary: Nettoyer les fichiers Cloudinary orphelins (envoi non enregistré, onglet fermé, œuvre supprimée).
+  evidence: seuls « Remplacer » et un format refusé suppriment le fichier ; la suppression d'une œuvre efface les lignes PhotoOeuvre mais pas les fichiers.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-5-deposer-une-oeuvre.md`
+  summary: Faire refuser les brouillons par l'ancienne route PUT /api/artiste/oeuvres/[slug] (ou la retirer en 2.7/2.8).
+  evidence: elle écrit titre, technique, prix et dimensions sans les règles du dépôt ; seul l'artiste propriétaire peut l'appeler.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-5-deposer-une-oeuvre.md`
+  summary: Reprendre dans le formulaire de dépôt l'image (imageUrl) d'un brouillon créé avant la story 2.5.
+  evidence: non vérifié (medium s'il en existe) ; à régler en comptant en production les œuvres `brouillon` avec imageUrl non vide et sans PhotoOeuvre.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-5-deposer-une-oeuvre.md`
+  summary: Tester la file d'enregistrement du formulaire de dépôt (ordre, slug du premier envoi, échec).
+  evidence: Vitest tourne sans DOM ; extraire la file dans une fonction pure ou ajouter jsdom.

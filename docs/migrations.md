@@ -99,6 +99,12 @@ Retour arrière : le code précédent fonctionne sur la base migrée (colonnes a
 - Retour arrière : l'ancien code ignore les deux tables. Pour les retirer (dernier recours) : `DROP TABLE "Invitation", "Jeton"; DROP TYPE "UsageJeton";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261102013809_invitations_artistes';`. Les comptes artistes déjà créés restent (table `User`).
 - Fiche artiste du porteur : `scripts/sql/fiche-artiste-porteur.sql` (valeurs à compléter), puis invitation depuis l'écran.
 
+### Story 2.5 : dépôt d'une œuvre
+
+- Migration : `20261102212219_depot_oeuvre` (colonnes facultatives `ambiance` et `couleurDominante` de `Artwork`, énumération `TypePhoto`, table `PhotoOeuvre` avec une photo au plus par œuvre et par case, `CASCADE` à la suppression de l'œuvre). Ajout seulement, aucune recopie ; le nouveau code lit `PhotoOeuvre` (formulaire de dépôt) et échouerait sans elle : même procédure que les précédentes, `preview` puis production **avant la fusion**, avec la ligne `_prisma_migrations` et l'empreinte SHA-256.
+- Cloudinary : le formulaire envoie les photos directement à Cloudinary avec une signature du serveur ; il lui faut `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` et `CLOUDINARY_API_SECRET` dans Vercel (Preview et Production). Sans elles, l'envoi de photos affiche « momentanément indisponible », le reste du formulaire fonctionne.
+- Retour arrière : l'ancien code ignore la table et les deux colonnes ; les brouillons créés par le nouveau formulaire apparaissent dans « Mes œuvres » (année 0 tant qu'elle n'est pas saisie), jamais en galerie. Pour retirer la migration (dernier recours) : `DROP TABLE "PhotoOeuvre"; DROP TYPE "TypePhoto"; ALTER TABLE "Artwork" DROP COLUMN "ambiance", DROP COLUMN "couleurDominante";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261102212219_depot_oeuvre';`.
+
 ## Journal des bases partagées
 
 - 2026-10-28 : sur `production` puis sur la branche `preview`, la ligne de base `20261027150000_ligne_de_base` a été déclarée (sans exécution) et `20261027230000_inscriptions_ouverture` appliquée, en une transaction depuis l'éditeur SQL de Neon (SQL de la migration et empreintes SHA-256 identiques à celles de Prisma). Point de restauration : branche `avant-migrations-28-10` (expire le 2026-11-04).

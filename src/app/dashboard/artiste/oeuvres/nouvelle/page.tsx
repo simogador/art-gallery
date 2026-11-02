@@ -1,55 +1,21 @@
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import type { Metadata } from 'next'
-import { prisma } from '@/lib/prisma'
-import { ArtworkForm } from '@/components/dashboard/ArtworkForm'
 import { acteurCourant } from '@/lib/acces'
 import { listerZones } from '@/lib/livraison'
-import { SectionExpedition } from './SectionExpedition'
+import { PageDepot } from '../depot/PageDepot'
 
-export const metadata: Metadata = { title: 'Nouvelle œuvre — Errancy' }
+export const metadata: Metadata = { title: 'Déposer une œuvre — Errancy' }
 export const dynamic = 'force-dynamic'
 
+// Story 2.5 : formulaire de dépôt vide ; le brouillon est créé au premier champ enregistré, puis
+// l'adresse devient /dashboard/artiste/oeuvres/[slug].
 export default async function NouvelleOeuvrePage() {
   // Rôle relu à chaque page : le layout n'est pas réexécuté lors d'une navigation interne.
   const acteur = await acteurCourant()
   if (acteur.type === 'visiteur') redirect('/auth/connexion')
   if (acteur.type !== 'artist') redirect('/dashboard')
+  if (!acteur.artiste) redirect('/dashboard/artiste')
 
-  const artist = await prisma.artist.findFirst({
-    where: { userId: acteur.userId },
-    select: { id: true },
-  })
-  if (!artist) redirect('/dashboard/artiste')
   const zones = await listerZones()
-
-  return (
-    <div>
-      {/* Header */}
-      <div className="mb-10">
-        <div className="flex items-center gap-2 mb-4">
-          <Link
-            href="/dashboard/artiste/oeuvres"
-            className="font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200"
-          >
-            Mes œuvres
-          </Link>
-          <span className="text-neutral-300">›</span>
-          <span className="font-sans text-xs uppercase tracking-widest text-neutral-600">Nouvelle</span>
-        </div>
-        <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
-          Ajouter une œuvre
-        </h1>
-        <p className="font-sans text-sm text-neutral-400 mt-2">
-          L&apos;œuvre sera immédiatement visible sur la galerie Errancy.
-        </p>
-      </div>
-
-      <div className="divider mb-10" />
-
-      <ArtworkForm mode="create" />
-
-      <SectionExpedition zones={zones.map((z) => z.nom)} />
-    </div>
-  )
+  return <PageDepot depot={null} zones={zones.map((z) => z.nom)} />
 }

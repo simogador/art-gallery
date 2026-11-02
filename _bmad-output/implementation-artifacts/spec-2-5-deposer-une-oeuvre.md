@@ -2,7 +2,7 @@
 title: 'Story 2.5 — Déposer une œuvre : photos, informations, dimensions et prix'
 type: 'feature'
 created: '2026-11-02'
-status: 'in-progress'
+status: 'done'
 route: 'dispatch'
 baseline_commit: 'df7afcb28418473fb36825588d63a01c61ffedc7'
 review_loop_iteration: 0
@@ -65,13 +65,13 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `prisma/schema.prisma` + `prisma/migrations/<horodatage>_depot_oeuvre/` -- colonnes et table photos, `migrate dev --create-only` sur PostgreSQL local -- migration additive.
-- [ ] `src/lib/curation/depot-regles.ts` -- règles pures (listes, limites : titre 120, technique 120, histoire 300, année 1900 à l'année courante, 1 à 10 000 mm) -- partagées client/serveur.
-- [ ] `src/lib/curation/depot.ts`, `photos.ts`, `index.ts` -- API du dépôt, propriété vérifiée, brouillon seulement, slug provisoire `brouillon-<8 caractères>` recalculé depuis le titre tant que l'œuvre est en brouillon -- logique métier.
-- [ ] `src/app/dashboard/artiste/oeuvres/depot/` (composants client `FormulaireDepot`, `CasePhoto`, actions serveur) -- interface et enregistrement à la sortie du champ.
-- [ ] Pages `nouvelle` et `[slug]`, suppression du POST, `eslint/exceptions-prisma.cjs` -- branchement.
-- [ ] `tests/depot.test.ts` -- matrice ci-dessus, propriété, signature, brouillon seul.
-- [ ] `docs/migrations.md`, `AGENTS.md`, `sprint-status.yaml` -- journal et repères.
+- [x] `prisma/schema.prisma` + `prisma/migrations/<horodatage>_depot_oeuvre/` -- colonnes et table photos, `migrate dev --create-only` sur PostgreSQL local -- migration additive.
+- [x] `src/lib/curation/depot-regles.ts` -- règles pures (listes, limites : titre 120, technique 120, histoire 300, année 1900 à l'année courante, 1 à 10 000 mm) -- partagées client/serveur.
+- [x] `src/lib/curation/depot.ts`, `photos.ts`, `index.ts` -- API du dépôt, propriété vérifiée, brouillon seulement, slug provisoire `brouillon-<8 caractères>` recalculé depuis le titre tant que l'œuvre est en brouillon -- logique métier.
+- [x] `src/app/dashboard/artiste/oeuvres/depot/` (composants client `FormulaireDepot`, `CasePhoto`, actions serveur) -- interface et enregistrement à la sortie du champ.
+- [x] Pages `nouvelle` et `[slug]`, suppression du POST, `eslint/exceptions-prisma.cjs` -- branchement.
+- [x] `tests/depot.test.ts` -- matrice ci-dessus, propriété, signature, brouillon seul.
+- [x] `docs/migrations.md`, `AGENTS.md`, `sprint-status.yaml` -- journal et repères.
 
 **Acceptance Criteria:**
 - Given un artiste connecté, when il ouvre `/dashboard/artiste/oeuvres/nouvelle`, then il voit une page unique avec les cinq sections, la progression et l'état de chaque section.
@@ -81,9 +81,41 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 
 ## Implementation Notes
 
+- Migration `20261102212219_depot_oeuvre`, créée par `migrate dev --create-only` sur PostgreSQL local ; `migrate diff` : aucune différence.
+- `Artwork.year` reste obligatoire (migration additive) : un brouillon sans année porte `0` (`ANNEE_NON_RENSEIGNEE`), relu comme « non renseignée » ; les autres colonnes obligatoires de l'ancien schéma sont des textes vides.
+- Envoi signé : la signature couvre `public_id` (chemin complet `errancy/oeuvres/<id>/<case>-<8 hex>`, unique à chaque envoi) et `timestamp`. `folder` est renvoyé pour information mais jamais posté à Cloudinary : en mode « dossiers fixes », `folder` + un `public_id` déjà préfixé doublerait le chemin. Vérification : signature `sha1(public_id=…&version=…+secret)` en temps constant, `public_id` conforme à l'œuvre et à la case, `resource_type` (image, ou vidéo pour la case Vidéo) et `secure_url` égale à l'adresse de cette ressource (non couverte par la signature). La photo remplacée est supprimée de Cloudinary au mieux, après l'écriture.
+- Slug : `slugifier(titre)` unique (`-2`, `-3`…) ; `nouvelle` est réservé (il masquerait la page de dépôt). Titre vidé : slug conservé. Le client sérialise ses enregistrements (file) et met l'adresse à jour par `history.replaceState`, sans recharger le formulaire.
+- Orientation : `ECART_CARRE = 0` (carrée seulement à hauteur = largeur), réglable dans `depot-regles.ts`.
+- `publicationInitiale` est désormais dans `curation/depot.ts` (réexportée par `curation`). `ArtworkForm` perd son mode `create` (sa route POST est supprimée).
+
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Constat (relecteur) | Verdict | Preuve | Suite |
+|---|---|---|---|---|
+| 1 | Taille et format contrôlés seulement dans le navigateur (aveugle, cas limites) | medium | la signature ne couvrait que `public_id` et `timestamp` | patch : `allowed_formats` signé, `format`/`bytes` vérifiés |
+| 2 | HEIC enregistré en `.heic`, illisible par les navigateurs (aveugle) | medium | URL brute copiée dans `PhotoOeuvre.url` et `imageUrl` | patch : extension `.jpg` |
+| 3 | Envoi bloqué « en cours » sur abandon ou délai (cas limites) | low | ni `onabort` ni `ontimeout` | patch |
+| 4 | Slug suffixé conservé après un titre préfixe (aveugle, vérification) | low | « Nuit 2024 » → « Nuit » gardait `nuit-2024` | patch + test |
+| 5 | Aucun moyen de supprimer un brouillon (aveugle) | medium | les brouillons n'atteignent plus le bouton de `ArtworkForm` | patch : `DeleteButton` existant |
+| 6 | Titre d'onglet « Modifier brouillon-xxxx » (aveugle) | low | `generateMetadata` | patch |
+| 7 | Liste admin : titre vide et « 0 · » (vérification, cas limites) | low | `admin/oeuvres/page.tsx` | patch |
+| 8 | Tests manquants : `actionPreparerEnvoi`, « Sans titre », photo sur œuvre publiée (vérification, aveugle) | medium | aucune occurrence dans `tests/` | patch : 5 tests |
+| 9 | Statuts du suivi et de la spec divergents (aveugle) | low | `in-progress` contre `in-review` | patch |
+| 10 | `verrouillerDepot` lit les colonnes d'état hors de `disponibilite` (aveugle) | false | le test d'isolement autorise `src/lib/curation/` | rejeté |
+| 11 | Signature SHA-256 non gérée (cas limites) | low | compte et SDK en SHA-1 par défaut, aucun réglage contraire | rejeté |
+| 12 | Collision de slug concurrente non rattrapée (3 relecteurs) | low | deux brouillons au même titre à la même seconde ; l'artiste réessaie | rejeté |
+| 13 | Choix d'ambiance non réessayable après échec (cas limites) | low | rare (échec réseau) ; choisir une autre valeur puis revenir | rejeté |
+| 14 | Brouillon créé avant la fin de l'envoi, ou en double sur réponse perdue (aveugle, cas limites) | low | rare ; supprimable désormais (n° 5) | rejeté |
+| 15 | Fichiers Cloudinary orphelins (refus, onglet fermé, suppression d'œuvre) (aveugle, cas limites) | low | aucun nettoyage hors « Remplacer » et refus de format | defer |
+| 16 | Ancien `PUT /api/artiste/oeuvres/[slug]` accepte encore un brouillon (aveugle) | low | requête forgée par l'artiste sur son propre brouillon | defer |
+| 17 | Brouillon antérieur à 2.5 avec `imageUrl` sans `PhotoOeuvre` (cas limites) | maybe-false | dépend de brouillons existants en production | defer |
+| 18 | File d'enregistrement du client non testée (vérification) | low | pas d'environnement DOM dans Vitest | defer, vérification manuelle en préversion |
+| 19 | Limite image 20 Mo contre 10 Mo du plan gratuit Cloudinary (aveugle) | maybe-false | dépend du plan du compte | question au porteur |
+| 20 | Visiteur redirigé vers la connexion au lieu d'une 404 (cas limites) | low | aucune fuite : il ne voit rien du brouillon | rejeté |
+| 21 | Rafraîchissement complet et verrou à chaque lecture (aveugle, vérification) | low | performance, sans effet visible | rejeté |
+| 22 | `SectionExpedition` dans le dossier `nouvelle` (aveugle) | low | rangement | rejeté |
 
 ## Design Notes
 

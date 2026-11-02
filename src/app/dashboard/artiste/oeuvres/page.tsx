@@ -89,7 +89,7 @@ export default async function OeuvresPage() {
                   {artwork.title}
                 </p>
                 <p className="font-sans text-xs text-neutral-400 mt-0.5 truncate">
-                  {artwork.year}{artwork.dimensions ? ` · ${artwork.dimensions}` : ''}
+                  {[artwork.year, artwork.dimensions].filter(Boolean).join(' · ')}
                 </p>
               </div>
 

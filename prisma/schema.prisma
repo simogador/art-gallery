@@ -60,6 +60,11 @@ model Artwork {
   artistId    String
   exhibitions ArtworkExhibition[]
   offresLivraison OffreLivraison[]
+  // Story 2.5 (FR-20) : dépôt par l'artiste. Codes snake_case des listes fermées de
+  // src/lib/curation/depot-regles.ts ; écrits seulement par le module curation.
+  ambiance         String?
+  couleurDominante String?
+  photos           PhotoOeuvre[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
@@ -83,6 +88,30 @@ enum Disponibilite {
   vendue
   vendue_ailleurs
   retiree
+}
+
+// Story 2.5 : une photo (ou vidéo) par prise de vue attendue, envoyée directement à Cloudinary
+// par le navigateur (envoi signé). Écrite seulement par le module curation.
+enum TypePhoto {
+  face_lumiere_du_jour
+  gros_plan
+  mise_en_situation
+  video
+}
+
+model PhotoOeuvre {
+  id        String    @id @default(cuid())
+  artwork   Artwork   @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  artworkId String
+  type      TypePhoto
+  url       String
+  publicId  String
+  largeur   Int?
+  hauteur   Int?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([artworkId, type])
 }
 
 model Exhibition {

@@ -153,3 +153,29 @@ export function champsDimensions(saisie: unknown): SaisieLue<ChampsDimensions> {
   // L'ancienne colonne reçoit le texte normalisé, relu à l'identique par lireDimensions.
   return { ok: true, champs: { dimensions: formaterDimensions(d), ...d } }
 }
+
+/* ── Dimensions saisies en centimètres, champ par champ (story 2.5) ────── */
+
+const REGEX_CM = new RegExp(`^${S}${N}${S}$`)
+
+// Une dimension saisie en centimètres (« 60 », « 31,5 ») → millimètres entiers, arrondis comme
+// lireDimensions. Vide : null ; illisible (texte, signe moins…) : 'illisible'. L'appelant vérifie les bornes.
+export function centimetresEnMillimetres(saisie: unknown): number | null | 'illisible' {
+  if (saisie === null || saisie === undefined) return null
+  if (typeof saisie !== 'string') return 'illisible'
+  if (saisie.trim() === '') return null
+  const m = REGEX_CM.exec(saisie)
+  return m ? versMillimetres(m[1], 1) : 'illisible'
+}
+
+// Millimètres → centimètres affichés dans un champ de saisie (« 31,5 »), vide si null.
+export function millimetresEnCentimetres(mm: number | null | undefined): string {
+  return mm === null || mm === undefined ? '' : enCentimetres(mm)
+}
+
+// Dimensions exactes déjà validées → anciennes et nouvelles colonnes. L'ancienne colonne ne reçoit
+// le texte normalisé que lorsque hauteur et largeur sont connues (sinon vide, comme une œuvre sans
+// dimensions) ; il est relu à l'identique par lireDimensions.
+export function champsDimensionsExactes(d: DimensionsEnBase): ChampsDimensions {
+  return { dimensions: formaterDimensions(d), hauteurMm: d.hauteurMm, largeurMm: d.largeurMm, profondeurMm: d.profondeurMm }
+}
