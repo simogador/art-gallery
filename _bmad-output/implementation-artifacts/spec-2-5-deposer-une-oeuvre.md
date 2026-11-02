@@ -2,8 +2,9 @@
 title: 'Story 2.5 — Déposer une œuvre : photos, informations, dimensions et prix'
 type: 'feature'
 created: '2026-11-02'
-status: 'draft'
+status: 'in-progress'
 route: 'dispatch'
+baseline_commit: 'df7afcb28418473fb36825588d63a01c61ffedc7'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md', '{project-root}/docs/migrations.md']
 ---
