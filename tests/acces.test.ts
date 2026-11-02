@@ -119,10 +119,15 @@ describe('changement de rôle sans reconnexion', () => {
 
   it('vérifie le rôle dans chaque page de l’espace artiste, pas seulement dans le layout', async () => {
     const { default: PageArtiste } = await import('@/app/dashboard/artiste/page')
-    await roleEnBase('artist')
-    await expect(PageArtiste()).resolves.toBeTruthy()
-    await roleEnBase('user')
-    await expect(PageArtiste()).rejects.toThrow('redirection:/dashboard')
+    // Story 2.4 : onglets Commandes et Paiements.
+    const { default: PageCommandes } = await import('@/app/dashboard/artiste/commandes/page')
+    const { default: PagePaiements } = await import('@/app/dashboard/artiste/paiements/page')
+    for (const Page of [PageArtiste, PageCommandes, PagePaiements]) {
+      await roleEnBase('artist')
+      await expect(Page()).resolves.toBeTruthy()
+      await roleEnBase('user')
+      await expect(Page()).rejects.toThrow('redirection:/dashboard')
+    }
   })
 
   it('ouvre puis referme une route d’API artiste au gré du rôle en base', async () => {

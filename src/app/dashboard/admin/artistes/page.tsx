@@ -4,7 +4,8 @@ import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { ToggleAction } from '@/components/dashboard/ToggleAction'
 import { DeleteButton } from '@/components/dashboard/DeleteButton'
-import { acteurCourant } from '@/lib/acces'
+import { acteurCourant, invitationsEnAttente } from '@/lib/acces'
+import { InvitationArtiste } from './InvitationArtiste'
 
 export const metadata: Metadata = { title: 'Artistes — Admin Errancy' }
 
@@ -18,6 +19,8 @@ export default async function AdminArtistesPage() {
       user:    { select: { id: true, email: true, role: true } },
     },
   })
+  // Story 2.4 : invitations encore valables des artistes sans compte.
+  const enAttente = await invitationsEnAttente(artists.filter((a) => !a.user).map((a) => a.id))
 
   return (
     <div>
@@ -39,7 +42,8 @@ export default async function AdminArtistesPage() {
       <div className="flex flex-col gap-2">
         {artists.map((artist) => (
           <div key={artist.id}
-            className="grid grid-cols-[1fr_auto] lg:grid-cols-[1fr_80px_80px_160px_80px_24px] gap-4 items-center p-4 border border-neutral-200 rounded-sm hover:border-neutral-300 transition-colors duration-200">
+            className="flex flex-col gap-3 p-4 border border-neutral-200 rounded-sm hover:border-neutral-300 transition-colors duration-200">
+          <div className="grid grid-cols-[1fr_auto] lg:grid-cols-[1fr_80px_80px_160px_80px_24px] gap-4 items-center">
 
             {/* Name */}
             <div className="min-w-0">
@@ -107,6 +111,18 @@ export default async function AdminArtistesPage() {
                 ↗
               </Link>
             </div>
+          </div>
+          {!artist.user && (
+            <InvitationArtiste
+              artistId={artist.id}
+              nom={artist.name}
+              enAttente={
+                enAttente[artist.id]
+                  ? { email: enAttente[artist.id].email, echeance: enAttente[artist.id].echeance.toISOString() }
+                  : null
+              }
+            />
+          )}
           </div>
         ))}
       </div>

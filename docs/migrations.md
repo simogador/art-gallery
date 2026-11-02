@@ -93,6 +93,12 @@ Retour arrière : le code précédent fonctionne sur la base migrée (colonnes a
 - Ensuite, les zones se modifient depuis `/dashboard/admin/zones`, jamais en SQL.
 - Retour arrière : l'ancien code ignore les trois tables. Pour les retirer (dernier recours, tant qu'aucune offre n'existe) : `DROP TABLE "OffreLivraison", "ZonePays", "Zone";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261031004437_zones_livraison';`.
 
+### Story 2.4 : invitation des artistes
+
+- Migration : `20261102013809_invitations_artistes` (énumération `UsageJeton`, tables `Jeton` et `Invitation`). Ajout de tables seulement ; le nouveau code les lit (administration des artistes, `/auth/invitation`) et échouerait sans elles : même procédure que les précédentes, `preview` puis production **avant la fusion**, avec la ligne `_prisma_migrations` et l'empreinte SHA-256.
+- Retour arrière : l'ancien code ignore les deux tables. Pour les retirer (dernier recours) : `DROP TABLE "Invitation", "Jeton"; DROP TYPE "UsageJeton";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261102013809_invitations_artistes';`. Les comptes artistes déjà créés restent (table `User`).
+- Fiche artiste du porteur : `scripts/sql/fiche-artiste-porteur.sql` (valeurs à compléter), puis invitation depuis l'écran.
+
 ## Journal des bases partagées
 
 - 2026-10-28 : sur `production` puis sur la branche `preview`, la ligne de base `20261027150000_ligne_de_base` a été déclarée (sans exécution) et `20261027230000_inscriptions_ouverture` appliquée, en une transaction depuis l'éditeur SQL de Neon (SQL de la migration et empreintes SHA-256 identiques à celles de Prisma). Point de restauration : branche `avant-migrations-28-10` (expire le 2026-11-04).
