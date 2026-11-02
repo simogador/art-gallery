@@ -22,6 +22,12 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 - Espace artiste : `artist-tabbar` (Accueil, Œuvres, Commandes, Paiements ; basse sur mobile, latérale à partir de `lg`, `aria-current`). Accueil réduit au bloc « Mes œuvres » ; Commandes et Paiements affichent un état vide (Lot 2).
 - Migration appliquée par le porteur (SQL, ligne `_prisma_migrations`, SHA-256), `preview` puis production avant la fusion.
 
+**Décisions du porteur (2026-11-02) :**
+- Charte artiste : l'agent rédige une charte courte, provisoire et versionnée (`CHARTE_ARTISTE_VERSION`) à partir des engagements déjà décidés (œuvre originale et authentique, photos fidèles, disponibilité tenue à jour, emballage soigné, expédition dans les délais annoncés, reprise en cas de retour, commission de 30 %) ; le porteur la relit dans la PR.
+- Validité de l'invitation : 7 jours.
+- « Écrire à l'équipe » : `mailto:contact@errancy.art`, adresse lue dans `reglages`.
+- Fiche artiste du porteur : hors story ; l'agent fournit un SQL qui la crée, et le porteur s'invite avec une seconde adresse (un compte n'a qu'un rôle).
+
 ## Boundaries & Constraints
 
 **Always:** jetons créés et vérifiés seulement par `acces` ; comparaison par empreinte ; usage unique, y compris sous deux envois simultanés (consommation conditionnelle) ; aucun jeton, e-mail ni mot de passe dans les journaux ; mot de passe haché par bcrypt comme l'inscription ; droits vérifiés dans le module à partir de `acteurCourant()` ; liste d'exceptions Prisma qui ne grossit pas.
@@ -46,18 +52,11 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 
 </frozen-after-approval>
 
-## Open Questions
-
-1. Texte de la charte artiste — aucun texte n'existe. Options : (a) l'agent rédige une charte courte et provisoire, versionnée, à partir des engagements déjà décidés (œuvre originale et authentique, photos fidèles, disponibilité tenue à jour, emballage soigné, expédition dans les délais annoncés, reprise en cas de retour, commission de 30 %), que le porteur relit dans la PR ; (b) le porteur fournit le texte ; (c) case sans texte, renvoyant à une charte à rédiger plus tard.
-2. Durée de validité de l'invitation (UXQ-8) — options : 7 jours (maquette) ; 14 ou 30 jours (envoi manuel, artistes moins réactifs).
-3. Destination de « Écrire à l'équipe » — aucune adresse d'équipe n'existe (le pied de page affiche une adresse de démonstration). Options : une adresse e-mail que le porteur fournit (`mailto:`), lue dans `reglages` ; ou page `/contact` à créer plus tard (lien inactif d'ici là).
-4. Fiche artiste du porteur — l'invitation ne vise qu'un artiste existant, or seules des fiches de démonstration existent, et un compte n'a qu'un rôle (le compte Google du porteur est admin). Options : (a) ajouter à cet écran une création minimale de fiche (nom, pays) non publiée, et le porteur s'invite avec une seconde adresse ; (b) hors périmètre : la fiche du porteur est créée en SQL fourni par l'agent, puis invitation par une seconde adresse ; (c) reporter la création de fiches à une story dédiée.
-
 ## Code Map
 
 - `prisma/schema.prisma` -- ajouter `Jeton` (`id`, `empreinte` unique, `usage` enum `UsageJeton` = `invitation` pour l'instant, `cible`, `echeance`, `consommeLe?`, `revoqueLe?`, `createdAt`) et `Invitation` (`id`, `artistId` → `Artist` cascade, `email`, `creeParId?`, `accepteeLe?`, `charteVersion?`, `createdAt`). `User`/`Artist` inchangés (relation seulement). Migration générée contre PostgreSQL local.
 - `src/lib/acces/` (dans `MODULES_METIER`) -- nouveau `jetons.ts` (`emettreJeton`, `verifierJeton`, `consommerJeton`, `revoquerJetons`, empreinte `crypto.createHash('sha256')`, `randomBytes(32).toString('base64url')`) et `invitations.ts` (`inviterArtiste(acteur, artistId, email)`, `lireInvitation(jeton)`, `activerInvitation(jeton, { motDePasse, charteAcceptee })`), exportés par `index.ts`. bcrypt comme `src/app/auth/actions.ts` (`register`).
-- `src/lib/reglages/index.ts` -- `DUREE_INVITATION_JOURS`, `CHARTE_ARTISTE_VERSION`, adresse de contact selon OQ 3.
+- `src/lib/reglages/index.ts` -- `DUREE_INVITATION_JOURS`, `CHARTE_ARTISTE_VERSION`, `CONTACT_EQUIPE` (`contact@errancy.art`) ; texte de la charte dans un fichier pur `src/lib/acces/charte.ts` (affiché par la page d'activation).
 - `src/app/dashboard/admin/artistes/page.tsx` -- colonne « Accès » : relié (e-mail) ou bouton « Inviter » (composant client + action serveur, lien affiché une fois avec « Copier »). Reste lu par Prisma (déjà dans les exceptions) ; les écritures passent par `acces`.
 - `src/app/auth/invitation/[jeton]/route.ts` (GET, cookie, redirection), `src/app/auth/invitation/page.tsx`, `actions.ts`, formulaire client ; `next.config` ou en-têtes de réponse pour `Referrer-Policy`. Le middleware laisse passer `/auth` en maintenance.
 - `src/components/dashboard/DashboardNav.tsx`, `src/app/dashboard/artiste/layout.tsx`, `page.tsx`, nouvelles `commandes/page.tsx` et `paiements/page.tsx`.
@@ -75,6 +74,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 - [ ] Espace artiste -- navigation et pages vides.
 - [ ] `tests/invitations.test.ts` -- matrice I/O, dont double envoi concurrent et cloisonnement.
 - [ ] `docs/migrations.md` (story 2.4) et `AGENTS.md` (jetons et invitations).
+- [ ] `scripts/sql/fiche-artiste-porteur.sql` -- modèle de création de la fiche du porteur (valeurs à compléter), hors code applicatif.
 
 **Acceptance Criteria:**
 - Given la base, when on lit `Jeton`, then aucune valeur en clair n'y figure.
