@@ -25,6 +25,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 **Décisions du porteur (2026-11-02) :**
 - Listes fermées, modifiables plus tard dans le code : couleur dominante = Ocre, Bleu, Blanc, Vert, Rouge, Noir, Gris, Jaune, Multicolore ; ambiance = Calme, Lumineuse, Intense, Mélancolique, Joyeuse, Mystérieuse. Stockées en codes `snake_case` sans accent.
 - Cloudinary : le porteur vérifie, guidé pas à pas, que les trois variables existent dans Vercel pour Preview et Production ; l'agent ne modifie aucun réglage.
+- Taille maximale d'une photo : 10 Mo (limite du plan gratuit de Cloudinary), décision du 2026-11-03 ; vidéo : 100 Mo.
 - Spec gardée entière malgré sa longueur (photos et champs forment un seul formulaire).
 
 ## Boundaries & Constraints
@@ -38,7 +39,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 | Scenario | Input / State | Expected Output / Behavior | Error Handling |
 |----------|--------------|---------------------------|----------------|
 | Premier champ | formulaire vide, titre saisi puis quitté | brouillon créé, URL `/oeuvres/[slug]`, « Brouillon enregistré » | échec réseau : « Non enregistré, réessayez », saisie conservée |
-| Photo | image de 8 Mo dans la case gros plan | envoi direct à Cloudinary, vignette + « Remplacer » | type non image/vidéo ou > 20 Mo (image) / 100 Mo (vidéo) : refus avant envoi |
+| Photo | image de 8 Mo dans la case gros plan | envoi direct à Cloudinary, vignette + « Remplacer » | type non image/vidéo ou > 10 Mo (image) / 100 Mo (vidéo) : refus avant envoi |
 | Signature falsifiée | réponse Cloudinary modifiée côté client | photo non enregistrée | `signature_invalide` |
 | Dimensions | 60 × 80 cm | « 23,6 × 31,5 in · paysage » ; 600 et 800 mm | 0, négatif ou > 1 000 cm : erreur reliée au champ |
 | Prix | « 1 250,50 » | 125 050 centimes | illisible : `MESSAGE_PRIX_INVALIDE` |
@@ -112,7 +113,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 | 16 | Ancien `PUT /api/artiste/oeuvres/[slug]` accepte encore un brouillon (aveugle) | low | requête forgée par l'artiste sur son propre brouillon | defer |
 | 17 | Brouillon antérieur à 2.5 avec `imageUrl` sans `PhotoOeuvre` (cas limites) | maybe-false | dépend de brouillons existants en production | defer |
 | 18 | File d'enregistrement du client non testée (vérification) | low | pas d'environnement DOM dans Vitest | defer, vérification manuelle en préversion |
-| 19 | Limite image 20 Mo contre 10 Mo du plan gratuit Cloudinary (aveugle) | maybe-false | dépend du plan du compte | question au porteur |
+| 19 | Limite image 20 Mo contre 10 Mo du plan gratuit Cloudinary (aveugle) | maybe-false | plan gratuit confirmé (compte `djiu4tirq`) | porteur : limite ramenée à 10 Mo |
 | 20 | Visiteur redirigé vers la connexion au lieu d'une 404 (cas limites) | low | aucune fuite : il ne voit rien du brouillon | rejeté |
 | 21 | Rafraîchissement complet et verrou à chaque lecture (aveugle, vérification) | low | performance, sans effet visible | rejeté |
 | 22 | `SectionExpedition` dans le dossier `nouvelle` (aveugle) | low | rangement | rejeté |

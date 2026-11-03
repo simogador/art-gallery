@@ -110,7 +110,7 @@ describe('règles pures du dépôt', () => {
     const Mo = 1024 * 1024
     expect(refusFichier('gros_plan', { type: 'image/jpeg', size: 8 * Mo, name: 'a.jpg' })).toBeNull()
     expect(refusFichier('gros_plan', { type: '', size: 8 * Mo, name: 'IMG_1.HEIC' })).toBeNull()
-    expect(refusFichier('gros_plan', { type: 'image/jpeg', size: 21 * Mo, name: 'a.jpg' })).toContain('20 Mo')
+    expect(refusFichier('gros_plan', { type: 'image/jpeg', size: 11 * Mo, name: 'a.jpg' })).toContain('10 Mo')
     expect(refusFichier('gros_plan', { type: 'application/pdf', size: Mo, name: 'a.pdf' })).toContain('photo')
     expect(refusFichier('gros_plan', { type: 'video/mp4', size: Mo, name: 'a.mp4' })).toContain('photo')
     expect(refusFichier('video', { type: 'video/mp4', size: 99 * Mo, name: 'a.mp4' })).toBeNull()
@@ -460,7 +460,7 @@ describe('base : dépôt de l’artiste', () => {
       const pdf = { ...reponse(p.envoi.publicId), format: 'pdf' }
       expect(await enregistrerPhoto(ARTISTE as never, p.slug, 'gros_plan', pdf)).toMatchObject({ ok: false, code: 'fichier_refuse' })
       expect(detruire).toHaveBeenCalledWith(p.envoi.publicId, { resource_type: 'image', invalidate: true })
-      const lourd = { ...reponse(p.envoi.publicId), bytes: 21 * 1024 * 1024 }
+      const lourd = { ...reponse(p.envoi.publicId), bytes: 11 * 1024 * 1024 }
       expect(await enregistrerPhoto(ARTISTE as never, p.slug, 'gros_plan', lourd)).toMatchObject({ ok: false, code: 'fichier_refuse' })
       expect(await enregistrerPhoto(ARTISTE as never, p.slug, 'gros_plan', { ...reponse(p.envoi.publicId), bytes: undefined })).toMatchObject({
         ok: false, code: 'fichier_refuse',

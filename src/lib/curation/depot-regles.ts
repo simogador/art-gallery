@@ -63,9 +63,9 @@ export const PHOTOS: readonly {
   nature: 'image' | 'video'
   tailleMaxOctets: number
 }[] = [
-  { type: 'face_lumiere_du_jour', legende: 'Œuvre de face, lumière du jour', obligatoire: true, nature: 'image', tailleMaxOctets: 20 * MO },
-  { type: 'gros_plan', legende: 'Gros plan de la matière', obligatoire: true, nature: 'image', tailleMaxOctets: 20 * MO },
-  { type: 'mise_en_situation', legende: 'Mise en situation avec repère d’échelle', obligatoire: true, nature: 'image', tailleMaxOctets: 20 * MO },
+  { type: 'face_lumiere_du_jour', legende: 'Œuvre de face, lumière du jour', obligatoire: true, nature: 'image', tailleMaxOctets: 10 * MO },
+  { type: 'gros_plan', legende: 'Gros plan de la matière', obligatoire: true, nature: 'image', tailleMaxOctets: 10 * MO },
+  { type: 'mise_en_situation', legende: 'Mise en situation avec repère d’échelle', obligatoire: true, nature: 'image', tailleMaxOctets: 10 * MO },
   { type: 'video', legende: 'Vidéo', obligatoire: false, nature: 'video', tailleMaxOctets: 100 * MO },
 ]
 
