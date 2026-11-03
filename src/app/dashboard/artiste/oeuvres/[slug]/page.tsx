@@ -6,9 +6,11 @@ import { oeuvreAEditer } from '@/lib/catalogue'
 import { ArtworkForm } from '@/components/dashboard/ArtworkForm'
 import { acteurCourant } from '@/lib/acces'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
-import { lireDepot } from '@/lib/curation'
-import { listerZones } from '@/lib/livraison'
+import { lireDepot, lireOeuvreEnCuration } from '@/lib/curation'
+import { zonesOuvertes } from '@/lib/livraison'
+import { DELAI_REPONSE_CURATION_JOURS } from '@/lib/reglages'
 import { PageDepot } from '../depot/PageDepot'
+import { RecapitulatifCuration } from '../depot/RecapitulatifCuration'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -39,14 +41,17 @@ export default async function EditOeuvrePage({ params }: Props) {
   if (!acteur.artiste) redirect('/dashboard/artiste')
 
   // Story 2.5 : un brouillon de l'artiste s'ouvre dans le formulaire de dépôt. Une œuvre d'un autre
-  // artiste (acces_refuse) ou inexistante : 404. Une œuvre sortie du brouillon (transition_interdite)
-  // garde l'ancienne page d'édition, jusqu'aux stories 2.7 et 2.8.
+  // artiste (acces_refuse) ou inexistante : 404. Story 2.6 : une œuvre en curation s'affiche en
+  // lecture seule (récapitulatif et délai de réponse) ; une œuvre publiée garde l'ancienne page
+  // d'édition, jusqu'aux stories 2.7 et 2.8.
   const depot = await depotDeLaPage(slug)
   if (depot.ok) {
-    const zones = await listerZones()
-    return <PageDepot depot={depot.depot} zones={zones.map((z) => z.nom)} />
+    return <PageDepot depot={depot.depot} zones={await zonesOuvertes()} />
   }
   if (depot.code !== 'transition_interdite') notFound()
+
+  const enCuration = await lireOeuvreEnCuration(acteur, slug)
+  if (enCuration.ok) return <RecapitulatifCuration recap={enCuration.recap} delaiJours={DELAI_REPONSE_CURATION_JOURS} />
 
   // null si l'œuvre n'existe pas ou appartient à un autre artiste.
   const artwork = await oeuvreAEditer(acteur.userId, slug)

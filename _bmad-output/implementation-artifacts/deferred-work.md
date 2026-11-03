@@ -23,6 +23,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-3-zones-de-livraison.md`
   summary: Ajouter à `OffreLivraison` des contraintes `CHECK` (frais ≥ 0, délais ≥ 0, transport min ≤ max, devise sur trois lettres) avec la story 2.6, qui écrit la table.
   evidence: Revue de la story 2.3 : la table est créée sans contrainte de valeur ; vide jusqu'à la story 2.6. Vérifier que `prisma migrate diff` de la CI tolère des `CHECK` écrits à la main.
+  resolution: Résolu par la story 2.6 (migration `20261103100532_expedition_engagements`) : six contraintes `CHECK`, dont « valeurs présentes si livrée » et « vides si non livrée » ; `prisma migrate diff` les ignore (aucune différence), couvertes par `tests/livraison.test.ts`.
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-4-invitation-artiste.md`
   summary: Archiver le texte de chaque version de la charte artiste acceptée et permettre à l'artiste de la relire depuis son espace.
   evidence: Revue de la story 2.4 : seule la version (`Invitation.charteVersion`) est enregistrée ; les textes antérieurs ne vivent que dans l'historique git. À faire avant que la charte ne soit définitive (relecture juridique).
@@ -36,9 +37,23 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-5-deposer-une-oeuvre.md`
   summary: Faire refuser les brouillons par l'ancienne route PUT /api/artiste/oeuvres/[slug] (ou la retirer en 2.7/2.8).
   evidence: elle écrit titre, technique, prix et dimensions sans les règles du dépôt ; seul l'artiste propriétaire peut l'appeler.
+  resolution: Résolu par la story 2.6 : la route répond 409 pour un brouillon ou une œuvre en curation (test dans `tests/depot.test.ts`).
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-5-deposer-une-oeuvre.md`
   summary: Reprendre dans le formulaire de dépôt l'image (imageUrl) d'un brouillon créé avant la story 2.5.
   evidence: non vérifié (medium s'il en existe) ; à régler en comptant en production les œuvres `brouillon` avec imageUrl non vide et sans PhotoOeuvre.
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-5-deposer-une-oeuvre.md`
   summary: Tester la file d'enregistrement du formulaire de dépôt (ordre, slug du premier envoi, échec).
   evidence: Vitest tourne sans DOM ; extraire la file dans une fonction pure ou ajouter jsdom.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-6-expedition-engagements-curation.md`
+  summary: Interdire à la bascule admin `definirPublication` de publier ou dépublier une œuvre `en_curation` hors de la file de curation (story 2.7).
+  evidence: un admin peut publier une œuvre en curation sans relecture, ou la renvoyer en brouillon sans prévenir l'artiste.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-6-expedition-engagements-curation.md`
+  summary: Mettre à jour la puce « Dépôt d'une œuvre (story 2.5) » d'AGENTS.md : en curation → récapitulatif en lecture seule, publiée → ancienne page.
+  evidence: la puce 2.5 dit encore qu'une œuvre hors brouillon ouvre l'ancienne page d'édition.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-6-expedition-engagements-curation.md`
+  summary: Tester la logique client des zones du formulaire de dépôt (saisie partielle, « Je ne livre pas », reprise).
+  evidence: Vitest tourne sans DOM ; extraire la décision de `sortieZone` dans une fonction pure de depot-regles.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-6-expedition-engagements-curation.md`
+  summary: Fixer la règle pour une œuvre envoyée ou publiée sans offre pour une zone créée ensuite (« pas d'offre = non livrée » ?).
+  evidence: non vérifié ; à trancher avec l'affichage du prix livré (épopée 3).

@@ -7,15 +7,24 @@ import { champAvailable, estRecopiee, lireEtatVerrouille, type Publication } fro
 // l'administration. La règle d'accord signé (FR-16) viendra avec les stories 2.4 et 2.7.
 // Story 2.5 : propriétaire du descriptif, des dimensions et des photos ; dépôt par l'artiste
 // (./depot, ./photos), règles pures partagées avec le formulaire (./depot-regles).
+// Story 2.6 : expédition par zone (offres écrites via livraison), engagements, envoi en curation.
 
 export {
   enregistrerChamp,
+  enregistrerOffreDepot,
+  envoyerEnCuration,
   lireDepot,
+  lireOeuvreEnCuration,
   publicationInitiale,
+  repriseZonesPossible,
+  reprendreZones,
   type DepotLu,
   type PhotoDepot,
+  type RecapitulatifCuration,
   type RefusDepot,
   type ResultatDepot,
+  type ResultatEnvoiCuration,
+  type ResultatRecapitulatif,
 } from './depot'
 export { enregistrerPhoto, preparerEnvoiPhoto, type EnvoiSigne, type ResultatEnvoi, type ResultatPhoto } from './photos'
 export * from './depot-regles'

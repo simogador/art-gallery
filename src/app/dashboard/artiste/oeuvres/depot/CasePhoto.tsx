@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState } from 'react'
 import Image from 'next/image'
-import { refusFichier, type TypePhoto } from '@/lib/curation/depot-regles'
+import { ID_CHAMP, refusFichier, type TypePhoto } from '@/lib/curation/depot-regles'
 
 // `photo-slot` (UX-DR27, story 2.5) : une case légendée par prise de vue, une photo chacune.
 // Ajout depuis l'appareil photo ou la galerie du téléphone (le sélecteur du système propose les
@@ -73,6 +73,7 @@ export function CasePhoto({ type, legende, obligatoire, nature, url, envoyer }: 
         onChange={choisir}
       />
       <button
+        id={ID_CHAMP.photo(type)}
         type="button"
         onClick={() => champ.current?.click()}
         disabled={enCours !== null}

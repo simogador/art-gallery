@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-27-2026 09:35
-last_updated: 11-03-2026 10:10
+last_updated: 11-03-2026 10:24
 project: art-gallery
 project_key: NOKEY
 tracking_system: file-system
@@ -53,7 +53,7 @@ development_status:
   2-3-zones-de-livraison-gérées-par-l-équipe: done
   2-4-invitation-et-premier-accès-de-l-artiste: done
   2-5-déposer-une-œuvre-photos-informations-dimensions-et-prix: done
-  2-6-expédition-par-zone-engagements-et-envoi-en-curation: in-progress
+  2-6-expédition-par-zone-engagements-et-envoi-en-curation: review
   2-7-curation-par-l-équipe: backlog
   2-8-l-artiste-tient-la-disponibilité-de-ses-œuvres: backlog
   2-9-catalogue-réel-uniquement: backlog

@@ -2,7 +2,7 @@
 title: 'Story 2.6 — Expédition par zone, engagements et envoi en curation'
 type: 'feature'
 created: '2026-11-03'
-status: 'in-progress'
+status: 'done'
 route: 'dispatch'
 baseline_commit: '5c4582905fa6c95db55078f3f3e2e74b78cee31e'
 review_loop_iteration: 0
@@ -63,14 +63,14 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `prisma/schema.prisma` + `prisma/migrations/<horodatage>_expedition_engagements/` -- colonnes, `CHECK`, `migrate dev --create-only` puis ajout des `CHECK` à la main -- migration additive.
-- [ ] `src/lib/livraison/` -- lecture, écriture et recopie des offres d'une œuvre -- propriétaire des offres.
-- [ ] `src/lib/curation/depot-regles.ts`, `depot.ts`, `index.ts` -- règles et complétude des sections 4 et 5, éléments manquants, reprise, envoi en curation -- logique métier.
-- [ ] `src/lib/reglages/index.ts` -- délai de réponse de la curation -- réglable.
-- [ ] `src/app/dashboard/artiste/oeuvres/depot/` -- sections 4 et 5, liste « Il manque N éléments », bouton d'envoi -- interface.
-- [ ] Pages `[slug]` et `oeuvres`, route PUT -- lecture seule en curation, bandeau, refus.
-- [ ] `tests/depot.test.ts`, `tests/livraison.test.ts` -- matrice, `CHECK` en base, propriété.
-- [ ] `docs/migrations.md`, `AGENTS.md`, `deferred-work.md` (entrée `CHECK` close) -- journal et repères.
+- [x] `prisma/schema.prisma` + `prisma/migrations/<horodatage>_expedition_engagements/` -- colonnes, `CHECK`, `migrate dev --create-only` puis ajout des `CHECK` à la main -- migration additive.
+- [x] `src/lib/livraison/` -- lecture, écriture et recopie des offres d'une œuvre -- propriétaire des offres.
+- [x] `src/lib/curation/depot-regles.ts`, `depot.ts`, `index.ts` -- règles et complétude des sections 4 et 5, éléments manquants, reprise, envoi en curation -- logique métier.
+- [x] `src/lib/reglages/index.ts` -- délai de réponse de la curation -- réglable.
+- [x] `src/app/dashboard/artiste/oeuvres/depot/` -- sections 4 et 5, liste « Il manque N éléments », bouton d'envoi -- interface.
+- [x] Pages `[slug]` et `oeuvres`, route PUT -- lecture seule en curation, bandeau, refus.
+- [x] `tests/depot.test.ts`, `tests/livraison.test.ts` -- matrice, `CHECK` en base, propriété.
+- [x] `docs/migrations.md`, `AGENTS.md`, `deferred-work.md` (entrée `CHECK` close) -- journal et repères.
 
 **Acceptance Criteria:**
 - Given un artiste sans zone ouverte par l'équipe, when il ouvre la section 4, then il lit l'explication au lieu d'une liste vide et l'envoi reste impossible.
@@ -79,9 +79,38 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 
 ## Implementation Notes
 
+- Migration `20261103100532_expedition_engagements`, créée par `migrate dev --create-only` sur PostgreSQL local, puis six `CHECK` ajoutés à la main (`OffreLivraison_frais_positifs`, `_delais_positifs`, `_transport_ordonne`, `_devise_iso`, `_livree_complete`, `_non_livree_vide`) ; `migrate diff` : aucune différence. Les bornes métier (frais ≤ 10 000 €, préparation ≤ 60, transport 1 à 90) restent dans `depot-regles.ts`, pas en base.
+- Une zone s'enregistre quand ses quatre valeurs sont valides (une offre livrée est toujours complète) ; partiellement remplie, rien n'est écrit et la zone l'indique. Quatre champs vidés : offre retirée. Décocher « Je ne livre pas » avec une saisie incomplète retire l'offre non livrée. Frais de 0 € acceptés (sans mention de gratuité).
+- « Reprendre les zones » recopie les offres seulement (pas les visites en atelier), depuis l'œuvre la plus récemment créée de l'artiste qui a des offres, quel que soit son état ; elle remplace les offres déjà saisies (confirmation demandée dans le navigateur s'il y en a). Sans brouillon, elle le crée.
+- Visites en atelier et engagements passent par `enregistrerChamp` (saisies « oui » / « non ») ; `available` reste écrite (fausse) à l'envoi via `champAvailable`.
+- `SectionExpedition` déplacée de `nouvelle/` vers `depot/` (composant contrôlé) ; texte sans zone conservé.
+
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Constat (relecteur) | Verdict | Preuve | Suite |
+|---|---|---|---|---|
+| 1 | Zone enregistrée puis vidée en partie : anciens frais envoyés en curation (cas limites, vérification) | medium | `sortieZone` n'écrivait rien sur une saisie partielle | patch : offre retirée, message à la zone |
+| 2 | Décocher « Je ne livre pas » avec des champs invalides laisse la zone non livrée en base (cas limites) | medium | retour anticipé de `sortieZone` | patch |
+| 3 | Erreur d'une zone non livrée invisible (cas limites, aveugle) | medium | erreur portée par le champ `frais` masqué | patch : erreur à la zone, case rétablie |
+| 4 | Lien « Il manque » sans cible quand la case est cochée localement (cas limites, aveugle) | low | `depot-zone-<id>-frais` absent du DOM | patch : repli sur la case |
+| 5 | Suppression d'une œuvre en curation par l'artiste (aveugle, cas limites) | medium | `DELETE` non gardé | patch : 409 + test |
+| 6 | Aucune contrainte « non livrée = valeurs vides » en base (aveugle) | low | seul `livree_complete` existait | patch : `CHECK` + test |
+| 7 | Zone ajoutée par l'équipe après le chargement : refus au message générique (cas limites) | low | `depot_incomplet` | patch : « rechargez la page » |
+| 8 | Message « 10000 » (aveugle) | low | format | patch |
+| 9 | « Modifier » sur une œuvre en curation (aveugle) | low | `aria-label` | patch : « Voir » |
+| 10 | Tests : choix de la dernière œuvre, bouton de reprise sur `/nouvelle` (vérification) | medium | aucun cas à deux candidates | patch : 3 tests |
+| 11 | Statut du suivi divergent (aveugle) | low | `in-progress` contre `in-review` | patch |
+| 12 | Course entre le contrôle de l'ancien PUT et sa mise à jour (aveugle) | low | l'artiste modifierait son œuvre à l'instant où il l'envoie | rejeté |
+| 13 | Bascule admin `definirPublication` depuis `en_curation` (aveugle) | low | admin seulement ; la file de curation est la story 2.7 | defer |
+| 14 | `AGENTS.md` : la puce 2.5 contredit la puce 2.6 (aveugle) | low | fichier de contexte des agents | defer |
+| 15 | Logique client des zones non testée (vérification) | low | Vitest sans DOM | defer, vérification manuelle en préversion |
+| 16 | Œuvres sans offre pour une zone créée plus tard (aveugle) | maybe-false | dépend des zones ajoutées par l'équipe | defer |
+| 17 | Verrou exclusif pour une lecture, requête de reprise à chaque enregistrement (aveugle) | low | performance sans effet visible | rejeté |
+| 18 | Date d'envoi sans fuseau horaire (aveugle) | low | fuseau à choisir (artistes partout) | rejeté |
+| 19 | Bandeau `?envoyee=1` affichable à la main (aveugle) | low | sans effet sur les données | rejeté |
+| 20 | Modification pendant l'envoi, confirmation de reprise avec saisie non enregistrée, zone supprimée entre deux écritures (cas limites) | low | rares ; le serveur revérifie | rejeté |
 
 ## Verification
 

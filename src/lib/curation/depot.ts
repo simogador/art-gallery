@@ -3,22 +3,51 @@ import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@/generated/prisma/client'
 import type { Acteur } from '@/lib/acces'
 import { champsDimensionsExactes, champsPrix } from '@/lib/catalogue/conversions'
-import { disponibiliteInitiale, estBrouillon, type EtatOeuvre, type Publication } from '@/lib/disponibilite'
+import {
+  champAvailable,
+  disponibiliteInitiale,
+  estBrouillon,
+  estEnCuration,
+  lireEtatVerrouille,
+  type EtatOeuvre,
+  type Publication,
+} from '@/lib/disponibilite'
+import {
+  derniereOeuvreAvecOffres,
+  enregistrerOffre as ecrireOffre,
+  offresDeLOeuvre,
+  recopierOffres,
+  zonesOuvertes,
+} from '@/lib/livraison'
 import {
   ANNEE_NON_RENSEIGNEE,
   centimesEnSaisie,
+  elementsManquants,
   validerChamp,
+  validerOffre,
   type ChampDepot,
+  type ChampOffre,
   type CodeRefusDepot,
   type DepotLu,
+  type ValeurChamp,
+  type ZoneDepot,
 } from './depot-regles'
 
 // Dépôt d'une œuvre par son artiste (story 2.5, FR-20). Le module curation est propriétaire du
 // descriptif, des dimensions et des photos d'une œuvre. Seul l'artiste propriétaire lit et modifie
 // son dépôt, et seulement tant que l'œuvre est en brouillon : une œuvre en curation ou publiée
 // garde l'ancienne page d'édition (stories 2.7, 2.8).
+// Story 2.6 : expédition par zone (offres écrites par le module livraison, appelé ici), visites en
+// atelier, engagements, puis envoi en curation (`brouillon` → `en_curation`). Une œuvre en curation
+// se relit en lecture seule (lireOeuvreEnCuration), jamais modifiable par l'artiste.
 
-export type RefusDepot = { ok: false; code: CodeRefusDepot; erreur?: string }
+export type RefusDepot = {
+  ok: false
+  code: CodeRefusDepot
+  erreur?: string
+  /** Erreurs par champ d'une zone (`valeur_invalide` sur une offre). */
+  erreursOffre?: Partial<Record<ChampOffre, string>>
+}
 
 export type { DepotLu, PhotoDepot } from './depot-regles'
 
@@ -31,13 +60,15 @@ export function publicationInitiale(): { publication: Publication } {
 
 const CHAMPS_DEPOT_LUS = {
   slug: true, title: true, medium: true, year: true, description: true, ambiance: true, couleurDominante: true,
-  hauteurMm: true, largeurMm: true, profondeurMm: true, prixCentimes: true,
+  hauteurMm: true, largeurMm: true, profondeurMm: true, prixCentimes: true, artistId: true,
+  visitesAtelier: true, engagementCertificat: true, engagementEmballage: true, engagementReprise: true,
+  envoyeeEnCurationLe: true,
   photos: { select: { type: true, url: true, largeur: true, hauteur: true } },
 } as const
 
 type LigneDepot = Prisma.ArtworkGetPayload<{ select: typeof CHAMPS_DEPOT_LUS }>
 
-function versDepot(l: LigneDepot): DepotLu {
+function versDepot(l: LigneDepot, offres: DepotLu['offres'], repriseDisponible: boolean): DepotLu {
   return {
     slug: l.slug,
     titre: l.title,
@@ -52,6 +83,12 @@ function versDepot(l: LigneDepot): DepotLu {
     prixCentimes: l.prixCentimes,
     photos: l.photos.map((p) => p.type),
     photosLues: Object.fromEntries(l.photos.map((p) => [p.type, { url: p.url, largeur: p.largeur, hauteur: p.hauteur }])),
+    offres,
+    visitesAtelier: l.visitesAtelier,
+    engagementCertificat: l.engagementCertificat,
+    engagementEmballage: l.engagementEmballage,
+    engagementReprise: l.engagementReprise,
+    repriseDisponible,
   }
 }
 
@@ -68,10 +105,20 @@ export type OeuvreVerrouillee = { id: string; slug: string; hauteurMm: number | 
  * l'écriture). Refus : `introuvable`, `acces_refuse` (œuvre d'un autre artiste), `transition_interdite`
  * (œuvre qui n'est plus en brouillon).
  */
-export async function verrouillerDepot(
+export function verrouillerDepot(
   tx: Prisma.TransactionClient,
   acteur: Acteur,
   slug: string,
+): Promise<{ ok: true; oeuvre: OeuvreVerrouillee } | RefusDepot> {
+  return verrouillerOeuvre(tx, acteur, slug, estBrouillon)
+}
+
+/** Comme verrouillerDepot, pour une œuvre de l'acteur dont l'état satisfait `accepte`. */
+async function verrouillerOeuvre(
+  tx: Prisma.TransactionClient,
+  acteur: Acteur,
+  slug: string,
+  accepte: (e: EtatOeuvre) => boolean,
 ): Promise<{ ok: true; oeuvre: OeuvreVerrouillee } | RefusDepot> {
   const artisteId = artisteDeposant(acteur)
   if (!artisteId) return { ok: false, code: 'acces_refuse' }
@@ -82,7 +129,7 @@ export async function verrouillerDepot(
   const l = lignes[0]
   if (!l) return { ok: false, code: 'introuvable' }
   if (l.artistId !== artisteId) return { ok: false, code: 'acces_refuse' }
-  if (!estBrouillon(l)) return { ok: false, code: 'transition_interdite' }
+  if (!accepte(l)) return { ok: false, code: 'transition_interdite' }
   return { ok: true, oeuvre: { id: l.id, slug: l.slug, hauteurMm: l.hauteurMm, largeurMm: l.largeurMm, profondeurMm: l.profondeurMm } }
 }
 
@@ -151,7 +198,7 @@ async function donneesDuChamp(
   tx: Prisma.TransactionClient,
   oeuvre: OeuvreVerrouillee,
   champ: ChampDepot,
-  valeur: string | number | null,
+  valeur: ValeurChamp,
 ): Promise<Prisma.ArtworkUpdateInput> {
   const texte = typeof valeur === 'string' ? valeur : ''
   const nombre = typeof valeur === 'number' ? valeur : null
@@ -174,6 +221,14 @@ async function donneesDuChamp(
       if (!prix.ok) throw new Error('prix validé refusé par champsPrix')
       return prix.champs
     }
+    case 'visitesAtelier':
+      return { visitesAtelier: typeof valeur === 'boolean' ? valeur : null }
+    case 'engagementCertificat':
+      return { engagementCertificat: valeur === true }
+    case 'engagementEmballage':
+      return { engagementEmballage: valeur === true }
+    case 'engagementReprise':
+      return { engagementReprise: valeur === true }
     case 'hauteur':
     case 'largeur':
     case 'profondeur': {
@@ -190,14 +245,140 @@ export async function lireDepot(acteur: Acteur, slug: string): Promise<ResultatD
   return prisma.$transaction(async (tx): Promise<ResultatDepot> => {
     const verrou = await verrouillerDepot(tx, acteur, slug)
     if (!verrou.ok) return verrou
-    const ligne = await tx.artwork.findUniqueOrThrow({ where: { id: verrou.oeuvre.id }, select: CHAMPS_DEPOT_LUS })
-    return { ok: true, depot: versDepot(ligne) }
+    return { ok: true, depot: await relireDepot(tx, verrou.oeuvre.id) }
   })
+}
+
+async function lireLigne(tx: Prisma.TransactionClient, id: string): Promise<{ ligne: LigneDepot; depot: DepotLu }> {
+  const ligne = await tx.artwork.findUniqueOrThrow({ where: { id }, select: CHAMPS_DEPOT_LUS })
+  const offres = await offresDeLOeuvre(tx, id)
+  const reprise = (await derniereOeuvreAvecOffres(tx, ligne.artistId, id)) !== null
+  return { ligne, depot: versDepot(ligne, offres, reprise) }
 }
 
 /** Relit le dépôt après une écriture, dans la même transaction. */
 export async function relireDepot(tx: Prisma.TransactionClient, id: string): Promise<DepotLu> {
-  return versDepot(await tx.artwork.findUniqueOrThrow({ where: { id }, select: CHAMPS_DEPOT_LUS }))
+  return (await lireLigne(tx, id)).depot
+}
+
+/** Brouillon existant (verrouillé) ou, sans slug, créé pour le premier enregistrement. */
+async function brouillonPourEcrire(
+  tx: Prisma.TransactionClient,
+  acteur: Acteur,
+  artisteId: string,
+  slug: string | null,
+): Promise<{ ok: true; oeuvre: OeuvreVerrouillee } | RefusDepot> {
+  if (slug === null) return { ok: true, oeuvre: await creerBrouillon(tx, artisteId) }
+  return verrouillerDepot(tx, acteur, slug)
+}
+
+/**
+ * Enregistre la saisie d'une zone (story 2.6) : frais et délais, « je ne livre pas », ou quatre
+ * champs vides (offre retirée). Sans slug, crée d'abord le brouillon. Une saisie refusée n'écrit
+ * rien : `valeur_invalide` avec les erreurs par champ.
+ */
+export async function enregistrerOffreDepot(
+  acteur: Acteur,
+  slug: string | null,
+  zoneId: unknown,
+  saisie: unknown,
+): Promise<ResultatDepot> {
+  const artisteId = artisteDeposant(acteur)
+  if (!artisteId) return { ok: false, code: 'acces_refuse' }
+  if (typeof zoneId !== 'string' || !zoneId) return { ok: false, code: 'zone_introuvable' }
+  const lue = validerOffre(saisie)
+  if (!lue.ok) return { ok: false, code: 'valeur_invalide', erreursOffre: lue.erreurs }
+
+  return prisma.$transaction(async (tx): Promise<ResultatDepot> => {
+    if (!(await tx.zone.findUnique({ where: { id: zoneId }, select: { id: true } }))) {
+      return { ok: false, code: 'zone_introuvable' }
+    }
+    const verrou = await brouillonPourEcrire(tx, acteur, artisteId, slug)
+    if (!verrou.ok) return verrou
+    await ecrireOffre(tx, verrou.oeuvre.id, zoneId, lue.offre)
+    return { ok: true, depot: await relireDepot(tx, verrou.oeuvre.id) }
+  })
+}
+
+/** Une autre œuvre de l'artiste a-t-elle des offres à reprendre ? (formulaire sans brouillon) */
+export async function repriseZonesPossible(acteur: Acteur): Promise<boolean> {
+  const artisteId = artisteDeposant(acteur)
+  if (!artisteId) return false
+  return (await derniereOeuvreAvecOffres(prisma, artisteId, '')) !== null
+}
+
+/**
+ * « Reprendre les zones de ma dernière œuvre » : remplace les offres du brouillon par celles de la
+ * dernière autre œuvre de l'artiste qui en a. Sans slug, crée d'abord le brouillon. Aucune œuvre
+ * antérieure avec des offres : `introuvable`, rien n'est écrit.
+ */
+export async function reprendreZones(acteur: Acteur, slug: string | null): Promise<ResultatDepot> {
+  const artisteId = artisteDeposant(acteur)
+  if (!artisteId) return { ok: false, code: 'acces_refuse' }
+  return prisma.$transaction(async (tx): Promise<ResultatDepot> => {
+    if (slug !== null) {
+      const verrou = await verrouillerDepot(tx, acteur, slug)
+      if (!verrou.ok) return verrou
+      const source = await derniereOeuvreAvecOffres(tx, artisteId, verrou.oeuvre.id)
+      if (!source) return { ok: false, code: 'introuvable' }
+      await recopierOffres(tx, source, verrou.oeuvre.id)
+      return { ok: true, depot: await relireDepot(tx, verrou.oeuvre.id) }
+    }
+    const source = await derniereOeuvreAvecOffres(tx, artisteId, '')
+    if (!source) return { ok: false, code: 'introuvable' }
+    const oeuvre = await creerBrouillon(tx, artisteId)
+    await recopierOffres(tx, source, oeuvre.id)
+    return { ok: true, depot: await relireDepot(tx, oeuvre.id) }
+  })
+}
+
+export type ResultatEnvoiCuration = { ok: true; slug: string } | RefusDepot
+
+/**
+ * Envoie le brouillon en curation (story 2.6) : revérifie la complétude sur la ligne verrouillée,
+ * passe la publication de `brouillon` à `en_curation` et retient la date d'envoi (ordre de la file,
+ * story 2.7). Incomplet : `depot_incomplet`, l'œuvre reste en brouillon ; déjà envoyée :
+ * `transition_interdite`.
+ */
+export async function envoyerEnCuration(acteur: Acteur, slug: unknown): Promise<ResultatEnvoiCuration> {
+  if (!artisteDeposant(acteur)) return { ok: false, code: 'acces_refuse' }
+  if (typeof slug !== 'string' || !slug) return { ok: false, code: 'introuvable' }
+  return prisma.$transaction(async (tx): Promise<ResultatEnvoiCuration> => {
+    const verrou = await verrouillerDepot(tx, acteur, slug)
+    if (!verrou.ok) return verrou
+    const depot = await relireDepot(tx, verrou.oeuvre.id)
+    if (elementsManquants(depot, await zonesOuvertes(tx)).length > 0) return { ok: false, code: 'depot_incomplet' }
+    const etat = await lireEtatVerrouille(tx, slug)
+    const publication: Publication = 'en_curation'
+    await tx.artwork.update({
+      where: { id: verrou.oeuvre.id },
+      data: {
+        publication,
+        envoyeeEnCurationLe: new Date(),
+        // Double écriture (AD-20) : available reste égale à « disponible », donc fausse.
+        ...champAvailable({ publication, disponibilite: etat?.disponibilite ?? null }),
+      },
+    })
+    return { ok: true, slug: verrou.oeuvre.slug }
+  })
+}
+
+/** Récapitulatif en lecture seule d'une œuvre en curation. */
+export type RecapitulatifCuration = DepotLu & { envoyeeLe: Date | null; zones: ZoneDepot[] }
+
+export type ResultatRecapitulatif = { ok: true; recap: RecapitulatifCuration } | RefusDepot
+
+/**
+ * Œuvre en curation de l'artiste propriétaire, en lecture seule. Refus : `introuvable`,
+ * `acces_refuse`, `transition_interdite` (œuvre qui n'est pas en curation).
+ */
+export async function lireOeuvreEnCuration(acteur: Acteur, slug: string): Promise<ResultatRecapitulatif> {
+  return prisma.$transaction(async (tx): Promise<ResultatRecapitulatif> => {
+    const verrou = await verrouillerOeuvre(tx, acteur, slug, estEnCuration)
+    if (!verrou.ok) return verrou
+    const { ligne, depot } = await lireLigne(tx, verrou.oeuvre.id)
+    return { ok: true, recap: { ...depot, envoyeeLe: ligne.envoyeeEnCurationLe, zones: await zonesOuvertes(tx) } }
+  })
 }
 
 /**
@@ -217,14 +398,9 @@ export async function enregistrerChamp(
   if (!lu.ok) return { ok: false, code: 'valeur_invalide', erreur: lu.erreur }
 
   return prisma.$transaction(async (tx): Promise<ResultatDepot> => {
-    let oeuvre: OeuvreVerrouillee
-    if (slug === null) {
-      oeuvre = await creerBrouillon(tx, artisteId)
-    } else {
-      const verrou = await verrouillerDepot(tx, acteur, slug)
-      if (!verrou.ok) return verrou
-      oeuvre = verrou.oeuvre
-    }
+    const verrou = await brouillonPourEcrire(tx, acteur, artisteId, slug)
+    if (!verrou.ok) return verrou
+    const oeuvre = verrou.oeuvre
     await tx.artwork.update({ where: { id: oeuvre.id }, data: await donneesDuChamp(tx, oeuvre, champ, lu.valeur) })
     return { ok: true, depot: await relireDepot(tx, oeuvre.id) }
   })

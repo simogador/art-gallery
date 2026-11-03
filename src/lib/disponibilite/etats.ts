@@ -60,6 +60,11 @@ export function estBrouillon(e: EtatOeuvre): boolean {
   return e.publication === 'brouillon'
 }
 
+/** En curation (axe publication seul) : envoyée par l'artiste, en attente de l'équipe (story 2.6). */
+export function estEnCuration(e: EtatOeuvre): boolean {
+  return e.publication === 'en_curation'
+}
+
 /** Axe disponibilité seul (bascule « Disponible / Vendue » de l'administration), quelle que soit la publication. */
 export function estMarqueeDisponible(e: EtatOeuvre): boolean {
   return e.disponibilite === 'disponible'

@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CODES_PAYS, estCodePays, nomPays, paysSansZone } from '@/lib/livraison/pays'
 import { messageRefusZone } from '@/lib/livraison/messages'
-import { SectionExpedition } from '@/app/dashboard/artiste/oeuvres/nouvelle/SectionExpedition'
+import { SectionExpedition } from '@/app/dashboard/artiste/oeuvres/depot/SectionExpedition'
 import { creerBaseJetable, type BaseJetable } from './utils/base-jetable'
 
 // Story 2.3 (AD-12, OQ-5) : zones de livraison gérées par l'équipe.
@@ -62,17 +62,34 @@ describe('pays', () => {
 })
 
 describe('section Expédition du dépôt', () => {
+  const rien = () => undefined
+  const props = (zones: { id: string; nom: string }[], repriseDisponible = false) => ({
+    zones, saisies: {}, erreurs: {}, repriseDisponible, onSaisie: rien, onSortie: rien, onNonLivree: rien, onReprendre: rien,
+  })
+
   it('sans zone : explique que les zones ne sont pas encore ouvertes, sans liste vide', () => {
-    const html = renderToStaticMarkup(createElement(SectionExpedition, { zones: [] }))
+    const html = renderToStaticMarkup(createElement(SectionExpedition, props([])))
     expect(html).toContain('Les zones de livraison ne sont pas encore ouvertes')
     expect(html).not.toContain('<ul')
   })
 
-  it('avec des zones : les liste', () => {
-    const html = renderToStaticMarkup(createElement(SectionExpedition, { zones: ['Maroc', 'Union européenne'] }))
+  it('avec des zones : frais, délais et « Je ne livre pas » par zone, libellés reliés', () => {
+    const html = renderToStaticMarkup(createElement(SectionExpedition, props([{ id: 'z1', nom: 'Maroc' }, { id: 'z2', nom: 'Union européenne' }])))
     expect(html).toContain('Maroc')
     expect(html).toContain('Union européenne')
     expect(html).not.toContain('pas encore ouvertes')
+    expect(html.match(/Je ne livre pas cette zone/g)).toHaveLength(2)
+    for (const id of ['depot-zone-z1-frais', 'depot-zone-z1-preparation', 'depot-zone-z1-transportMin', 'depot-zone-z1-transportMax', 'depot-zone-z2-nonLivree']) {
+      expect(html).toContain(`for="${id}"`)
+      expect(html).toContain(`id="${id}"`)
+    }
+    expect(html).not.toMatch(/gratuit|garantie/i)
+  })
+
+  it('« Reprendre les zones de ma dernière œuvre » seulement si une autre œuvre a des offres', () => {
+    const zones = [{ id: 'z1', nom: 'Maroc' }]
+    expect(renderToStaticMarkup(createElement(SectionExpedition, props(zones)))).not.toContain('Reprendre')
+    expect(renderToStaticMarkup(createElement(SectionExpedition, props(zones, true)))).toContain('Reprendre les zones de ma dernière œuvre')
   })
 })
 
@@ -367,6 +384,86 @@ describe('base : zones de livraison', () => {
     })
   })
 
+  describe('offres d’une œuvre (story 2.6)', () => {
+    const inserer = (valeurs: string) =>
+      db.query(
+        `INSERT INTO "OffreLivraison" (id, "artworkId", "zoneId", livree, "fraisCentimes", "preparationJours", "transportMinJours", "transportMaxJours", devise, "updatedAt")
+         SELECT gen_random_uuid()::text, 'oeuvre-1', id, ${valeurs}, now() FROM "Zone" LIMIT 1`,
+      )
+
+    it('contraintes CHECK en base : frais et délais positifs, min ≤ max, devise ISO, valeurs présentes si livrée', async () => {
+      const { creerZone } = await import('@/lib/livraison')
+      await creerZone(ADMIN, { nom: 'Maroc', pays: ['MA'] })
+      for (const [valeurs, contrainte] of [
+        [`true, -1, 3, 2, 5, 'EUR'`, 'OffreLivraison_frais_positifs'],
+        [`true, 2500, -1, 2, 5, 'EUR'`, 'OffreLivraison_delais_positifs'],
+        [`true, 2500, 3, 6, 5, 'EUR'`, 'OffreLivraison_transport_ordonne'],
+        [`true, 2500, 3, 2, 5, 'euro'`, 'OffreLivraison_devise_iso'],
+        [`true, NULL, 3, 2, 5, 'EUR'`, 'OffreLivraison_livree_complete'],
+        [`true, 2500, 3, NULL, 5, 'EUR'`, 'OffreLivraison_livree_complete'],
+        [`false, 2500, NULL, NULL, NULL, 'EUR'`, 'OffreLivraison_non_livree_vide'],
+        [`false, NULL, NULL, 2, 5, 'EUR'`, 'OffreLivraison_non_livree_vide'],
+      ] as const) {
+        await expect(inserer(valeurs), contrainte).rejects.toMatchObject({ constraint: contrainte })
+      }
+      await inserer(`false, NULL, NULL, NULL, NULL, 'EUR'`)
+      await db.query('DELETE FROM "OffreLivraison"')
+      await inserer(`true, 0, 0, 2, 2, 'EUR'`)
+      expect((await db.query('SELECT count(*)::int AS n FROM "OffreLivraison"')).rows[0].n).toBe(1)
+    })
+
+    it('enregistrerOffre, offresDeLOeuvre et recopierOffres', async () => {
+      const { creerZone, enregistrerOffre, offresDeLOeuvre, recopierOffres, derniereOeuvreAvecOffres } = await import('@/lib/livraison')
+      const { prisma } = await import('@/lib/prisma')
+      const maroc = await creerZone(ADMIN, { nom: 'Maroc', pays: ['MA'] })
+      const monde = await creerZone(ADMIN, { nom: 'Reste du monde', pays: ['US'] })
+      if (!maroc.ok || !monde.ok) throw new Error('zones')
+      await db.query(
+        `INSERT INTO "Artwork" (id, slug, title, year, medium, dimensions, description, "imageUrl", "artistId", "updatedAt")
+         VALUES ('oeuvre-2', 'oeuvre-2', 'Titre 2', 2021, 'Huile', '', 'D', '', 'artiste-1', now()) ON CONFLICT DO NOTHING`,
+      )
+      const livree = { livree: true, fraisCentimes: 2500, preparationJours: 3, transportMinJours: 2, transportMaxJours: 5 }
+      expect(await enregistrerOffre(prisma, 'oeuvre-1', maroc.id, livree)).toBe(true)
+      // Non livrée : frais et délais vides, quelles que soient les valeurs transmises.
+      expect(await enregistrerOffre(prisma, 'oeuvre-1', monde.id, { ...livree, livree: false })).toBe(true)
+      expect(await enregistrerOffre(prisma, 'oeuvre-1', 'zone-inconnue', livree)).toBe(false)
+      expect(await offresDeLOeuvre(prisma, 'oeuvre-1')).toEqual([
+        { zoneId: maroc.id, ...livree },
+        { zoneId: monde.id, livree: false, fraisCentimes: null, preparationJours: null, transportMinJours: null, transportMaxJours: null },
+      ])
+      expect(await derniereOeuvreAvecOffres(prisma, 'artiste-1', 'oeuvre-2')).toBe('oeuvre-1')
+      expect(await derniereOeuvreAvecOffres(prisma, 'artiste-1', 'oeuvre-1')).toBeNull()
+      expect(await recopierOffres(prisma, 'oeuvre-1', 'oeuvre-2')).toBe(2)
+      expect(await offresDeLOeuvre(prisma, 'oeuvre-2')).toEqual(await offresDeLOeuvre(prisma, 'oeuvre-1'))
+      // null retire l'offre.
+      await enregistrerOffre(prisma, 'oeuvre-2', maroc.id, null)
+      expect((await offresDeLOeuvre(prisma, 'oeuvre-2')).map((o) => o.zoneId)).toEqual([monde.id])
+      await db.query(`DELETE FROM "Artwork" WHERE id = 'oeuvre-2'`)
+    })
+
+    it('derniereOeuvreAvecOffres : la plus récente de deux œuvres aux offres différentes', async () => {
+      const { creerZone, enregistrerOffre, offresDeLOeuvre, recopierOffres, derniereOeuvreAvecOffres } = await import('@/lib/livraison')
+      const { prisma } = await import('@/lib/prisma')
+      const maroc = await creerZone(ADMIN, { nom: 'Maroc', pays: ['MA'] })
+      if (!maroc.ok) throw new Error('zone')
+      for (const [id, decalage] of [['ancienne', '-2 days'], ['recente', '-1 day'], ['cible', '0 day']] as const) {
+        await db.query(
+          `INSERT INTO "Artwork" (id, slug, title, year, medium, dimensions, description, "imageUrl", "artistId", "createdAt", "updatedAt")
+           VALUES ($1, $1, $1, 2021, 'Huile', '', 'D', '', 'artiste-1', now() + $2::interval, now())`,
+          [id, decalage],
+        )
+      }
+      const offre = (frais: number) => ({ livree: true, fraisCentimes: frais, preparationJours: 3, transportMinJours: 2, transportMaxJours: 5 })
+      await enregistrerOffre(prisma, 'ancienne', maroc.id, offre(1000))
+      await enregistrerOffre(prisma, 'recente', maroc.id, offre(2000))
+      expect(await derniereOeuvreAvecOffres(prisma, 'artiste-1', 'cible')).toBe('recente')
+      expect(await derniereOeuvreAvecOffres(prisma, 'artiste-1', 'recente')).toBe('ancienne')
+      await recopierOffres(prisma, 'recente', 'cible')
+      expect((await offresDeLOeuvre(prisma, 'cible'))[0].fraisCentimes).toBe(2000)
+      await db.query(`DELETE FROM "Artwork" WHERE id IN ('ancienne', 'recente', 'cible')`)
+    })
+  })
+
   it('le dépôt montre les zones aussitôt enregistrées', async () => {
     const { creerZone } = await import('@/lib/livraison')
     const { default: Page } = await import('@/app/dashboard/artiste/oeuvres/nouvelle/page')
@@ -375,20 +472,25 @@ describe('base : zones de livraison', () => {
     await db.query(`UPDATE "Artist" SET "userId" = 'u-artiste' WHERE id = 'artiste-1'`)
     acteur.courant = ARTISTE
 
-    // Story 2.5 : la page rend PageDepot, qui passe la section au formulaire de dépôt.
+    // Story 2.5 : la page rend PageDepot, qui passe les zones au formulaire de dépôt (2.6 : saisie par zone).
     const { PageDepot } = await import('@/app/dashboard/artiste/oeuvres/depot/PageDepot')
     const { FormulaireDepot } = await import('@/app/dashboard/artiste/oeuvres/depot/FormulaireDepot')
     const section = async () => {
       const page = await Page()
       const formulaire = trouverElement(PageDepot(page.props as Parameters<typeof PageDepot>[0]), FormulaireDepot)
-      const el = trouverElement((formulaire?.props as { expedition?: ReactNode } | undefined)?.expedition, SectionExpedition)
-      if (!el) throw new Error('section Expédition absente')
-      return renderToStaticMarkup(el)
+      if (!formulaire) throw new Error('formulaire de dépôt absent')
+      return renderToStaticMarkup(formulaire)
     }
 
     expect(await section()).toContain('pas encore ouvertes')
-    await creerZone(ADMIN, { nom: 'Maroc', pays: ['MA'] })
+    const maroc = await creerZone(ADMIN, { nom: 'Maroc', pays: ['MA'] })
     expect(await section()).toContain('Maroc')
+
+    // Story 2.6 : « Reprendre les zones de ma dernière œuvre » seulement si une autre œuvre a des offres.
+    expect(await section()).not.toContain('Reprendre les zones de ma dernière œuvre')
+    if (!maroc.ok) throw new Error('zone')
+    await offre(maroc.id)
+    expect(await section()).toContain('Reprendre les zones de ma dernière œuvre')
   })
 
   it('zones-depart.sql, lancé deux fois : cinq zones selon la liste validée, RU et BY sans zone', async () => {

@@ -1,21 +1,27 @@
 import { createHash } from 'node:crypto'
-import { isValidElement, type ReactElement, type ReactNode } from 'react'
+import { createElement, isValidElement, type ReactElement, type ReactNode } from 'react'
 import { Client } from 'pg'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { renderToStaticMarkup } from 'react-dom/server'
 import {
   apercuDimensions,
   centimesEnSaisie,
+  elementsManquants,
   etatSections,
   nombreSectionsCompletes,
+  offreEnSaisie,
   orientation,
   refusFichier,
   validerChamp,
+  validerOffre,
   type DonneesDepot,
+  type SaisieOffre,
 } from '@/lib/curation/depot-regles'
 import { MESSAGE_PRIX_INVALIDE } from '@/lib/catalogue/conversions'
 import { creerBaseJetable, type BaseJetable } from './utils/base-jetable'
 
 // Story 2.5 (FR-20) : dépôt d'une œuvre par son artiste — photos, informations, dimensions et prix.
+// Story 2.6 : expédition par zone, visites en atelier, engagements et envoi en curation.
 
 const acteur = vi.hoisted(() => ({ courant: { type: 'visiteur' } as Record<string, unknown> }))
 const detruire = vi.hoisted(() => vi.fn(async () => ({ result: 'ok' })))
@@ -60,6 +66,31 @@ function trouver(n: ReactNode, predicat: (e: ReactElement) => boolean): ReactEle
   }
   if (predicat(n)) return n
   return trouver((n.props as { children?: ReactNode }).children, predicat)
+}
+
+const saisie = (frais: string, preparation: string, transportMin: string, transportMax: string): SaisieOffre => ({
+  nonLivree: false, frais, preparation, transportMin, transportMax,
+})
+const ZONES = [{ id: 'z-maroc', nom: 'Maroc' }, { id: 'z-monde', nom: 'Reste du monde' }]
+const NON_LIVREE = { livree: false, fraisCentimes: null, preparationJours: null, transportMinJours: null, transportMaxJours: null }
+const VIDE: DonneesDepot = {
+  titre: '', technique: '', annee: null, histoire: '', ambiance: null, couleurDominante: null,
+  hauteurMm: null, largeurMm: null, profondeurMm: null, prixCentimes: null, photos: [],
+  offres: [], visitesAtelier: null, engagementCertificat: false, engagementEmballage: false, engagementReprise: false,
+}
+const PLEIN: DonneesDepot = {
+  ...VIDE,
+  titre: 'T', technique: 'Huile', annee: 2024, histoire: 'H', ambiance: 'calme', couleurDominante: 'bleu',
+  hauteurMm: 600, largeurMm: 800, profondeurMm: null, prixCentimes: 95_000,
+  photos: ['face_lumiere_du_jour', 'gros_plan', 'mise_en_situation'],
+}
+const COMPLET: DonneesDepot = {
+  ...PLEIN,
+  offres: [
+    { zoneId: 'z-maroc', livree: true, fraisCentimes: 2500, preparationJours: 3, transportMinJours: 2, transportMaxJours: 5 },
+    { zoneId: 'z-monde', ...NON_LIVREE },
+  ],
+  visitesAtelier: true, engagementCertificat: true, engagementEmballage: true, engagementReprise: true,
 }
 
 describe('règles pures du dépôt', () => {
@@ -118,25 +149,99 @@ describe('règles pures du dépôt', () => {
     expect(refusFichier('video', { type: 'image/png', size: Mo, name: 'a.png' })).toContain('vidéo')
   })
 
-  it('sections : trois saisissables, Expédition et Engagements à compléter (story 2.6)', () => {
-    const vide: DonneesDepot = {
-      titre: '', technique: '', annee: null, histoire: '', ambiance: null, couleurDominante: null,
-      hauteurMm: null, largeurMm: null, profondeurMm: null, prixCentimes: null, photos: [],
-    }
-    expect(nombreSectionsCompletes(etatSections(vide))).toBe(0)
-    const plein: DonneesDepot = {
-      titre: 'T', technique: 'Huile', annee: 2024, histoire: 'H', ambiance: 'calme', couleurDominante: 'bleu',
-      hauteurMm: 600, largeurMm: 800, profondeurMm: null, prixCentimes: 95_000,
-      photos: ['face_lumiere_du_jour', 'gros_plan', 'mise_en_situation'],
-    }
-    const sections = etatSections(plein)
+  it('sections : complétude des cinq sections', () => {
+    expect(nombreSectionsCompletes(etatSections(VIDE, ZONES))).toBe(0)
+    const sections = etatSections(PLEIN, ZONES)
     expect(sections.map((s) => [s.titre, s.complet])).toEqual([
       ['Photos', true], ['Informations', true], ['Dimensions et prix', true], ['Expédition', false], ['Engagements', false],
     ])
-    expect(etatSections({ ...plein, photos: ['face_lumiere_du_jour'] })[0].manques).toEqual([
+    expect(etatSections({ ...PLEIN, photos: ['face_lumiere_du_jour'] }, ZONES)[0].manques).toEqual([
       'Gros plan de la matière', 'Mise en situation avec repère d’échelle',
     ])
-    expect(etatSections({ ...plein, ambiance: 'retiree-de-la-liste' })[1].complet).toBe(false)
+    expect(etatSections({ ...PLEIN, ambiance: 'retiree-de-la-liste' }, ZONES)[1].complet).toBe(false)
+    expect(nombreSectionsCompletes(etatSections(COMPLET, ZONES))).toBe(5)
+    expect(elementsManquants(COMPLET, ZONES)).toEqual([])
+  })
+
+  it('zone livrée : 25 €, préparation 3, transport 2 à 5 → 2 500 centimes, 3, 2, 5', () => {
+    expect(validerOffre(saisie('25', '3', '2', '5'))).toEqual({
+      ok: true, offre: { livree: true, fraisCentimes: 2500, preparationJours: 3, transportMinJours: 2, transportMaxJours: 5 },
+    })
+    expect(validerOffre(saisie('0', '0', '1', '1'))).toMatchObject({ ok: true, offre: { fraisCentimes: 0, preparationJours: 0 } })
+    expect(validerOffre(saisie('10 000', '60', '90', '90'))).toMatchObject({ ok: true, offre: { fraisCentimes: 1_000_000 } })
+    expect(offreEnSaisie({ zoneId: 'z', livree: true, fraisCentimes: 2550, preparationJours: 3, transportMinJours: 2, transportMaxJours: 5 }))
+      .toEqual(saisie('25,50', '3', '2', '5'))
+    expect(offreEnSaisie({ zoneId: 'z', livree: true, fraisCentimes: 0, preparationJours: 0, transportMinJours: 1, transportMaxJours: 1 }).frais).toBe('0')
+  })
+
+  it('zone : min > max, négatif ou hors bornes → erreur reliée au champ', () => {
+    expect(validerOffre(saisie('25', '3', '6', '5'))).toEqual({
+      ok: false, erreurs: { transportMax: expect.stringContaining('supérieur ou égal') },
+    })
+    for (const [s, champ] of [
+      [saisie('-5', '3', '2', '5'), 'frais'],
+      [saisie('10 000,01', '3', '2', '5'), 'frais'],
+      [saisie('vingt', '3', '2', '5'), 'frais'],
+      [saisie('25', '61', '2', '5'), 'preparation'],
+      [saisie('25', '-1', '2', '5'), 'preparation'],
+      [saisie('25', '2,5', '2', '5'), 'preparation'],
+      [saisie('25', '3', '0', '5'), 'transportMin'],
+      [saisie('25', '3', '2', '91'), 'transportMax'],
+      [saisie('25', '', '2', '5'), 'preparation'],
+    ] as const) {
+      const r = validerOffre(s)
+      expect(r.ok, JSON.stringify(s)).toBe(false)
+      expect(r.ok ? {} : Object.keys(r.erreurs), JSON.stringify(s)).toEqual([champ])
+    }
+    expect(validerOffre(null)).toMatchObject({ ok: false })
+    expect(validerOffre({ nonLivree: 'oui' })).toMatchObject({ ok: false })
+  })
+
+  it('zone refusée : offre non livrée, frais et délais vides ; quatre champs vides : aucune offre', () => {
+    expect(validerOffre({ ...saisie('25', '3', '2', '5'), nonLivree: true })).toEqual({
+      ok: true, offre: { livree: false, fraisCentimes: null, preparationJours: null, transportMinJours: null, transportMaxJours: null },
+    })
+    expect(validerOffre(saisie('', '', '', ''))).toEqual({ ok: true, offre: null })
+  })
+
+  it('expédition : chaque zone renseignée, au moins une livrée, visites en atelier renseignées', () => {
+    const libelles = (d: DonneesDepot, zones = ZONES) => elementsManquants(d, zones).filter((m) => m.section === 'expedition')
+    expect(libelles({ ...COMPLET, offres: [] })).toEqual([
+      { section: 'expedition', libelle: 'Maroc : frais et délais, ou « Je ne livre pas »', cible: 'depot-zone-z-maroc-frais' },
+      { section: 'expedition', libelle: 'Reste du monde : frais et délais, ou « Je ne livre pas »', cible: 'depot-zone-z-monde-frais' },
+    ])
+    const refusees = COMPLET.offres.map((o) => ({ ...NON_LIVREE, zoneId: o.zoneId }))
+    expect(libelles({ ...COMPLET, offres: refusees })).toEqual([
+      { section: 'expedition', libelle: 'Livrez au moins une zone', cible: 'depot-zone-z-maroc-nonLivree' },
+    ])
+    expect(etatSections({ ...COMPLET, offres: refusees }, ZONES)[3].manques).toEqual(['Livrez au moins une zone'])
+    expect(libelles({ ...COMPLET, visitesAtelier: null })).toEqual([
+      { section: 'expedition', libelle: 'Visites en atelier', cible: 'depot-visitesAtelier' },
+    ])
+    expect(libelles({ ...COMPLET, visitesAtelier: false })).toEqual([])
+    // Sans zone ouverte par l'équipe : la section ne peut pas être complète, le lien mène à la section.
+    expect(libelles(COMPLET, [])).toEqual([
+      { section: 'expedition', libelle: 'Zones de livraison (pas encore ouvertes par l’équipe)', cible: 'section-expedition' },
+    ])
+  })
+
+  it('engagements : les trois cases ; éléments manquants avec l’id du champ ciblé', () => {
+    expect(elementsManquants({ ...COMPLET, engagementEmballage: false }, ZONES)).toEqual([
+      { section: 'engagements', libelle: 'Emballage conforme au guide Errancy', cible: 'depot-engagementEmballage' },
+    ])
+    expect(elementsManquants({ ...COMPLET, photos: ['face_lumiere_du_jour', 'mise_en_situation'] }, ZONES)).toEqual([
+      { section: 'photos', libelle: 'Gros plan de la matière', cible: 'depot-photo-gros_plan' },
+    ])
+    expect(elementsManquants({ ...COMPLET, prixCentimes: null }, ZONES)).toEqual([
+      { section: 'dimensions', libelle: 'Prix', cible: 'depot-prix' },
+    ])
+    expect(elementsManquants(VIDE, ZONES)).toHaveLength(9 + 3 + 2 + 1 + 3)
+    expect(validerChamp('visitesAtelier', 'oui')).toEqual({ ok: true, valeur: true })
+    expect(validerChamp('visitesAtelier', 'non')).toEqual({ ok: true, valeur: false })
+    expect(validerChamp('visitesAtelier', '')).toEqual({ ok: true, valeur: null })
+    expect(validerChamp('visitesAtelier', 'peut-être')).toMatchObject({ ok: false })
+    expect(validerChamp('engagementReprise', 'oui')).toEqual({ ok: true, valeur: true })
+    expect(validerChamp('engagementReprise', '')).toMatchObject({ ok: false })
   })
 })
 
@@ -195,6 +300,7 @@ describe('base : dépôt de l’artiste', () => {
     process.env.CLOUDINARY_API_SECRET = SECRET
     detruire.mockClear()
     await db.query('DELETE FROM "Artwork"')
+    await db.query('DELETE FROM "Zone"')
   })
 
   it('premier champ : crée le brouillon (brouillon + disponible, available faux), slug tiré du titre', async () => {
@@ -272,7 +378,7 @@ describe('base : dépôt de l’artiste', () => {
 
     const lu = await lireDepot(ARTISTE as never, slug)
     if (!lu.ok) throw new Error(lu.code)
-    expect(etatSections(lu.depot).map((s) => s.complet)).toEqual([false, true, false, false, false])
+    expect(etatSections(lu.depot, []).map((s) => s.complet)).toEqual([false, true, false, false, false])
   })
 
   it.each([['hauteur', '0'], ['hauteur', '-5'], ['largeur', '1001'], ['prix', '12,345'], ['annee', '1850']] as const)(
@@ -521,6 +627,301 @@ describe('base : dépôt de l’artiste', () => {
       expect(await actionPreparerEnvoi('par-action', 'gros_plan')).toMatchObject({ ok: true, slug: 'par-action' })
       expect(await nombre()).toBe(avant)
       expect((await ligne('par-action')).title).toBe('Par action')
+    })
+  })
+
+  describe('expédition, engagements et envoi en curation (story 2.6)', () => {
+    const offres = async (slug: string) =>
+      (
+        await db.query(
+          `SELECT z.nom, o.livree, o."fraisCentimes", o."preparationJours", o."transportMinJours", o."transportMaxJours"
+           FROM "OffreLivraison" o JOIN "Artwork" a ON a.id = o."artworkId" JOIN "Zone" z ON z.id = o."zoneId"
+           WHERE a.slug = $1 ORDER BY z."createdAt", z.nom`,
+          [slug],
+        )
+      ).rows
+
+    async function zone(nom: string, decalage = 0): Promise<string> {
+      const id = `z-${nom.toLowerCase().replace(/[^a-z]+/g, '-')}`
+      await db.query(
+        `INSERT INTO "Zone" (id, nom, "createdAt", "updatedAt") VALUES ($1, $2, now() + make_interval(secs => $3), now())`,
+        [id, nom, decalage],
+      )
+      return id
+    }
+
+    const livree = (frais: string, preparation = '3', min = '2', max = '5') => ({
+      nonLivree: false, frais, preparation, transportMin: min, transportMax: max,
+    })
+    const refusee = { nonLivree: true, frais: '', preparation: '', transportMin: '', transportMax: '' }
+
+    /** Brouillon complet sauf ce que `sauf` retire ; zones Maroc (livrée) et Reste du monde (refusée). */
+    async function complet(titre: string, sauf: string[] = []): Promise<string> {
+      const { enregistrerChamp, enregistrerOffreDepot } = await import('@/lib/curation')
+      const r = await enregistrerChamp(ARTISTE as never, null, 'titre', titre)
+      if (!r.ok) throw new Error(r.code)
+      const slug = r.depot.slug
+      const champs = [
+        ['technique', 'Huile'], ['annee', '2024'], ['histoire', 'Une histoire.'], ['ambiance', 'calme'], ['hauteur', '60'],
+        ['largeur', '80'], ['couleurDominante', 'bleu'], ['prix', '950'], ['visitesAtelier', 'non'],
+        ['engagementCertificat', 'oui'], ['engagementEmballage', 'oui'], ['engagementReprise', 'oui'],
+      ] as const
+      for (const [champ, valeur] of champs) {
+        if (!sauf.includes(champ)) expect((await enregistrerChamp(ARTISTE as never, slug, champ, valeur)).ok, champ).toBe(true)
+      }
+      const { id } = await ligne(slug)
+      for (const type of ['face_lumiere_du_jour', 'gros_plan', 'mise_en_situation']) {
+        if (sauf.includes(type)) continue
+        await db.query(
+          `INSERT INTO "PhotoOeuvre" (id, "artworkId", type, url, "publicId", "updatedAt")
+           VALUES (gen_random_uuid()::text, $1, $2::"TypePhoto", 'https://res.cloudinary.com/x/image/upload/a.jpg', $3, now())`,
+          [id, type, `errancy/oeuvres/${id}/${type}`],
+        )
+      }
+      const zones = (await db.query('SELECT id, nom FROM "Zone"')).rows as { id: string; nom: string }[]
+      for (const z of zones) {
+        const s = z.nom === 'Maroc' ? livree('25') : refusee
+        expect((await enregistrerOffreDepot(ARTISTE as never, slug, z.id, s)).ok, z.nom).toBe(true)
+      }
+      return slug
+    }
+
+    it('zone livrée, puis refusée, puis vidée ; une saisie refusée n’écrit rien', async () => {
+      const { enregistrerOffreDepot } = await import('@/lib/curation')
+      const maroc = await zone('Maroc')
+      const r = await enregistrerOffreDepot(ARTISTE as never, null, maroc, livree('25'))
+      if (!r.ok) throw new Error(r.code)
+      // Premier enregistrement : crée le brouillon.
+      expect(r.depot.slug).toMatch(/^brouillon-[0-9a-f]{8}$/)
+      expect(await offres(r.depot.slug)).toEqual([
+        { nom: 'Maroc', livree: true, fraisCentimes: 2500, preparationJours: 3, transportMinJours: 2, transportMaxJours: 5 },
+      ])
+      expect(r.depot.offres).toEqual([
+        { zoneId: maroc, livree: true, fraisCentimes: 2500, preparationJours: 3, transportMinJours: 2, transportMaxJours: 5 },
+      ])
+      for (const invalide of [livree('25', '3', '6', '5'), livree('-1'), livree('25', '61'), livree('25', '3', '0', '5'), livree('25', '')]) {
+        const refus = await enregistrerOffreDepot(ARTISTE as never, r.depot.slug, maroc, invalide)
+        expect(refus, JSON.stringify(invalide)).toMatchObject({ ok: false, code: 'valeur_invalide' })
+        expect(refus.ok ? {} : refus.erreursOffre, JSON.stringify(invalide)).not.toEqual({})
+      }
+      expect((await offres(r.depot.slug))[0].fraisCentimes).toBe(2500)
+      // Aucune écriture, pas même un brouillon, sur une saisie refusée sans brouillon.
+      const avant = await nombre()
+      expect(await enregistrerOffreDepot(ARTISTE as never, null, maroc, livree('-1'))).toMatchObject({ ok: false })
+      expect(await nombre()).toBe(avant)
+
+      await enregistrerOffreDepot(ARTISTE as never, r.depot.slug, maroc, { ...livree('25'), nonLivree: true })
+      expect(await offres(r.depot.slug)).toEqual([
+        { nom: 'Maroc', livree: false, fraisCentimes: null, preparationJours: null, transportMinJours: null, transportMaxJours: null },
+      ])
+      await enregistrerOffreDepot(ARTISTE as never, r.depot.slug, maroc, livree('', '', '', ''))
+      expect(await offres(r.depot.slug)).toEqual([])
+      expect(await enregistrerOffreDepot(ARTISTE as never, r.depot.slug, 'zone-inconnue', livree('25'))).toMatchObject({
+        ok: false, code: 'zone_introuvable',
+      })
+    })
+
+    it('aucune zone livrée : section 4 « Livrez au moins une zone », envoi refusé', async () => {
+      const { enregistrerOffreDepot, envoyerEnCuration, lireDepot } = await import('@/lib/curation')
+      const maroc = await zone('Maroc')
+      await zone('Reste du monde', 1)
+      const slug = await complet('Toutes refusées')
+      await enregistrerOffreDepot(ARTISTE as never, slug, maroc, refusee)
+      const lu = await lireDepot(ARTISTE as never, slug)
+      if (!lu.ok) throw new Error(lu.code)
+      const { zonesOuvertes } = await import('@/lib/livraison')
+      expect(etatSections(lu.depot, await zonesOuvertes())[3]).toMatchObject({ complet: false, manques: ['Livrez au moins une zone'] })
+      expect(await envoyerEnCuration(ARTISTE as never, slug)).toEqual({ ok: false, code: 'depot_incomplet' })
+      expect((await ligne(slug)).publication).toBe('brouillon')
+    })
+
+    it('reprendre : les 5 offres de la dernière autre œuvre recopiées et enregistrées ; sans œuvre antérieure, rien', async () => {
+      const { enregistrerChamp, enregistrerOffreDepot, reprendreZones, lireDepot } = await import('@/lib/curation')
+      const ids = []
+      for (const [i, nom] of ['Maroc', 'Union européenne', 'Europe hors UE', 'Amérique du Nord', 'Reste du monde'].entries()) {
+        ids.push(await zone(nom, i))
+      }
+      const premiere = await enregistrerChamp(ARTISTE as never, null, 'titre', 'Première')
+      if (!premiere.ok) throw new Error(premiere.code)
+      expect(premiere.depot.repriseDisponible).toBe(false)
+      expect(await reprendreZones(ARTISTE as never, 'premiere')).toEqual({ ok: false, code: 'introuvable' })
+      for (const [i, id] of ids.entries()) {
+        await enregistrerOffreDepot(ARTISTE as never, 'premiere', id, i === 4 ? refusee : livree(String(10 * (i + 1))))
+      }
+      // Les œuvres d'un autre artiste ne comptent pas.
+      const { repriseZonesPossible } = await import('@/lib/curation')
+      expect(await repriseZonesPossible(AUTRE as never)).toBe(false)
+      expect(await repriseZonesPossible(ARTISTE as never)).toBe(true)
+
+      const seconde = await enregistrerChamp(ARTISTE as never, null, 'titre', 'Seconde')
+      if (!seconde.ok) throw new Error(seconde.code)
+      expect(seconde.depot.repriseDisponible).toBe(true)
+      await enregistrerOffreDepot(ARTISTE as never, 'seconde', ids[0], livree('99'))
+      const r = await reprendreZones(ARTISTE as never, 'seconde')
+      expect(r).toMatchObject({ ok: true, depot: { slug: 'seconde' } })
+      expect(await offres('seconde')).toEqual(await offres('premiere'))
+      expect(await offres('seconde')).toHaveLength(5)
+      expect(await reprendreZones(AUTRE as never, 'seconde')).toMatchObject({ ok: false, code: 'acces_refuse' })
+      // Sans brouillon : le crée, avec les zones reprises.
+      const nouveau = await reprendreZones(ARTISTE as never, null)
+      if (!nouveau.ok) throw new Error(nouveau.code)
+      expect(nouveau.depot.offres).toHaveLength(5)
+      const lu = await lireDepot(ARTISTE as never, 'premiere')
+      expect(lu).toMatchObject({ ok: true, depot: { repriseDisponible: true } })
+    })
+
+    it('envoi incomplet : depot_incomplet, reste brouillon ; envoi complet : en_curation, date, puis transition_interdite', async () => {
+      const { envoyerEnCuration, enregistrerChamp, lireDepot, enregistrerOffreDepot } = await import('@/lib/curation')
+      await zone('Maroc')
+      await zone('Reste du monde', 1)
+      const incomplet = await complet('Sans gros plan', ['gros_plan'])
+      expect(await envoyerEnCuration(ARTISTE as never, incomplet)).toEqual({ ok: false, code: 'depot_incomplet' })
+      expect(await ligne(incomplet)).toMatchObject({ publication: 'brouillon' })
+      expect((await db.query(`SELECT "envoyeeEnCurationLe" FROM "Artwork" WHERE slug = $1`, [incomplet])).rows[0].envoyeeEnCurationLe).toBeNull()
+
+      const slug = await complet('Prête')
+      expect(await envoyerEnCuration(AUTRE as never, slug)).toMatchObject({ ok: false, code: 'acces_refuse' })
+      expect(await envoyerEnCuration(ADMIN as never, slug)).toMatchObject({ ok: false, code: 'acces_refuse' })
+      const avant = Date.now()
+      expect(await envoyerEnCuration(ARTISTE as never, slug)).toEqual({ ok: true, slug })
+      const l = (await db.query(
+        `SELECT publication::text AS publication, disponibilite::text AS disponibilite, available, "envoyeeEnCurationLe",
+                "visitesAtelier", "engagementCertificat", "engagementEmballage", "engagementReprise"
+         FROM "Artwork" WHERE slug = $1`, [slug],
+      )).rows[0]
+      expect(l).toMatchObject({
+        publication: 'en_curation', disponibilite: 'disponible', available: false,
+        visitesAtelier: false, engagementCertificat: true, engagementEmballage: true, engagementReprise: true,
+      })
+      expect(l.envoyeeEnCurationLe.getTime()).toBeGreaterThanOrEqual(avant - 1000)
+      expect(await envoyerEnCuration(ARTISTE as never, slug)).toEqual({ ok: false, code: 'transition_interdite' })
+      // Une œuvre en curation ne se modifie plus par l'artiste.
+      expect(await enregistrerChamp(ARTISTE as never, slug, 'prix', '1')).toMatchObject({ ok: false, code: 'transition_interdite' })
+      const { id: maroc } = (await db.query(`SELECT id FROM "Zone" WHERE nom = 'Maroc'`)).rows[0]
+      expect(await enregistrerOffreDepot(ARTISTE as never, slug, maroc, livree('1'))).toMatchObject({ ok: false, code: 'transition_interdite' })
+      expect(await lireDepot(ARTISTE as never, slug)).toMatchObject({ ok: false, code: 'transition_interdite' })
+      // Absente du catalogue.
+      const { getArtworkBySlug } = await import('@/lib/catalogue')
+      expect(await getArtworkBySlug(slug)).toBeNull()
+    })
+
+    it('sans zone ouverte par l’équipe : envoi impossible', async () => {
+      const { envoyerEnCuration } = await import('@/lib/curation')
+      const slug = await complet('Sans zone')
+      expect(await envoyerEnCuration(ARTISTE as never, slug)).toEqual({ ok: false, code: 'depot_incomplet' })
+    })
+
+    it('autre artiste : rien n’est écrit sur le brouillon d’autrui', async () => {
+      const { enregistrerOffreDepot, envoyerEnCuration, reprendreZones } = await import('@/lib/curation')
+      const maroc = await zone('Maroc')
+      const slug = await complet('À moi')
+      const avant = await offres(slug)
+      expect(await enregistrerOffreDepot(AUTRE as never, slug, maroc, refusee)).toMatchObject({ ok: false, code: 'acces_refuse' })
+      expect(await enregistrerChampAutre(slug)).toMatchObject({ ok: false, code: 'acces_refuse' })
+      expect(await reprendreZones(AUTRE as never, slug)).toMatchObject({ ok: false, code: 'acces_refuse' })
+      expect(await envoyerEnCuration(AUTRE as never, slug)).toMatchObject({ ok: false, code: 'acces_refuse' })
+      expect(await offres(slug)).toEqual(avant)
+      expect((await ligne(slug)).publication).toBe('brouillon')
+    })
+
+    async function enregistrerChampAutre(slug: string) {
+      const { enregistrerChamp } = await import('@/lib/curation')
+      return enregistrerChamp(AUTRE as never, slug, 'engagementCertificat', 'non')
+    }
+
+    it('actions : envoi complet → retour à « Mes œuvres » ; incomplet → message', async () => {
+      const { actionEnvoyerEnCuration, actionEnregistrerOffre } = await import('@/app/dashboard/artiste/oeuvres/depot/actions')
+      const maroc = await zone('Maroc')
+      const slug = await complet('Par action')
+      acteur.courant = ARTISTE
+      expect(await actionEnregistrerOffre(slug, maroc, livree('25', '3', '6', '5'))).toMatchObject({
+        ok: false, code: 'valeur_invalide', erreursOffre: { transportMax: expect.any(String) },
+      })
+      const incomplet = await complet('Incomplet', ['engagementReprise'])
+      const refus = await actionEnvoyerEnCuration(incomplet)
+      expect(refus).toMatchObject({ ok: false, code: 'depot_incomplet' })
+      expect(refus.message).toMatch(/Il manque/)
+      await expect(actionEnvoyerEnCuration(slug)).rejects.toThrow('redirection:/dashboard/artiste/oeuvres?envoyee=1')
+      expect((await ligne(slug)).publication).toBe('en_curation')
+      expect(await actionEnvoyerEnCuration(slug)).toMatchObject({ ok: false, code: 'transition_interdite' })
+    })
+
+    it('pages : œuvre en curation en lecture seule avec le délai ; bandeau après envoi sur « Mes œuvres »', async () => {
+      const { envoyerEnCuration } = await import('@/lib/curation')
+      const { default: Page } = await import('@/app/dashboard/artiste/oeuvres/[slug]/page')
+      const { RecapitulatifCuration } = await import('@/app/dashboard/artiste/oeuvres/depot/RecapitulatifCuration')
+      await zone('Maroc')
+      await zone('Reste du monde', 1)
+      const slug = await complet('Lecture seule')
+      await envoyerEnCuration(ARTISTE as never, slug)
+
+      acteur.courant = ARTISTE
+      const page = await Page({ params: Promise.resolve({ slug }) })
+      expect(page.type).toBe(RecapitulatifCuration)
+      expect(page.props).toMatchObject({ delaiJours: 7, recap: { slug, titre: 'Lecture seule' } })
+      const html = renderToStaticMarkup(createElement(RecapitulatifCuration, page.props))
+      expect(html).toContain('sous 7 jours')
+      expect(html).toContain('En curation')
+      expect(html).toContain('25 € · préparation 3 j · transport 2 à 5 j')
+      expect(html).toContain('Je ne livre pas cette zone')
+      expect(html).not.toMatch(/<(input|textarea|select|button|form)\b/)
+      expect(html).not.toMatch(/gratuit|garantie/i)
+
+      acteur.courant = AUTRE
+      await expect(Page({ params: Promise.resolve({ slug }) })).rejects.toThrow('introuvable')
+
+      acteur.courant = ARTISTE
+      const { default: Oeuvres } = await import('@/app/dashboard/artiste/oeuvres/page')
+      const { StatusBadge } = await import('@/components/dashboard/StatusBadge')
+      const texte = (n: ReactNode): string =>
+        Array.isArray(n) ? n.map(texte).join('') : isValidElement(n) ? texte((n.props as { children?: ReactNode }).children) : n == null || typeof n === 'boolean' ? '' : String(n)
+      const bandeau = (n: ReactNode) => trouver(n, (e) => (e.props as { role?: string }).role === 'status')
+      const avec = await Oeuvres({ searchParams: Promise.resolve({ envoyee: '1' }) })
+      expect(texte(bandeau(avec))).toMatch(/envoyée à l.équipe Errancy.*En curation.*sous 7 jours/)
+      expect(trouver(avec, (e) => e.type === StatusBadge && (e.props as { libelle: string }).libelle === 'En curation')).not.toBeNull()
+      expect(bandeau(await Oeuvres({ searchParams: Promise.resolve({}) }))).toBeNull()
+    })
+
+    it('ancienne route PUT : refuse un brouillon et une œuvre en curation, accepte une œuvre publiée', async () => {
+      const { PUT } = await import('@/app/api/artiste/oeuvres/[slug]/route')
+      const { auth } = await import('@/auth')
+      const { envoyerEnCuration } = await import('@/lib/curation')
+      await zone('Maroc')
+      const brouillon = await complet('Brouillon PUT')
+      const enCuration = await complet('Curation PUT')
+      await envoyerEnCuration(ARTISTE as never, enCuration)
+      await publiee('publiee-put')
+      acteur.courant = ARTISTE
+      const corps = { title: 'Modifiée', year: '2020', technique: 'Huile', dimensions: '10 × 10 cm', price: '100', description: 'D' }
+      const appel = async (slug: string) => {
+        vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'utilisateur-1' } } as never)
+        const req = new Request(`http://local/api/artiste/oeuvres/${slug}`, { method: 'PUT', body: JSON.stringify(corps) })
+        return PUT(req as never, { params: Promise.resolve({ slug }) })
+      }
+      expect((await appel(brouillon)).status).toBe(409)
+      expect((await appel(enCuration)).status).toBe(409)
+      expect((await ligne(enCuration)).title).toBe('Curation PUT')
+      expect((await appel('publiee-put')).status).toBe(200)
+      expect((await ligne('publiee-put')).title).toBe('Modifiée')
+    })
+
+    it('ancienne route DELETE : refuse une œuvre en curation, supprime un brouillon', async () => {
+      const { DELETE } = await import('@/app/api/artiste/oeuvres/[slug]/route')
+      const { auth } = await import('@/auth')
+      const { envoyerEnCuration } = await import('@/lib/curation')
+      await zone('Maroc')
+      const brouillon = await complet('Brouillon DELETE')
+      const enCuration = await complet('Curation DELETE')
+      await envoyerEnCuration(ARTISTE as never, enCuration)
+      acteur.courant = ARTISTE
+      const appel = async (slug: string) => {
+        vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'utilisateur-1' } } as never)
+        return DELETE(new Request(`http://local/api/artiste/oeuvres/${slug}`, { method: 'DELETE' }) as never, { params: Promise.resolve({ slug }) })
+      }
+      expect((await appel(enCuration)).status).toBe(409)
+      expect(await ligne(enCuration)).toBeDefined()
+      expect((await appel(brouillon)).status).toBe(200)
+      expect(await ligne(brouillon)).toBeUndefined()
     })
   })
 })
