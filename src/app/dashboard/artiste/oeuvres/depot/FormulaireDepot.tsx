@@ -6,31 +6,53 @@ import {
   AMBIANCES,
   apercuDimensions,
   centimesEnSaisie,
+  CHAMPS_OFFRE,
   COULEURS_DOMINANTES,
+  elementsManquants,
+  ENGAGEMENTS,
+  erreurChampOffre,
   etatSections,
+  ID_CHAMP,
   LIBELLES_CHAMPS,
   LIMITES_DEPOT,
   longueur,
   MESSAGE_NON_ENREGISTRE,
   NOMBRE_SECTIONS,
   nombreSectionsCompletes,
+  NON,
+  offreEnSaisie,
+  OUI,
   PHOTOS,
+  remplissageOffre,
   validerChamp,
   type ChampDepot,
+  type ChampOffre,
   type DepotLu,
   type DonneesDepot,
   type EtatSection,
   type IdSection,
+  type SaisieOffre,
   type TypePhoto,
+  type ZoneDepot,
 } from '@/lib/curation/depot-regles'
 import { DeleteButton } from '@/components/dashboard/DeleteButton'
-import { actionEnregistrerChamp, actionEnregistrerPhoto, actionPreparerEnvoi } from './actions'
+import {
+  actionEnregistrerChamp,
+  actionEnregistrerOffre,
+  actionEnregistrerPhoto,
+  actionEnvoyerEnCuration,
+  actionPreparerEnvoi,
+  actionReprendreZones,
+} from './actions'
 import { CasePhoto } from './CasePhoto'
+import { SectionExpedition, type ErreursZone } from './SectionExpedition'
 
 // Formulaire de dépôt (story 2.5, FR-20) : une seule page en cinq sections. Chaque champ est
 // validé et enregistré à sa sortie (jamais à chaque frappe) ; une valeur refusée reste affichée
 // avec son erreur. Les enregistrements passent un par un dans une file : le premier crée le
 // brouillon, les suivants utilisent son slug (qui suit le titre tant que l'œuvre est en brouillon).
+// Story 2.6 : expédition par zone, visites en atelier, engagements, liste des éléments manquants
+// (chaque lien place le focus sur le champ concerné) et envoi en curation.
 
 type Valeurs = Record<ChampDepot, string>
 type Statut = 'aucun' | 'enCours' | 'enregistre' | 'echec'
@@ -38,6 +60,26 @@ type Statut = 'aucun' | 'enCours' | 'enregistre' | 'echec'
 const VIDE: DonneesDepot = {
   titre: '', technique: '', annee: null, histoire: '', ambiance: null, couleurDominante: null,
   hauteurMm: null, largeurMm: null, profondeurMm: null, prixCentimes: null, photos: [],
+  offres: [], visitesAtelier: null, engagementCertificat: false, engagementEmballage: false, engagementReprise: false,
+}
+
+const ouiNon = (v: boolean | null | undefined) => (v === true ? OUI : v === false ? NON : '')
+
+function saisiesZones(d: DepotLu | null, zones: ZoneDepot[]): Record<string, SaisieOffre> {
+  return Object.fromEntries(zones.map((z) => [z.id, offreEnSaisie(d?.offres.find((o) => o.zoneId === z.id))]))
+}
+
+/** Place le focus sur l'élément d'interface `id` (premier champ d'un groupe), après l'avoir fait défiler. */
+function placerFocus(id: string) {
+  // Champ d'une zone masqué (« Je ne livre pas » coché sans être enregistré) : sa case à cocher.
+  const el = document.getElementById(id) ?? document.getElementById(id.replace(/-(frais|preparation|transportMin|transportMax)$/, '-nonLivree'))
+  if (!el) return
+  const cible =
+    el instanceof HTMLFieldSetElement
+      ? (el.querySelector<HTMLInputElement>('input:checked') ?? el.querySelector<HTMLInputElement>('input'))
+      : el
+  cible?.scrollIntoView({ block: 'center' })
+  cible?.focus({ preventScroll: true })
 }
 
 function valeursInitiales(d: DepotLu | null): Valeurs {
@@ -52,11 +94,15 @@ function valeursInitiales(d: DepotLu | null): Valeurs {
     profondeur: millimetresEnCentimetres(d?.profondeurMm),
     couleurDominante: d?.couleurDominante ?? '',
     prix: centimesEnSaisie(d?.prixCentimes ?? null),
+    visitesAtelier: ouiNon(d?.visitesAtelier),
+    engagementCertificat: d?.engagementCertificat ? OUI : NON,
+    engagementEmballage: d?.engagementEmballage ? OUI : NON,
+    engagementReprise: d?.engagementReprise ? OUI : NON,
   }
 }
 
-const idChamp = (champ: ChampDepot) => `depot-${champ}`
-const idSection = (id: IdSection) => `section-${id}`
+const idChamp = ID_CHAMP.champ
+const idSection = ID_CHAMP.section
 
 const CHEMIN_OEUVRES = '/dashboard/artiste/oeuvres'
 
@@ -92,8 +138,22 @@ function envoyerACloudinary(
   })
 }
 
-export function FormulaireDepot({ depot: initial, expedition }: { depot: DepotLu | null; expedition: ReactNode }) {
+type PropsFormulaire = {
+  depot: DepotLu | null
+  /** Zones ouvertes par l'équipe. */
+  zones: ZoneDepot[]
+  /** Sans brouillon : une autre œuvre de l'artiste a des offres à reprendre. */
+  repriseInitiale?: boolean
+}
+
+export function FormulaireDepot({ depot: initial, zones, repriseInitiale = false }: PropsFormulaire) {
   const [depot, setDepot] = useState<DepotLu | null>(initial)
+  const [zonesSaisies, setZonesSaisies] = useState<Record<string, SaisieOffre>>(() => saisiesZones(initial, zones))
+  const [erreursZones, setErreursZones] = useState<Record<string, ErreursZone>>({})
+  const [envoiEnCours, setEnvoiEnCours] = useState(false)
+  const [refusEnvoi, setRefusEnvoi] = useState<string | null>(null)
+  // Dernière saisie enregistrée de chaque zone : une zone quittée sans changement n'est pas renvoyée.
+  const zonesEnregistrees = useRef<Record<string, SaisieOffre>>(saisiesZones(initial, zones))
   const [valeurs, setValeurs] = useState<Valeurs>(() => valeursInitiales(initial))
   const [erreurs, setErreurs] = useState<Partial<Record<ChampDepot, string>>>({})
   const [statut, setStatut] = useState<Statut>(initial ? 'enregistre' : 'aucun')
@@ -204,7 +264,121 @@ export function FormulaireDepot({ depot: initial, expedition }: { depot: DepotLu
     [appliquer, enFile],
   )
 
-  const sections = useMemo(() => etatSections(depot ?? VIDE), [depot])
+  /* ── Expédition par zone ── */
+
+  const envoyerZone = useCallback(
+    (zoneId: string, saisie: SaisieOffre, erreursApres: ErreursZone = {}) => {
+      // Échec : erreur affichée au niveau de la zone (les champs peuvent être masqués) et case
+      // « Je ne livre pas » ramenée à son dernier état enregistré.
+      const echouer = () => {
+        setErreursZones((e) => ({ ...e, [zoneId]: { ...erreursApres, zone: MESSAGE_NON_ENREGISTRE } }))
+        const nonLivreeEnregistree = zonesEnregistrees.current[zoneId]?.nonLivree ?? false
+        setZonesSaisies((z) => ({ ...z, [zoneId]: { ...z[zoneId], nonLivree: nonLivreeEnregistree } }))
+      }
+      enFile(async () => {
+        try {
+          const r = await actionEnregistrerOffre(slug.current, zoneId, saisie)
+          if (r.ok) {
+            zonesEnregistrees.current = { ...zonesEnregistrees.current, [zoneId]: saisie }
+            setErreursZones((e) => ({ ...e, [zoneId]: erreursApres }))
+            appliquer(r.depot)
+          } else if (r.code === 'valeur_invalide' && r.erreursOffre) {
+            setErreursZones((e) => ({ ...e, [zoneId]: r.erreursOffre ?? {} }))
+          } else {
+            echouer()
+            setMessageGlobal(r.message)
+          }
+          return r
+        } catch (erreur) {
+          echouer()
+          throw erreur
+        }
+      }).catch(() => undefined)
+    },
+    [appliquer, enFile],
+  )
+
+  const memeSaisie = (a: SaisieOffre | undefined, b: SaisieOffre) =>
+    !!a && a.nonLivree === b.nonLivree && CHAMPS_OFFRE.every((c) => a[c].trim() === b[c].trim())
+
+  /** Valide la zone à la sortie d'un champ ; l'enregistre quand ses quatre valeurs sont valides. */
+  const sortieZone = (zoneId: string, saisie: SaisieOffre) => {
+    const erreurs: ErreursZone = {}
+    for (const c of CHAMPS_OFFRE) {
+      const e = saisie[c].trim() === '' ? null : erreurChampOffre(c, saisie)
+      if (e) erreurs[c] = e
+    }
+    const enregistree = zonesEnregistrees.current[zoneId]
+    const remplissage = remplissageOffre(saisie)
+    if (remplissage === 'partiel') erreurs.zone = MESSAGE_ZONE_INCOMPLETE
+    setErreursZones((e) => ({ ...e, [zoneId]: erreurs }))
+    if (Object.keys(erreurs).length) {
+      // Saisie incomplète ou invalide : l'offre enregistrée (livrée ou non) est retirée, pour que la
+      // zone compte comme manquante au lieu d'envoyer en curation des valeurs périmées.
+      const offreEnregistree = !!enregistree && (enregistree.nonLivree || remplissageOffre(enregistree) !== 'vide')
+      if (offreEnregistree) envoyerZone(zoneId, SAISIE_ZONE_VIDE, erreurs)
+      return
+    }
+    if (memeSaisie(enregistree, saisie)) return
+    envoyerZone(zoneId, saisie)
+  }
+
+  const saisirZone = (zoneId: string, champ: ChampOffre, valeur: string) =>
+    setZonesSaisies((z) => ({ ...z, [zoneId]: { ...z[zoneId], [champ]: valeur } }))
+
+  const nonLivree = (zoneId: string, valeur: boolean) => {
+    const saisie = { ...zonesSaisies[zoneId], nonLivree: valeur }
+    setZonesSaisies((z) => ({ ...z, [zoneId]: saisie }))
+    if (valeur) {
+      setErreursZones((e) => ({ ...e, [zoneId]: {} }))
+      envoyerZone(zoneId, saisie)
+    } else {
+      sortieZone(zoneId, saisie)
+    }
+  }
+
+  const reprendre = () => {
+    if (depot?.offres.length && !window.confirm('Remplacer les frais et délais déjà indiqués par ceux de votre dernière œuvre ?')) return
+    enFile(async () => {
+      try {
+        const r = await actionReprendreZones(slug.current)
+        if (r.ok) {
+          appliquer(r.depot)
+          const saisies = saisiesZones(r.depot, zones)
+          zonesEnregistrees.current = saisies
+          setZonesSaisies(saisies)
+          setErreursZones({})
+        } else {
+          setMessageGlobal(r.message)
+        }
+        return r
+      } catch (erreur) {
+        setMessageGlobal(MESSAGE_NON_ENREGISTRE)
+        throw erreur
+      }
+    }).catch(() => undefined)
+  }
+
+  /* ── Envoi en curation ── */
+
+  const envoyer = async () => {
+    setRefusEnvoi(null)
+    setEnvoiEnCours(true)
+    try {
+      // Les enregistrements en cours passent d'abord ; le serveur revérifie la complétude.
+      await file.current
+      const r = await actionEnvoyerEnCuration(slug.current)
+      // En cas de succès, l'action redirige vers « Mes œuvres » et ne revient pas ici.
+      if (r && !r.ok) setRefusEnvoi(r.message)
+    } catch {
+      setRefusEnvoi(MESSAGE_NON_ENREGISTRE)
+    } finally {
+      setEnvoiEnCours(false)
+    }
+  }
+
+  const sections = useMemo(() => etatSections(depot ?? VIDE, zones), [depot, zones])
+  const manquants = useMemo(() => elementsManquants(depot ?? VIDE, zones), [depot, zones])
   const completes = nombreSectionsCompletes(sections)
   const section = (id: IdSection) => sections.find((s) => s.id === id)!
   const apercu = apercuDimensions(valeurs)
@@ -281,7 +455,7 @@ export function FormulaireDepot({ depot: initial, expedition }: { depot: DepotLu
           ))}
         </div>
         <p className="font-sans text-xs text-neutral-500 mt-3">
-          Repère d&apos;échelle : une chaise, une personne, un meuble connu. Photos de 20 Mo au plus, vidéo de 100 Mo au plus.
+          Repère d&apos;échelle : une chaise, une personne, un meuble connu. Photos de 10 Mo au plus, vidéo de 100 Mo au plus.
         </p>
       </Section>
 
@@ -299,6 +473,7 @@ export function FormulaireDepot({ depot: initial, expedition }: { depot: DepotLu
           />
           <Choix
             champ="ambiance"
+            libelle={LIBELLES_CHAMPS.ambiance}
             options={AMBIANCES}
             valeur={valeurs.ambiance}
             erreur={erreurs.ambiance}
@@ -324,6 +499,7 @@ export function FormulaireDepot({ depot: initial, expedition }: { depot: DepotLu
           </p>
           <Choix
             champ="couleurDominante"
+            libelle={LIBELLES_CHAMPS.couleurDominante}
             options={COULEURS_DOMINANTES}
             valeur={valeurs.couleurDominante}
             erreur={erreurs.couleurDominante}
@@ -338,21 +514,104 @@ export function FormulaireDepot({ depot: initial, expedition }: { depot: DepotLu
         </div>
       </Section>
 
-      {/* ── 4. Expédition (saisie en story 2.6) ── */}
-      <div id={idSection('expedition')} className="scroll-mt-24 [&>section]:mt-0">
-        {expedition}
-        <p className="font-sans text-xs text-neutral-600 mt-4">
-          <span aria-hidden="true">○ </span>Section 4 · À compléter : {section('expedition').manques.join(', ')}
+      {/* ── 4. Expédition ── */}
+      <Section etat={section('expedition')}>
+        <div className="flex flex-col gap-8">
+          <SectionExpedition
+            zones={zones}
+            saisies={zonesSaisies}
+            erreurs={erreursZones}
+            repriseDisponible={depot ? depot.repriseDisponible : repriseInitiale}
+            onSaisie={saisirZone}
+            onSortie={(zoneId) => sortieZone(zoneId, zonesSaisies[zoneId])}
+            onNonLivree={nonLivree}
+            onReprendre={reprendre}
+          />
+          <Choix
+            champ="visitesAtelier"
+            libelle={LIBELLES_CHAMPS.visitesAtelier}
+            options={OPTIONS_OUI_NON}
+            valeur={valeurs.visitesAtelier}
+            erreur={erreurs.visitesAtelier}
+            onChoix={(v) => choisir('visitesAtelier', v)}
+          />
+        </div>
+      </Section>
+
+      {/* ── 5. Engagements ── */}
+      <Section etat={section('engagements')}>
+        <fieldset className="flex flex-col gap-2">
+          <legend className="font-sans text-sm text-neutral-600 mb-2">Cochez les trois engagements pour pouvoir envoyer l&apos;œuvre.</legend>
+          {ENGAGEMENTS.map((champ) => (
+            <div key={champ}>
+              <label htmlFor={idChamp(champ)} className="min-h-[44px] flex items-center gap-3 font-sans text-sm text-foreground cursor-pointer">
+                <input
+                  id={idChamp(champ)}
+                  type="checkbox"
+                  checked={valeurs[champ] === OUI}
+                  onChange={(e) => choisir(champ, e.target.checked ? OUI : NON)}
+                  aria-describedby={erreurs[champ] ? `${idChamp(champ)}-erreur` : undefined}
+                  className="w-5 h-5 flex-shrink-0 accent-foreground"
+                />
+                {LIBELLES_CHAMPS[champ]}
+              </label>
+              {erreurs[champ] && (
+                <p id={`${idChamp(champ)}-erreur`} role="alert" className="font-sans text-xs text-red-600">
+                  Erreur : {erreurs[champ]}
+                </p>
+              )}
+            </div>
+          ))}
+        </fieldset>
+      </Section>
+
+      {/* ── Envoi en curation ── */}
+      <div className="border border-neutral-200 rounded-sm p-5">
+        {manquants.length > 0 ? (
+          <>
+            <p id="depot-manquants" className="font-sans text-sm text-foreground font-medium">
+              Il manque {manquants.length} élément{manquants.length > 1 ? 's' : ''} pour envoyer :
+            </p>
+            <ul className="mt-2 flex flex-col">
+              {manquants.map((m) => (
+                <li key={m.cible + m.libelle}>
+                  <a
+                    href={`#${m.cible}`}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      placerFocus(m.cible)
+                    }}
+                    className="min-h-[44px] inline-flex items-center font-sans text-sm text-foreground underline underline-offset-4"
+                  >
+                    {m.libelle}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p id="depot-manquants" className="font-sans text-sm text-foreground">
+            Toutes les sections sont complètes : vous pouvez envoyer l&apos;œuvre à l&apos;équipe Errancy.
+          </p>
+        )}
+        {refusEnvoi && (
+          <p role="alert" className="font-sans text-sm text-red-600 mt-3">
+            {refusEnvoi}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={envoyer}
+          disabled={manquants.length > 0 || envoiEnCours || !depot}
+          aria-describedby="depot-manquants"
+          className="mt-4 min-h-[44px] px-6 bg-foreground text-background rounded-sm font-sans text-xs uppercase tracking-widest hover:bg-neutral-700 transition-colors duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {envoiEnCours ? 'Envoi…' : 'Envoyer en curation'}
+        </button>
+        <p className="font-sans text-xs text-neutral-500 mt-2">
+          Une fois envoyée, l&apos;œuvre ne se modifie plus pendant que l&apos;équipe l&apos;examine.
         </p>
       </div>
-
-      {/* ── 5. Engagements (saisie en story 2.6) ── */}
-      <Section etat={section('engagements')}>
-        <p className="font-sans text-sm text-neutral-600">
-          Vous pourrez bientôt confirmer vos engagements : certificat d&apos;authenticité signé, emballage
-          conforme au guide Errancy et reprise d&apos;une œuvre retournée dans son emballage d&apos;origine.
-        </p>
-      </Section>
 
       {/* Brouillon abandonné : l'artiste peut le supprimer (slug courant, qui suit le titre). */}
       {depot && (
@@ -369,9 +628,17 @@ export function FormulaireDepot({ depot: initial, expedition }: { depot: DepotLu
   )
 }
 
+const MESSAGE_ZONE_INCOMPLETE = 'Complétez les quatre valeurs ou cochez « Je ne livre pas cette zone ».'
+const SAISIE_ZONE_VIDE: SaisieOffre = { nonLivree: false, frais: '', preparation: '', transportMin: '', transportMax: '' }
+
+const OPTIONS_OUI_NON = [
+  { code: OUI, libelle: 'Oui' },
+  { code: NON, libelle: 'Non' },
+] as const
+
 function Section({ etat, children }: { etat: EtatSection; children: ReactNode }) {
   return (
-    <section id={idSection(etat.id)} aria-labelledby={`${idSection(etat.id)}-titre`} className="border-t border-neutral-200 pt-8 scroll-mt-24">
+    <section id={idSection(etat.id)} tabIndex={-1} aria-labelledby={`${idSection(etat.id)}-titre`} className="border-t border-neutral-200 pt-8 scroll-mt-24">
       <h2 id={`${idSection(etat.id)}-titre`} className="font-serif font-light text-foreground text-2xl">
         {etat.numero}. {etat.titre}
       </h2>
@@ -421,9 +688,10 @@ function ChampTexte({ id, libelle, value, erreur, aide, multiligne, inputMode, o
 }
 
 function Choix({
-  champ, options, valeur, erreur, onChoix,
+  champ, libelle, options, valeur, erreur, onChoix,
 }: {
-  champ: 'ambiance' | 'couleurDominante'
+  champ: ChampDepot
+  libelle: string
   options: readonly { code: string; libelle: string }[]
   valeur: string
   erreur?: string
@@ -432,7 +700,7 @@ function Choix({
   const id = idChamp(champ)
   return (
     <fieldset id={id} aria-describedby={erreur ? `${id}-erreur` : undefined} aria-invalid={erreur ? true : undefined}>
-      <legend className="font-sans text-sm font-medium text-foreground mb-2">{LIBELLES_CHAMPS[champ]}</legend>
+      <legend className="font-sans text-sm font-medium text-foreground mb-2">{libelle}</legend>
       <div className="flex flex-wrap gap-2">
         {options.map((o) => {
           const choisi = valeur === o.code

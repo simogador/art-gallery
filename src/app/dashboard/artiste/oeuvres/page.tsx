@@ -6,10 +6,18 @@ import { ArtworkImage } from '@/components/ui'
 import { oeuvresDeLArtiste, gradient, accent } from '@/lib/catalogue'
 import { acteurCourant } from '@/lib/acces'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
+import { DELAI_REPONSE_CURATION_JOURS } from '@/lib/reglages'
 
 export const metadata: Metadata = { title: 'Mes œuvres — Errancy' }
 
-export default async function OeuvresPage() {
+interface Props {
+  searchParams?: Promise<{ envoyee?: string | string[] }>
+}
+
+export default async function OeuvresPage({ searchParams }: Props) {
+  // Story 2.6 : retour après un envoi en curation (?envoyee=1), bandeau du délai de réponse.
+  const envoyee = (await searchParams)?.envoyee === '1'
+
   // Rôle relu à chaque page : le layout n'est pas réexécuté lors d'une navigation interne.
   const acteur = await acteurCourant()
   if (acteur.type === 'visiteur') redirect('/auth/connexion')
@@ -44,6 +52,13 @@ export default async function OeuvresPage() {
           Ajouter
         </Link>
       </div>
+
+      {envoyee && (
+        <p role="status" className="mb-8 font-sans text-sm text-foreground bg-neutral-50 border border-neutral-200 rounded-sm px-4 py-3">
+          Votre œuvre a été envoyée à l&apos;équipe Errancy. Elle est maintenant « En curation » :
+          l&apos;équipe vous répond sous {DELAI_REPONSE_CURATION_JOURS} jours.
+        </p>
+      )}
 
       {artworks.length === 0 ? (
         <div className="py-32 border border-dashed border-neutral-200 rounded-sm flex flex-col items-center justify-center text-center">
@@ -112,7 +127,7 @@ export default async function OeuvresPage() {
               <Link
                 href={`/dashboard/artiste/oeuvres/${artwork.slug}`}
                 className="flex items-center justify-center w-8 h-8 rounded-sm border border-neutral-200 hover:border-foreground hover:bg-neutral-50 transition-all duration-200 group/edit"
-                aria-label={`Modifier ${artwork.title}`}
+                aria-label={`${artwork.etat === 'en_curation' ? 'Voir' : 'Modifier'} ${artwork.title}`}
               >
                 <EditIcon />
               </Link>

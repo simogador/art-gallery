@@ -24,3 +24,7 @@ export function passeLaMaintenance(role: string | null, chemin: string): boolean
   if (role === 'admin') return true
   return role === 'artist' && (chemin === '/dashboard/artiste' || chemin.startsWith('/dashboard/artiste/'))
 }
+
+// Délai de réponse de l'équipe après un envoi en curation, annoncé à l'artiste (story 2.6,
+// décision du porteur du 2026-11-03) : « sous 7 jours ».
+export const DELAI_REPONSE_CURATION_JOURS = 7

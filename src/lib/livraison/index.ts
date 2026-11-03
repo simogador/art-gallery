@@ -1,11 +1,14 @@
 import { prisma } from '@/lib/prisma'
+import type { Prisma } from '@/generated/prisma/client'
 import type { Acteur } from '@/lib/acces'
 import { LONGUEUR_MAX_NOM, type RefusZone } from './messages'
 import { estCodePays, trierParNom } from './pays'
 
 // Module livraison (AD-12, story 2.3) : seul module qui lit et écrit les zones de livraison et
 // leurs pays. Les zones sont des données gérées par l'équipe (OQ-5), jamais codées en dur.
-// Les offres par œuvre et par zone (OffreLivraison) seront saisies en story 2.6.
+// Story 2.6 : seul module qui lit et écrit les offres par œuvre et par zone (OffreLivraison), saisies
+// par l'artiste. Ces fonctions reçoivent la transaction du module curation, qui a déjà verrouillé
+// l'œuvre et vérifié l'acteur (artiste propriétaire, brouillon) : elles ne contrôlent aucun droit.
 
 export { CODES_PAYS, estCodePays, nomPays, trierParNom } from './pays'
 export { LONGUEUR_MAX_NOM, messageRefusZone, type RefusZone } from './messages'
@@ -150,4 +153,85 @@ export async function supprimerZone(acteur: Acteur, id: string): Promise<Resulta
     if (codeErreur(erreur) === 'P2025') return { ok: false, code: 'introuvable' }
     throw erreur
   }
+}
+
+/* ── Offres d'une œuvre (story 2.6) ─────────────────────────────────────── */
+
+/** Offre d'une œuvre pour une zone : livrée (frais en centimes, délais en jours) ou non livrée (valeurs vides). */
+export type OffreLue = {
+  zoneId: string
+  livree: boolean
+  fraisCentimes: number | null
+  preparationJours: number | null
+  transportMinJours: number | null
+  transportMaxJours: number | null
+}
+
+export type ValeursOffre = Omit<OffreLue, 'zoneId'>
+
+const CHAMPS_OFFRE_LUS = {
+  zoneId: true, livree: true, fraisCentimes: true, preparationJours: true, transportMinJours: true, transportMaxJours: true,
+} as const
+
+/** Zones ouvertes par l'équipe (id et nom), dans leur ordre de création. */
+export async function zonesOuvertes(tx: Prisma.TransactionClient = prisma): Promise<{ id: string; nom: string }[]> {
+  return tx.zone.findMany({ orderBy: [{ createdAt: 'asc' }, { nom: 'asc' }], select: { id: true, nom: true } })
+}
+
+/** Offres enregistrées d'une œuvre, dans l'ordre des zones. */
+export async function offresDeLOeuvre(tx: Prisma.TransactionClient, artworkId: string): Promise<OffreLue[]> {
+  return tx.offreLivraison.findMany({
+    where: { artworkId },
+    orderBy: [{ zone: { createdAt: 'asc' } }, { zone: { nom: 'asc' } }],
+    select: CHAMPS_OFFRE_LUS,
+  })
+}
+
+/**
+ * Enregistre l'offre d'une œuvre pour une zone (création ou remplacement) ; null la retire (la zone
+ * redevient à renseigner). Valeurs déjà validées par l'appelant ; une zone livrée porte toujours ses
+ * quatre valeurs, une zone non livrée aucune (contraintes CHECK en base). false si la zone n'existe plus.
+ */
+export async function enregistrerOffre(
+  tx: Prisma.TransactionClient,
+  artworkId: string,
+  zoneId: string,
+  valeurs: ValeursOffre | null,
+): Promise<boolean> {
+  if (!(await tx.zone.findUnique({ where: { id: zoneId }, select: { id: true } }))) return false
+  if (valeurs === null) {
+    await tx.offreLivraison.deleteMany({ where: { artworkId, zoneId } })
+    return true
+  }
+  const donnees = valeurs.livree
+    ? valeurs
+    : { livree: false, fraisCentimes: null, preparationJours: null, transportMinJours: null, transportMaxJours: null }
+  await tx.offreLivraison.upsert({
+    where: { artworkId_zoneId: { artworkId, zoneId } },
+    create: { artworkId, zoneId, ...donnees },
+    update: donnees,
+  })
+  return true
+}
+
+/** Remplace les offres de l'œuvre `versId` par une copie de celles de l'œuvre `deId`. */
+export async function recopierOffres(tx: Prisma.TransactionClient, deId: string, versId: string): Promise<number> {
+  const source = await offresDeLOeuvre(tx, deId)
+  await tx.offreLivraison.deleteMany({ where: { artworkId: versId } })
+  await tx.offreLivraison.createMany({ data: source.map((o) => ({ ...o, artworkId: versId })) })
+  return source.length
+}
+
+/** Dernière œuvre de l'artiste (la plus récemment créée), autre que `saufId`, qui a au moins une offre. */
+export async function derniereOeuvreAvecOffres(
+  tx: Prisma.TransactionClient,
+  artisteId: string,
+  saufId: string,
+): Promise<string | null> {
+  const oeuvre = await tx.artwork.findFirst({
+    where: { artistId: artisteId, NOT: { id: saufId }, offresLivraison: { some: {} } },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    select: { id: true },
+  })
+  return oeuvre?.id ?? null
 }

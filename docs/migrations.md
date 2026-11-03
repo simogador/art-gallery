@@ -105,6 +105,24 @@ Retour arrière : le code précédent fonctionne sur la base migrée (colonnes a
 - Cloudinary : le formulaire envoie les photos directement à Cloudinary avec une signature du serveur ; il lui faut `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` et `CLOUDINARY_API_SECRET` dans Vercel (Preview et Production). Sans elles, l'envoi de photos affiche « momentanément indisponible », le reste du formulaire fonctionne. Réglage du 2026-11-03 : compte `djiu4tirq` (plan gratuit, images de 10 Mo au plus), clé dédiée `errancy-vercel` (les clés de mai étaient désactivées) ; `CLOUDINARY_API_KEY` et `CLOUDINARY_API_SECRET` en Production et Preview, `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` en deux variables (secret en Production, configuration en Preview).
 - Retour arrière : l'ancien code ignore la table et les deux colonnes ; les brouillons créés par le nouveau formulaire apparaissent dans « Mes œuvres » (année 0 tant qu'elle n'est pas saisie), jamais en galerie. Pour retirer la migration (dernier recours) : `DROP TABLE "PhotoOeuvre"; DROP TYPE "TypePhoto"; ALTER TABLE "Artwork" DROP COLUMN "ambiance", DROP COLUMN "couleurDominante";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261102212219_depot_oeuvre';`.
 
+### Story 2.6 : expédition, engagements et envoi en curation
+
+- Migration : `20261103100532_expedition_engagements`. Sur `Artwork` : `visitesAtelier` (facultative), `engagementCertificat`, `engagementEmballage`, `engagementReprise` (booléens à `false` par défaut) et `envoyeeEnCurationLe` (facultative). Sur `OffreLivraison` : `livree` (vrai par défaut), frais et délais devenus facultatifs (vides pour une zone non livrée), et six contraintes `CHECK` écrites à la main (frais et délais positifs, transport min ≤ max, devise sur trois lettres, quatre valeurs présentes si la zone est livrée, toutes vides sinon). Prisma ne décrit pas les `CHECK` : `prisma migrate diff` (job « Migrations ») les ignore et répond « No difference detected ».
+- Ajout seulement, aucune recopie (la table des offres est vide avant cette story) ; le nouveau code lit les nouvelles colonnes (formulaire de dépôt) et échouerait sans elles : même procédure que les précédentes, `preview` puis production **avant la fusion**, avec la ligne `_prisma_migrations` et l'empreinte SHA-256.
+- Retour arrière : l'ancien code ignore les colonnes ajoutées. Une œuvre déjà envoyée (`en_curation`) s'ouvre alors dans l'ancienne page d'édition, et une offre non livrée (frais vides) n'est lue par aucun ancien écran. Pour retirer la migration (dernier recours, après avoir supprimé les offres non livrées : `DELETE FROM "OffreLivraison" WHERE NOT "livree";`) :
+  ```sql
+  ALTER TABLE "OffreLivraison"
+    DROP CONSTRAINT "OffreLivraison_frais_positifs", DROP CONSTRAINT "OffreLivraison_delais_positifs",
+    DROP CONSTRAINT "OffreLivraison_transport_ordonne", DROP CONSTRAINT "OffreLivraison_devise_iso",
+    DROP CONSTRAINT "OffreLivraison_livree_complete", DROP CONSTRAINT "OffreLivraison_non_livree_vide",
+    DROP COLUMN "livree",
+    ALTER COLUMN "fraisCentimes" SET NOT NULL, ALTER COLUMN "preparationJours" SET NOT NULL,
+    ALTER COLUMN "transportMinJours" SET NOT NULL, ALTER COLUMN "transportMaxJours" SET NOT NULL;
+  ALTER TABLE "Artwork" DROP COLUMN "visitesAtelier", DROP COLUMN "engagementCertificat",
+    DROP COLUMN "engagementEmballage", DROP COLUMN "engagementReprise", DROP COLUMN "envoyeeEnCurationLe";
+  DELETE FROM "_prisma_migrations" WHERE migration_name = '20261103100532_expedition_engagements';
+  ```
+
 ## Journal des bases partagées
 
 - 2026-10-28 : sur `production` puis sur la branche `preview`, la ligne de base `20261027150000_ligne_de_base` a été déclarée (sans exécution) et `20261027230000_inscriptions_ouverture` appliquée, en une transaction depuis l'éditeur SQL de Neon (SQL de la migration et empreintes SHA-256 identiques à celles de Prisma). Point de restauration : branche `avant-migrations-28-10` (expire le 2026-11-04).

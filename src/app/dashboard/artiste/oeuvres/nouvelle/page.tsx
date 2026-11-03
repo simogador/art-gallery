@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { acteurCourant } from '@/lib/acces'
-import { listerZones } from '@/lib/livraison'
+import { repriseZonesPossible } from '@/lib/curation'
+import { zonesOuvertes } from '@/lib/livraison'
 import { PageDepot } from '../depot/PageDepot'
 
 export const metadata: Metadata = { title: 'Déposer une œuvre — Errancy' }
@@ -16,6 +17,6 @@ export default async function NouvelleOeuvrePage() {
   if (acteur.type !== 'artist') redirect('/dashboard')
   if (!acteur.artiste) redirect('/dashboard/artiste')
 
-  const zones = await listerZones()
-  return <PageDepot depot={null} zones={zones.map((z) => z.nom)} />
+  const [zones, reprise] = await Promise.all([zonesOuvertes(), repriseZonesPossible(acteur)])
+  return <PageDepot depot={null} zones={zones} repriseInitiale={reprise} />
 }

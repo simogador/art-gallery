@@ -1,11 +1,18 @@
 import Link from 'next/link'
-import type { DepotLu } from '@/lib/curation/depot-regles'
-import { SectionExpedition } from '../nouvelle/SectionExpedition'
+import type { DepotLu, ZoneDepot } from '@/lib/curation/depot-regles'
 import { FormulaireDepot } from './FormulaireDepot'
 
 // Page de dépôt (story 2.5), commune à /dashboard/artiste/oeuvres/nouvelle (sans brouillon) et à
 // /dashboard/artiste/oeuvres/[slug] (brouillon de l'artiste). L'appelant a vérifié l'acteur.
-export function PageDepot({ depot, zones }: { depot: DepotLu | null; zones: string[] }) {
+export function PageDepot({
+  depot,
+  zones,
+  repriseInitiale = false,
+}: {
+  depot: DepotLu | null
+  zones: ZoneDepot[]
+  repriseInitiale?: boolean
+}) {
   return (
     <div>
       <div className="mb-10">
@@ -25,12 +32,12 @@ export function PageDepot({ depot, zones }: { depot: DepotLu | null; zones: stri
           Déposer une œuvre
         </h1>
         <p className="font-sans text-sm text-neutral-600 mt-2 max-w-prose">
-          Complétez les cinq sections. L&apos;œuvre reste un brouillon visible de vous seul ; l&apos;envoi à
-          l&apos;équipe Errancy pour validation viendra une fois toutes les sections complètes.
+          Complétez les cinq sections. L&apos;œuvre reste un brouillon visible de vous seul jusqu&apos;à
+          son envoi à l&apos;équipe Errancy, qui la valide avant toute publication.
         </p>
       </div>
 
-      <FormulaireDepot depot={depot} expedition={<SectionExpedition zones={zones} />} />
+      <FormulaireDepot depot={depot} zones={zones} repriseInitiale={repriseInitiale} />
     </div>
   )
 }

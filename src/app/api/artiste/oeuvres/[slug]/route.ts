@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { acteurCourant } from '@/lib/acces'
 import { champsDimensionsModifiees, champsPrix } from '@/lib/catalogue/conversions'
+import { estBrouillon, estEnCuration } from '@/lib/disponibilite/etats'
 
 async function getArtistArtwork(userId: string, slug: string) {
   const artist = await prisma.artist.findFirst({ where: { userId } })
@@ -30,6 +31,15 @@ export async function PUT(
   const artwork  = await getArtistArtwork(session.user.id!, slug)
   if (!artwork) {
     return NextResponse.json({ error: 'Œuvre introuvable' }, { status: 404 })
+  }
+  // Story 2.6 : un brouillon se modifie seulement par le formulaire de dépôt (module curation, avec
+  // ses règles) ; une œuvre en curation ne se modifie plus. Cette ancienne route ne sert qu'aux
+  // œuvres publiées, jusqu'aux stories 2.7 et 2.8.
+  if (estBrouillon(artwork) || estEnCuration(artwork)) {
+    return NextResponse.json(
+      { error: estBrouillon(artwork) ? 'Ce brouillon se modifie depuis le formulaire de dépôt.' : 'Cette œuvre est en curation : elle ne se modifie plus.' },
+      { status: 409 },
+    )
   }
 
   const body = await req.json()
@@ -76,6 +86,10 @@ export async function DELETE(
   const artwork  = await getArtistArtwork(session.user.id!, slug)
   if (!artwork) {
     return NextResponse.json({ error: 'Œuvre introuvable' }, { status: 404 })
+  }
+  // Story 2.6 : une œuvre en curation ne se modifie ni ne se supprime par l'artiste.
+  if (estEnCuration(artwork)) {
+    return NextResponse.json({ error: 'Cette œuvre est en curation : elle ne peut pas être supprimée.' }, { status: 409 })
   }
 
   await prisma.artwork.delete({ where: { slug } })

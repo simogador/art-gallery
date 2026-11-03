@@ -1,6 +1,6 @@
 import { centimetresEnMillimetres, MESSAGE_PRIX_INVALIDE, prixEnCentimes } from '@/lib/catalogue/conversions'
 
-// Dépôt d'une œuvre par l'artiste (story 2.5, FR-20) : règles pures, sans accès à la base.
+// Dépôt d'une œuvre par l'artiste (stories 2.5 et 2.6, FR-20) : règles pures, sans accès à la base.
 // Partagées par le formulaire (composants client) et par le module curation (serveur), qui
 // revalide toujours à la frontière. Listes fermées décidées par le porteur le 2026-11-02,
 // modifiables ici : codes snake_case sans accent stockés en base, libellés affichés.
@@ -122,10 +122,23 @@ export type ChampDepot =
   | 'profondeur'
   | 'couleurDominante'
   | 'prix'
+  | 'visitesAtelier'
+  | 'engagementCertificat'
+  | 'engagementEmballage'
+  | 'engagementReprise'
 
 export const CHAMPS_DEPOT: readonly ChampDepot[] = [
   'titre', 'technique', 'annee', 'histoire', 'ambiance', 'hauteur', 'largeur', 'profondeur', 'couleurDominante', 'prix',
+  'visitesAtelier', 'engagementCertificat', 'engagementEmballage', 'engagementReprise',
 ]
+
+/** Les trois engagements de la section 5 (story 2.6), dans l'ordre d'affichage. */
+export const ENGAGEMENTS = ['engagementCertificat', 'engagementEmballage', 'engagementReprise'] as const
+export type ChampEngagement = (typeof ENGAGEMENTS)[number]
+
+/** Saisie d'un choix oui / non (visites en atelier, engagements) : « oui », « non » ou vide. */
+export const OUI = 'oui'
+export const NON = 'non'
 
 export function estChampDepot(valeur: unknown): valeur is ChampDepot {
   return typeof valeur === 'string' && (CHAMPS_DEPOT as readonly string[]).includes(valeur)
@@ -142,10 +155,14 @@ export const LIBELLES_CHAMPS: Record<ChampDepot, string> = {
   profondeur: 'Profondeur (cm, facultative)',
   couleurDominante: 'Couleur dominante',
   prix: 'Prix de l’œuvre seule (€)',
+  visitesAtelier: 'Acceptez-vous les visites en atelier ?',
+  engagementCertificat: 'Je fournis un certificat d’authenticité signé avec l’œuvre.',
+  engagementEmballage: 'J’emballe l’œuvre selon le guide d’emballage Errancy.',
+  engagementReprise: 'J’accepte la reprise d’une œuvre retournée dans son emballage d’origine.',
 }
 
-/** Valeur prête à enregistrer : texte, nombre (année, millimètres, centimes) ou null (champ vidé). */
-export type ValeurChamp = string | number | null
+/** Valeur prête à enregistrer : texte, nombre (année, millimètres, centimes), booléen (oui / non) ou null (champ vidé). */
+export type ValeurChamp = string | number | boolean | null
 export type ChampLu = { ok: true; valeur: ValeurChamp } | { ok: false; erreur: string }
 
 function texteBorne(saisie: string, max: number, nom: string): ChampLu {
@@ -206,6 +223,156 @@ export function validerChamp(champ: ChampDepot, saisie: unknown, maintenant: Dat
       const lu = prixEnCentimes(saisie)
       return lu.ok ? { ok: true, valeur: lu.centimes } : { ok: false, erreur: MESSAGE_PRIX_INVALIDE }
     }
+    case 'visitesAtelier':
+      if (saisie === '') return { ok: true, valeur: null }
+      return saisie === OUI || saisie === NON
+        ? { ok: true, valeur: saisie === OUI }
+        : { ok: false, erreur: 'Répondez par oui ou par non.' }
+    case 'engagementCertificat':
+    case 'engagementEmballage':
+    case 'engagementReprise':
+      return saisie === OUI || saisie === NON ? { ok: true, valeur: saisie === OUI } : { ok: false, erreur: 'Valeur illisible.' }
+  }
+}
+
+/* ── Expédition par zone (story 2.6, AD-12) ─────────────────────────────── */
+
+export const LIMITES_EXPEDITION = {
+  fraisMaxCentimes: 1_000_000,
+  preparationMin: 0,
+  preparationMax: 60,
+  transportMin: 1,
+  transportMax: 90,
+} as const
+
+/** Zone ouverte par l'équipe, telle que montrée à l'artiste. */
+export type ZoneDepot = { id: string; nom: string }
+
+/** Offre enregistrée d'une œuvre pour une zone : livrée (frais et délais) ou « je ne livre pas ». */
+export type OffreDepot = {
+  zoneId: string
+  livree: boolean
+  fraisCentimes: number | null
+  preparationJours: number | null
+  transportMinJours: number | null
+  transportMaxJours: number | null
+}
+
+export type ChampOffre = 'frais' | 'preparation' | 'transportMin' | 'transportMax'
+export const CHAMPS_OFFRE: readonly ChampOffre[] = ['frais', 'preparation', 'transportMin', 'transportMax']
+
+export const LIBELLES_OFFRE: Record<ChampOffre, string> = {
+  frais: 'Frais d’expédition (€)',
+  preparation: 'Préparation (jours)',
+  transportMin: 'Transport, au moins (jours)',
+  transportMax: 'Transport, au plus (jours)',
+}
+
+/** Saisie d'une zone dans le formulaire : textes des quatre champs et case « Je ne livre pas cette zone ». */
+export type SaisieOffre = { nonLivree: boolean } & Record<ChampOffre, string>
+
+export type OffreLue =
+  | { ok: true; offre: Omit<OffreDepot, 'zoneId'> | null }
+  | { ok: false; erreurs: Partial<Record<ChampOffre, string>> }
+
+function fraisEnCentimes(saisie: string): number | null | 'invalide' {
+  const texte = saisie.trim()
+  if (texte === '') return null
+  const lu = prixEnCentimes(texte)
+  if (!lu.ok) return 'invalide'
+  // prixEnCentimes lit « 0 » comme une absence de prix ; ici, 0 € est un montant.
+  const centimes = lu.centimes ?? 0
+  return centimes > LIMITES_EXPEDITION.fraisMaxCentimes ? 'invalide' : centimes
+}
+
+function jours(saisie: string, min: number, max: number): number | null | 'invalide' {
+  const texte = saisie.trim()
+  if (texte === '') return null
+  if (!/^\d{1,3}$/.test(texte)) return 'invalide'
+  const n = Number(texte)
+  return n >= min && n <= max ? n : 'invalide'
+}
+
+/** Erreur d'un seul champ d'une zone, à sa sortie (null : valeur acceptable ou vide). */
+export function erreurChampOffre(champ: ChampOffre, saisie: Record<ChampOffre, string>): string | null {
+  const L = LIMITES_EXPEDITION
+  switch (champ) {
+    case 'frais':
+      return fraisEnCentimes(saisie.frais) === 'invalide'
+        ? `Indiquez les frais en euros, de 0 à ${(L.fraisMaxCentimes / 100).toLocaleString('fr-FR')} € (par exemple « 25 » ou « 12,50 »).`
+        : null
+    case 'preparation':
+      return jours(saisie.preparation, L.preparationMin, L.preparationMax) === 'invalide'
+        ? `Indiquez un nombre entier de jours, de ${L.preparationMin} à ${L.preparationMax}.`
+        : null
+    case 'transportMin':
+      return jours(saisie.transportMin, L.transportMin, L.transportMax) === 'invalide'
+        ? `Indiquez un nombre entier de jours, de ${L.transportMin} à ${L.transportMax}.`
+        : null
+    case 'transportMax': {
+      const max = jours(saisie.transportMax, L.transportMin, L.transportMax)
+      if (max === 'invalide') return `Indiquez un nombre entier de jours, de ${L.transportMin} à ${L.transportMax}.`
+      const min = jours(saisie.transportMin, L.transportMin, L.transportMax)
+      if (typeof min === 'number' && typeof max === 'number' && min > max) {
+        return 'Le transport au plus doit être supérieur ou égal au transport au moins.'
+      }
+      return null
+    }
+  }
+}
+
+/** Les quatre champs de la zone sont-ils tous vides, tous remplis, ou en partie ? */
+export function remplissageOffre(saisie: Record<ChampOffre, string>): 'vide' | 'complet' | 'partiel' {
+  const remplis = CHAMPS_OFFRE.filter((c) => saisie[c].trim() !== '').length
+  return remplis === 0 ? 'vide' : remplis === CHAMPS_OFFRE.length ? 'complet' : 'partiel'
+}
+
+/**
+ * Valide la saisie d'une zone et la convertit (centimes, jours entiers). « Je ne livre pas » : offre
+ * non livrée, frais et délais vides. Quatre champs vides : aucune offre (null, la zone redevient à
+ * compléter). Sinon les quatre valeurs sont exigées et bornées ; un refus n'écrit rien.
+ */
+export function validerOffre(saisie: unknown): OffreLue {
+  const s = saisie as Partial<SaisieOffre> | null
+  if (!s || typeof s !== 'object' || typeof s.nonLivree !== 'boolean' || CHAMPS_OFFRE.some((c) => typeof s[c] !== 'string')) {
+    return { ok: false, erreurs: { frais: 'Valeur illisible.' } }
+  }
+  const lue = s as SaisieOffre
+  if (lue.nonLivree) {
+    return {
+      ok: true,
+      offre: { livree: false, fraisCentimes: null, preparationJours: null, transportMinJours: null, transportMaxJours: null },
+    }
+  }
+  if (remplissageOffre(lue) === 'vide') return { ok: true, offre: null }
+  const erreurs: Partial<Record<ChampOffre, string>> = {}
+  for (const c of CHAMPS_OFFRE) {
+    const e = lue[c].trim() === '' ? `Indiquez : ${LIBELLES_OFFRE[c].toLowerCase()}.` : erreurChampOffre(c, lue)
+    if (e) erreurs[c] = e
+  }
+  if (Object.keys(erreurs).length) return { ok: false, erreurs }
+  const L = LIMITES_EXPEDITION
+  return {
+    ok: true,
+    offre: {
+      livree: true,
+      fraisCentimes: fraisEnCentimes(lue.frais) as number,
+      preparationJours: jours(lue.preparation, L.preparationMin, L.preparationMax) as number,
+      transportMinJours: jours(lue.transportMin, L.transportMin, L.transportMax) as number,
+      transportMaxJours: jours(lue.transportMax, L.transportMin, L.transportMax) as number,
+    },
+  }
+}
+
+/** Offre enregistrée → saisie du formulaire (2 500 centimes → « 25 »). */
+export function offreEnSaisie(o: OffreDepot | undefined): SaisieOffre {
+  const n = (v: number | null | undefined) => (v === null || v === undefined ? '' : String(v))
+  return {
+    nonLivree: o ? !o.livree : false,
+    frais: o?.livree ? (o.fraisCentimes === 0 ? '0' : centimesEnSaisie(o.fraisCentimes)) : '',
+    preparation: o?.livree ? n(o.preparationJours) : '',
+    transportMin: o?.livree ? n(o.transportMinJours) : '',
+    transportMax: o?.livree ? n(o.transportMaxJours) : '',
   }
 }
 
@@ -268,6 +435,13 @@ export type DonneesDepot = {
   prixCentimes: number | null
   /** Types de photos déjà enregistrées. */
   photos: TypePhoto[]
+  /** Offres enregistrées, une au plus par zone (story 2.6). */
+  offres: OffreDepot[]
+  /** null : pas encore renseignée. */
+  visitesAtelier: boolean | null
+  engagementCertificat: boolean
+  engagementEmballage: boolean
+  engagementReprise: boolean
 }
 
 export type PhotoDepot = { url: string; largeur: number | null; hauteur: number | null }
@@ -276,6 +450,8 @@ export type PhotoDepot = { url: string; largeur: number | null; hauteur: number 
 export type DepotLu = DonneesDepot & {
   slug: string
   photosLues: Partial<Record<TypePhoto, PhotoDepot>>
+  /** Une autre œuvre de l'artiste a des offres : « Reprendre les zones de ma dernière œuvre » est proposé. */
+  repriseDisponible: boolean
 }
 
 export type IdSection = 'photos' | 'informations' | 'dimensions' | 'expedition' | 'engagements'
@@ -284,35 +460,79 @@ export type EtatSection = { id: IdSection; numero: number; titre: string; comple
 
 export const NOMBRE_SECTIONS = 5
 
+/** Élément qui manque pour envoyer en curation, avec l'id de l'élément d'interface où placer le focus. */
+export type ElementManquant = { section: IdSection; libelle: string; cible: string }
+
+/** Ids des éléments d'interface du formulaire, partagés par le formulaire et la liste des manques. */
+export const ID_CHAMP = {
+  champ: (champ: ChampDepot) => `depot-${champ}`,
+  photo: (type: TypePhoto) => `depot-photo-${type}`,
+  zone: (zoneId: string, champ: ChampOffre | 'nonLivree') => `depot-zone-${zoneId}-${champ}`,
+  section: (id: IdSection) => `section-${id}`,
+}
+
+const SECTIONS: readonly { id: IdSection; titre: string }[] = [
+  { id: 'photos', titre: 'Photos' },
+  { id: 'informations', titre: 'Informations' },
+  { id: 'dimensions', titre: 'Dimensions et prix' },
+  { id: 'expedition', titre: 'Expédition' },
+  { id: 'engagements', titre: 'Engagements' },
+]
+
+export const MESSAGE_AUCUNE_ZONE_LIVREE = 'Livrez au moins une zone'
+
 /**
- * État des cinq sections. Expédition et Engagements restent « À compléter » : leur saisie vient
- * avec la story 2.6.
+ * Tout ce qui manque pour envoyer l'œuvre en curation, dans l'ordre du formulaire. Expédition :
+ * chaque zone ouverte par l'équipe a une offre ou « je ne livre pas », au moins une est livrée, et
+ * les visites en atelier sont renseignées ; sans zone ouverte, la section ne peut pas être complète.
  */
-export function etatSections(d: DonneesDepot): EtatSection[] {
-  const manquesPhotos = PHOTOS.filter((p) => p.obligatoire && !d.photos.includes(p.type)).map((p) => p.legende)
-  const manquesInfos = [
-    !d.titre && LIBELLES_CHAMPS.titre,
-    !d.technique && LIBELLES_CHAMPS.technique,
-    d.annee === null && LIBELLES_CHAMPS.annee,
-    !d.histoire && LIBELLES_CHAMPS.histoire,
-    !estDans(AMBIANCES, d.ambiance) && LIBELLES_CHAMPS.ambiance,
-  ].filter((m): m is string => Boolean(m))
-  const manquesDims = [
-    d.hauteurMm === null && 'Hauteur',
-    d.largeurMm === null && 'Largeur',
-    !estDans(COULEURS_DOMINANTES, d.couleurDominante) && LIBELLES_CHAMPS.couleurDominante,
-    d.prixCentimes === null && 'Prix',
-  ].filter((m): m is string => Boolean(m))
-  const section = (id: IdSection, numero: number, titre: string, manques: string[]): EtatSection => ({
-    id, numero, titre, complet: manques.length === 0, manques,
+export function elementsManquants(d: DonneesDepot, zones: readonly ZoneDepot[]): ElementManquant[] {
+  const m: ElementManquant[] = []
+  const champ = (section: IdSection, c: ChampDepot, libelle = LIBELLES_CHAMPS[c]) =>
+    m.push({ section, libelle, cible: ID_CHAMP.champ(c) })
+
+  for (const p of PHOTOS) {
+    if (p.obligatoire && !d.photos.includes(p.type)) m.push({ section: 'photos', libelle: p.legende, cible: ID_CHAMP.photo(p.type) })
+  }
+  if (!d.titre) champ('informations', 'titre')
+  if (!d.technique) champ('informations', 'technique')
+  if (d.annee === null) champ('informations', 'annee')
+  if (!d.histoire) champ('informations', 'histoire')
+  if (!estDans(AMBIANCES, d.ambiance)) champ('informations', 'ambiance')
+  if (d.hauteurMm === null) champ('dimensions', 'hauteur', 'Hauteur')
+  if (d.largeurMm === null) champ('dimensions', 'largeur', 'Largeur')
+  if (!estDans(COULEURS_DOMINANTES, d.couleurDominante)) champ('dimensions', 'couleurDominante')
+  if (d.prixCentimes === null) champ('dimensions', 'prix', 'Prix')
+
+  if (zones.length === 0) {
+    m.push({ section: 'expedition', libelle: 'Zones de livraison (pas encore ouvertes par l’équipe)', cible: ID_CHAMP.section('expedition') })
+  } else {
+    const offres = new Map(d.offres.map((o) => [o.zoneId, o]))
+    for (const z of zones) {
+      if (!offres.has(z.id)) {
+        m.push({ section: 'expedition', libelle: `${z.nom} : frais et délais, ou « Je ne livre pas »`, cible: ID_CHAMP.zone(z.id, 'frais') })
+      }
+    }
+    const toutesRenseignees = zones.every((z) => offres.has(z.id))
+    if (toutesRenseignees && !zones.some((z) => offres.get(z.id)?.livree)) {
+      m.push({ section: 'expedition', libelle: MESSAGE_AUCUNE_ZONE_LIVREE, cible: ID_CHAMP.zone(zones[0].id, 'nonLivree') })
+    }
+  }
+  if (d.visitesAtelier === null) champ('expedition', 'visitesAtelier', 'Visites en atelier')
+
+  if (!d.engagementCertificat) champ('engagements', 'engagementCertificat', 'Certificat d’authenticité signé')
+  if (!d.engagementEmballage) champ('engagements', 'engagementEmballage', 'Emballage conforme au guide Errancy')
+  if (!d.engagementReprise) champ('engagements', 'engagementReprise', 'Reprise d’une œuvre retournée')
+  return m
+}
+
+/** État des cinq sections, à partir des éléments manquants. */
+export function etatSections(d: DonneesDepot, zones: readonly ZoneDepot[]): EtatSection[] {
+  const manquants = elementsManquants(d, zones)
+  return SECTIONS.map((s, i) => {
+    const manques = manquants.filter((e) => e.section === s.id).map((e) => e.libelle)
+    return { id: s.id, numero: i + 1, titre: s.titre, complet: manques.length === 0, manques }
   })
-  return [
-    section('photos', 1, 'Photos', manquesPhotos),
-    section('informations', 2, 'Informations', manquesInfos),
-    section('dimensions', 3, 'Dimensions et prix', manquesDims),
-    section('expedition', 4, 'Expédition', ['Frais et délais par zone']),
-    section('engagements', 5, 'Engagements', ['Certificat, emballage et reprise']),
-  ]
 }
 
 export function nombreSectionsCompletes(sections: EtatSection[]): number {
@@ -329,6 +549,8 @@ export type CodeRefusDepot =
   | 'signature_invalide'
   | 'fichier_refuse'
   | 'envoi_indisponible'
+  | 'zone_introuvable'
+  | 'depot_incomplet'
 
 export const MESSAGE_NON_ENREGISTRE = 'Non enregistré, réessayez.'
 
@@ -348,5 +570,9 @@ export function messageRefusDepot(code: CodeRefusDepot): string {
       return 'Ce fichier ne correspond pas à cette case : choisissez une photo, ou une vidéo pour la case Vidéo.'
     case 'envoi_indisponible':
       return 'L’envoi de photos est momentanément indisponible. Réessayez plus tard ou écrivez à l’équipe.'
+    case 'zone_introuvable':
+      return 'Cette zone de livraison n’existe plus. Rechargez la page.'
+    case 'depot_incomplet':
+      return 'Il manque encore des éléments : rechargez la page pour voir la liste à jour.'
   }
 }

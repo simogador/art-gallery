@@ -65,6 +65,13 @@ model Artwork {
   ambiance         String?
   couleurDominante String?
   photos           PhotoOeuvre[]
+  // Story 2.6 (FR-20) : visites en atelier (null : pas encore renseignée), trois engagements de
+  // l'artiste et date d'envoi en curation (ordre de la file, story 2.7). Écrits seulement par curation.
+  visitesAtelier       Boolean?
+  engagementCertificat Boolean   @default(false)
+  engagementEmballage  Boolean   @default(false)
+  engagementReprise    Boolean   @default(false)
+  envoyeeEnCurationLe  DateTime?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
@@ -255,7 +262,10 @@ model ZonePays {
   @@index([zoneId])
 }
 
-// Une offre par œuvre et par zone acceptée (saisie en story 2.6) ; « je ne livre pas » = pas d'offre.
+// Une offre par œuvre et par zone, saisie par l'artiste (story 2.6), écrite seulement par livraison :
+// livrée (frais et délais renseignés) ou « je ne livre pas » (livree = false, frais et délais vides).
+// Contraintes CHECK écrites à la main dans la migration 2.6 (Prisma ne les décrit pas) : frais et
+// délais positifs, transport min ≤ max, devise sur trois lettres, valeurs présentes si livrée, vides sinon.
 // Restrict : une zone utilisée par une offre ne peut pas être supprimée, même hors application.
 model OffreLivraison {
   id                String   @id @default(cuid())
@@ -263,11 +273,12 @@ model OffreLivraison {
   artworkId         String
   zone              Zone     @relation(fields: [zoneId], references: [id], onDelete: Restrict)
   zoneId            String
-  fraisCentimes     Int
+  livree            Boolean  @default(true)
+  fraisCentimes     Int?
   devise            String   @default("EUR")
-  preparationJours  Int
-  transportMinJours Int
-  transportMaxJours Int
+  preparationJours  Int?
+  transportMinJours Int?
+  transportMaxJours Int?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
