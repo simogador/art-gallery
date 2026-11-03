@@ -319,29 +319,36 @@ describe('base : recopie, lectures et écritures', () => {
     const parametres = (slug: string) => ({ params: Promise.resolve({ slug }) })
     const saisie = { title: 'Nouvelle', year: '2024', technique: 'Huile', description: '' }
 
-    it('la création par l’artiste écrit anciennes et nouvelles colonnes', async () => {
-      acteur.courant = { type: 'artist', userId: UTILISATEUR, artiste: { id: 'artiste-1', slug: 'artiste-1', name: 'Artiste Un' } }
-      const { POST } = await import('@/app/api/artiste/oeuvres/route')
-      const reponse = await POST(requete('/api/artiste/oeuvres', 'POST', { ...saisie, price: '1 250,50', dimensions: '60 × 80 cm' }))
-      expect(reponse.status).toBe(201)
-      const { slug } = await reponse.json()
+    it('le dépôt par l’artiste écrit anciennes et nouvelles colonnes (story 2.5)', async () => {
+      const artiste = { type: 'artist', userId: UTILISATEUR, artiste: { id: 'artiste-1', slug: 'artiste-1', name: 'Artiste Un' } }
+      const { enregistrerChamp } = await import('@/lib/curation')
+      const cree = await enregistrerChamp(artiste as never, null, 'prix', '1 250,50')
+      if (!cree.ok) throw new Error(cree.code)
+      const slug = cree.depot.slug
+      expect((await enregistrerChamp(artiste as never, slug, 'hauteur', '60')).ok).toBe(true)
+      expect(await colonnes(slug)).toEqual({
+        price: 1250.5, dimensions: '', prixCentimes: 125050, devise: 'EUR',
+        hauteurMm: 600, largeurMm: null, profondeurMm: null,
+      })
+      expect((await enregistrerChamp(artiste as never, slug, 'largeur', '80')).ok).toBe(true)
       expect(await colonnes(slug)).toEqual({
         price: 1250.5, dimensions: '60 × 80 cm', prixCentimes: 125050, devise: 'EUR',
         hauteurMm: 600, largeurMm: 800, profondeurMm: null,
       })
+      expect(lireDimensions((await colonnes(slug)).dimensions)).toEqual({ hauteurMm: 600, largeurMm: 800, profondeurMm: null })
     })
 
     it.each([
-      [{ price: '1000', dimensions: 'environ 1 m' }, '« 120 × 80 cm »'],
-      [{ price: '-5', dimensions: '60 × 80 cm' }, 'Prix invalide'],
-      [{ price: 'abc', dimensions: '60 × 80 cm' }, 'Prix invalide'],
-      [{ price: '10,123', dimensions: '60 × 80 cm' }, 'Prix invalide'],
-    ])('refuse en 400 la saisie %o', async (champs, message) => {
-      acteur.courant = { type: 'artist', userId: UTILISATEUR, artiste: { id: 'artiste-1', slug: 'artiste-1', name: 'Artiste Un' } }
-      const { POST } = await import('@/app/api/artiste/oeuvres/route')
-      const reponse = await POST(requete('/api/artiste/oeuvres', 'POST', { ...saisie, ...champs }))
-      expect(reponse.status).toBe(400)
-      expect((await reponse.json()).error).toContain(message)
+      ['prix', '-5', 'Prix invalide'],
+      ['prix', 'abc', 'Prix invalide'],
+      ['prix', '10,123', 'Prix invalide'],
+      ['hauteur', 'environ 1 m', 'centimètres'],
+    ] as const)('refuse le champ %s « %s » sans créer de brouillon', async (champ, valeur, message) => {
+      const artiste = { type: 'artist', userId: UTILISATEUR, artiste: { id: 'artiste-1', slug: 'artiste-1', name: 'Artiste Un' } }
+      const { enregistrerChamp } = await import('@/lib/curation')
+      const refus = await enregistrerChamp(artiste as never, null, champ, valeur)
+      expect(refus).toMatchObject({ ok: false, code: 'valeur_invalide' })
+      expect(refus.ok ? '' : refus.erreur).toContain(message)
       expect((await db.query('SELECT count(*)::int AS n FROM "Artwork"')).rows[0].n).toBe(0)
     })
 

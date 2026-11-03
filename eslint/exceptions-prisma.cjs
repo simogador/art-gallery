@@ -8,7 +8,6 @@ module.exports = [
   'src/app/api/admin/oeuvres/[slug]/route.ts',
   'src/app/api/admin/utilisateurs/[id]/route.ts',
   'src/app/api/artiste/oeuvres/[slug]/route.ts',
-  'src/app/api/artiste/oeuvres/route.ts',
   'src/app/api/checkout/route.ts',
   'src/app/api/upload/route.ts',
   'src/app/api/webhooks/stripe/route.ts',
@@ -20,5 +19,4 @@ module.exports = [
   'src/app/dashboard/admin/page.tsx',
   'src/app/dashboard/admin/utilisateurs/[id]/page.tsx',
   'src/app/dashboard/admin/utilisateurs/page.tsx',
-  'src/app/dashboard/artiste/oeuvres/nouvelle/page.tsx',
 ]

@@ -444,15 +444,11 @@ describe('base : recopie, lectures et écritures', () => {
 
   it('une œuvre créée par l’artiste naît brouillon + disponible, absente du catalogue', async () => {
     acteur.courant = ARTISTE
-    const { POST } = await import('@/app/api/artiste/oeuvres/route')
-    const reponse = await POST(
-      new Request('http://localhost/api/artiste/oeuvres', {
-        method: 'POST',
-        body: JSON.stringify({ title: 'Nouvelle', year: '2024', technique: 'Huile', price: '100', dimensions: '60 × 80 cm' }),
-      }) as never,
-    )
-    expect(reponse.status).toBe(201)
-    const { slug } = await reponse.json()
+    // Story 2.5 : le premier champ du formulaire de dépôt crée le brouillon.
+    const { enregistrerChamp } = await import('@/lib/curation')
+    const cree = await enregistrerChamp(ARTISTE as never, null, 'titre', 'Nouvelle')
+    if (!cree.ok) throw new Error(cree.code)
+    const slug = cree.depot.slug
     // available = « disponible » (publiée et disponible) : faux tant qu'elle n'est pas publiée.
     expect(await etat(slug)).toEqual({ publication: 'brouillon', disponibilite: 'disponible', available: false })
 

@@ -44,8 +44,10 @@ function etatAffiche(e: EtatOeuvre): EtatAffiche {
 export type OeuvreArtiste = {
   id: string
   slug: string
+  /** « Sans titre » pour un brouillon dont le titre n'est pas encore saisi (story 2.5). */
   title: string
-  year: number
+  /** null pour un brouillon dont l'année n'est pas encore saisie (0 en base, story 2.5). */
+  year: number | null
   medium: string
   /** Euros, pour formatPrice ; null sans prix. */
   prix: number | null
@@ -58,7 +60,8 @@ export type OeuvreArtiste = {
 
 function versOeuvreArtiste(w: OeuvreLue): OeuvreArtiste {
   return {
-    id: w.id, slug: w.slug, title: w.title, year: w.year, medium: w.medium,
+    id: w.id, slug: w.slug, title: w.title.trim() || 'Sans titre', year: w.year > 0 ? w.year : null,
+    medium: w.medium,
     prix: centimesEnEuros(w.prixCentimes),
     dimensions: formaterDimensions(w),
     featured: w.featured, imageUrl: w.imageUrl, createdAt: w.createdAt,

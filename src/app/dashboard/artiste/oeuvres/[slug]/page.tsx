@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -5,15 +6,27 @@ import { oeuvreAEditer } from '@/lib/catalogue'
 import { ArtworkForm } from '@/components/dashboard/ArtworkForm'
 import { acteurCourant } from '@/lib/acces'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
+import { lireDepot } from '@/lib/curation'
+import { listerZones } from '@/lib/livraison'
+import { PageDepot } from '../depot/PageDepot'
 
 interface Props {
   params: Promise<{ slug: string }>
 }
 
+// Une seule lecture du dépôt par requête, partagée par generateMetadata et la page. React.cache
+// n'existe que dans le React serveur de Next.js ; ailleurs (tests), appel direct.
+const memoiser: <F extends (...args: never[]) => unknown>(f: F) => F =
+  'cache' in React ? (React as unknown as { cache: <F>(f: F) => F }).cache : (f) => f
+const depotDeLaPage = memoiser(async (slug: string) => lireDepot(await acteurCourant(), slug))
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
+  if ((await depotDeLaPage(slug)).ok) return { title: 'Déposer une œuvre — Errancy' }
   return { title: `Modifier ${slug} — Errancy` }
 }
+
+export const dynamic = 'force-dynamic'
 
 export default async function EditOeuvrePage({ params }: Props) {
   // Rôle relu à chaque page : le layout n'est pas réexécuté lors d'une navigation interne.
@@ -24,6 +37,16 @@ export default async function EditOeuvrePage({ params }: Props) {
   const { slug } = await params
 
   if (!acteur.artiste) redirect('/dashboard/artiste')
+
+  // Story 2.5 : un brouillon de l'artiste s'ouvre dans le formulaire de dépôt. Une œuvre d'un autre
+  // artiste (acces_refuse) ou inexistante : 404. Une œuvre sortie du brouillon (transition_interdite)
+  // garde l'ancienne page d'édition, jusqu'aux stories 2.7 et 2.8.
+  const depot = await depotDeLaPage(slug)
+  if (depot.ok) {
+    const zones = await listerZones()
+    return <PageDepot depot={depot.depot} zones={zones.map((z) => z.nom)} />
+  }
+  if (depot.code !== 'transition_interdite') notFound()
 
   // null si l'œuvre n'existe pas ou appartient à un autre artiste.
   const artwork = await oeuvreAEditer(acteur.userId, slug)

@@ -131,14 +131,16 @@ describe('changement de rôle sans reconnexion', () => {
   })
 
   it('ouvre puis referme une route d’API artiste au gré du rôle en base', async () => {
-    const { POST } = await import('@/app/api/artiste/oeuvres/route')
+    // Story 2.5 : la création passe par le formulaire de dépôt ; la modification garde sa route.
+    const { PUT } = await import('@/app/api/artiste/oeuvres/[slug]/route')
     const requete = () =>
-      new Request('http://localhost/api/artiste/oeuvres', { method: 'POST', body: '{}' }) as never
+      new Request('http://localhost/api/artiste/oeuvres/inconnue', { method: 'PUT', body: '{}' }) as never
+    const parametres = { params: Promise.resolve({ slug: 'inconnue' }) }
 
     await roleEnBase('artist')
-    expect((await POST(requete())).status).not.toBe(403)
+    expect((await PUT(requete(), parametres)).status).not.toBe(403)
     await roleEnBase('user')
-    expect((await POST(requete())).status).toBe(403)
+    expect((await PUT(requete(), parametres)).status).toBe(403)
   })
 
   it('ne laisse changer l’image d’une œuvre qu’à son artiste ou à un admin', async () => {

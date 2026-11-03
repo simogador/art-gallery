@@ -66,9 +66,10 @@ export default async function AdminOeuvresPage() {
             {/* Title */}
             <div className="min-w-0">
               <p className="font-serif text-base font-light text-foreground group-hover:text-gold transition-colors duration-200 truncate">
-                {artwork.title}
+                {artwork.title || 'Sans titre'}
               </p>
-              <p className="font-sans text-xs text-neutral-400 mt-0.5">{artwork.year} · {artwork.medium}</p>
+              {/* Brouillon de dépôt (story 2.5) : année 0 tant qu'elle n'est pas saisie. */}
+              <p className="font-sans text-xs text-neutral-400 mt-0.5">{[artwork.year, artwork.medium].filter(Boolean).join(' · ')}</p>
             </div>
 
             {/* Artist */}

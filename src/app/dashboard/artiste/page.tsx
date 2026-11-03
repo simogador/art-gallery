@@ -91,7 +91,7 @@ export default async function ArtisteDashboardPage() {
                     {artwork.title}
                   </p>
                   <p className="font-sans text-xs text-neutral-400 mt-0.5 truncate">
-                    {artwork.year} · {artwork.medium}
+                    {[artwork.year, artwork.medium].filter(Boolean).join(' · ')}
                   </p>
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">

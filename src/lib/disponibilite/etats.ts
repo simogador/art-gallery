@@ -55,6 +55,11 @@ export function estPubliee(e: EtatOeuvre): boolean {
   return e.publication === 'publiee'
 }
 
+/** Brouillon (axe publication seul) : seul état où l'artiste modifie son dépôt (story 2.5). */
+export function estBrouillon(e: EtatOeuvre): boolean {
+  return e.publication === 'brouillon'
+}
+
 /** Axe disponibilité seul (bascule « Disponible / Vendue » de l'administration), quelle que soit la publication. */
 export function estMarqueeDisponible(e: EtatOeuvre): boolean {
   return e.disponibilite === 'disponible'

@@ -375,8 +375,13 @@ describe('base : zones de livraison', () => {
     await db.query(`UPDATE "Artist" SET "userId" = 'u-artiste' WHERE id = 'artiste-1'`)
     acteur.courant = ARTISTE
 
+    // Story 2.5 : la page rend PageDepot, qui passe la section au formulaire de dépôt.
+    const { PageDepot } = await import('@/app/dashboard/artiste/oeuvres/depot/PageDepot')
+    const { FormulaireDepot } = await import('@/app/dashboard/artiste/oeuvres/depot/FormulaireDepot')
     const section = async () => {
-      const el = trouverElement(await Page(), SectionExpedition)
+      const page = await Page()
+      const formulaire = trouverElement(PageDepot(page.props as Parameters<typeof PageDepot>[0]), FormulaireDepot)
+      const el = trouverElement((formulaire?.props as { expedition?: ReactNode } | undefined)?.expedition, SectionExpedition)
       if (!el) throw new Error('section Expédition absente')
       return renderToStaticMarkup(el)
     }
