@@ -2,8 +2,9 @@
 title: 'Story 2.6 — Expédition par zone, engagements et envoi en curation'
 type: 'feature'
 created: '2026-11-03'
-status: 'draft'
+status: 'in-progress'
 route: 'dispatch'
+baseline_commit: '5c4582905fa6c95db55078f3f3e2e74b78cee31e'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-2-5-deposer-une-oeuvre.md', '{project-root}/docs/migrations.md']
 ---
