@@ -94,3 +94,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
   summary: Après la migration B de la 2.10, supprimer dans une PR de suivi les scripts SQL de recopie, d'écarts et de correction des stories 2.1 et 2.2 et leurs sections de `docs/migrations.md`.
   evidence: ces scripts lisent les colonnes supprimées ; ils servent encore aux contrôles juste avant B.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Décrire précisément dans AGENTS.md et dans `tests/anciennes-colonnes.test.ts` la portée du scan des anciennes colonnes (chaînes, constantes d'autres fichiers, objets des fonctions d'aide non suivis).
+  evidence: revue 1 de la story 2.10 ; le scan est une heuristique, TypeScript refuse les clés après B.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Tester les requêtes de contrôle lancées avant la migration B (`dimensions-illisibles.sql`, `prix-non-recopies.sql`, requête « artistes avec accord » de la procédure).
+  evidence: medium (non vérifié) ; contrôle manuel unique en lecture seule, scripts supprimés après B.

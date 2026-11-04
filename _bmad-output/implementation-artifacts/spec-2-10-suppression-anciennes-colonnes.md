@@ -2,9 +2,9 @@
 title: 'Story 2.10 — Suppression des anciennes colonnes'
 type: 'refactor'
 created: '2026-11-04'
-status: 'in-progress'
+status: 'in-review'
 route: 'dispatch'
-review_loop_iteration: 0
+review_loop_iteration: 1
 baseline_commit: 'f7e5998d7e1226cfd1db2bd28707b4bf18bb4cc4'
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md', '{project-root}/docs/migrations.md', '{project-root}/_bmad-output/implementation-artifacts/spec-2-9-catalogue-reel.md']
 ---
@@ -71,9 +71,32 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 
 ## Implementation Notes
 
+- Migrations générées par `prisma migrate dev --create-only` sur un PostgreSQL 16 local : A `20261104125132_anciennes_colonnes_facultatives` (`ALTER COLUMN "dimensions" DROP NOT NULL`, SHA-256 `a41efb3db6dc0f4369dc28ad3ff751938ad0c8bfad1e2b0981f454633592926a`), générée sur le schéma de départ avec `dimensions String?` ; B `20261104125144_suppression_anciennes_colonnes` (`DROP COLUMN` des trois, SHA-256 `ecf964b04377f1adbb01b83db980d5c948763d27f0fe0ec2528e5e748faa66a4`). SQL exact avec la ligne `_prisma_migrations` dans `docs/migrations.md`.
+- `catalogue/conversions` : `ChampsPrix` = `{ prixCentimes, devise }`, `ChampsDimensions` = millimètres seuls ; `champsDimensionsModifiees` (comparaison à l'ancien texte) et `champsDimensionsExactes` supprimés, les deux routes PUT utilisent `champsDimensions`. `disponibilite` : `champAvailable` supprimé ; `disponibiliteInitiale()` et `disponibiliteRemiseEnVente()` ne prennent plus d'argument. `curation/depot` : brouillon créé sans prix ni dimensions, un champ de dimension n'écrit que sa colonne en millimètres, `envoyerEnCuration` ne relit plus l'état (ligne déjà verrouillée par `verrouillerDepot`) ; `OeuvreVerrouillee` réduite à `{ id, slug }`. `OeuvreAEditer` : `dimensionsLues` fusionné dans `dimensions` (formaté depuis les millimètres, vide sinon), `price` depuis `prixCentimes` seulement.
+- Tests : `tests/anciennes-colonnes.test.ts` (schéma Prisma sans les trois colonnes ; scan statique de `src/` : clés dans les appels `.artwork.*(…)`, sélections `artwork(s): {…}`, objets constants qu'ils nomment, `data.<colonne>`, SQL brut sur `"Artwork"`, avec témoin ; base « après A » simulée en recréant les trois colonnes : dépôt, édition et bascules admin, webhook ne touchent pas les anciennes colonnes). Tests des scripts SQL 2.1/2.2 (recopie, écarts, correction) retirés ; `vendues-sans-commande.sql` garde son test (il ne lit pas les anciennes colonnes).
+- Vérifié : `npx eslint .` (0 erreur), `verifier-exceptions-prisma` (16, aucun ajout), `npm test` (302 verts, PostgreSQL 16 local), `npm run build`, migrations A+B sur base vide puis `prisma migrate diff --exit-code` (« No difference detected »).
+
 ## Spec Change Log
 
 ## Review Triage Log
+
+Revue 1 (blind-hunter, edge-case-hunter, verification-gap), sur le code de l'itération 0.
+
+| # | Source | Constat | Verdict | Route |
+|---|--------|---------|---------|-------|
+| 1 | blind, edge | Retour arrière avant B cassé : après A (`DROP NOT NULL`), le nouveau code crée des œuvres à `dimensions` NULL ; l'ancien client Prisma (`dimensions String`) et `champsDimensionsModifiees` (`texteEnBase.trim()`) ne supportent pas NULL, alors que la matrice gelée exige que le code précédent fonctionne | high — contradiction dans le bloc gelé (A = `DROP NOT NULL` contre « Retour arrière avant B : fonctionne ») | intent_gap |
+| 2 | blind, edge | Fusion avant A : chaque nouveau brouillon échoue (NOT NULL), déjà arrivé pour #29 et #32 | high — même cause que 1 (A doit rendre l'insertion sans `dimensions` possible sans casser l'ancien code) | intent_gap (avec 1) |
+| 3 | blind | Enregistrer une œuvre aux dimensions partielles efface ses millimètres (formulaire prérempli vide, `champsDimensions('')`) | medium — perte silencieuse ; ne réécrire les dimensions que si le texte saisi diffère du prérempli | à reporter dans la ré-implémentation (KEEP) |
+| 4 | verif | La base « après A » des tests recrée `dimensions` nullable à la main au lieu d'exécuter le fichier de A | medium — A pourrait être vide sans échec | à reporter dans la ré-implémentation (KEEP) |
+| 5 | blind | Étape 3 de la procédure : la date de référence des écarts est le déploiement de production, pas A ; `updatedAt` n'est qu'un indice | low — doc | à reporter (KEEP) |
+| 6 | blind | Avertissement « après B » : ajouter l'« Instant Rollback » de Vercel et les préversions des PR ouvertes non rebasées | low — doc | à reporter (KEEP) |
+| 7 | blind, edge | Retour arrière : une œuvre modifiée par le nouveau code garde dans l'ancien formulaire ses anciens prix/dimensions | low — doc (le signaler dans le retour arrière) | à reporter (KEEP) |
+| 8 | blind | En-tête de `dimensions-illisibles.sql` et commentaire de `disponibiliteInitiale` périmés | low — correction directe | à reporter (KEEP) |
+| 9 | blind, edge | Scan statique : chaînes non ignorées (`'image/*'`), constantes d'autres fichiers, objets construits par les fonctions d'aide | low — heuristique, TypeScript couvre les clés après B ; la portée réelle doit être décrite dans le test et AGENTS.md | defer (AGENTS.md) |
+| 10 | blind, verif | Plus aucun test des requêtes de contrôle utilisées avant B | medium (non vérifié) — contrôle manuel unique en lecture seule | defer |
+| 11 | blind | Suppression des scripts 2.1/2.2 non suivie | false — entrée déjà ajoutée à `deferred-work.md` | rejet |
+| 12 | blind | Statuts spec / sprint-status différents | false — synchronisés à l'étape de présentation | rejet |
+| 13 | blind | Tests « après A » sans la route artiste, l'envoi en curation, la curation, les déclarations | low — couverts par TypeScript après B et par les tests existants | rejet |
 
 ## Verification
 
