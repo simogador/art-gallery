@@ -84,3 +84,13 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-9-catalogue-reel.md`
   summary: Tester par un rendu les règles d'affichage de la section `Hero` de l'accueil (chiffres nuls masqués, pas de carte de prix pour une œuvre vendue, motif sans œuvre).
   evidence: medium (non vérifié) ; les tests n'inspectent que les props passées à `Hero`, jamais son rendu ; un rendu sous Node demande de neutraliser `useScroll` de framer-motion. Vérification manuelle en préversion en attendant.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Ajouter les contraintes `CHECK` sur `Artwork` (`prixCentimes > 0`, millimètres ≥ 1, devise de trois lettres) dans une story à part.
+  evidence: décision du porteur du 2026-11-04 (revue de la spec 2.10) : séparer pour qu'une donnée de démonstration non conforme ne fasse pas échouer la suppression des colonnes ; prévoir une requête de contrôle avant la migration.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Supprimer les œuvres et artistes de démonstration (et leurs images Cloudinary, après confirmation des droits) dans une story à part.
+  evidence: décision du porteur du 2026-11-04 : hors 2.10, suppression irréversible touchant expositions, éventuelles commandes et Cloudinary (`docs/images-demonstration.md`).
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Après la migration B de la 2.10, supprimer dans une PR de suivi les scripts SQL de recopie, d'écarts et de correction des stories 2.1 et 2.2 et leurs sections de `docs/migrations.md`.
+  evidence: ces scripts lisent les colonnes supprimées ; ils servent encore aux contrôles juste avant B.

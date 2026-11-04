@@ -22,6 +22,12 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 - Avant B, sur la production : requêtes de contrôle en lecture seule (`dimensions-illisibles.sql`, `prix-non-recopies.sql`, `ecarts-prix-dimensions.sql`, `ecarts-publication-disponibilite.sql`) ; la sauvegarde datée est vérifiée restaurable juste avant (AQ-4).
 - Les scripts SQL de recopie, d'écarts et de correction des stories 2.1 et 2.2 sont supprimés **dans une PR de suivi**, après B ; d'ici là ils restent nécessaires aux contrôles.
 
+**Décisions du porteur (2026-11-04) :**
+- Période de vérification suffisante (2.1 en production depuis le 2026-10-29, 2.2 depuis le 2026-10-30) : B est appliquée dès la fin de cette story, après les contrôles.
+- Dimensions illisibles : si `dimensions-illisibles.sql` liste des œuvres d'artistes avec accord signé, l'équipe complète leurs millimètres à la main avant B ; la perte du texte est acceptée pour les œuvres de démonstration.
+- Contraintes `CHECK` (prix, millimètres, devise) : story à part, hors 2.10.
+- Suppression des œuvres et artistes de démonstration : story à part, hors 2.10.
+
 ## Boundaries & Constraints
 
 **Always:** l'agent fournit le SQL exact de chaque migration, avec la ligne `_prisma_migrations` et l'empreinte SHA-256 ; les types d'affichage (`lib/types` `Artwork.price`, `size`, `CartItem.price`) restent ; textes en français.
@@ -39,13 +45,6 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 | Base migrée A+B | toutes les migrations sur base vide | `prisma migrate diff` sans écart | CI « Migrations » |
 
 </frozen-after-approval>
-
-## Open Questions
-
-1. **Période de vérification** (AC de l'epic : « depuis la période convenue avec le porteur », jamais fixée) : 2.1 est en production depuis le 2026-10-29, 2.2 depuis le 2026-10-30. Options : *suffisante* (on supprime dès la fin de cette story) / *attendre une date* (A et le code peuvent partir, B attend cette date).
-2. **Dimensions illisibles** : si `dimensions-illisibles.sql` liste en production des œuvres sans millimètres, leur texte disparaît avec B. Options : *œuvres réelles complétées à la main avant B, perte acceptée pour la démonstration* (recommandé) / *bloquer B tant que la liste n'est pas vide*.
-3. **Contraintes `CHECK`** reportées par la 2.1 « avec la story 2.10 » (`prixCentimes > 0`, millimètres ≥ 1, devise de trois lettres) : *à part* (recommandé : risque de refus sur des données de démonstration, story suivante) / *dans cette story* (requête de contrôle préalable, migration A).
-4. **Données de démonstration** (« story 2.10 ou à part », décision du 2026-11-04) : *à part* (recommandé : suppression irréversible, droits Cloudinary à confirmer) / *dans cette story*.
 
 ## Code Map
 
