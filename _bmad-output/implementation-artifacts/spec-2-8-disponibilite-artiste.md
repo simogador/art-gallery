@@ -2,8 +2,9 @@
 title: 'Story 2.8 — L''artiste tient la disponibilité de ses œuvres'
 type: 'feature'
 created: '2026-11-04'
-status: 'draft'
+status: 'in-progress'
 route: 'dispatch'
+baseline_commit: 'd7279208563344d6b6c4980c6fd606630c3771b4'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-2-7-curation-par-l-equipe.md', '{project-root}/docs/migrations.md']
 ---
