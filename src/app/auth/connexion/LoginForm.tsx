@@ -186,19 +186,6 @@ function DecorativePanel({ title, subtitle }: { title: string; subtitle: string 
         </p>
       </div>
 
-      {/* Bottom — Stats */}
-      <div className="relative z-10 flex items-center gap-8 pt-8 border-t border-neutral-800">
-        {[
-          { value: '5',  label: 'Artistes' },
-          { value: '8',  label: 'Œuvres' },
-          { value: '3',  label: 'Expositions' },
-        ].map(({ value, label }) => (
-          <div key={label}>
-            <p className="font-serif text-2xl font-light text-background leading-none">{value}</p>
-            <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-600 mt-1">{label}</p>
-          </div>
-        ))}
-      </div>
     </motion.div>
   )
 }

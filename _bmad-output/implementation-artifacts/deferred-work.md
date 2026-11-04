@@ -80,3 +80,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-8-disponibilite-artiste.md`
   summary: Vérifier la remise en vente d'une œuvre publiée par l'ancien chemin (sans photos ni engagements du dépôt).
   evidence: non vérifié ; la page de curation suppose les données du dépôt.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-9-catalogue-reel.md`
+  summary: Tester par un rendu les règles d'affichage de la section `Hero` de l'accueil (chiffres nuls masqués, pas de carte de prix pour une œuvre vendue, motif sans œuvre).
+  evidence: medium (non vérifié) ; les tests n'inspectent que les props passées à `Hero`, jamais son rendu ; un rendu sous Node demande de neutraliser `useScroll` de framer-motion. Vérification manuelle en préversion en attendant.

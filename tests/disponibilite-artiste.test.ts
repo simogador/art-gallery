@@ -187,6 +187,8 @@ describe('base : disponibilité tenue par l’artiste', () => {
     it('retirer : `retiree`, la fiche publique redirige (301) vers la page de l’artiste', async () => {
       const { declarerDisponibilite } = await dispo()
       await oeuvre('aube', 'publiee', 'disponible')
+      // Story 2.9 : la redirection suppose une page artiste publique (une autre œuvre visible).
+      await oeuvre('autre-visible', 'publiee', 'disponible')
       expect(await declarerDisponibilite(ARTISTE as never, 'aube', 'retiree')).toMatchObject({ ok: true })
       expect(await etat('aube')).toMatchObject({ publication: 'publiee', disponibilite: 'retiree', available: false })
       const { default: Fiche } = await import('@/app/galerie/[id]/page')

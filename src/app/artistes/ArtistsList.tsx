@@ -23,12 +23,19 @@ const fadeUpVariants = {
 
 interface Props {
   artists: Artist[]
+  /** Nombre réel d'expositions visibles (une exposition à plusieurs artistes compte une fois). */
+  exhibitionsCount: number
 }
 
-export function ArtistsList({ artists }: Props) {
+export function ArtistsList({ artists, exhibitionsCount }: Props) {
   const disciplines = ['Tous', ...Array.from(new Set(artists.map((a) => a.discipline)))]
   const totalWorks = artists.reduce((s, a) => s + a.worksCount, 0)
-  const totalExhibitions = artists.reduce((s, a) => s + a.exhibitions, 0)
+  // Story 2.9 : chiffres réels, masqués quand ils valent zéro.
+  const stats = [
+    { value: artists.length,   label: 'Artistes' },
+    { value: totalWorks,       label: 'Œuvres' },
+    { value: exhibitionsCount, label: 'Expositions' },
+  ].filter(({ value }) => value > 0)
 
   const [activeFilter, setActiveFilter] = useState('Tous')
 
@@ -71,21 +78,19 @@ export function ArtistsList({ artists }: Props) {
           </motion.p>
 
           {/* Global stats */}
-          <motion.div
-            variants={fadeUpVariants}
-            className="flex items-center gap-10 mt-10 pt-8 border-t border-neutral-200"
-          >
-            {[
-              { value: String(artists.length),    label: 'Artistes' },
-              { value: `${totalWorks}+`,           label: 'Œuvres' },
-              { value: String(totalExhibitions),   label: 'Expositions' },
-            ].map(({ value, label }) => (
-              <div key={label} className="flex flex-col">
-                <span className="font-serif text-3xl font-light text-foreground leading-none">{value}</span>
-                <span className="font-sans text-xs uppercase tracking-widest text-neutral-400 mt-1">{label}</span>
-              </div>
-            ))}
-          </motion.div>
+          {stats.length > 0 && (
+            <motion.div
+              variants={fadeUpVariants}
+              className="flex items-center gap-10 mt-10 pt-8 border-t border-neutral-200"
+            >
+              {stats.map(({ value, label }) => (
+                <div key={label} className="flex flex-col">
+                  <span className="font-serif text-3xl font-light text-foreground leading-none">{value}</span>
+                  <span className="font-sans text-xs uppercase tracking-widest text-neutral-400 mt-1">{label}</span>
+                </div>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
       </section>
 
@@ -133,12 +138,21 @@ export function ArtistsList({ artists }: Props) {
             })}
           </motion.div>
 
-          {/* Grid */}
-          <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-            {filtered.map((artist, i) => (
-              <ArtistCard key={artist.id} artist={artist} index={i} />
-            ))}
-          </motion.div>
+          {/* Grid ; story 2.9 : sans artiste visible (accord signé et œuvre publiée), l'état vide. */}
+          {artists.length > 0 ? (
+            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+              {filtered.map((artist, i) => (
+                <ArtistCard key={artist.id} artist={artist} index={i} />
+              ))}
+            </motion.div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-neutral-200 rounded-sm">
+              <p className="font-serif text-xl font-light text-neutral-400">Les artistes arrivent bientôt</p>
+              <p className="font-sans text-sm text-neutral-400 mt-2 max-w-sm text-pretty">
+                Nous présenterons ici les artistes de la galerie dès la publication de leurs premières œuvres.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

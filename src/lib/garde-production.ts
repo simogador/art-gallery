@@ -50,11 +50,17 @@ export function identifiantBase(url: string | undefined): string | null {
 
 let avertissementEmis = false
 
+// DATABASE_URL vise-t-elle l'endpoint DATABASE_PRODUCTION_ID ? null si cette variable est absente.
+function viseProduction(env: Record<string, string | undefined>): boolean | null {
+  const idProduction = normaliser(env.DATABASE_PRODUCTION_ID ?? '')
+  return idProduction === null ? null : identifiantBase(env.DATABASE_URL) === idProduction
+}
+
 export function ecritureInterdite(env: Record<string, string | undefined> = process.env): boolean {
   if (env.VERCEL_ENV === 'production') return false
 
-  const idProduction = normaliser(env.DATABASE_PRODUCTION_ID ?? '')
-  if (!idProduction) {
+  const vise = viseProduction(env)
+  if (vise === null) {
     if (!avertissementEmis) {
       avertissementEmis = true
       console.warn(
@@ -64,7 +70,27 @@ export function ecritureInterdite(env: Record<string, string | undefined> = proc
     return false
   }
 
-  return identifiantBase(env.DATABASE_URL) === idProduction
+  return vise
+}
+
+export class AmorcageProductionInterdit extends Error {
+  readonly code = 'amorcage_production_interdit'
+
+  constructor() {
+    super(
+      'Amorçage refusé : la base visée est la production (VERCEL_ENV=production ou DATABASE_URL sur DATABASE_PRODUCTION_ID). Utilisez votre propre base ou branche Neon.',
+    )
+    this.name = 'AmorcageProductionInterdit'
+  }
+}
+
+/**
+ * Amorçage (`prisma db seed`, `npm run db:seed`, story 2.9) : refusé sur la production, même depuis l'environnement de
+ * production (contrairement aux écritures de l'application), et dès que DATABASE_URL vise l'endpoint
+ * DATABASE_PRODUCTION_ID.
+ */
+export function amorcageInterdit(env: Record<string, string | undefined> = process.env): boolean {
+  return env.VERCEL_ENV === 'production' || viseProduction(env) === true
 }
 
 // Client en lecture seule : toute écriture lève EcritureProductionInterdite.

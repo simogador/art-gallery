@@ -2,7 +2,7 @@
 title: 'Story 2.9 — Catalogue réel uniquement'
 type: 'feature'
 created: '2026-11-04'
-status: 'in-progress'
+status: 'done'
 route: 'dispatch'
 review_loop_iteration: 0
 baseline_commit: 'fdf69ac85a7a8b6b85d7b5fcad2818e8c262a993'
@@ -60,13 +60,13 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/lib/disponibilite/etats.ts`, `src/lib/catalogue/*` -- règle de visibilité avec accord, artistes et expositions publics filtrés.
-- [ ] `src/components/sections/*`, `src/lib/utils/*`, pages publiques -- lecture par `catalogue`, états vides, plus de valeurs inventées.
-- [ ] `src/data/` -- suppression.
-- [ ] `prisma/seed.ts` -- plus de catalogue de démonstration, refus en production.
-- [ ] `docs/images-demonstration.md` -- liste des images Cloudinary de démonstration.
-- [ ] `tests/catalogue-reel.test.ts` -- matrice, aucun import de `src/data`, états vides.
-- [ ] `AGENTS.md` -- règle de visibilité.
+- [x] `src/lib/disponibilite/etats.ts`, `src/lib/catalogue/*` -- règle de visibilité avec accord, artistes et expositions publics filtrés.
+- [x] `src/components/sections/*`, `src/lib/utils/*`, pages publiques -- lecture par `catalogue`, états vides, plus de valeurs inventées.
+- [x] `src/data/` -- suppression.
+- [x] `prisma/seed.ts` -- plus de catalogue de démonstration, refus en production.
+- [x] `docs/images-demonstration.md` -- liste des images Cloudinary de démonstration.
+- [x] `tests/catalogue-reel.test.ts` -- matrice, aucun import de `src/data`, états vides.
+- [x] `AGENTS.md` -- règle de visibilité.
 
 **Acceptance Criteria:**
 - Given le dépôt, when on cherche `@/data` dans `src/`, then il n'y a aucun résultat et le dossier `src/data/` n'existe plus.
@@ -74,9 +74,42 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 
 ## Implementation Notes
 
+- Règle dans `disponibilite/etats.ts` : `ARTISTE_ACCORD` (`accordSigneLe` non nul, `active`), intégré à `VISIBLE` (`artist: ARTISTE_ACCORD`) ; `ARTISTE_VISIBLE` (accord + `artworks: { some: VISIBLE }`) et `EXPOSITION_VISIBLE` (`artworks: { some: { artwork: VISIBLE } }`) ; `estVisible` reçoit désormais `artist` (`CHAMPS_ARTISTE_ACCORD`), prédicat `aUnAccord`. `DISPONIBLE`/`estDisponible` restent l'axe disponibilité seul (ils alimentent `champAvailable`, qui ne doit pas changer) ; le checkout exige `estDisponible` **et** `estVisible`, même message « n'est plus disponible ». Appelants mis à jour : catalogue (galerie, fiches, artistes, expositions, liées), espace artiste (`visible`), page admin d'une œuvre (lien « Voir »), checkout. `getArtistArtworksBySlug` passe par `AND` (un `artist` voisin de `...VISIBLE` écraserait la condition d'accord).
+- Œuvre retirée : redirection 301 vers l'artiste seulement si sa page est publique (`ARTISTE_VISIBLE` : accord, actif, une autre œuvre visible) ; sinon la fiche répond 404, jamais de redirection vers une page artiste en 404.
+- Accueil : `src/app/page.tsx` (serveur) lit `accueilPublic()` (`catalogue/accueil.ts`) ; `Hero`, `Gallery`, `Artists`, `Exhibitions` reçoivent leurs données en props. Œuvre mise en avant : coup de cœur disponible, sinon première disponible, sinon première visible ; carte de prix seulement si disponible ; badge « Exposition en cours » seulement si une exposition visible est en cours ; chiffres nuls masqués. Sans œuvre visible, la collection affiche « La collection arrive bientôt » ; sections artistes et expositions vides masquées.
+- États vides : galerie (« La collection arrive bientôt », sans « Réinitialiser »), artistes (« Les artistes arrivent bientôt »), expositions (« Aucune exposition n'est programmée pour le moment. ») ; chiffres nuls masqués, « 340+ » et le « + » de la page artistes retirés. Panneau de connexion : chiffres codés en dur retirés.
+- `src/data/`, `lib/utils/artists.ts`, `lib/utils/exhibitions.ts` supprimés ; `lib/utils/artworks.ts` ne garde que `formatPrice`.
+- Seed : plus aucune écriture ; `amorcageInterdit` / `AmorcageProductionInterdit` (`garde-production`) refusent `VERCEL_ENV=production` et une `DATABASE_URL` sur `DATABASE_PRODUCTION_ID` ; `prisma.config.ts` déclare `migrations.seed` (`tsx prisma/seed.ts`, Prisma ne passe pas par un shell : `scripts/verifier-base.ts` reste lancé par `npm run db:seed` seul). Décision du porteur du 2026-11-04 consignée dans `docs/decisions-porteur.md`. `prisma/seed.ts` sort de `eslint/exceptions-prisma.cjs` (16 au lieu de 17).
+- `docs/images-demonstration.md` : huit images (`errancy/artworks/<slug>`, compte `djiu4tirq`) et requête de contrôle en lecture seule ; aucune suppression.
+- Vérifié : `npx eslint .` (0 erreur), `verifier-exceptions-prisma` (aucun ajout), `npm test` (301 verts, PostgreSQL 16 local), `npm run build`, et `next start` sur une base locale migrée (œuvre de démonstration absente de l'accueil et de la galerie, fiche et page artiste en 404 ; œuvre réelle visible ; états vides après effacement de l'accord).
+
 ## Spec Change Log
 
 ## Review Triage Log
+
+Revue 1 (trois relecteurs : blind-hunter, edge-case-hunter, verification-gap).
+
+| # | Source | Constat | Verdict | Route |
+|---|--------|---------|---------|-------|
+| 1 | blind | `sprint-status` à `in-progress`, spec à `in-review` | false — la synchronisation du suivi se fait à l'étape de présentation (passage en `review`) | rejet |
+| 2 | blind, edge | rangées de chiffres vides (`ArtistsList`, `GalleryPage`, `ExhibitionsList`) : filet `border-t` orphelin quand tout vaut zéro | low — visible sur chaque page vide, correction directe (ne rendre le conteneur que s'il reste un chiffre) | patch |
+| 3 | blind | `ArtistsList` : état vide affiché sous la grille vide au lieu de la remplacer | low — marges en trop, correction directe (ternaire) | patch |
+| 4 | blind | `ArtistsList` : « Expositions » = somme par artiste, une exposition à deux artistes compte double | medium — chiffre public faux alors que la story annonce des chiffres réels | patch |
+| 5 | blind | `ExhibitionsList` vide : « Aucune exposition » puis « Aucune exposition n'est programmée… », onglets vides | low — redondance visible, correction directe du titre | patch |
+| 6 | blind, edge | œuvre publiée d'un artiste sans accord ou inactif : « Publiée » affiché à l'artiste et à l'admin, lien « Voir » disparu sans raison | medium — conséquence directe de la nouvelle règle, aucune explication | patch (mention courte) |
+| 7 | blind | panier local garde des œuvres devenues invisibles | false — la matrice prévoit le refus au paiement (règle existante), Lot 2 fermé | rejet |
+| 8 | blind | accueil charge tout le catalogue à chaque requête | low — catalogue minuscule, même schéma que `/galerie` ; correction non directe | rejet |
+| 9 | blind, edge | commentaire de `prisma.config.ts` : `prisma db seed` ne lance pas `verifier-base.ts` contrairement à `db:seed` | low — commentaire inexact, correction directe | patch |
+| 10 | blind | README demande encore `db:seed` | false — le README a été mis à jour (aucun catalogue, zones par SQL) | rejet |
+| 11 | blind | `amorcageInterdit` recopie la comparaison d'endpoint de `ecritureInterdite` | low — divergence future si l'analyse de l'URL change ; extraction directe | patch |
+| 12 | blind, edge | test du seed dépendant de `.env.local` (dotenv du script enfant) | low — échec local possible selon le fichier du développeur ; correction directe | patch |
+| 13 | blind | décision du porteur du 2026-11-04 absente de `docs/decisions-porteur.md` (« à purger ») | low — registre des décisions incomplet ; ajout d'une ligne | patch |
+| 14 | blind | `<Link><Button>` dans `Hero` | low — même schéma déjà employé 5 fois dans les sections ; corriger demande de refondre `Button` | rejet |
+| 15 | blind | filet décoratif vide dans `LoginForm` | low — suppression directe | patch |
+| 16 | edge | `artisteDOeuvreRetiree` : redirection permanente vers une page artiste en 404 si l'artiste n'a plus d'œuvre visible | medium — 308 mise en cache vers une 404 | patch (`ARTISTE_VISIBLE`) |
+| 17 | verif, blind | `oeuvreMiseEnAvant` et badge « Exposition en cours » non distingués d'une règle plus simple par les tests | medium — l'accueil pourrait mettre en avant une œuvre vendue sans échec de test | patch (tests) |
+| 18 | verif | règles d'affichage de `Hero` jamais rendues en test | medium (non vérifié) — rendu sous Node avec framer-motion à étudier ; contrôle manuel en préversion | defer |
+| 19 | verif, blind | `getRelatedArtworks`, `getExhibitionArtistsBySlug`, redirection 301 conservée : pas de test avec le catalogue mixte | medium — une fuite de la démonstration ne ferait échouer aucun test | patch (tests) |
 
 ## Verification
 

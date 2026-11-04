@@ -1,15 +1,24 @@
 'use client'
 
 import { useRef } from 'react'
+import Link from 'next/link'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { Button, Badge } from '@/components/ui'
+import { Button, Badge, ArtworkImage } from '@/components/ui'
 import { cn } from '@/lib/utils/cn'
+import { formatPrice } from '@/lib/utils/artworks'
+import type { Artwork } from '@/lib/types'
 
-const STATS = [
-  { value: '340+', label: 'Œuvres' },
-  { value: '60',   label: 'Artistes' },
-  { value: '12',   label: 'Expositions' },
-] as const
+// Story 2.9 : chiffres et œuvre mise en avant viennent du catalogue réel (props de la page
+// d'accueil) ; un chiffre nul n'est pas affiché, et sans œuvre visible la légende disparaît.
+export type ChiffresHero = { oeuvres: number; artistes: number; expositions: number }
+
+function statistiques({ oeuvres, artistes, expositions }: ChiffresHero) {
+  return [
+    { value: oeuvres,     label: oeuvres > 1 ? 'Œuvres' : 'Œuvre' },
+    { value: artistes,    label: artistes > 1 ? 'Artistes' : 'Artiste' },
+    { value: expositions, label: expositions > 1 ? 'Expositions' : 'Exposition' },
+  ].filter((s) => s.value > 0)
+}
 
 /* ─── Animation variants ──────────────────────────────────────────────────── */
 
@@ -46,7 +55,14 @@ const imageVariants = {
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 
-export function Hero() {
+interface HeroProps {
+  oeuvre:            Artwork | null
+  chiffres:          ChiffresHero
+  expositionEnCours: boolean
+}
+
+export function Hero({ oeuvre, chiffres, expositionEnCours }: HeroProps) {
+  const stats = statistiques(chiffres)
   const sectionRef = useRef<HTMLElement>(null)
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end start'] })
 
@@ -76,10 +92,12 @@ export function Hero() {
             animate="visible"
             className="flex flex-col"
           >
-            {/* Badge */}
-            <motion.div variants={fadeInVariants}>
-              <Badge variant="gold" dot label="Exposition en cours" className="mb-8" />
-            </motion.div>
+            {/* Badge : seulement si une exposition visible est en cours. */}
+            {expositionEnCours && (
+              <motion.div variants={fadeInVariants}>
+                <Badge variant="gold" dot label="Exposition en cours" className="mb-8" />
+              </motion.div>
+            )}
 
             {/* Headline */}
             <motion.h1
@@ -111,23 +129,29 @@ export function Hero() {
               variants={fadeUpVariants}
               className="flex flex-col sm:flex-row gap-3 mt-10"
             >
-              <Button variant="primary" size="lg" rightIcon={<ArrowIcon />}>
-                Explorer la galerie
-              </Button>
-              <Button variant="ghost" size="lg">
-                Rencontrer les artistes
-              </Button>
+              <Link href="/galerie">
+                <Button variant="primary" size="lg" rightIcon={<ArrowIcon />}>
+                  Explorer la galerie
+                </Button>
+              </Link>
+              <Link href="/artistes">
+                <Button variant="ghost" size="lg">
+                  Rencontrer les artistes
+                </Button>
+              </Link>
             </motion.div>
 
-            {/* Stats */}
-            <motion.div
-              variants={fadeInVariants}
-              className="flex items-center gap-8 mt-14 pt-8 border-t border-neutral-200"
-            >
-              {STATS.map(({ value, label }, i) => (
-                <StatItem key={label} value={value} label={label} index={i} />
-              ))}
-            </motion.div>
+            {/* Stats : chiffres réels, masqués quand ils valent zéro. */}
+            {stats.length > 0 && (
+              <motion.div
+                variants={fadeInVariants}
+                className="flex items-center gap-8 mt-14 pt-8 border-t border-neutral-200"
+              >
+                {stats.map(({ value, label }, i) => (
+                  <StatItem key={label} value={String(value)} label={label} index={i} />
+                ))}
+              </motion.div>
+            )}
           </motion.div>
 
           {/* ── Right: Image ── */}
@@ -147,55 +171,74 @@ export function Hero() {
                 'aspect-[3/4] md:aspect-[4/5]',
                 'bg-neutral-200',
               )}>
-                {/* Placeholder art image */}
-                <div className="absolute inset-0 bg-gradient-to-br from-neutral-100 via-neutral-200 to-neutral-300" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <ArtPlaceholder />
-                </div>
+                {oeuvre ? (
+                  <ArtworkImage
+                    imageUrl={oeuvre.imageUrl}
+                    title={oeuvre.title}
+                    gradient={oeuvre.gradient}
+                    accentColor={oeuvre.accentColor}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority
+                  />
+                ) : (
+                  <>
+                    {/* Sans œuvre visible : motif décoratif seul. */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-neutral-100 via-neutral-200 to-neutral-300" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <ArtPlaceholder />
+                    </div>
+                  </>
+                )}
                 {/* Image overlay gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 via-transparent to-transparent" />
               </div>
 
-              {/* Artwork caption */}
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.2, duration: 0.5 }}
-                className={cn(
-                  'absolute bottom-4 left-4 right-4',
-                  'bg-background/90 backdrop-blur-sm',
-                  'border border-neutral-200',
-                  'rounded-sm px-4 py-3',
-                )}
-              >
-                <p className="font-serif text-sm font-light text-foreground">
-                  <em>Lumière Dorée</em>
-                  {' — '}
-                  <span className="text-neutral-500 font-sans text-xs">Sophie Marceau, 2024</span>
-                </p>
-                <p className="font-sans text-xs text-gold mt-0.5 uppercase tracking-widest">
-                  Huile sur toile · 120 × 90 cm
-                </p>
-              </motion.div>
+              {/* Artwork caption : œuvre réelle mise en avant. */}
+              {oeuvre && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.2, duration: 0.5 }}
+                  className={cn(
+                    'absolute bottom-4 left-4 right-4',
+                    'bg-background/90 backdrop-blur-sm',
+                    'border border-neutral-200',
+                    'rounded-sm px-4 py-3',
+                  )}
+                >
+                  <Link href={`/galerie/${oeuvre.id}`} className="block">
+                    <p className="font-serif text-sm font-light text-foreground">
+                      <em>{oeuvre.title}</em>
+                      {' — '}
+                      <span className="text-neutral-500 font-sans text-xs">{oeuvre.artist}, {oeuvre.year}</span>
+                    </p>
+                    <p className="font-sans text-xs text-gold mt-0.5 uppercase tracking-widest">
+                      {oeuvre.technique}{oeuvre.size ? ` · ${oeuvre.size}` : ''}
+                    </p>
+                  </Link>
+                </motion.div>
+              )}
             </motion.div>
 
-            {/* Floating accent card */}
-            <motion.div
-              initial={{ opacity: 0, x: 20, y: -10 }}
-              animate={{ opacity: 1, x: 0, y: 0 }}
-              transition={{ delay: 1, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className={cn(
-                'absolute -top-6 -right-4 md:-right-8 z-20',
-                'bg-foreground text-background',
-                'rounded-sm px-4 py-3',
-                'shadow-premium-lg',
-              )}
-            >
-              <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-400 mb-0.5">
-                Pièce du mois
-              </p>
-              <p className="font-serif text-lg font-light leading-tight">12 400 €</p>
-            </motion.div>
+            {/* Floating accent card : prix de l'œuvre mise en avant, si elle est disponible. */}
+            {oeuvre && !oeuvre.sold && oeuvre.price > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: 20, y: -10 }}
+                animate={{ opacity: 1, x: 0, y: 0 }}
+                transition={{ delay: 1, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className={cn(
+                  'absolute -top-6 -right-4 md:-right-8 z-20',
+                  'bg-foreground text-background',
+                  'rounded-sm px-4 py-3',
+                  'shadow-premium-lg',
+                )}
+              >
+                <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-400 mb-0.5">
+                  À la une
+                </p>
+                <p className="font-serif text-lg font-light leading-tight">{formatPrice(oeuvre.price)}</p>
+              </motion.div>
+            )}
 
             {/* Background decorative square */}
             <div className="absolute -bottom-6 -left-6 w-2/3 h-2/3 bg-neutral-100 rounded-sm -z-10" />

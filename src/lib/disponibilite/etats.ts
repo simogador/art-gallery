@@ -14,11 +14,42 @@ export type EtatOeuvre = { publication: Publication | null; disponibilite: Dispo
 /** Fragment de `select` : les colonnes nécessaires aux prédicats ci-dessous. */
 export const CHAMPS_ETAT = { publication: true, disponibilite: true } as const
 
-/** Visible : publiée et non retirée. Les colonnes vides ne sont jamais visibles. */
+/**
+ * Artiste dont les œuvres peuvent être visibles (FR-16, story 2.9) : accord écrit signé enregistré
+ * (`accordSigneLe`) et fiche active. Sans accord (catalogue de démonstration, accord effacé), aucune
+ * de ses œuvres n'est visible, quel que soit leur état.
+ */
+export type ArtisteAccord = { accordSigneLe: Date | null; active: boolean }
+
+/** Fragment de `select` de l'artiste : les colonnes nécessaires à estVisible. */
+export const CHAMPS_ARTISTE_ACCORD = { accordSigneLe: true, active: true } as const
+
+/** Fragment de requête sur l'artiste : accord signé et fiche active. */
+export const ARTISTE_ACCORD = {
+  accordSigneLe: { not: null },
+  active: true,
+} satisfies Prisma.ArtistWhereInput
+
+/**
+ * Visible : publiée, non retirée, et son artiste a un accord signé et est actif (story 2.9).
+ * Les colonnes vides ne sont jamais visibles.
+ */
 export const VISIBLE = {
   publication: 'publiee',
   disponibilite: { in: ['disponible', 'reservee', 'vendue', 'vendue_ailleurs'] },
+  artist: ARTISTE_ACCORD,
 } satisfies Prisma.ArtworkWhereInput
+
+/** Artiste visible publiquement (liste, page, accueil) : accord signé, actif, au moins une œuvre visible. */
+export const ARTISTE_VISIBLE = {
+  ...ARTISTE_ACCORD,
+  artworks: { some: VISIBLE },
+} satisfies Prisma.ArtistWhereInput
+
+/** Exposition visible publiquement : au moins une œuvre visible. */
+export const EXPOSITION_VISIBLE = {
+  artworks: { some: { artwork: VISIBLE } },
+} satisfies Prisma.ExhibitionWhereInput
 
 /** Disponible : publiée et disponible à la vente. */
 export const DISPONIBLE = {
@@ -41,8 +72,14 @@ export const EN_CURATION = { publication: 'en_curation' } satisfies Prisma.Artwo
 /** Publiée (axe publication seul) : comptages de l'administration. */
 export const PUBLIEE = { publication: 'publiee' } satisfies Prisma.ArtworkWhereInput
 
-export function estVisible(e: EtatOeuvre): boolean {
-  return e.publication === 'publiee' && e.disponibilite !== null && e.disponibilite !== 'retiree'
+/** Accord signé enregistré et fiche active : condition d'artiste de « visible » (story 2.9). */
+export function aUnAccord(a: ArtisteAccord): boolean {
+  return a.accordSigneLe !== null && a.active
+}
+
+/** Visible : publiée, non retirée, artiste avec accord signé et actif (même règle que VISIBLE). */
+export function estVisible(e: EtatOeuvre & { artist: ArtisteAccord }): boolean {
+  return e.publication === 'publiee' && e.disponibilite !== null && e.disponibilite !== 'retiree' && aUnAccord(e.artist)
 }
 
 export function estDisponible(e: EtatOeuvre): boolean {

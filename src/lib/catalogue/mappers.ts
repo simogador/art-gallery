@@ -166,3 +166,10 @@ export function mapExhibition(e: DbExhibition): Exhibition {
     accentColor: accent(e.slug),
   }
 }
+
+/* ── Accueil (story 2.9) ────────────────────────────────────────────────── */
+
+/** Œuvre mise en avant : coup de cœur encore disponible, sinon la première disponible, sinon la première visible. */
+export function oeuvreMiseEnAvant(oeuvres: Artwork[]): Artwork | null {
+  return oeuvres.find((o) => o.featured && !o.sold) ?? oeuvres.find((o) => !o.sold) ?? oeuvres[0] ?? null
+}

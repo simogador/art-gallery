@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { Button, Badge } from '@/components/ui'
-import { ARTWORKS } from '@/data/artworks'
 import type { Artwork, ArtMedium } from '@/lib/types'
 
 const FILTERS: ArtMedium[] = ['Tout', 'Peinture', 'Sculpture', 'Photographie', 'Art numérique']
@@ -32,21 +31,22 @@ const cardVariants = {
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 
-export function Gallery() {
+// Story 2.9 : œuvres visibles du catalogue réel, lues par la page d'accueil.
+export function Gallery({ artworks }: { artworks: Artwork[] }) {
   const [activeFilter, setActiveFilter] = useState<ArtMedium>('Tout')
   const [showAll,      setShowAll]      = useState(false)
   const [hovered,      setHovered]      = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     const list = activeFilter === 'Tout'
-      ? ARTWORKS
-      : ARTWORKS.filter((a) => a.medium === activeFilter)
+      ? artworks
+      : artworks.filter((a) => a.medium === activeFilter)
     return showAll ? list : list.slice(0, VISIBLE_DEFAULT)
-  }, [activeFilter, showAll])
+  }, [artworks, activeFilter, showAll])
 
   const totalForFilter = activeFilter === 'Tout'
-    ? ARTWORKS.length
-    : ARTWORKS.filter((a) => a.medium === activeFilter).length
+    ? artworks.length
+    : artworks.filter((a) => a.medium === activeFilter).length
 
   const handleFilter = (f: ArtMedium) => {
     setActiveFilter(f)
@@ -78,12 +78,25 @@ export function Gallery() {
           </p>
         </motion.div>
 
+        {/* ── État vide : aucune œuvre visible ── */}
+        {artworks.length === 0 ? (
+          <motion.div
+            variants={headerVariants}
+            className="py-24 flex flex-col items-center gap-3 text-center border border-dashed border-neutral-200 rounded-sm"
+          >
+            <p className="font-serif text-2xl font-light text-neutral-400">La collection arrive bientôt</p>
+            <p className="font-sans text-sm text-neutral-400 max-w-sm text-pretty">
+              Les premières œuvres de nos artistes sont en cours de sélection. Revenez nous voir très vite.
+            </p>
+          </motion.div>
+        ) : (
+        <>
         {/* ── Filters ── */}
         <motion.div variants={headerVariants} className="flex items-center gap-2 flex-wrap mb-10">
           {FILTERS.map((filter) => {
             const count = filter === 'Tout'
-              ? ARTWORKS.length
-              : ARTWORKS.filter((a) => a.medium === filter).length
+              ? artworks.length
+              : artworks.filter((a) => a.medium === filter).length
             const isActive = activeFilter === filter
 
             return (
@@ -156,6 +169,8 @@ export function Gallery() {
             </Link>
           </div>
         </motion.div>
+        </>
+        )}
       </motion.div>
     </section>
   )

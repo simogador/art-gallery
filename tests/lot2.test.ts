@@ -27,7 +27,8 @@ vi.mock('@/lib/prisma', () => ({
           devise: 'EUR',
           year: 2020,
           medium: 'Huile',
-          artist: { name: 'Artiste' },
+          // Story 2.9 : accord signé, sinon l'œuvre n'est pas visible et le paiement la refuse.
+          artist: { name: 'Artiste', accordSigneLe: new Date('2026-11-01'), active: true },
         },
       ]),
     },
@@ -122,7 +123,7 @@ describe('chemin d’achat actuel', () => {
       const { prisma } = await import('@/lib/prisma')
       vi.mocked(prisma.artwork.findMany).mockResolvedValueOnce([
         { slug: 'oeuvre-1', title: 'Œuvre 1', available: true, publication: 'publiee', disponibilite: 'disponible', price: 1200, prixCentimes: null, devise: 'EUR',
-          year: 2020, medium: 'Huile', artist: { name: 'Artiste' } },
+          year: 2020, medium: 'Huile', artist: { name: 'Artiste', accordSigneLe: new Date('2026-11-01'), active: true } },
       ] as never)
       const { POST } = await import('@/app/api/checkout/route')
       const reponse = await POST(requetePanier() as never)

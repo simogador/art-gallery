@@ -8,7 +8,7 @@ import { ToggleAction } from '@/components/dashboard/ToggleAction'
 import { acteurCourant } from '@/lib/acces'
 import { basculesPublication, oeuvreACurer } from '@/lib/curation'
 import { PageCuration } from './PageCuration'
-import { basculePossible, estMarqueeDisponible, estPubliee, estRecopiee, estVisible, libelleEtat } from '@/lib/disponibilite'
+import { CHAMPS_ARTISTE_ACCORD, aUnAccord, basculePossible, estMarqueeDisponible, estPubliee, estRecopiee, estVisible, libelleEtat } from '@/lib/disponibilite'
 
 interface Props { params: Promise<{ slug: string }> }
 
@@ -29,7 +29,7 @@ export default async function AdminEditOeuvrePage({ params }: Props) {
   if (aCurer.ok) return <PageCuration oeuvre={aCurer.oeuvre} />
   const artwork  = await prisma.artwork.findUnique({
     where:  { slug },
-    include: { artist: { select: { name: true, slug: true } } },
+    include: { artist: { select: { name: true, slug: true, ...CHAMPS_ARTISTE_ACCORD } } },
   })
   if (!artwork) notFound()
   // Story 2.7 : bascule « Publiée / Brouillon » seulement là où definirPublication l'accepte.
@@ -57,6 +57,12 @@ export default async function AdminEditOeuvrePage({ params }: Props) {
             <p className="font-sans text-sm text-neutral-400 mt-1">
               {artwork.artist.name} · {artwork.year}
             </p>
+            {/* Story 2.9 : publiée mais masquée à cause de l'artiste (accord, fiche inactive). */}
+            {estPubliee(artwork) && !aUnAccord(artwork.artist) && (
+              <p className="font-sans text-sm text-neutral-600 mt-2">
+                Masquée du site public : accord signé non enregistré ou artiste inactif.
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-3">

@@ -47,6 +47,13 @@ export function ExhibitionsList({ exhibitions }: Props) {
     'passee':   exhibitions.filter((e) => e.status === 'passee').length,
   }
 
+  // Story 2.9 : compteurs nuls masqués, rangée absente s'il n'en reste aucun.
+  const compteurs = ([
+    { label: 'En cours', count: counts['en-cours'], variant: 'gold'    as const },
+    { label: 'À venir',  count: counts['a-venir'],  variant: 'default' as const },
+    { label: 'Passées',  count: counts['passee'],   variant: 'dark'    as const },
+  ]).filter(({ count }) => count > 0)
+
   const [activeTab, setActiveTab] = useState<FilterTab>('toutes')
 
   const filtered   = activeTab === 'toutes' ? exhibitions : exhibitions.filter((e) => e.status === activeTab)
@@ -89,21 +96,19 @@ export function ExhibitionsList({ exhibitions }: Props) {
           </motion.p>
 
           {/* Status counters */}
-          <motion.div
-            variants={fadeUpVariants}
-            className="flex flex-wrap items-center gap-8 mt-10 pt-8 border-t border-neutral-200"
-          >
-            {([
-              { label: 'En cours', count: counts['en-cours'], variant: 'gold'    as const },
-              { label: 'À venir',  count: counts['a-venir'],  variant: 'default' as const },
-              { label: 'Passées',  count: counts['passee'],   variant: 'dark'    as const },
-            ]).map(({ label, count, variant }) => (
-              <div key={label} className="flex items-center gap-3">
-                <Badge variant={variant} dot label={label} />
-                <span className="font-serif text-2xl font-light text-foreground leading-none">{count}</span>
-              </div>
-            ))}
-          </motion.div>
+          {compteurs.length > 0 && (
+            <motion.div
+              variants={fadeUpVariants}
+              className="flex flex-wrap items-center gap-8 mt-10 pt-8 border-t border-neutral-200"
+            >
+              {compteurs.map(({ label, count, variant }) => (
+                <div key={label} className="flex items-center gap-3">
+                  <Badge variant={variant} dot label={label} />
+                  <span className="font-serif text-2xl font-light text-foreground leading-none">{count}</span>
+                </div>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
       </section>
 
@@ -173,9 +178,13 @@ export function ExhibitionsList({ exhibitions }: Props) {
 
               {filtered.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-neutral-200 rounded-sm">
-                  <p className="font-serif text-xl font-light text-neutral-400">Aucune exposition</p>
+                  <p className="font-serif text-xl font-light text-neutral-400">
+                    {exhibitions.length === 0 ? 'Les expositions arrivent bientôt' : 'Aucune exposition'}
+                  </p>
                   <p className="font-sans text-sm text-neutral-400 mt-2">
-                    Il n&apos;y a pas d&apos;exposition dans cette catégorie pour le moment.
+                    {exhibitions.length === 0
+                      ? 'Aucune exposition n’est programmée pour le moment.'
+                      : 'Il n’y a pas d’exposition dans cette catégorie pour le moment.'}
                   </p>
                 </div>
               )}

@@ -93,6 +93,11 @@ export default async function EditOeuvrePage({ params, searchParams }: Props) {
             <p className="font-sans text-sm text-neutral-400 mt-2">
               {artwork.year}{artwork.dimensionsLues ? ` · ${artwork.dimensionsLues}` : ''}
             </p>
+            {artwork.masqueeSansAccord && (
+              <p className="font-sans text-sm text-neutral-600 mt-2">
+                Masquée du site public tant que votre accord signé n&apos;est pas enregistré. Écrivez à l&apos;équipe.
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-3 flex-shrink-0">
