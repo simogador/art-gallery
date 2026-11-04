@@ -2,9 +2,10 @@
 title: 'Story 2.9 — Catalogue réel uniquement'
 type: 'feature'
 created: '2026-11-04'
-status: 'ready-for-dev'
+status: 'in-progress'
 route: 'dispatch'
 review_loop_iteration: 0
+baseline_commit: 'fdf69ac85a7a8b6b85d7b5fcad2818e8c262a993'
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-2-7-curation-par-l-equipe.md', '{project-root}/docs/migrations.md']
 ---
 
