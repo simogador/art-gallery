@@ -2,9 +2,10 @@
 title: 'Story 2.10 — Suppression des anciennes colonnes'
 type: 'refactor'
 created: '2026-11-04'
-status: 'draft'
+status: 'in-progress'
 route: 'dispatch'
 review_loop_iteration: 0
+baseline_commit: 'f7e5998d7e1226cfd1db2bd28707b4bf18bb4cc4'
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md', '{project-root}/docs/migrations.md', '{project-root}/_bmad-output/implementation-artifacts/spec-2-9-catalogue-reel.md']
 ---
 
