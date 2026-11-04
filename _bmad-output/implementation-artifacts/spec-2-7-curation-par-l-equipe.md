@@ -2,8 +2,9 @@
 title: 'Story 2.7 — Curation par l''équipe'
 type: 'feature'
 created: '2026-11-04'
-status: 'draft'
+status: 'in-progress'
 route: 'dispatch'
+baseline_commit: '02f8d9d5df8ed1485f966fcc57787602e46d635a'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-2-6-expedition-engagements-curation.md', '{project-root}/docs/migrations.md']
 ---
