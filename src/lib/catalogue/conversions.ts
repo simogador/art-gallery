@@ -1,7 +1,7 @@
 // Conversions exactes du prix et des dimensions (AD-5, AD-20, story 2.1).
 // Module pur : aucun accès à la base, utilisable côté client comme côté serveur.
-// La lecture des dimensions suit exactement les règles de scripts/sql/recopie-prix-dimensions.sql ;
-// tests/catalogue.test.ts vérifie l'accord des deux.
+// Story 2.10 : les anciennes colonnes `price` et `dimensions` ont disparu ; seules les colonnes
+// exactes (prixCentimes, devise, hauteurMm, largeurMm, profondeurMm) sont écrites.
 
 export const DEVISE = 'EUR'
 
@@ -59,7 +59,7 @@ export function prixEnCentimes(saisie: unknown): PrixLu {
   return { ok: true, centimes: centimes === 0 ? null : centimes }
 }
 
-// Centimes → euros, pour l'affichage (formatPrice) et l'ancienne colonne price.
+// Centimes → euros, pour l'affichage (formatPrice).
 export function centimesEnEuros(centimes: number | null | undefined): number | null {
   return centimes === null || centimes === undefined ? null : centimes / 100
 }
@@ -106,52 +106,45 @@ export function formaterDimensions(d: DimensionsEnBase | null | undefined): stri
   return `${valeurs.map(enCentimetres).join(' × ')} cm`
 }
 
-/* ── Saisie du formulaire (double écriture, AD-20 temps 1 à 3) ─────────── */
+/* ── Saisie du formulaire (colonnes exactes seulement, story 2.10) ──────── */
 
-// Modification : un texte renvoyé tel quel alors qu'il est illisible (ancienne valeur préremplie)
-// laisse toutes les colonnes de dimensions intactes, pour pouvoir modifier les autres champs.
-// Un nouveau texte illisible reste refusé.
-export function champsDimensionsModifiees(
-  saisie: unknown,
-  texteEnBase: string,
-): SaisieLue<ChampsDimensions | Record<string, never>> {
-  const lu = champsDimensions(saisie)
-  if (!lu.ok && typeof saisie === 'string' && saisie.trim() === texteEnBase.trim()) {
-    return { ok: true, champs: {} }
-  }
-  return lu
-}
-
-export type ChampsPrix = { price: number | null; prixCentimes: number | null; devise: string }
-export type ChampsDimensions = {
-  dimensions: string
-  hauteurMm: number | null
-  largeurMm: number | null
-  profondeurMm: number | null
-}
+export type ChampsPrix = { prixCentimes: number | null; devise: string }
+export type ChampsDimensions = DimensionsEnBase
 
 export type SaisieLue<T> = { ok: true; champs: T } | { ok: false; erreur: string }
 
-// Prix saisi → anciennes et nouvelles colonnes, cohérentes.
+// Prix saisi → colonnes exactes (centimes, devise).
 export function champsPrix(saisie: unknown): SaisieLue<ChampsPrix> {
   const lu = prixEnCentimes(saisie)
   if (!lu.ok) return { ok: false, erreur: MESSAGE_PRIX_INVALIDE }
-  return { ok: true, champs: { price: centimesEnEuros(lu.centimes), prixCentimes: lu.centimes, devise: DEVISE } }
+  return { ok: true, champs: { prixCentimes: lu.centimes, devise: DEVISE } }
 }
 
-// Dimensions saisies → anciennes et nouvelles colonnes. Vide : aucune dimension.
+// Dimensions saisies (« 120 × 80 cm ») → millimètres. Vide : aucune dimension.
 export function champsDimensions(saisie: unknown): SaisieLue<ChampsDimensions> {
   if (saisie !== null && saisie !== undefined && typeof saisie !== 'string') {
     return { ok: false, erreur: MESSAGE_DIMENSIONS_ILLISIBLES }
   }
   const texte = (saisie ?? '').trim()
   if (texte === '') {
-    return { ok: true, champs: { dimensions: '', hauteurMm: null, largeurMm: null, profondeurMm: null } }
+    return { ok: true, champs: { hauteurMm: null, largeurMm: null, profondeurMm: null } }
   }
   const d = lireDimensions(texte)
   if (!d) return { ok: false, erreur: MESSAGE_DIMENSIONS_ILLISIBLES }
-  // L'ancienne colonne reçoit le texte normalisé, relu à l'identique par lireDimensions.
-  return { ok: true, champs: { dimensions: formaterDimensions(d), ...d } }
+  return { ok: true, champs: d }
+}
+
+// Modification (routes PUT d'édition) : le formulaire est prérempli avec formaterDimensions des
+// millimètres en base. Ce texte renvoyé tel quel laisse les trois colonnes intactes : une œuvre aux
+// dimensions partielles (hauteur seule, préremplie vide) ne perd pas les autres à l'enregistrement.
+export function champsDimensionsModifiees(
+  saisie: unknown,
+  enBase: DimensionsEnBase,
+): SaisieLue<ChampsDimensions | Record<string, never>> {
+  if (typeof saisie === 'string' && saisie.trim() === formaterDimensions(enBase)) {
+    return { ok: true, champs: {} }
+  }
+  return champsDimensions(saisie)
 }
 
 /* ── Dimensions saisies en centimètres, champ par champ (story 2.5) ────── */
@@ -171,11 +164,4 @@ export function centimetresEnMillimetres(saisie: unknown): number | null | 'illi
 // Millimètres → centimètres affichés dans un champ de saisie (« 31,5 »), vide si null.
 export function millimetresEnCentimetres(mm: number | null | undefined): string {
   return mm === null || mm === undefined ? '' : enCentimetres(mm)
-}
-
-// Dimensions exactes déjà validées → anciennes et nouvelles colonnes. L'ancienne colonne ne reçoit
-// le texte normalisé que lorsque hauteur et largeur sont connues (sinon vide, comme une œuvre sans
-// dimensions) ; il est relu à l'identique par lireDimensions.
-export function champsDimensionsExactes(d: DimensionsEnBase): ChampsDimensions {
-  return { dimensions: formaterDimensions(d), hauteurMm: d.hauteurMm, largeurMm: d.largeurMm, profondeurMm: d.profondeurMm }
 }

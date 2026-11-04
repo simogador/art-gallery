@@ -126,11 +126,11 @@ describe('base : règle de visibilité « accord signé requis »', () => {
   }
   async function oeuvre(slug: string, artistId: string, publication = 'publiee', disponibilite = 'disponible') {
     await db.query(
-      `INSERT INTO "Artwork" (id, slug, title, year, medium, dimensions, description, "imageUrl", price, "prixCentimes",
-                              "hauteurMm", "largeurMm", available, publication, disponibilite, "artistId", "updatedAt")
-       VALUES ($1, $1, $2, 2024, 'Huile sur toile', '', 'Description', '', 100, 10000, 1000, 800,
-               $3, $4::"Publication", $5::"Disponibilite", $6, now())`,
-      [slug, `Titre ${slug}`, publication === 'publiee' && disponibilite === 'disponible', publication, disponibilite, artistId],
+      `INSERT INTO "Artwork" (id, slug, title, year, medium, description, "imageUrl", "prixCentimes",
+                              "hauteurMm", "largeurMm", publication, disponibilite, "artistId", "updatedAt")
+       VALUES ($1, $1, $2, 2024, 'Huile sur toile', 'Description', '', 10000, 1000, 800,
+               $3::"Publication", $4::"Disponibilite", $5, now())`,
+      [slug, `Titre ${slug}`, publication, disponibilite, artistId],
     )
   }
   async function exposition(slug: string, oeuvres: string[], passee = false) {

@@ -137,30 +137,25 @@ export type OeuvreAEditer = {
   title: string
   year: number
   medium: string
-  /** Texte prérempli : dimensions exactes, sinon l'ancien texte illisible à corriger. */
+  /** Dimensions exactes formatées (« 120 × 90 cm »), vide sans hauteur ni largeur. */
   dimensions: string
-  /** Dimensions exactes formatées, vide si illisibles (affichage). */
-  dimensionsLues: string
   /** Euros, pour le formulaire ; null sans prix. */
   price: number | null
   description: string
   imageUrl: string
 } & EtatAffiche
 
-// Formulaire d'édition : seule lecture des anciennes colonnes, pour ne rien perdre d'une valeur
-// pas encore recopiée (prix) ou illisible (dimensions, à corriger à la main).
+// Formulaire d'édition : prix et dimensions lus dans les colonnes exactes seulement (story 2.10) ;
+// une œuvre sans millimètres a un champ de dimensions vide.
 export function versOeuvreAEditer(w: {
   slug: string; title: string; year: number; medium: string; description: string; imageUrl: string
-  dimensions: string; price: number | null
   prixCentimes: number | null; hauteurMm: number | null; largeurMm: number | null; profondeurMm: number | null
   artist: ArtisteAccord
 } & EtatOeuvre): OeuvreAEditer {
-  const dimensionsLues = formaterDimensions(w)
   return {
     slug: w.slug, title: w.title, year: w.year, medium: w.medium,
-    dimensions: dimensionsLues || w.dimensions,
-    dimensionsLues,
-    price: centimesEnEuros(w.prixCentimes) ?? w.price,
+    dimensions: formaterDimensions(w),
+    price: centimesEnEuros(w.prixCentimes),
     description: w.description, imageUrl: w.imageUrl,
     ...etatAffiche(w),
   }
@@ -168,7 +163,7 @@ export function versOeuvreAEditer(w: {
 
 const CHAMPS_EDITION = {
   slug: true, title: true, year: true, medium: true, description: true, imageUrl: true,
-  dimensions: true, price: true, artistId: true, ...CHAMPS_ETAT,
+  artistId: true, ...CHAMPS_ETAT,
   artist: { select: CHAMPS_ARTISTE_ACCORD },
   prixCentimes: true, hauteurMm: true, largeurMm: true, profondeurMm: true,
 } as const

@@ -36,7 +36,7 @@ export async function remettreEnVente(acteur: Acteur, slug: unknown): Promise<Re
     const maintenant = new Date()
     await tx.artwork.update({
       where: { id: verrou.oeuvre.id },
-      data: { publication, envoyeeEnCurationLe: maintenant, ...disponibiliteRemiseEnVente({ publication }) },
+      data: { publication, envoyeeEnCurationLe: maintenant, ...disponibiliteRemiseEnVente() },
     })
     // La déclaration « retirée » n'est plus en vigueur (écrite par le module disponibilite).
     await cloreDeclarationRetrait(tx, verrou.oeuvre.id, maintenant)

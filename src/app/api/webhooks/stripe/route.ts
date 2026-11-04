@@ -47,7 +47,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   const slugs = artworkIds.split(',').filter(Boolean)
 
-  // Story 2.2 : `vendue` (et `available` = false, double écriture), idempotent.
+  // Story 2.2 : `vendue`, idempotent.
   const count = await marquerVendues(slugs)
 
   console.log(`[webhook] ${count} œuvre(s) marquée(s) vendue(s) :`, slugs)

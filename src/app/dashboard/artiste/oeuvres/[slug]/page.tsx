@@ -91,7 +91,7 @@ export default async function EditOeuvrePage({ params, searchParams }: Props) {
               {artwork.title}
             </h1>
             <p className="font-sans text-sm text-neutral-400 mt-2">
-              {artwork.year}{artwork.dimensionsLues ? ` · ${artwork.dimensionsLues}` : ''}
+              {artwork.year}{artwork.dimensions ? ` · ${artwork.dimensions}` : ''}
             </p>
             {artwork.masqueeSansAccord && (
               <p className="font-sans text-sm text-neutral-600 mt-2">

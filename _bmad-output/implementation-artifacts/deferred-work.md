@@ -100,3 +100,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
   summary: Tester les requêtes de contrôle lancées avant la migration B (`dimensions-illisibles.sql`, `prix-non-recopies.sql`, requête « artistes avec accord » de la procédure).
   evidence: medium (non vérifié) ; contrôle manuel unique en lecture seule, scripts supprimés après B.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Compléter l'entrée précédente : `ecarts-prix-dimensions.sql` et `ecarts-publication-disponibilite.sql`, lancées avant B, n'ont plus de test non plus (relecture 2).
+  evidence: tests des scripts 2.1/2.2 retirés avec les colonnes ; contrôle manuel unique avant B, scripts supprimés après.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Rendre `Artwork.publication` et `disponibilite` obligatoires (après vérification qu'aucune ligne n'est vide) et retirer les chemins `estRecopiee` / `non_recopiee`.
+  evidence: après B, aucun code ne crée d'œuvre sans les deux axes ; les branches « non recopiée » ne servent plus qu'aux œuvres antérieures à la story 2.2.

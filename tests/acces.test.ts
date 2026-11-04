@@ -71,8 +71,8 @@ describe('changement de rôle sans reconnexion', () => {
       ['oeuvre-d-un-autre', 'artiste-2'],
     ]) {
       await db.query(
-        `INSERT INTO "Artwork" (id, slug, title, year, medium, dimensions, description, "imageUrl", "artistId", "updatedAt")
-         VALUES ($1, $1, 'Titre', 2020, 'Huile', '50 x 70 cm', 'Description', 'https://exemple.test/o.jpg', $2, now())`,
+        `INSERT INTO "Artwork" (id, slug, title, year, medium, description, "imageUrl", "artistId", "updatedAt")
+         VALUES ($1, $1, 'Titre', 2020, 'Huile', 'Description', 'https://exemple.test/o.jpg', $2, now())`,
         [slug, artiste],
       )
     }

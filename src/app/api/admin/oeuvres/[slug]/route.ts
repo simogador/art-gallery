@@ -32,11 +32,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
   if (typeof body.title        === 'string')  data.title        = body.title.trim()
   if (typeof body.year         === 'number')  data.year         = body.year
   if (typeof body.technique    === 'string')  data.medium       = body.technique.trim()
-  // Double écriture (AD-20) : anciennes et nouvelles colonnes, cohérentes ; refus si illisible.
+  // Colonnes exactes seulement (story 2.10) : texte « h × l (× p) cm » → millimètres ; refus si
+  // illisible. Le texte prérempli renvoyé tel quel laisse les millimètres intacts.
   if (typeof body.dimensions === 'string') {
-    const actuelle = await prisma.artwork.findUnique({ where: { slug }, select: { dimensions: true } })
+    const actuelle = await prisma.artwork.findUnique({
+      where: { slug },
+      select: { hauteurMm: true, largeurMm: true, profondeurMm: true },
+    })
     if (!actuelle) return NextResponse.json({ error: 'Œuvre introuvable' }, { status: 404 })
-    const taille = champsDimensionsModifiees(body.dimensions, actuelle.dimensions)
+    const taille = champsDimensionsModifiees(body.dimensions, actuelle)
     if (!taille.ok) return NextResponse.json({ error: taille.erreur }, { status: 400 })
     Object.assign(data, taille.champs)
   }

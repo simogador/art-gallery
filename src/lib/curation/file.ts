@@ -2,7 +2,6 @@ import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@/generated/prisma/client'
 import type { Acteur } from '@/lib/acces'
 import {
-  champAvailable,
   EN_CURATION,
   estEnCuration,
   estMarqueeDisponible,
@@ -131,7 +130,7 @@ export type ResultatDecision = { ok: true; slug: string } | RefusCuration
 
 /**
  * « Valider » : `en_curation` → `publiee`, l'œuvre reste `disponible` (posée au dépôt) et devient
- * visible sur le site ; `available` vraie (double écriture). Refus, sans rien écrire :
+ * visible sur le site. Refus, sans rien écrire :
  * `controle_incomplet` (les quatre points non cochés), `transition_interdite` (déjà décidée),
  * `indisponible` (disponibilité autre que `disponible`), `accord_absent` (artiste sans accord signé).
  */
@@ -150,7 +149,7 @@ export async function validerOeuvre(acteur: Acteur, slug: unknown, controle: unk
     const publication: Publication = 'publiee'
     await tx.artwork.update({
       where: { id: ligne.id },
-      data: { publication, ...champAvailable({ publication, disponibilite: ligne.disponibilite }) },
+      data: { publication },
     })
     await tx.decisionCuration.create({
       data: { artworkId: ligne.id, decision: 'valider', controle: coches, adminId: acteur.userId },
@@ -182,8 +181,7 @@ export async function renvoyerOeuvre(
     const publication: Publication = 'brouillon'
     await tx.artwork.update({
       where: { id: ligne.id },
-      // Double écriture (AD-20) : available reste égale à « disponible », donc fausse.
-      data: { publication, ...champAvailable({ publication, disponibilite: ligne.disponibilite }) },
+      data: { publication },
     })
     await tx.decisionCuration.create({
       data: {

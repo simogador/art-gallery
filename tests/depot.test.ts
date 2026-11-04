@@ -252,9 +252,9 @@ describe('base : dépôt de l’artiste', () => {
   const ligne = async (slug: string) =>
     (
       await db.query(
-        `SELECT id, slug, title, year, medium, description, ambiance, "couleurDominante", price, "prixCentimes",
-                dimensions, "hauteurMm", "largeurMm", "profondeurMm", "imageUrl", "artistId",
-                publication::text AS publication, disponibilite::text AS disponibilite, available
+        `SELECT id, slug, title, year, medium, description, ambiance, "couleurDominante", "prixCentimes",
+                "hauteurMm", "largeurMm", "profondeurMm", "imageUrl", "artistId",
+                publication::text AS publication, disponibilite::text AS disponibilite
          FROM "Artwork" WHERE slug = $1`,
         [slug],
       )
@@ -264,9 +264,9 @@ describe('base : dépôt de l’artiste', () => {
 
   async function publiee(slug: string, artiste = 'artiste-1') {
     await db.query(
-      `INSERT INTO "Artwork" (id, slug, title, year, medium, dimensions, description, "imageUrl", price, "prixCentimes",
-                              available, publication, disponibilite, "artistId", "updatedAt")
-       VALUES ($1, $1, 'Publiée', 2020, 'Huile', '10 × 10 cm', 'D', '', 100, 10000, true, 'publiee', 'disponible', $2, now())`,
+      `INSERT INTO "Artwork" (id, slug, title, year, medium, description, "imageUrl", "prixCentimes",
+                              "hauteurMm", "largeurMm", publication, disponibilite, "artistId", "updatedAt")
+       VALUES ($1, $1, 'Publiée', 2020, 'Huile', 'D', '', 10000, 100, 100, 'publiee', 'disponible', $2, now())`,
       [slug, artiste],
     )
   }
@@ -303,14 +303,15 @@ describe('base : dépôt de l’artiste', () => {
     await db.query('DELETE FROM "Zone"')
   })
 
-  it('premier champ : crée le brouillon (brouillon + disponible, available faux), slug tiré du titre', async () => {
+  it('premier champ : crée le brouillon (brouillon + disponible), slug tiré du titre', async () => {
     const { enregistrerChamp } = await import('@/lib/curation')
     const r = await enregistrerChamp(ARTISTE as never, null, 'titre', 'La Sqala sous la brume')
     if (!r.ok) throw new Error(r.code)
     expect(r.depot.slug).toBe('la-sqala-sous-la-brume')
     expect(await ligne(r.depot.slug)).toMatchObject({
-      title: 'La Sqala sous la brume', year: 0, medium: '', dimensions: '', imageUrl: '', artistId: 'artiste-1',
-      publication: 'brouillon', disponibilite: 'disponible', available: false, prixCentimes: null,
+      title: 'La Sqala sous la brume', year: 0, medium: '', imageUrl: '', artistId: 'artiste-1',
+      publication: 'brouillon', disponibilite: 'disponible', prixCentimes: null,
+      hauteurMm: null, largeurMm: null, profondeurMm: null,
     })
     const { getArtworkBySlug, getAllArtworks } = await import('@/lib/catalogue')
     expect(await getArtworkBySlug(r.depot.slug)).toBeNull()
@@ -354,7 +355,7 @@ describe('base : dépôt de l’artiste', () => {
     ])
   })
 
-  it('informations, dimensions et prix : millimètres, centimes et anciennes colonnes', async () => {
+  it('informations, dimensions et prix : millimètres et centimes seulement', async () => {
     const { enregistrerChamp, lireDepot } = await import('@/lib/curation')
     const r = await enregistrerChamp(ARTISTE as never, null, 'titre', 'Remparts')
     if (!r.ok) throw new Error(r.code)
@@ -367,14 +368,14 @@ describe('base : dépôt de l’artiste', () => {
     }
     expect(await ligne(slug)).toMatchObject({
       medium: 'Acrylique sur toile', year: 2024, description: 'Les remparts un matin de brume.', ambiance: 'calme',
-      couleurDominante: 'bleu', hauteurMm: 600, largeurMm: 800, profondeurMm: null, dimensions: '60 × 80 cm',
-      prixCentimes: 125_050, price: 1250.5,
+      couleurDominante: 'bleu', hauteurMm: 600, largeurMm: 800, profondeurMm: null,
+      prixCentimes: 125_050,
     })
     await enregistrerChamp(ARTISTE as never, slug, 'profondeur', '4,5')
-    expect(await ligne(slug)).toMatchObject({ profondeurMm: 45, dimensions: '60 × 80 × 4,5 cm' })
-    // Hauteur vidée : plus d'ancien texte, comme une œuvre sans dimensions.
+    expect(await ligne(slug)).toMatchObject({ hauteurMm: 600, largeurMm: 800, profondeurMm: 45 })
+    // Hauteur vidée : les autres dimensions restent.
     await enregistrerChamp(ARTISTE as never, slug, 'hauteur', '')
-    expect(await ligne(slug)).toMatchObject({ hauteurMm: null, largeurMm: 800, dimensions: '' })
+    expect(await ligne(slug)).toMatchObject({ hauteurMm: null, largeurMm: 800, profondeurMm: 45 })
 
     const lu = await lireDepot(ARTISTE as never, slug)
     if (!lu.ok) throw new Error(lu.code)
@@ -785,12 +786,12 @@ describe('base : dépôt de l’artiste', () => {
       const avant = Date.now()
       expect(await envoyerEnCuration(ARTISTE as never, slug)).toEqual({ ok: true, slug })
       const l = (await db.query(
-        `SELECT publication::text AS publication, disponibilite::text AS disponibilite, available, "envoyeeEnCurationLe",
+        `SELECT publication::text AS publication, disponibilite::text AS disponibilite, "envoyeeEnCurationLe",
                 "visitesAtelier", "engagementCertificat", "engagementEmballage", "engagementReprise"
          FROM "Artwork" WHERE slug = $1`, [slug],
       )).rows[0]
       expect(l).toMatchObject({
-        publication: 'en_curation', disponibilite: 'disponible', available: false,
+        publication: 'en_curation', disponibilite: 'disponible',
         visitesAtelier: false, engagementCertificat: true, engagementEmballage: true, engagementReprise: true,
       })
       expect(l.envoyeeEnCurationLe.getTime()).toBeGreaterThanOrEqual(avant - 1000)

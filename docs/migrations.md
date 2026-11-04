@@ -75,7 +75,7 @@ Retour arrière : le code précédent fonctionne sur la base migrée (colonnes a
 - Migration : `20261029084432_prix_dimensions_exacts` (ajoute `prixCentimes`, `devise`, `hauteurMm`, `largeurMm`, `profondeurMm` à `Artwork`, toutes facultatives ou avec valeur par défaut).
 - Recopie : `scripts/sql/recopie-prix-dimensions.sql`. Prix en euros → centimes ; dimensions « hauteur × largeur (× profondeur) cm|mm » → millimètres. Rien n'est deviné.
 - Écarts après la fusion (étape 7) : `scripts/sql/ecarts-prix-dimensions.sql`, en lecture seule.
-- Contrôles : `scripts/sql/dimensions-illisibles.sql` (œuvres à compléter depuis le formulaire d'édition, qui préremplit l'ancien texte) et `scripts/sql/prix-non-recopies.sql` (prix nul, négatif, à plus de deux décimales ou au-delà de 21 474 836,47 €, limite d'une colonne `INTEGER`).
+- Contrôles : `scripts/sql/dimensions-illisibles.sql` (œuvres à compléter depuis le formulaire d'édition ; depuis la story 2.10, le formulaire ne préremplit plus l'ancien texte, que seule cette requête affiche) et `scripts/sql/prix-non-recopies.sql` (prix nul, négatif, à plus de deux décimales ou au-delà de 21 474 836,47 €, limite d'une colonne `INTEGER`).
 
 ### Story 2.2 : publication et disponibilité
 
@@ -145,6 +145,60 @@ Retour arrière : le code précédent fonctionne sur la base migrée (colonnes a
   DROP TYPE "TypeDeclarationDisponibilite";
   DELETE FROM "_prisma_migrations" WHERE migration_name = '20261104064428_declarations_disponibilite';
   ```
+
+### Story 2.10 : suppression des anciennes colonnes
+
+Quatrième temps de AD-20 pour les stories 2.1 et 2.2 : `Artwork.available`, `Artwork.price` et `Artwork.dimensions` ne sont plus ni lues ni écrites par le code, puis disparaissent. Décisions du porteur du 2026-11-04 (`docs/decisions-porteur.md`). **Ordre inversé** par rapport aux migrations précédentes : deux migrations, la première avant la fusion, la seconde **après** le déploiement de production.
+
+- **A** — `20261104202353_dimensions_par_defaut` (empreinte SHA-256 : `6a0d6963b84f29f5df54450034c89fb3090d1c6eb97afe12eddaffcd8e1aaf6f`). `dimensions` reçoit la valeur par défaut `''` et reste `NOT NULL`. Sans effet sur l'ancien code, qui l'écrit toujours et lit `''` (texte vide, comme une œuvre sans dimensions) pour les œuvres créées par le nouveau code ; le nouveau code crée une œuvre sans elle et échouerait sans A (colonne `NOT NULL` sans valeur par défaut). `price` (facultative) et `available` (valeur par défaut `true`) n'en ont pas besoin.
+  ```sql
+  BEGIN;
+  -- AlterTable
+  ALTER TABLE "Artwork" ALTER COLUMN "dimensions" SET DEFAULT '';
+  INSERT INTO "_prisma_migrations" (id, checksum, migration_name, started_at, finished_at, applied_steps_count)
+  VALUES (gen_random_uuid()::text, '6a0d6963b84f29f5df54450034c89fb3090d1c6eb97afe12eddaffcd8e1aaf6f',
+          '20261104202353_dimensions_par_defaut', now(), now(), 1);
+  COMMIT;
+  ```
+- **B** — `20261104202403_suppression_anciennes_colonnes` (empreinte SHA-256 : `ecf964b04377f1adbb01b83db980d5c948763d27f0fe0ec2528e5e748faa66a4`). Supprime les trois colonnes et leurs valeurs. **Irréversible** : au-delà, seul le retour à la branche de sauvegarde ramène les colonnes et leurs valeurs.
+  ```sql
+  BEGIN;
+  -- AlterTable
+  ALTER TABLE "Artwork" DROP COLUMN "available",
+  DROP COLUMN "dimensions",
+  DROP COLUMN "price";
+  INSERT INTO "_prisma_migrations" (id, checksum, migration_name, started_at, finished_at, applied_steps_count)
+  VALUES (gen_random_uuid()::text, 'ecf964b04377f1adbb01b83db980d5c948763d27f0fe0ec2528e5e748faa66a4',
+          '20261104202403_suppression_anciennes_colonnes', now(), now(), 1);
+  COMMIT;
+  ```
+  L'empreinte porte sur le fichier `migration.sql` entier, avertissements de Prisma en commentaire compris : vérifiez-la avec `sha256sum` (étape 2 ci-dessus) avant de l'enregistrer.
+
+Procédure :
+
+1. **`preview`, avant la fusion** : branche de sauvegarde datée de `preview` si besoin, puis A (ci-dessus) depuis l'éditeur SQL de Neon. Vérifiez la préversion de la PR (dépôt d'une œuvre par le compte artiste de test Kara Walker, édition, curation, bascules de l'administration), puis le **retour arrière** : redéployez la préversion du commit précédent sur la même base, elle fonctionne (l'ancien code écrit encore les trois colonnes, et lit `''` pour l'œuvre déposée par le nouveau code). Consignez les deux dans la PR.
+2. **Production, avant la fusion** : branche de sauvegarde datée `avant-anciennes-colonnes-<JJ-MM>` à partir de `main`, puis A. Fusionnez ensuite et **notez l'heure de fin du déploiement de production** : c'est la référence de l'étape 3.
+3. **Après le déploiement de production** (le code en ligne ne lit plus les colonnes), contrôles en **lecture seule** depuis l'éditeur SQL de Neon :
+   - `scripts/sql/dimensions-illisibles.sql` : œuvres sans hauteur ou sans largeur en millimètres. Décision du porteur : si elle liste des œuvres d'artistes **avec accord signé**, l'équipe complète leurs millimètres à la main avant B, depuis `/dashboard/admin/oeuvres/<slug>` (le formulaire ne préremplit plus l'ancien texte : il s'affiche dans la colonne `dimensions` de la requête) ; la perte du texte est acceptée pour les œuvres de démonstration. Les brouillons du formulaire de dépôt sans dimensions y apparaissent aussi, avec un texte vide : rien à reprendre. Pour ne voir que les œuvres d'artistes avec accord :
+     ```sql
+     SELECT a."slug", a."title", a."dimensions", a."publication"::text AS publication
+     FROM "Artwork" AS a JOIN "Artist" AS r ON r."id" = a."artistId"
+     WHERE (a."hauteurMm" IS NULL OR a."largeurMm" IS NULL)
+       AND r."accordSigneLe" IS NOT NULL
+       AND btrim(a."dimensions") <> ''
+     ORDER BY a."slug";
+     ```
+   - `scripts/sql/prix-non-recopies.sql` : prix de l'ancienne colonne jamais recopiés en centimes. Une œuvre listée d'un artiste avec accord : saisissez son prix depuis l'administration avant B.
+   - `scripts/sql/ecarts-prix-dimensions.sql` et `scripts/sql/ecarts-publication-disponibilite.sql` : œuvres dont anciennes et nouvelles colonnes divergent. Le code précédent (stories 2.1 à 2.9) écrivait les deux, cohérentes ; le nouveau code n'écrit plus que les nouvelles, qui font foi. Une œuvre listée modifiée **depuis le déploiement de production** (heure notée à l'étape 2 : prix ou dimensions changés, bascule, paiement, brouillon créé) est donc attendue : rien à corriger. **Ne lancez ni les recopies ni `corriger-ecarts-publication-disponibilite.sql`, ni la correction de l'étape 7** : ils remettraient les anciennes valeurs par-dessus les nouvelles. Une œuvre listée qui n'a pas été modifiée depuis ce déploiement est inattendue : examinez-la à la main avant B et reportez la bonne valeur depuis l'administration. `updatedAt` n'est qu'un indice (il change à toute écriture, pas seulement du prix ou de l'état) : en cas de doute, comparez avec la branche de sauvegarde de l'étape 2.
+4. **Juste avant B** : nouvelle branche de sauvegarde datée à partir de `main`, et vérification qu'elle est restaurable (AQ-4) : ouvrez-la dans Neon et lancez `SELECT count(*), count("price"), count(NULLIF(btrim("dimensions"), '')) FROM "Artwork";`, les valeurs doivent être celles de `main`. Notez sa date d'expiration.
+5. **B** (ci-dessus) sur la production depuis l'éditeur SQL de Neon, puis sur `preview`. Sur `preview`, B casse les préversions des PR ouvertes qui ne contiennent pas cette story (leur client Prisma lit encore les colonnes) : rebasez-les sur `main`.
+6. `npx prisma migrate status` (chaîne directe) : « Database schema is up to date » ; accueil, galerie et espace artiste sans erreur.
+
+Retour arrière :
+
+- **Avant B** : redéployez le commit précédent dans Vercel ; il fonctionne sur la base après A. Les œuvres créées entre-temps par le nouveau code ont `dimensions` vide (valeur par défaut `''`), `price` nul et `available` vraie (valeur par défaut, que l'ancien code ne lit plus depuis la story 2.2) : l'ancien formulaire d'édition affiche des dimensions vides. Une œuvre **modifiée** par le nouveau code garde dans les anciennes colonnes ses anciens prix et dimensions, plus tenus à jour : l'ancien formulaire d'édition préremplit les colonnes exactes, mais se rabat sur les anciennes quand elles sont vides, et montre donc l'ancien prix ou l'ancien texte d'une œuvre dont le nouveau code a effacé le prix ou les dimensions ; l'enregistrer réécrirait cette ancienne valeur. Relancez les deux requêtes d'écarts (étape 7) et corrigez ces œuvres à la main depuis l'administration ; les colonnes exactes font foi. Retirer A n'est pas nécessaire ; si vous y tenez (sans risque, l'ancien code écrit toujours la colonne) : `ALTER TABLE "Artwork" ALTER COLUMN "dimensions" DROP DEFAULT;` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261104202353_dimensions_par_defaut';`.
+- **Après B** : ne redéployez **jamais** un commit antérieur à cette story, ni par un redéploiement ni par l'« Instant Rollback » de Vercel : son client Prisma lit les colonnes supprimées et chaque page du catalogue serait en erreur. Seul recours : restaurer la branche de sauvegarde de l'étape 4, en perdant toutes les écritures faites depuis.
+- Les scripts SQL de recopie, d'écarts et de correction des stories 2.1 et 2.2 restent dans le dépôt jusqu'à B (contrôles de l'étape 3) ; ils seront supprimés dans une PR de suivi, après B.
 
 ## Journal des bases partagées
 
