@@ -2,7 +2,7 @@
 title: 'Story 2.10 — Suppression des anciennes colonnes'
 type: 'refactor'
 created: '2026-11-04'
-status: 'in-review'
+status: 'draft'
 route: 'dispatch'
 review_loop_iteration: 1
 baseline_commit: 'f7e5998d7e1226cfd1db2bd28707b4bf18bb4cc4'
@@ -18,7 +18,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 **Approach:**
 - Le code cesse de lire et d'écrire les trois colonnes ; elles disparaissent de `schema.prisma`.
 - Deux migrations, pour qu'aucun code déployé ne casse :
-  - **A** (`…_anciennes_colonnes_facultatives`) : `dimensions` devient facultative (`DROP NOT NULL`). Sans effet sur l'ancien code, qui l'écrit toujours ; permet au nouveau code de créer une œuvre sans elle. Appliquée par le porteur **avant la fusion** (preview puis production).
+  - **A** (`…_dimensions_par_defaut`) : `dimensions` reçoit la valeur par défaut `''` (`ALTER COLUMN "dimensions" SET DEFAULT ''`), et reste `NOT NULL`. Sans effet sur l'ancien code, qui l'écrit toujours et lit `''` pour les œuvres créées par le nouveau code ; permet au nouveau code de créer une œuvre sans elle. Appliquée par le porteur **avant la fusion** (preview puis production).
   - **B** (`…_suppression_anciennes_colonnes`) : `DROP COLUMN` des trois colonnes. Appliquée par le porteur **après le déploiement de production** du nouveau code, qui ne les lit plus. Irréversible : au-delà, seul le retour à la branche de sauvegarde ramène les colonnes.
 - Avant B, sur la production : requêtes de contrôle en lecture seule (`dimensions-illisibles.sql`, `prix-non-recopies.sql`, `ecarts-prix-dimensions.sql`, `ecarts-publication-disponibilite.sql`) ; la sauvegarde datée est vérifiée restaurable juste avant (AQ-4).
 - Les scripts SQL de recopie, d'écarts et de correction des stories 2.1 et 2.2 sont supprimés **dans une PR de suivi**, après B ; d'ici là ils restent nécessaires aux contrôles.
@@ -28,6 +28,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 - Dimensions illisibles : si `dimensions-illisibles.sql` liste des œuvres d'artistes avec accord signé, l'équipe complète leurs millimètres à la main avant B ; la perte du texte est acceptée pour les œuvres de démonstration.
 - Contraintes `CHECK` (prix, millimètres, devise) : story à part, hors 2.10.
 - Suppression des œuvres et artistes de démonstration : story à part, hors 2.10.
+- Migration A = valeur par défaut `''` sur `dimensions` (et non `DROP NOT NULL`), pour que le code précédent fonctionne encore sur les œuvres créées par le nouveau code (relecture 1, décision du porteur).
 
 ## Boundaries & Constraints
 
@@ -78,6 +79,8 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 
 ## Spec Change Log
 
+- **Relecture 1 (itération 0 → 1), intent_gap tranché par le porteur le 2026-11-04.** Constat : avec A = `DROP NOT NULL`, le nouveau code crée des œuvres à `dimensions` NULL que l'ancien client Prisma (`dimensions String`) et `champsDimensionsModifiees` ne supportent pas : la ligne « Retour arrière avant B » de la matrice était fausse. Amendement : A devient `SET DEFAULT ''` (bloc gelé, décision du porteur). État évité : retour arrière impossible avant B. KEEP (de l'itération 0, copie du diff dans le brouillon de l'agent) : découpage du code (`champsPrix`/`champsDimensions` en colonnes exactes seules, suppression de `champAvailable`, `champsDimensionsExactes`, `champsDimensionsModifiees`, `OeuvreVerrouillee = { id, slug }`, un champ de dimension du dépôt n'écrit que sa colonne), test `tests/anciennes-colonnes.test.ts` (énumération Prisma, scan statique avec témoin, base « après A »), section 2.10 de `docs/migrations.md` (SQL exact, empreintes, contrôles avant B dont la requête « artistes avec accord », retour arrière avant et après B), mises à jour d'`AGENTS.md`.
+
 ## Review Triage Log
 
 Revue 1 (blind-hunter, edge-case-hunter, verification-gap), sur le code de l'itération 0.
@@ -97,6 +100,14 @@ Revue 1 (blind-hunter, edge-case-hunter, verification-gap), sur le code de l'it�
 | 11 | blind | Suppression des scripts 2.1/2.2 non suivie | false — entrée déjà ajoutée à `deferred-work.md` | rejet |
 | 12 | blind | Statuts spec / sprint-status différents | false — synchronisés à l'étape de présentation | rejet |
 | 13 | blind | Tests « après A » sans la route artiste, l'envoi en curation, la curation, les déclarations | low — couverts par TypeScript après B et par les tests existants | rejet |
+
+## Design Notes
+
+Corrections issues de la relecture 1, à intégrer à la ré-implémentation :
+- Édition (routes PUT admin et artiste) : ne réécrire les millimètres que si le texte de dimensions reçu diffère du texte prérempli (`formaterDimensions` des millimètres en base) ; sinon une œuvre aux dimensions partielles perd les autres à chaque enregistrement.
+- Base « après A » des tests : recréer les colonnes dans l'état de l'init (`dimensions TEXT NOT NULL`), puis exécuter le fichier `migration.sql` de A lu sur le disque ; le dépôt doit alors donner `dimensions = ''`.
+- `docs/migrations.md`, section 2.10 : la référence des écarts attendus est l'heure du déploiement de production de la PR (pas l'application de A), `updatedAt` n'est qu'un indice ; après B, ni redéploiement d'un commit antérieur ni « Instant Rollback » de Vercel, et B sur `preview` casse les préversions des PR ouvertes non rebasées ; au retour arrière avant B, une œuvre modifiée par le nouveau code montre dans l'ancien formulaire ses anciens prix et dimensions.
+- En-tête de `scripts/sql/dimensions-illisibles.sql` (le formulaire ne préremplit plus l'ancien texte) et commentaire de `disponibiliteInitiale` à mettre à jour.
 
 ## Verification
 
