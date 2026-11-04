@@ -9,19 +9,39 @@ import { gradient, accent } from '@/lib/catalogue/mappers'
 import { ToggleAction } from '@/components/dashboard/ToggleAction'
 import { DeleteButton } from '@/components/dashboard/DeleteButton'
 import { acteurCourant } from '@/lib/acces'
+import { basculesPublication, fileDeCuration, messageRefusCuration } from '@/lib/curation'
 import {
-  basculePossible, estDisponible, estMarqueeDisponible, estPubliee, estRecopiee, estVendue, libelleEtat,
+  basculePossible, estDisponible, estEnCuration, estMarqueeDisponible, estPubliee, estRecopiee, estVendue, libelleEtat,
 } from '@/lib/disponibilite'
+import { FileDeCuration } from './FileDeCuration'
 
 export const metadata: Metadata = { title: 'Œuvres — Admin Errancy' }
 
-export default async function AdminOeuvresPage() {
-  if ((await acteurCourant()).type !== 'admin') redirect('/dashboard')
+interface Props {
+  searchParams?: Promise<{ decision?: string | string[] }>
+}
+
+const BANDEAUX_DECISION: Record<string, string> = {
+  validee: 'Œuvre validée : elle est publiée et visible sur le site.',
+  renvoyee: 'Œuvre renvoyée à l’artiste : elle redevient un brouillon, avec votre commentaire sur sa fiche.',
+}
+
+export default async function AdminOeuvresPage({ searchParams }: Props) {
+  const acteur = await acteurCourant()
+  if (acteur.type !== 'admin') redirect('/dashboard')
+
+  // Story 2.7 : file de curation en tête (module curation), et bandeau après une décision.
+  const decision = (await searchParams)?.decision
+  const bandeau = typeof decision === 'string' ? BANDEAUX_DECISION[decision] : undefined
+  const file = await fileDeCuration(acteur)
 
   const artworks = await prisma.artwork.findMany({
     orderBy: [{ createdAt: 'desc' }],
     include: { artist: { select: { name: true, slug: true } } },
   })
+
+  // Story 2.7 : bascule « Publiée / Brouillon » seulement là où definirPublication l'accepte.
+  const basculables = await basculesPublication(acteur, artworks.map((w) => w.slug))
 
   // Story 2.2 : états lus par le module disponibilite.
   const available   = artworks.filter((w) => estDisponible(w)).length
@@ -39,6 +59,16 @@ export default async function AdminOeuvresPage() {
           {artworks.length} œuvre{artworks.length > 1 ? 's' : ''} · {available} disponibles · {sold} vendues · {nonPubliees} non publiées
         </p>
       </div>
+
+      {bandeau && (
+        <p role="status" className="mb-8 font-sans text-sm text-foreground bg-neutral-50 border border-neutral-200 rounded-sm px-4 py-3">
+          {bandeau}
+        </p>
+      )}
+
+      <FileDeCuration file={file.ok ? file.file : []} erreur={file.ok ? undefined : messageRefusCuration(file.code)} />
+
+      <h2 className="font-serif font-light text-foreground text-2xl mb-4">Toutes les œuvres</h2>
 
       {/* Column headers */}
       <div className="hidden lg:grid grid-cols-[56px_1fr_140px_90px_110px_90px_80px] gap-4 px-4 mb-2">
@@ -83,9 +113,10 @@ export default async function AdminOeuvresPage() {
               {artwork.prixCentimes !== null ? formatPrice(centimesEnEuros(artwork.prixCentimes)!) : '—'}
             </p>
 
-            {/* Publication toggle (module curation) */}
+            {/* Publication toggle (module curation) ; une œuvre en curation, déposée non validée ou sans
+                accord signé passe par la file de curation (story 2.7). */}
             <div className="hidden lg:block">
-              {estRecopiee(artwork) ? (
+              {estRecopiee(artwork) && basculables.has(artwork.slug) ? (
               <ToggleAction
                 value={estPubliee(artwork)}
                 apiUrl={`/api/admin/oeuvres/${artwork.slug}`}
@@ -118,7 +149,7 @@ export default async function AdminOeuvresPage() {
                 href={`/dashboard/admin/oeuvres/${artwork.slug}`}
                 className="font-sans text-[10px] uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200"
               >
-                Éditer
+                {estEnCuration(artwork) ? 'Relire' : 'Éditer'}
               </Link>
               <DeleteButton
                 apiUrl={`/api/admin/oeuvres/${artwork.slug}`}

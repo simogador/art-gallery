@@ -123,6 +123,18 @@ Retour arrière : le code précédent fonctionne sur la base migrée (colonnes a
   DELETE FROM "_prisma_migrations" WHERE migration_name = '20261103100532_expedition_engagements';
   ```
 
+### Story 2.7 : curation par l'équipe
+
+- Migration : `20261104060111_curation`. Sur `Artist` : `accordSigneLe` (`DATE` facultative, date de signature de l'accord écrit, FR-16). Nouvelle énumération `TypeDecisionCuration` (`valider`, `renvoyer`) et table `DecisionCuration` (œuvre en `CASCADE`, décision, commentaire facultatif, codes cochés de la liste de contrôle `controle` — `TEXT[]` non nul, vide par défaut —, `adminId` facultatif sans clé étrangère, date ; index `(artworkId, createdAt)`). Contrainte `CHECK` écrite à la main, `DecisionCuration_renvoi_commente` : un renvoi porte un commentaire de 10 à 1 000 caractères ; `prisma migrate diff` l'ignore (« No difference detected »).
+- Ajout seulement, aucune recopie : tous les artistes commencent « Accord non signé », donc aucune œuvre en curation ne peut être validée avant que l'équipe enregistre la date de signature sur `/dashboard/admin/artistes`. Le nouveau code lit la colonne et la table (file de curation, fiche de dépôt) et échouerait sans elles : même procédure que les précédentes, `preview` puis production **avant la fusion**, avec la ligne `_prisma_migrations` et l'empreinte SHA-256.
+- Retour arrière : l'ancien code ignore la colonne et la table. Une œuvre renvoyée (`brouillon`) s'ouvre alors dans le formulaire de dépôt sans le bandeau du commentaire ; une œuvre validée reste publiée ; une œuvre en curation peut de nouveau être publiée par l'ancienne bascule. Pour retirer la migration (dernier recours, les décisions sont perdues) :
+  ```sql
+  DROP TABLE "DecisionCuration"; -- emporte la contrainte CHECK
+  DROP TYPE "TypeDecisionCuration";
+  ALTER TABLE "Artist" DROP COLUMN "accordSigneLe";
+  DELETE FROM "_prisma_migrations" WHERE migration_name = '20261104060111_curation';
+  ```
+
 ## Journal des bases partagées
 
 - 2026-10-28 : sur `production` puis sur la branche `preview`, la ligne de base `20261027150000_ligne_de_base` a été déclarée (sans exécution) et `20261027230000_inscriptions_ouverture` appliquée, en une transaction depuis l'éditeur SQL de Neon (SQL de la migration et empreintes SHA-256 identiques à celles de Prisma). Point de restauration : branche `avant-migrations-28-10` (expire le 2026-11-04).

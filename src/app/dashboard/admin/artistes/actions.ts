@@ -3,6 +3,7 @@
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { acteurCourant, inviterArtiste, messageRefusInvitation } from '@/lib/acces'
+import { enregistrerAccord, messageRefusCuration } from '@/lib/curation'
 
 // Invitation d'un artiste (story 2.4). Le lien est construit sur l'origine de la requête (préversion
 // ou production) et renvoyé une seule fois : seule son empreinte est en base.
@@ -27,4 +28,18 @@ export async function actionInviter(artistId: string, _etat: EtatInvitation, for
   if (!resultat.ok) return { ok: false, message: messageRefusInvitation(resultat.code) }
   revalidatePath('/dashboard/admin/artistes')
   return { ok: true, lien: `${origine()}/auth/invitation/${resultat.jeton}`, echeance: resultat.echeance.toISOString() }
+}
+
+// Accord écrit signé (story 2.7, FR-16) : date enregistrée ou effacée par le module curation.
+export type EtatAccord = { ok: true; message: string } | { ok: false; message: string } | null
+
+export async function actionEnregistrerAccord(artistId: string, _etat: EtatAccord, formData: FormData): Promise<EtatAccord> {
+  // Seule l'action explicite « Effacer la date » efface : un enregistrement sans date est refusé.
+  const effacer = formData.get('effacer') === '1'
+  const date = formData.get('date')
+  if (!effacer && (typeof date !== 'string' || date.trim() === '')) return { ok: false, message: 'Choisissez une date.' }
+  const resultat = await enregistrerAccord(await acteurCourant(), artistId, effacer ? '' : date)
+  if (!resultat.ok) return { ok: false, message: resultat.erreur ?? messageRefusCuration(resultat.code) }
+  revalidatePath('/dashboard/admin', 'layout')
+  return { ok: true, message: resultat.accordSigneLe ? 'Date de signature enregistrée.' : 'Date de signature effacée.' }
 }

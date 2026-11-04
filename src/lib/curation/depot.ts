@@ -19,6 +19,7 @@ import {
   recopierOffres,
   zonesOuvertes,
 } from '@/lib/livraison'
+import { dernierRenvoi } from './decisions'
 import {
   ANNEE_NON_RENSEIGNEE,
   centimesEnSaisie,
@@ -68,7 +69,12 @@ const CHAMPS_DEPOT_LUS = {
 
 type LigneDepot = Prisma.ArtworkGetPayload<{ select: typeof CHAMPS_DEPOT_LUS }>
 
-function versDepot(l: LigneDepot, offres: DepotLu['offres'], repriseDisponible: boolean): DepotLu {
+function versDepot(
+  l: LigneDepot,
+  offres: DepotLu['offres'],
+  repriseDisponible: boolean,
+  renvoi: DepotLu['renvoi'],
+): DepotLu {
   return {
     slug: l.slug,
     titre: l.title,
@@ -89,6 +95,7 @@ function versDepot(l: LigneDepot, offres: DepotLu['offres'], repriseDisponible: 
     engagementEmballage: l.engagementEmballage,
     engagementReprise: l.engagementReprise,
     repriseDisponible,
+    renvoi,
   }
 }
 
@@ -249,14 +256,17 @@ export async function lireDepot(acteur: Acteur, slug: string): Promise<ResultatD
   })
 }
 
-async function lireLigne(tx: Prisma.TransactionClient, id: string): Promise<{ ligne: LigneDepot; depot: DepotLu }> {
+/** Ligne et dépôt d'une œuvre, quel que soit son état (dépôt, récapitulatif, curation par l'équipe). */
+export async function lireLigne(tx: Prisma.TransactionClient, id: string): Promise<{ ligne: LigneDepot; depot: DepotLu }> {
   const ligne = await tx.artwork.findUniqueOrThrow({ where: { id }, select: CHAMPS_DEPOT_LUS })
   const offres = await offresDeLOeuvre(tx, id)
   const reprise = (await derniereOeuvreAvecOffres(tx, ligne.artistId, id)) !== null
-  return { ligne, depot: versDepot(ligne, offres, reprise) }
+  // Story 2.7 : commentaire du dernier renvoi de l'équipe, jusqu'au prochain envoi en curation.
+  const renvoi = await dernierRenvoi(tx, id)
+  return { ligne, depot: versDepot(ligne, offres, reprise, renvoi) }
 }
 
-/** Relit le dépôt après une écriture, dans la même transaction. */
+/** Relit le dépôt après une écriture, dans la même transaction (avec le dernier renvoi de l'équipe). */
 export async function relireDepot(tx: Prisma.TransactionClient, id: string): Promise<DepotLu> {
   return (await lireLigne(tx, id)).depot
 }

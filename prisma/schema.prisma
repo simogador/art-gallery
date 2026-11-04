@@ -25,6 +25,9 @@ model Artist {
   invitations Invitation[]
   userId      String?   @unique
   user        User?     @relation(fields: [userId], references: [id])
+  // Story 2.7 (FR-16) : date de signature de l'accord écrit, enregistrée par l'équipe ; sans elle,
+  // aucune œuvre de l'artiste n'est publiée. Écrite seulement par le module curation.
+  accordSigneLe DateTime? @db.Date
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -65,6 +68,7 @@ model Artwork {
   ambiance         String?
   couleurDominante String?
   photos           PhotoOeuvre[]
+  decisionsCuration DecisionCuration[]
   // Story 2.6 (FR-20) : visites en atelier (null : pas encore renseignée), trois engagements de
   // l'artiste et date d'envoi en curation (ordre de la file, story 2.7). Écrits seulement par curation.
   visitesAtelier       Boolean?
@@ -95,6 +99,27 @@ enum Disponibilite {
   vendue
   vendue_ailleurs
   retiree
+}
+
+// Story 2.7 (FR-25) : décisions de l'équipe sur une œuvre en curation, conservées ; écrites
+// seulement par le module curation. `controle` : codes de la liste de contrôle cochés.
+// `adminId` : utilisateur admin auteur (sans clé étrangère, comme Invitation.creeParId).
+enum TypeDecisionCuration {
+  valider
+  renvoyer
+}
+
+model DecisionCuration {
+  id          String               @id @default(cuid())
+  artwork     Artwork              @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  artworkId   String
+  decision    TypeDecisionCuration
+  commentaire String?              @db.Text
+  controle    String[]             @default([])
+  adminId     String?
+  createdAt   DateTime             @default(now())
+
+  @@index([artworkId, createdAt])
 }
 
 // Story 2.5 : une photo (ou vidéo) par prise de vue attendue, envoyée directement à Cloudinary

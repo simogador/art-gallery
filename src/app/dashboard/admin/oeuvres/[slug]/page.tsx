@@ -6,6 +6,8 @@ import { ArtworkForm } from '@/components/dashboard/ArtworkForm'
 import { versOeuvreAEditer } from '@/lib/catalogue'
 import { ToggleAction } from '@/components/dashboard/ToggleAction'
 import { acteurCourant } from '@/lib/acces'
+import { basculesPublication, oeuvreACurer } from '@/lib/curation'
+import { PageCuration } from './PageCuration'
 import { basculePossible, estMarqueeDisponible, estPubliee, estRecopiee, estVisible, libelleEtat } from '@/lib/disponibilite'
 
 interface Props { params: Promise<{ slug: string }> }
@@ -16,14 +18,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function AdminEditOeuvrePage({ params }: Props) {
-  if ((await acteurCourant()).type !== 'admin') redirect('/dashboard')
+  const acteur = await acteurCourant()
+  if (acteur.type !== 'admin') redirect('/dashboard')
 
   const { slug } = await params
+
+  // Story 2.7 : une œuvre en curation s'ouvre dans la page de curation (récapitulatif en lecture
+  // seule, liste de contrôle, valider ou renvoyer), jamais dans le formulaire d'édition.
+  const aCurer = await oeuvreACurer(acteur, slug)
+  if (aCurer.ok) return <PageCuration oeuvre={aCurer.oeuvre} />
   const artwork  = await prisma.artwork.findUnique({
     where:  { slug },
     include: { artist: { select: { name: true, slug: true } } },
   })
   if (!artwork) notFound()
+  // Story 2.7 : bascule « Publiée / Brouillon » seulement là où definirPublication l'accepte.
+  const basculable = (await basculesPublication(acteur, [slug])).has(slug)
 
   return (
     <div>
@@ -53,7 +63,7 @@ export default async function AdminEditOeuvrePage({ params }: Props) {
             <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">
               {libelleEtat(artwork)}
             </span>
-            {estRecopiee(artwork) && (
+            {estRecopiee(artwork) && basculable && (
             <ToggleAction
               value={estPubliee(artwork)}
               apiUrl={`/api/admin/oeuvres/${artwork.slug}`}
