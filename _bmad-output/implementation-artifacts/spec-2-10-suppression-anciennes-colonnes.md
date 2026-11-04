@@ -2,7 +2,7 @@
 title: 'Story 2.10 — Suppression des anciennes colonnes'
 type: 'refactor'
 created: '2026-11-04'
-status: 'draft'
+status: 'in-progress'
 route: 'dispatch'
 review_loop_iteration: 1
 baseline_commit: 'f7e5998d7e1226cfd1db2bd28707b4bf18bb4cc4'
@@ -79,7 +79,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 
 ## Spec Change Log
 
-- **Relecture 1 (itération 0 → 1), intent_gap tranché par le porteur le 2026-11-04.** Constat : avec A = `DROP NOT NULL`, le nouveau code crée des œuvres à `dimensions` NULL que l'ancien client Prisma (`dimensions String`) et `champsDimensionsModifiees` ne supportent pas : la ligne « Retour arrière avant B » de la matrice était fausse. Amendement : A devient `SET DEFAULT ''` (bloc gelé, décision du porteur). État évité : retour arrière impossible avant B. KEEP (de l'itération 0, copie du diff dans le brouillon de l'agent) : découpage du code (`champsPrix`/`champsDimensions` en colonnes exactes seules, suppression de `champAvailable`, `champsDimensionsExactes`, `champsDimensionsModifiees`, `OeuvreVerrouillee = { id, slug }`, un champ de dimension du dépôt n'écrit que sa colonne), test `tests/anciennes-colonnes.test.ts` (énumération Prisma, scan statique avec témoin, base « après A »), section 2.10 de `docs/migrations.md` (SQL exact, empreintes, contrôles avant B dont la requête « artistes avec accord », retour arrière avant et après B), mises à jour d'`AGENTS.md`.
+- **Relecture 1 (itération 0 → 1), intent_gap tranché par le porteur le 2026-11-04.** Constat : avec A = `DROP NOT NULL`, le nouveau code crée des œuvres à `dimensions` NULL que l'ancien client Prisma (`dimensions String`) et `champsDimensionsModifiees` ne supportent pas : la ligne « Retour arrière avant B » de la matrice était fausse. Amendement : A devient `SET DEFAULT ''` (bloc gelé, décision du porteur). État évité : retour arrière impossible avant B. KEEP (de l'itération 0, diff complet conservé hors dépôt : `/tmp/claude-0/-home-user-art-gallery/a8f1e083-4c70-5ce5-bdbb-952959d3d527/scratchpad/diff-2-10-iteration0.patch`, à reprendre en l'adaptant à A = `SET DEFAULT ''` et aux Design Notes) : découpage du code (`champsPrix`/`champsDimensions` en colonnes exactes seules, suppression de `champAvailable`, `champsDimensionsExactes`, `champsDimensionsModifiees`, `OeuvreVerrouillee = { id, slug }`, un champ de dimension du dépôt n'écrit que sa colonne), test `tests/anciennes-colonnes.test.ts` (énumération Prisma, scan statique avec témoin, base « après A »), section 2.10 de `docs/migrations.md` (SQL exact, empreintes, contrôles avant B dont la requête « artistes avec accord », retour arrière avant et après B), mises à jour d'`AGENTS.md`.
 
 ## Review Triage Log
 
