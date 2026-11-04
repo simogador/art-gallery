@@ -8,12 +8,16 @@ import { acteurCourant } from '@/lib/acces'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
 import { lireDepot, lireOeuvreEnCuration } from '@/lib/curation'
 import { zonesOuvertes } from '@/lib/livraison'
-import { DELAI_REPONSE_CURATION_JOURS } from '@/lib/reglages'
+import { CONTACT_EQUIPE, DELAI_ANNULATION_DECLARATION_MINUTES, DELAI_REPONSE_CURATION_JOURS } from '@/lib/reglages'
+import { derniereDeclaration, ecrireAEquipe, heureLisible, messageDeclaration } from '@/lib/disponibilite'
+import { InfoBanner } from '@/components/dashboard/InfoBanner'
+import { AvailabilityPicker, BoutonAnnulerDeclaration } from '@/components/dashboard/AvailabilityPicker'
 import { PageDepot } from '../depot/PageDepot'
 import { RecapitulatifCuration } from '../depot/RecapitulatifCuration'
 
 interface Props {
   params: Promise<{ slug: string }>
+  searchParams?: Promise<{ declaration?: string | string[]; annulee?: string | string[] }>
 }
 
 // Une seule lecture du dépôt par requête, partagée par generateMetadata et la page. React.cache
@@ -30,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export const dynamic = 'force-dynamic'
 
-export default async function EditOeuvrePage({ params }: Props) {
+export default async function EditOeuvrePage({ params, searchParams }: Props) {
   // Rôle relu à chaque page : le layout n'est pas réexécuté lors d'une navigation interne.
   const acteur = await acteurCourant()
   if (acteur.type === 'visiteur') redirect('/auth/connexion')
@@ -43,7 +47,7 @@ export default async function EditOeuvrePage({ params }: Props) {
   // Story 2.5 : un brouillon de l'artiste s'ouvre dans le formulaire de dépôt. Une œuvre d'un autre
   // artiste (acces_refuse) ou inexistante : 404. Story 2.6 : une œuvre en curation s'affiche en
   // lecture seule (récapitulatif et délai de réponse) ; une œuvre publiée garde l'ancienne page
-  // d'édition, jusqu'aux stories 2.7 et 2.8.
+  // d'édition, avec le changement de disponibilité (story 2.8).
   const depot = await depotDeLaPage(slug)
   if (depot.ok) {
     return <PageDepot depot={depot.depot} zones={await zonesOuvertes()} />
@@ -56,6 +60,14 @@ export default async function EditOeuvrePage({ params }: Props) {
   // null si l'œuvre n'existe pas ou appartient à un autre artiste.
   const artwork = await oeuvreAEditer(acteur.userId, slug)
   if (!artwork) notFound()
+
+  // Story 2.8 : disponibilité tenue par l'artiste ; bandeau après une déclaration ou son annulation.
+  const retourDe = await searchParams
+  const declaration = await derniereDeclaration(acteur, slug)
+  const bandeauDeclaration = retourDe?.declaration === '1' && declaration ? declaration : null
+  const bandeauAnnulation = retourDe?.annulee === '1' && artwork.disponible
+  const annulableJusquA =
+    declaration?.annulable && !bandeauDeclaration ? heureLisible(declaration.annulableJusquA) : null
 
   return (
     <div>
@@ -98,6 +110,30 @@ export default async function EditOeuvrePage({ params }: Props) {
             )}
           </div>
         </div>
+      </div>
+
+      {bandeauDeclaration && (
+        <InfoBanner
+          action={bandeauDeclaration.annulable ? <BoutonAnnulerDeclaration slug={artwork.slug} retour="fiche" lien /> : undefined}
+        >
+          {messageDeclaration(bandeauDeclaration.type, bandeauDeclaration.le)}
+        </InfoBanner>
+      )}
+      {bandeauAnnulation && <InfoBanner>Déclaration annulée : l&apos;œuvre est de nouveau en vente.</InfoBanner>}
+
+      <div className="mb-10 empty:hidden">
+        <AvailabilityPicker
+          key={artwork.etat}
+          slug={artwork.slug}
+          titre={artwork.title}
+          declarations={artwork.declarations}
+          contactEquipe={ecrireAEquipe(artwork.etat, declaration?.annulable ?? false)}
+          remiseEnVente={artwork.remiseEnVente}
+          contact={CONTACT_EQUIPE}
+          delaiAnnulationMinutes={DELAI_ANNULATION_DECLARATION_MINUTES}
+          annulableJusquA={annulableJusquA}
+          retour="fiche"
+        />
       </div>
 
       <div className="divider mb-10" />

@@ -73,3 +73,10 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-7-curation-par-l-equipe.md`
   summary: Signaler « Renvoyée — à corriger » dans les listes d'œuvres de l'artiste.
   evidence: le renvoi n'est visible que sur la fiche de dépôt ; aucun e-mail avant l'épopée 4.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-8-disponibilite-artiste.md`
+  summary: Tester dans un navigateur la feuille de confirmation (Échap, voile, retour du focus) et le choix de disponibilité.
+  evidence: Vitest tourne sans DOM ; vérification manuelle sur la préversion en attendant jsdom ou Playwright.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-8-disponibilite-artiste.md`
+  summary: Vérifier la remise en vente d'une œuvre publiée par l'ancien chemin (sans photos ni engagements du dépôt).
+  evidence: non vérifié ; la page de curation suppose les données du dépôt.

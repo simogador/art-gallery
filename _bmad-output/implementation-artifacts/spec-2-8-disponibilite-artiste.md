@@ -2,7 +2,7 @@
 title: 'Story 2.8 — L''artiste tient la disponibilité de ses œuvres'
 type: 'feature'
 created: '2026-11-04'
-status: 'in-progress'
+status: 'done'
 route: 'dispatch'
 baseline_commit: 'd7279208563344d6b6c4980c6fd606630c3771b4'
 review_loop_iteration: 0
@@ -62,12 +62,12 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `prisma/schema.prisma` + `prisma/migrations/<horodatage>_declarations_disponibilite/` -- table additive.
-- [ ] `src/lib/disponibilite/`, `src/lib/curation/` -- déclarer, annuler, remettre en vente, libellés -- logique métier.
-- [ ] `src/app/dashboard/artiste/oeuvres/` (+ composants `availability-picker`, `confirm-sheet`, `info-banner`) -- interface artiste.
-- [ ] `src/app/galerie/[id]/page.tsx` -- « Vendue » et cache ≤ 60 s si nécessaire.
-- [ ] `tests/disponibilite-artiste.test.ts` -- matrice, propriété, concurrence avec la validation de curation, refus du checkout.
-- [ ] `docs/migrations.md`, `AGENTS.md` -- journal et repères.
+- [x] `prisma/schema.prisma` + `prisma/migrations/<horodatage>_declarations_disponibilite/` -- table additive.
+- [x] `src/lib/disponibilite/`, `src/lib/curation/` -- déclarer, annuler, remettre en vente, libellés -- logique métier.
+- [x] `src/app/dashboard/artiste/oeuvres/` (+ composants `availability-picker`, `confirm-sheet`, `info-banner`) -- interface artiste.
+- [x] `src/app/galerie/[id]/page.tsx` -- « Vendue » et cache ≤ 60 s si nécessaire.
+- [x] `tests/disponibilite-artiste.test.ts` -- matrice, propriété, concurrence avec la validation de curation, refus du checkout.
+- [x] `docs/migrations.md`, `AGENTS.md` -- journal et repères.
 
 **Acceptance Criteria:**
 - Given la feuille de confirmation ouverte, when l'artiste appuie sur Échap ou sur le voile, then rien n'est écrit et le focus revient sur le bouton qui l'a ouverte.
@@ -75,9 +75,38 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 
 ## Implementation Notes
 
+- Migration `20261104064428_declarations_disponibilite` (`migrate dev --create-only` sur PostgreSQL local ; `migrate diff` : aucune différence). Énumération `TypeDeclarationDisponibilite` ; `userId` sans clé étrangère (comme `DecisionCuration.adminId`) ; `createdAt` écrit par le code (même horloge que le contrôle du délai).
+- `disponibilite` : `declarerDisponibilite`, `annulerDeclaration` (paramètre `maintenant` pour les tests), `dernieresDeclarations`/`derniereDeclaration` (lecture du bandeau et de « Annuler »), `disponibiliteRemiseEnVente` (valeur écrite par curation, comme `disponibiliteInitiale`). Ordre des refus : `acces_refuse`, `introuvable`, `non_recopiee`, `transition_interdite`, puis `delai_depasse`. `reservationInterrompue` vaut vrai si l'œuvre était `reservee` (aucune ne l'est avant l'epic 6) ; une telle déclaration ne s'annule pas.
+- `curation/remise-en-vente.ts` : `remettreEnVente` réutilise `verrouillerOeuvre` (désormais exporté de `depot.ts`). Après la remise, retour à « Mes œuvres » avec le bandeau existant du délai de réponse (`?envoyee=1`).
+- Interface : le choix « Vendue ailleurs » / « Retirer de la vente » est un groupe dépliable (`aria-expanded`), pas une feuille : une seule feuille (`<dialog>` modal natif) à la fois. Bandeau via `?declaration=<slug>` (liste) ou `?declaration=1` (fiche) ; le bouton « Annuler (jusqu'à HH h MM) » de la ligne disparaît pour l'œuvre du bandeau (un seul « Annuler »). « Remettre en vente » passe aussi par la feuille de confirmation. Badge visible sur téléphone, lien d'édition à 44 px, `loading.tsx`.
+- Fiche publique : toutes les routes étaient déjà dynamiques (ƒ) ; l'action revalide le site entier, `revalidate = 60` ajouté en garde-fou. « Vendue » déjà affiché pour toute œuvre non disponible.
+- `LIBELLES_ETAT.disponible` reste « Disponible » (administration) ; « Publiée » seulement dans l'espace artiste (`libelleEtatArtiste`, via `EtatAffiche`).
+- « Écrire à l'équipe » (`ecrireAEquipe`) : œuvre vendue, ou vendue ailleurs dont « Annuler » n'est plus possible.
+- Remise en vente : la déclaration « retirée » ouverte est close (`annuleeLe`, `cloreDeclarationRetrait` de `disponibilite`) dans la même transaction.
+- Webhook Stripe (`marquerVendues`) : seules les œuvres `disponible` ou `reservee` passent `vendue` ; une œuvre déclarée vendue ailleurs ou retirée reste inchangée et est signalée par `console.error` (slugs seulement). Cas résiduel : une session de paiement ouverte avant la déclaration peut encore être payée ; la commande existe alors pour une œuvre vendue ailleurs ou retirée, et l'équipe traite le remboursement à la main (réservation et annulation outillées en epic 6).
+
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Constat (relecteur) | Verdict | Preuve | Suite |
+|---|---|---|---|---|
+| 1 | « Vendue ailleurs » au-delà de 15 min : aucune action, pas même « Écrire à l'équipe » (3 relecteurs) | medium | `contactEquipeSeulement` limité à `vendue` | patch : `ecrireAEquipe` |
+| 2 | Paiement d'une session ouverte avant la déclaration : le webhook écrase `vendue_ailleurs`/`retiree` (aveugle, cas limites) | medium | `marquerVendues` | patch : œuvres déclarées laissées intactes, `console.error` ; reste noté (remboursement à la main, epic 6) |
+| 3 | Fermeture native de la feuille sans `onCancel` (cas limites) | low | singleton non libéré | patch : gestionnaire `close` |
+| 4 | « Publiée » remplace « Disponible » côté admin (aveugle, cas limites) | low | table partagée | patch : `libelleEtatArtiste` |
+| 5 | Remise en vente sans trace ; transtypage des codes risqué (aveugle) | low | `annuleeLe` jamais posé | patch : `cloreDeclarationRetrait`, codes explicites |
+| 6 | Note de retour arrière fausse (aveugle) | low | `basculePossible` refuse ces états | patch : SQL indiqué |
+| 7 | Badge « Retirée » barré peu lisible (aveugle) | low | `line-through` | patch |
+| 8 | `aria-controls` vers un élément absent (aveugle) | low | groupe replié | patch |
+| 9 | Règle d'écriture des déclarations non vérifiée (aveugle) | low | test d'isolement limité aux colonnes | patch : test étendu |
+| 10 | Fiche `[slug]` jamais rendue avec les bandeaux (vérification, aveugle) | medium | aucun test | patch : test ajouté |
+| 11 | Statut du suivi divergent (aveugle) | low | `in-progress` | patch |
+| 12 | Comportement client de la feuille (Échap, voile, focus) non testé (vérification, aveugle) | low | Vitest sans DOM | defer : vérification manuelle en préversion |
+| 13 | Déclaration d'une œuvre `reservee` sans libération de la réservation (aveugle) | low | aucune réservation avant l'epic 6 | rejeté |
+| 14 | Remise en vente d'une œuvre ancienne sans données de dépôt (aveugle) | maybe-false | aucune œuvre ancienne retirée | defer |
+| 15 | `revalidate = 60` sans effet, invalidation de tout le site (aveugle) | low | performance | rejeté |
+| 16 | Bandeau initial possiblement non annoncé par les lecteurs d'écran (aveugle) | low | dépend du lecteur | rejeté |
 
 ## Verification
 

@@ -135,6 +135,17 @@ Retour arrière : le code précédent fonctionne sur la base migrée (colonnes a
   DELETE FROM "_prisma_migrations" WHERE migration_name = '20261104060111_curation';
   ```
 
+### Story 2.8 : disponibilité tenue par l'artiste
+
+- Migration : `20261104064428_declarations_disponibilite` (empreinte SHA-256 : `def27bf932044d0bb35ff828f7d822939efec5d0e2307907d61b57d1b47ddf61`). Nouvelle énumération `TypeDeclarationDisponibilite` (`vendue_ailleurs`, `retiree`) et table `DeclarationDisponibilite` (œuvre en `CASCADE`, type, `userId` de l'artiste sans clé étrangère, `reservationInterrompue` faux par défaut, `annuleeLe` facultative, date ; index `(artworkId, createdAt)`).
+- Ajout seulement, aucune recopie. Le nouveau code lit la table (« Mes œuvres », fiche de l'œuvre de l'artiste) et échouerait sans elle : même procédure que les précédentes, `preview` puis production **avant la fusion**, avec la ligne `_prisma_migrations` et l'empreinte SHA-256.
+- Retour arrière : l'ancien code ignore la table. Une œuvre vendue ailleurs reste affichée « Vendue » et non achetable (`available` fausse) ; une œuvre retirée redirige toujours vers son artiste ; l'artiste ne peut plus annuler ni remettre en vente, et la bascule de l'administration refuse ces deux états : pour remettre une œuvre en vente, seule voie, l'éditeur SQL de Neon, en une transaction : `UPDATE "Artwork" SET "disponibilite" = 'disponible', "available" = ("publication" = 'publiee') WHERE "slug" = '<slug>' AND "disponibilite" IN ('vendue_ailleurs', 'retiree');`. Pour retirer la migration (dernier recours, les déclarations sont perdues) :
+  ```sql
+  DROP TABLE "DeclarationDisponibilite";
+  DROP TYPE "TypeDeclarationDisponibilite";
+  DELETE FROM "_prisma_migrations" WHERE migration_name = '20261104064428_declarations_disponibilite';
+  ```
+
 ## Journal des bases partagées
 
 - 2026-10-28 : sur `production` puis sur la branche `preview`, la ligne de base `20261027150000_ligne_de_base` a été déclarée (sans exécution) et `20261027230000_inscriptions_ouverture` appliquée, en une transaction depuis l'éditeur SQL de Neon (SQL de la migration et empreintes SHA-256 identiques à celles de Prisma). Point de restauration : branche `avant-migrations-28-10` (expire le 2026-11-04).

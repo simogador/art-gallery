@@ -12,6 +12,7 @@ import { champAvailable, estEnCuration, estRecopiee, lireEtatVerrouille, type Pu
 // Story 2.7 : curation par l'équipe (./file) — file, valider (exige l'accord signé), renvoyer avec
 // commentaire, décisions conservées, accord signé de l'artiste ; règles pures dans ./curation-regles.
 // La bascule definirPublication refuse désormais une œuvre en curation : la file est le seul chemin.
+// Story 2.8 : « Remettre en vente » une œuvre retirée par l'artiste la renvoie en curation (./remise-en-vente).
 
 export {
   enregistrerChamp,
@@ -48,6 +49,7 @@ export {
   type ResultatOeuvreACurer,
 } from './file'
 export * from './curation-regles'
+export { remettreEnVente, type ResultatRemiseEnVente } from './remise-en-vente'
 
 export type ResultatPublication =
   | { ok: true }

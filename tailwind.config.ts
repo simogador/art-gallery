@@ -80,11 +80,17 @@ const config: Config = {
           '0%':   { opacity: '0', transform: 'scale(0.96)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
+        // Story 2.8 : feuille de confirmation qui monte du bas (confirm-sheet).
+        'slide-up': {
+          '0%':   { transform: 'translateY(100%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
       },
       animation: {
         'fade-in':  'fade-in 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
         'fade-out': 'fade-out 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
         'scale-in': 'scale-in 450ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
+        'slide-up': 'slide-up 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both',
       },
       boxShadow: {
         'premium-sm': '0 1px 3px 0 rgba(10,10,10,0.08), 0 1px 2px -1px rgba(10,10,10,0.04)',

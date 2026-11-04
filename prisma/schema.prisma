@@ -69,6 +69,7 @@ model Artwork {
   couleurDominante String?
   photos           PhotoOeuvre[]
   decisionsCuration DecisionCuration[]
+  declarationsDisponibilite DeclarationDisponibilite[]
   // Story 2.6 (FR-20) : visites en atelier (null : pas encore renseignée), trois engagements de
   // l'artiste et date d'envoi en curation (ordre de la file, story 2.7). Écrits seulement par curation.
   visitesAtelier       Boolean?
@@ -118,6 +119,27 @@ model DecisionCuration {
   controle    String[]             @default([])
   adminId     String?
   createdAt   DateTime             @default(now())
+
+  @@index([artworkId, createdAt])
+}
+
+// Story 2.8 (FR-21) : déclaration de l'artiste sur la disponibilité d'une œuvre publiée
+// (vendue ailleurs, retirée). Écrite seulement par le module disponibilite. reservationInterrompue
+// reste faux tant qu'il n'existe pas de réservation (epic 6) ; annuleeLe : « Annuler » dans le délai.
+enum TypeDeclarationDisponibilite {
+  vendue_ailleurs
+  retiree
+}
+
+model DeclarationDisponibilite {
+  id                     String                       @id @default(cuid())
+  artwork                Artwork                      @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  artworkId              String
+  type                   TypeDeclarationDisponibilite
+  userId                 String
+  reservationInterrompue Boolean                      @default(false)
+  annuleeLe              DateTime?
+  createdAt              DateTime                     @default(now())
 
   @@index([artworkId, createdAt])
 }

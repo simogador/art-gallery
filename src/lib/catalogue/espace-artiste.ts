@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import {
-  CHAMPS_ETAT, VENDUE, codeEtat, estDisponible, estVendue, estVisible, libelleEtat, type CodeEtat, type EtatOeuvre,
+  CHAMPS_ETAT, VENDUE, codeEtat, contactEquipeSeulement, declarationsPossibles, estDisponible, estVendue, estVisible,
+  libelleEtatArtiste, remiseEnVentePossible, type CodeEtat, type EtatOeuvre, type TypeDeclaration,
 } from '@/lib/disponibilite'
 import { centimesEnEuros, formaterDimensions } from './conversions'
 
@@ -22,9 +23,9 @@ type OeuvreLue = {
 
 /** État affiché à l'artiste (story 2.2), calculé par le module disponibilite. */
 export type EtatAffiche = {
-  /** Code des sept états : brouillon, en_curation, disponible, reservee, vendue, vendue_ailleurs, retiree. */
+  /** Code des sept états : brouillon, en_curation, disponible (« Publiée »), reservee, vendue, vendue_ailleurs, retiree. */
   etat: CodeEtat
-  /** « Brouillon », « En curation », « Disponible », « Réservée », « Vendue », « Vendue ailleurs », « Retirée ». */
+  /** « Brouillon », « En curation », « Publiée », « Réservée », « Vendue », « Vendue ailleurs », « Retirée ». */
   libelleEtat: string
   /** Publiée et disponible à la vente. */
   disponible: boolean
@@ -32,12 +33,19 @@ export type EtatAffiche = {
   visible: boolean
   /** Vendue (même règle que le chiffre d'affaires). */
   vendue: boolean
+  /** Story 2.8 : déclarations proposées (« Vendue ailleurs », « Retirer de la vente »). */
+  declarations: TypeDeclaration[]
+  /** Story 2.8 : vendue par Errancy, seul « Écrire à l'équipe » est proposé (voir aussi ecrireAEquipe). */
+  contactEquipe: boolean
+  /** Story 2.8 : retirée, « Remettre en vente » (retour en curation). */
+  remiseEnVente: boolean
 }
 
 function etatAffiche(e: EtatOeuvre): EtatAffiche {
   return {
-    etat: codeEtat(e), libelleEtat: libelleEtat(e),
+    etat: codeEtat(e), libelleEtat: libelleEtatArtiste(e),
     disponible: estDisponible(e), visible: estVisible(e), vendue: estVendue(e),
+    declarations: declarationsPossibles(e), contactEquipe: contactEquipeSeulement(e), remiseEnVente: remiseEnVentePossible(e),
   }
 }
 
