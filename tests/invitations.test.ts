@@ -141,8 +141,8 @@ describe('base : invitations', () => {
       )
     }
     await db.query(
-      `INSERT INTO "Artwork" (id, slug, title, year, medium, dimensions, description, "imageUrl", "artistId", "updatedAt")
-       VALUES ('oeuvre-b', 'oeuvre-b', 'Œuvre de B', 2020, 'Huile', '10 × 10 cm', 'Description', '', 'artiste-b', now())`,
+      `INSERT INTO "Artwork" (id, slug, title, year, medium, description, "imageUrl", "artistId", "updatedAt")
+       VALUES ('oeuvre-b', 'oeuvre-b', 'Œuvre de B', 2020, 'Huile', 'Description', '', 'artiste-b', now())`,
     )
   })
 

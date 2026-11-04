@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import type { Acteur } from '@/lib/acces'
 import { refusPublication } from './file'
-import { champAvailable, estEnCuration, estRecopiee, lireEtatVerrouille, type Publication } from '@/lib/disponibilite'
+import { estEnCuration, estRecopiee, lireEtatVerrouille, type Publication } from '@/lib/disponibilite'
 
 // Module curation (AD-6, story 2.2) : seul module qui écrit l'axe publication (`publication`).
 // Un admin publie ou dépublie depuis l'administration (bascule historique, definirPublication) ;
@@ -60,8 +60,8 @@ export type ResultatPublication =
  * œuvre pas encore recopiée, et pour une œuvre en curation (`transition_interdite`, story 2.7 :
  * elle se valide ou se renvoie depuis la file de curation). Pour publier (story 2.7) : refus d'une
  * œuvre passée par le dépôt sans validation en dernier lieu (`transition_interdite`, la file est le
- * seul chemin) et d'une œuvre dont l'artiste n'a pas d'accord signé (`accord_absent`). Tient aussi l'ancienne colonne `available` (double écriture, définie
- * par disponibilite), sur la ligne verrouillée : un paiement concurrent ne peut pas l'invalider.
+ * seul chemin) et d'une œuvre dont l'artiste n'a pas d'accord signé (`accord_absent`). Écrit sur la ligne
+ * verrouillée : un paiement concurrent attend la fin de la transaction.
  */
 export async function definirPublication(
   acteur: Acteur,
@@ -81,7 +81,7 @@ export async function definirPublication(
     }
     await tx.artwork.update({
       where: { slug },
-      data: { publication, ...champAvailable({ publication, disponibilite: actuel.disponibilite }) },
+      data: { publication },
     })
     return { ok: true }
   })

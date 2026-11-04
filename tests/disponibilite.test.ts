@@ -3,7 +3,6 @@ import path from 'node:path'
 import { Client } from 'pg'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  champAvailable,
   codeEtat,
   estDisponible,
   estVisible,
@@ -40,9 +39,6 @@ vi.mock('next/navigation', () => ({
   },
 }))
 
-const SQL_RECOPIE = readFileSync(path.resolve('scripts/sql/recopie-publication-disponibilite.sql'), 'utf8')
-const SQL_ECARTS = readFileSync(path.resolve('scripts/sql/ecarts-publication-disponibilite.sql'), 'utf8')
-const SQL_CORRECTION = readFileSync(path.resolve('scripts/sql/corriger-ecarts-publication-disponibilite.sql'), 'utf8')
 const SQL_VENDUES_SANS_COMMANDE = readFileSync(path.resolve('scripts/sql/vendues-sans-commande.sql'), 'utf8')
 
 const PUBLICATIONS: (Publication | null)[] = ['brouillon', 'en_curation', 'publiee', null]
@@ -60,7 +56,6 @@ describe('définitions de « visible » et « disponible »', () => {
         expect(estVisible({ ...e, artist: { accordSigneLe: null, active: true } })).toBe(false)
         expect(estVisible({ ...e, artist: { ...accord, active: false } })).toBe(false)
         expect(estDisponible(e), JSON.stringify(e)).toBe(publiee && disponibilite === 'disponible')
-        expect(champAvailable(e)).toEqual({ available: estDisponible(e) })
       }
     }
   })
@@ -112,43 +107,29 @@ describe('seuls les modules disponibilite et curation lisent ou écrivent les de
       )
     expect(trouves).toEqual([])
   })
-
-  it('aucune lecture de l’ancienne colonne available hors des deux modules', () => {
-    // Seule exception : le champ `available` du corps de la requête admin (bascule), transmis à disponibilite.
-    const lecture = /\.available\b|\bavailable\s*[:?]/
-    const trouves = fichiers('src')
-      .filter((f) => !AUTORISES.some((a) => f.split(path.sep).join('/').startsWith(a)))
-      .flatMap((f) =>
-        readFileSync(f, 'utf8')
-          .split('\n')
-          .filter((ligne) => !/^\s*(\/\/|\*|\/\*)/.test(ligne) && lecture.test(ligne.replace(/\bbody\.available\b/g, '')))
-          .map((ligne) => `${f}: ${ligne.trim()}`),
-      )
-    expect(trouves).toEqual([])
-  })
 })
 
-describe('base : recopie, lectures et écritures', () => {
+describe('base : lectures et écritures', () => {
   let base: BaseJetable
   let db: Client
 
-  // Insertion par l'ancien code : sans les nouvelles colonnes.
-  async function ancienneOeuvre(slug: string, available = true, prixCentimes = 10000) {
+  // Œuvre antérieure à la story 2.2 : axes publication et disponibilite vides.
+  async function ancienneOeuvre(slug: string, prixCentimes = 10000) {
     await db.query(
-      `INSERT INTO "Artwork" (id, slug, title, year, medium, dimensions, description, "imageUrl", price, "prixCentimes", available, "artistId", "updatedAt")
-       VALUES ($1, $1, $2, 2020, 'Huile sur toile', '10 × 10 cm', 'Description', '', $3, $4, $5, 'artiste-1', now())`,
-      [slug, `Titre ${slug}`, prixCentimes / 100, prixCentimes, available],
+      `INSERT INTO "Artwork" (id, slug, title, year, medium, description, "imageUrl", "prixCentimes", "hauteurMm", "largeurMm", "artistId", "updatedAt")
+       VALUES ($1, $1, $2, 2020, 'Huile sur toile', 'Description', '', $3, 100, 100, 'artiste-1', now())`,
+      [slug, `Titre ${slug}`, prixCentimes],
     )
   }
   async function oeuvre(slug: string, publication: Publication | null, disponibilite: Disponibilite | null) {
-    await ancienneOeuvre(slug, estDisponible({ publication, disponibilite }))
+    await ancienneOeuvre(slug)
     await db.query(
       `UPDATE "Artwork" SET publication = $2::"Publication", disponibilite = $3::"Disponibilite" WHERE slug = $1`,
       [slug, publication, disponibilite],
     )
   }
   const etat = async (slug: string) =>
-    (await db.query(`SELECT publication, disponibilite, available FROM "Artwork" WHERE slug = $1`, [slug])).rows[0]
+    (await db.query(`SELECT publication, disponibilite FROM "Artwork" WHERE slug = $1`, [slug])).rows[0]
 
   const ADMIN = { type: 'admin', userId: 'admin' }
   const ARTISTE = { type: 'artist', userId: UTILISATEUR, artiste: { id: 'artiste-1', slug: 'artiste-1', name: 'Artiste Un' } }
@@ -184,70 +165,6 @@ describe('base : recopie, lectures et écritures', () => {
     await db.query('DELETE FROM "Artwork"')
   })
 
-  it('la recopie suit available, deux fois sans changement, sans écraser une valeur présente', async () => {
-    await ancienneOeuvre('dispo', true)
-    await ancienneOeuvre('vendue', false)
-    await ancienneOeuvre('deja-brouillon', true)
-    await db.query(
-      `UPDATE "Artwork" SET publication = 'brouillon', disponibilite = 'retiree' WHERE slug = 'deja-brouillon'`,
-    )
-
-    await db.query(SQL_RECOPIE)
-    const premier = (await db.query('SELECT * FROM "Artwork" ORDER BY slug')).rows
-    await db.query(SQL_RECOPIE)
-    expect((await db.query('SELECT * FROM "Artwork" ORDER BY slug')).rows).toEqual(premier)
-
-    expect(await etat('dispo')).toEqual({ publication: 'publiee', disponibilite: 'disponible', available: true })
-    expect(await etat('vendue')).toEqual({ publication: 'publiee', disponibilite: 'vendue', available: false })
-    expect(await etat('deja-brouillon')).toMatchObject({ publication: 'brouillon', disponibilite: 'retiree' })
-  })
-
-  it('la requête d’écarts liste les œuvres créées ou modifiées par l’ancien code après la recopie', async () => {
-    await ancienneOeuvre('intacte', true)
-    await ancienneOeuvre('vendue-par-l-ancien-code', true)
-    await ancienneOeuvre('remise-en-vente', false)
-    await db.query(SQL_RECOPIE)
-    await oeuvre('brouillon-du-nouveau-code', 'brouillon', 'disponible')
-    expect((await db.query(SQL_ECARTS)).rows).toEqual([])
-
-    // L'ancien code écrit available, jamais les nouvelles colonnes.
-    await db.query(`UPDATE "Artwork" SET available = false WHERE slug = 'vendue-par-l-ancien-code'`)
-    await db.query(`UPDATE "Artwork" SET available = true WHERE slug = 'remise-en-vente'`)
-    await ancienneOeuvre('creee-par-l-ancien-code', true)
-
-    const ecarts = async () => (await db.query(SQL_ECARTS)).rows.map((r) => r.slug)
-    expect(await ecarts()).toEqual(['creee-par-l-ancien-code', 'remise-en-vente', 'vendue-par-l-ancien-code'])
-
-    // Correction ciblée (script documenté), deux fois sans changement.
-    await db.query(SQL_CORRECTION)
-    await db.query(SQL_CORRECTION)
-    expect(await ecarts()).toEqual([])
-    expect(await etat('vendue-par-l-ancien-code')).toEqual({ publication: 'publiee', disponibilite: 'vendue', available: false })
-    expect(await etat('remise-en-vente')).toEqual({ publication: 'publiee', disponibilite: 'disponible', available: true })
-    expect(await etat('creee-par-l-ancien-code')).toEqual({ publication: 'publiee', disponibilite: 'disponible', available: true })
-    expect(await etat('brouillon-du-nouveau-code')).toMatchObject({ publication: 'brouillon' })
-  })
-
-  it('la correction ne touche jamais un état inconnu de l’ancien code', async () => {
-    const etats: [string, Publication, Disponibilite][] = [
-      ['brouillon', 'brouillon', 'disponible'],
-      ['curation', 'en_curation', 'vendue'],
-      ['reservee', 'publiee', 'reservee'],
-      ['ailleurs', 'publiee', 'vendue_ailleurs'],
-      ['retiree', 'publiee', 'retiree'],
-    ]
-    for (const [slug, publication, disponibilite] of etats) await oeuvre(slug, publication, disponibilite)
-    // L'ancien code les remet toutes en vente.
-    await db.query(`UPDATE "Artwork" SET available = true`)
-    await db.query(`UPDATE "Artwork" SET publication = NULL WHERE slug = 'reservee'`)
-    await db.query(SQL_CORRECTION)
-    for (const [slug, publication, disponibilite] of etats) {
-      expect(await etat(slug), slug).toMatchObject({ publication: slug === 'reservee' ? 'publiee' : publication, disponibilite })
-    }
-    // Elles restent listées, pour un traitement à la main.
-    expect((await db.query(SQL_ECARTS)).rows.map((r) => r.slug)).toEqual(['ailleurs', 'brouillon', 'curation', 'reservee', 'retiree'])
-  })
-
   it('liste les œuvres publiées et vendues qu’aucune commande ne contient', async () => {
     await oeuvre('vendue-commandee', 'publiee', 'vendue')
     await oeuvre('vendue-commandee-2', 'publiee', 'vendue')
@@ -266,7 +183,7 @@ describe('base : recopie, lectures et écritures', () => {
     await oeuvre('b-vendue', 'publiee', 'vendue')
     await oeuvre('c-brouillon', 'brouillon', 'disponible')
     await oeuvre('d-retiree', 'publiee', 'retiree')
-    await ancienneOeuvre('e-colonnes-vides', true)
+    await ancienneOeuvre('e-colonnes-vides')
 
     const { getAllArtworks, getArtistBySlug, getArtistArtworksBySlug } = await import('@/lib/catalogue')
     const galerie = await getAllArtworks()
@@ -283,7 +200,7 @@ describe('base : recopie, lectures et écritures', () => {
     await oeuvre('b-vendue', 'publiee', 'vendue')
     await oeuvre('c-brouillon', 'brouillon', 'disponible')
     await oeuvre('d-retiree', 'publiee', 'retiree')
-    await ancienneOeuvre('e-colonnes-vides', true)
+    await ancienneOeuvre('e-colonnes-vides')
     await db.query('DELETE FROM "Exhibition"')
     await db.query(
       `INSERT INTO "Exhibition" (id, slug, title, description, location, "startDate", "endDate", "imageUrl", "updatedAt")
@@ -377,8 +294,6 @@ describe('base : recopie, lectures et écritures', () => {
       ['brouillon' as const, 'disponible' as const],
     ])('refuse une œuvre %s / %s : « n’est plus disponible »', async (publication, disponibilite) => {
       await oeuvre('refusee', publication, disponibilite)
-      // available volontairement à true : seule la nouvelle définition décide.
-      await db.query(`UPDATE "Artwork" SET available = true WHERE slug = 'refusee'`)
       const reponse = await payer('refusee')
       expect(reponse.status).toBe(400)
       expect((await reponse.json()).error).toContain("n'est plus disponible")
@@ -405,7 +320,7 @@ describe('base : recopie, lectures et écritures', () => {
       )
     }
 
-    it('session payée : vendue et available = false, idempotent', async () => {
+    it('session payée : vendue, idempotent', async () => {
       await oeuvre('payee-1', 'publiee', 'disponible')
       await oeuvre('payee-2', 'publiee', 'disponible')
       await oeuvre('autre', 'publiee', 'disponible')
@@ -421,9 +336,9 @@ describe('base : recopie, lectures et écritures', () => {
       expect((await recevoir(evenement)).status).toBe(200)
       expect((await recevoir(evenement)).status).toBe(200)
       for (const slug of ['payee-1', 'payee-2']) {
-        expect(await etat(slug)).toEqual({ publication: 'publiee', disponibilite: 'vendue', available: false })
+        expect(await etat(slug)).toEqual({ publication: 'publiee', disponibilite: 'vendue' })
       }
-      expect(await etat('autre')).toMatchObject({ disponibilite: 'disponible', available: true })
+      expect(await etat('autre')).toMatchObject({ disponibilite: 'disponible' })
       expect((await db.query('SELECT count(*)::int AS n FROM "Order"')).rows[0].n).toBe(1)
     })
 
@@ -453,13 +368,13 @@ describe('base : recopie, lectures et écritures', () => {
         alerte.mockRestore()
       }
       for (const slug of ['p-dispo', 'p-reservee', 'p-brouillon', 'p-deja-vendue']) {
-        expect(await etat(slug), slug).toMatchObject({ disponibilite: 'vendue', available: false })
+        expect(await etat(slug), slug).toMatchObject({ disponibilite: 'vendue' })
       }
-      expect(await etat('p-retiree')).toMatchObject({ disponibilite: 'retiree', available: false })
-      expect(await etat('p-ailleurs')).toMatchObject({ disponibilite: 'vendue_ailleurs', available: false })
+      expect(await etat('p-retiree')).toMatchObject({ disponibilite: 'retiree' })
+      expect(await etat('p-ailleurs')).toMatchObject({ disponibilite: 'vendue_ailleurs' })
     })
 
-    it('paiement de secours (payment_intent) : vendue et available = false', async () => {
+    it('paiement de secours (payment_intent) : vendue', async () => {
       await oeuvre('secours', 'publiee', 'disponible')
       const evenement = {
         type: 'payment_intent.succeeded',
@@ -471,7 +386,7 @@ describe('base : recopie, lectures et écritures', () => {
         },
       }
       expect((await recevoir(evenement)).status).toBe(200)
-      expect(await etat('secours')).toEqual({ publication: 'publiee', disponibilite: 'vendue', available: false })
+      expect(await etat('secours')).toEqual({ publication: 'publiee', disponibilite: 'vendue' })
     })
   })
 
@@ -482,8 +397,7 @@ describe('base : recopie, lectures et écritures', () => {
     const cree = await enregistrerChamp(ARTISTE as never, null, 'titre', 'Nouvelle')
     if (!cree.ok) throw new Error(cree.code)
     const slug = cree.depot.slug
-    // available = « disponible » (publiée et disponible) : faux tant qu'elle n'est pas publiée.
-    expect(await etat(slug)).toEqual({ publication: 'brouillon', disponibilite: 'disponible', available: false })
+    expect(await etat(slug)).toEqual({ publication: 'brouillon', disponibilite: 'disponible' })
 
     const { getAllArtworks, getArtworkBySlug, oeuvresDeLArtiste } = await import('@/lib/catalogue')
     expect(await getAllArtworks()).toEqual([])
@@ -502,30 +416,30 @@ describe('base : recopie, lectures et écritures', () => {
       )
     }
 
-    it('un admin publie puis dépublie ; available suit « disponible »', async () => {
+    it('un admin publie puis dépublie ; la disponibilité ne change pas', async () => {
       await oeuvre('a-publier', 'brouillon', 'disponible')
       acteur.courant = ADMIN
       expect((await modifier('a-publier', { publiee: true })).status).toBe(200)
-      expect(await etat('a-publier')).toEqual({ publication: 'publiee', disponibilite: 'disponible', available: true })
+      expect(await etat('a-publier')).toEqual({ publication: 'publiee', disponibilite: 'disponible' })
       const { getAllArtworks } = await import('@/lib/catalogue')
       expect((await getAllArtworks()).map((w) => w.id)).toEqual(['a-publier'])
 
       expect((await modifier('a-publier', { publiee: false })).status).toBe(200)
-      expect(await etat('a-publier')).toEqual({ publication: 'brouillon', disponibilite: 'disponible', available: false })
+      expect(await etat('a-publier')).toEqual({ publication: 'brouillon', disponibilite: 'disponible' })
     })
 
-    it('un admin bascule Disponible / Vendue ; available cohérent', async () => {
+    it('un admin bascule Disponible / Vendue', async () => {
       await oeuvre('a-basculer', 'publiee', 'disponible')
       acteur.courant = ADMIN
       expect((await modifier('a-basculer', { available: false })).status).toBe(200)
-      expect(await etat('a-basculer')).toEqual({ publication: 'publiee', disponibilite: 'vendue', available: false })
+      expect(await etat('a-basculer')).toEqual({ publication: 'publiee', disponibilite: 'vendue' })
       expect((await modifier('a-basculer', { available: true })).status).toBe(200)
-      expect(await etat('a-basculer')).toEqual({ publication: 'publiee', disponibilite: 'disponible', available: true })
+      expect(await etat('a-basculer')).toEqual({ publication: 'publiee', disponibilite: 'disponible' })
 
-      // Brouillon remis en vente : disponible, mais available reste faux tant qu'il n'est pas publié.
+      // Brouillon remis en vente : disponible, toujours brouillon.
       await oeuvre('brouillon-vendu', 'brouillon', 'vendue')
       expect((await modifier('brouillon-vendu', { available: true })).status).toBe(200)
-      expect(await etat('brouillon-vendu')).toEqual({ publication: 'brouillon', disponibilite: 'disponible', available: false })
+      expect(await etat('brouillon-vendu')).toEqual({ publication: 'brouillon', disponibilite: 'disponible' })
     })
 
     it.each([['reservee' as const], ['vendue_ailleurs' as const], ['retiree' as const]])(
@@ -537,14 +451,14 @@ describe('base : recopie, lectures et écritures', () => {
           const reponse = await modifier('figee', { available })
           expect(reponse.status).toBe(409)
         }
-        expect(await etat('figee')).toEqual({ publication: 'publiee', disponibilite, available: false })
+        expect(await etat('figee')).toEqual({ publication: 'publiee', disponibilite })
         const { definirDisponibilite } = await import('@/lib/disponibilite')
         expect(await definirDisponibilite(ADMIN as never, 'figee', true)).toEqual({ ok: false, code: 'transition_interdite' })
       },
     )
 
     it('œuvre non recopiée (un axe vide) : publication et bascule refusées', async () => {
-      await ancienneOeuvre('vide', true)
+      await ancienneOeuvre('vide')
       await oeuvre('sans-dispo', 'publiee', null)
       await oeuvre('sans-publication', null, 'disponible')
       acteur.courant = ADMIN
@@ -560,7 +474,7 @@ describe('base : recopie, lectures et écritures', () => {
       }
     })
 
-    it('publication et paiement concurrents : available jamais vrai sur une œuvre vendue', async () => {
+    it('publication et paiement concurrents : publiée et vendue, dans tous les ordres', async () => {
       const { definirPublication } = await import('@/lib/curation')
       const { marquerVendues } = await import('@/lib/disponibilite')
       const journal = vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -568,7 +482,7 @@ describe('base : recopie, lectures et écritures', () => {
         for (let i = 0; i < 10; i++) {
           await oeuvre(`course-${i}`, 'brouillon', 'disponible')
           await Promise.all([definirPublication(ADMIN as never, `course-${i}`, true), marquerVendues([`course-${i}`])])
-          expect(await etat(`course-${i}`)).toEqual({ publication: 'publiee', disponibilite: 'vendue', available: false })
+          expect(await etat(`course-${i}`)).toEqual({ publication: 'publiee', disponibilite: 'vendue' })
         }
       } finally {
         journal.mockRestore()
@@ -591,7 +505,7 @@ describe('base : recopie, lectures et écritures', () => {
       acteur.courant = refuse
       expect((await modifier('protegee', { publiee: true })).status).toBe(403)
       expect((await modifier('protegee', { available: false })).status).toBe(403)
-      expect(await etat('protegee')).toEqual({ publication: 'brouillon', disponibilite: 'disponible', available: false })
+      expect(await etat('protegee')).toEqual({ publication: 'brouillon', disponibilite: 'disponible' })
     })
 
     it('les fonctions des modules vérifient elles-mêmes l’acteur', async () => {
@@ -607,7 +521,7 @@ describe('base : recopie, lectures et écritures', () => {
       await oeuvre('c1', 'publiee', 'disponible')
       await oeuvre('c2', 'publiee', 'vendue')
       await oeuvre('c3', 'brouillon', 'disponible')
-      await ancienneOeuvre('c4', true)
+      await ancienneOeuvre('c4')
       const { compterOeuvres } = await import('@/lib/disponibilite')
       expect(await compterOeuvres()).toEqual({ total: 4, disponibles: 1, vendues: 1, nonPubliees: 2 })
     })

@@ -121,14 +121,6 @@ export function basculePossible(e: EtatOeuvre): boolean {
   return e.disponibilite === 'disponible' || e.disponibilite === 'vendue'
 }
 
-/**
- * Ancienne colonne `available`, écrite en double jusqu'à la story 2.10 : égale à « disponible »,
- * pour que le code précédent, qui ne lit qu'elle, reste juste en cas de retour arrière.
- */
-export function champAvailable(e: EtatOeuvre): { available: boolean } {
-  return { available: estDisponible(e) }
-}
-
 /** Les sept états, calculés à partir des deux axes (administration comprise). */
 export type CodeEtat = 'brouillon' | 'en_curation' | Disponibilite
 

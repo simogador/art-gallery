@@ -84,3 +84,25 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-9-catalogue-reel.md`
   summary: Tester par un rendu les règles d'affichage de la section `Hero` de l'accueil (chiffres nuls masqués, pas de carte de prix pour une œuvre vendue, motif sans œuvre).
   evidence: medium (non vérifié) ; les tests n'inspectent que les props passées à `Hero`, jamais son rendu ; un rendu sous Node demande de neutraliser `useScroll` de framer-motion. Vérification manuelle en préversion en attendant.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Ajouter les contraintes `CHECK` sur `Artwork` (`prixCentimes > 0`, millimètres ≥ 1, devise de trois lettres) dans une story à part.
+  evidence: décision du porteur du 2026-11-04 (revue de la spec 2.10) : séparer pour qu'une donnée de démonstration non conforme ne fasse pas échouer la suppression des colonnes ; prévoir une requête de contrôle avant la migration.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Supprimer les œuvres et artistes de démonstration (et leurs images Cloudinary, après confirmation des droits) dans une story à part.
+  evidence: décision du porteur du 2026-11-04 : hors 2.10, suppression irréversible touchant expositions, éventuelles commandes et Cloudinary (`docs/images-demonstration.md`).
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Après la migration B de la 2.10, supprimer dans une PR de suivi les scripts SQL de recopie, d'écarts et de correction des stories 2.1 et 2.2 et leurs sections de `docs/migrations.md`.
+  evidence: ces scripts lisent les colonnes supprimées ; ils servent encore aux contrôles juste avant B.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Décrire précisément dans AGENTS.md et dans `tests/anciennes-colonnes.test.ts` la portée du scan des anciennes colonnes (chaînes, constantes d'autres fichiers, objets des fonctions d'aide non suivis).
+  evidence: revue 1 de la story 2.10 ; le scan est une heuristique, TypeScript refuse les clés après B.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Tester les requêtes de contrôle lancées avant la migration B (`dimensions-illisibles.sql`, `prix-non-recopies.sql`, requête « artistes avec accord » de la procédure).
+  evidence: medium (non vérifié) ; contrôle manuel unique en lecture seule, scripts supprimés après B.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Compléter l'entrée précédente : `ecarts-prix-dimensions.sql` et `ecarts-publication-disponibilite.sql`, lancées avant B, n'ont plus de test non plus (relecture 2).
+  evidence: tests des scripts 2.1/2.2 retirés avec les colonnes ; contrôle manuel unique avant B, scripts supprimés après.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Rendre `Artwork.publication` et `disponibilite` obligatoires (après vérification qu'aucune ligne n'est vide) et retirer les chemins `estRecopiee` / `non_recopiee`.
+  evidence: après B, aucun code ne crée d'œuvre sans les deux axes ; les branches « non recopiée » ne servent plus qu'aux œuvres antérieures à la story 2.2.

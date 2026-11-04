@@ -106,7 +106,7 @@ describe('base : curation par l’équipe', () => {
   const etat = async (slug: string) =>
     (
       await db.query(
-        `SELECT publication::text AS publication, disponibilite::text AS disponibilite, available, "envoyeeEnCurationLe"
+        `SELECT publication::text AS publication, disponibilite::text AS disponibilite, "envoyeeEnCurationLe"
          FROM "Artwork" WHERE slug = $1`,
         [slug],
       )
@@ -125,11 +125,11 @@ describe('base : curation par l’équipe', () => {
   /** Œuvre insérée directement dans l'état voulu (date d'envoi facultative). */
   async function oeuvre(slug: string, publication: string, envoyeeLe: string | null = null, artiste = 'artiste-1') {
     await db.query(
-      `INSERT INTO "Artwork" (id, slug, title, year, medium, dimensions, description, "imageUrl", price, "prixCentimes",
-                              "hauteurMm", "largeurMm", available, publication, disponibilite, "artistId",
+      `INSERT INTO "Artwork" (id, slug, title, year, medium, description, "imageUrl", "prixCentimes",
+                              "hauteurMm", "largeurMm", publication, disponibilite, "artistId",
                               "envoyeeEnCurationLe", "createdAt", "updatedAt")
-       VALUES ($1, $1, $1, 2024, 'Huile', '60 × 80 cm', 'Histoire', 'https://res.cloudinary.com/x/image/upload/a.jpg',
-               950, 95000, 600, 800, false, $2::"Publication", 'disponible', $3, $4, now(), now())`,
+       VALUES ($1, $1, $1, 2024, 'Huile', 'Histoire', 'https://res.cloudinary.com/x/image/upload/a.jpg',
+               95000, 600, 800, $2::"Publication", 'disponible', $3, $4, now(), now())`,
       [slug, publication, artiste, envoyeeLe],
     )
   }
@@ -221,7 +221,7 @@ describe('base : curation par l’équipe', () => {
       expect((await getAllArtworks()).map((a) => a.id)).not.toContain('a-valider')
 
       expect(await validerOeuvre(ADMIN as never, 'a-valider', TOUS)).toEqual({ ok: true, slug: 'a-valider' })
-      expect(await etat('a-valider')).toMatchObject({ publication: 'publiee', disponibilite: 'disponible', available: true })
+      expect(await etat('a-valider')).toMatchObject({ publication: 'publiee', disponibilite: 'disponible' })
       expect(await decisions()).toEqual([
         { slug: 'a-valider', decision: 'valider', commentaire: null, controle: TOUS, adminId: 'admin-1' },
       ])
@@ -233,7 +233,7 @@ describe('base : curation par l’équipe', () => {
       const { validerOeuvre } = await import('@/lib/curation')
       await oeuvre('sans-accord', 'en_curation', '2026-11-01T09:00:00Z')
       expect(await validerOeuvre(ADMIN as never, 'sans-accord', TOUS)).toEqual({ ok: false, code: 'accord_absent' })
-      expect(await etat('sans-accord')).toMatchObject({ publication: 'en_curation', available: false })
+      expect(await etat('sans-accord')).toMatchObject({ publication: 'en_curation' })
       expect(await decisions()).toEqual([])
     })
 
@@ -285,7 +285,7 @@ describe('base : curation par l’équipe', () => {
         ok: true,
         slug: 'a-renvoyer',
       })
-      expect(await etat('a-renvoyer')).toMatchObject({ publication: 'brouillon', disponibilite: 'disponible', available: false })
+      expect(await etat('a-renvoyer')).toMatchObject({ publication: 'brouillon', disponibilite: 'disponible' })
       expect(await decisions()).toEqual([
         { slug: 'a-renvoyer', decision: 'renvoyer', commentaire: COMMENTAIRE, controle: ['photos', 'champs'], adminId: 'admin-1' },
       ])

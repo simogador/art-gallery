@@ -5,7 +5,6 @@ import { DELAI_ANNULATION_DECLARATION_MINUTES } from '@/lib/reglages'
 import {
   annulationAdmise,
   basculePossible,
-  champAvailable,
   dansLeDelai,
   declarationsPossibles,
   DISPONIBLE,
@@ -17,14 +16,12 @@ import {
   type DeclarationLue,
   type Disponibilite,
   type EtatOeuvre,
-  type Publication,
   type TypeDeclaration,
 } from './etats'
 
 // Module disponibilite (AD-6, AD-7, story 2.2) : seul module qui écrit l'axe disponibilité
 // (`disponibilite`) ; seul à définir « visible » et « disponible » (./etats, pur).
-// Double écriture jusqu'à la story 2.10 : chaque écriture tient aussi `available` égale à
-// « disponible » (champAvailable), pour que le retour au commit précédent reste possible.
+// L'ancienne colonne `available` a disparu (story 2.10) : seuls les deux axes font foi.
 
 export * from './etats'
 
@@ -33,8 +30,8 @@ export type ResultatEcriture = { ok: true } | { ok: false; code: CodeRefus }
 
 /**
  * Lit les deux axes d'une œuvre en verrouillant sa ligne (SELECT … FOR UPDATE) jusqu'à la fin de
- * la transaction : deux écritures concurrentes (publication, paiement) ne calculent jamais
- * `available` sur un axe périmé. null si l'œuvre n'existe pas. Utilisé aussi par curation.
+ * la transaction : deux écritures concurrentes (publication, paiement) ne décident jamais
+ * d'une transition sur un axe périmé. null si l'œuvre n'existe pas. Utilisé aussi par curation.
  */
 export async function lireEtatVerrouille(tx: Prisma.TransactionClient, slug: string): Promise<EtatOeuvre | null> {
   const lignes = await tx.$queryRaw<EtatOeuvre[]>`
@@ -47,21 +44,13 @@ export async function lireEtatVerrouille(tx: Prisma.TransactionClient, slug: str
  * Disponibilité d'une œuvre retirée que l'artiste remet en vente (story 2.8) : elle repasse en
  * curation (curation.remettreEnVente) et redevient `disponible`, pour que l'équipe la revalide.
  */
-export function disponibiliteRemiseEnVente({ publication }: { publication: Publication }): {
-  disponibilite: Disponibilite
-  available: boolean
-} {
-  const disponibilite: Disponibilite = 'disponible'
-  return { disponibilite, ...champAvailable({ publication, disponibilite }) }
+export function disponibiliteRemiseEnVente(): { disponibilite: Disponibilite } {
+  return { disponibilite: 'disponible' }
 }
 
-/** Disponibilité d'une œuvre qui vient d'être créée, selon sa publication initiale (curation.publicationInitiale). */
-export function disponibiliteInitiale({ publication }: { publication: Publication }): {
-  disponibilite: Disponibilite
-  available: boolean
-} {
-  const disponibilite: Disponibilite = 'disponible'
-  return { disponibilite, ...champAvailable({ publication, disponibilite }) }
+/** Disponibilité d'une œuvre qui vient d'être créée (brouillon du dépôt, curation.creerBrouillon) : toujours `disponible`. */
+export function disponibiliteInitiale(): { disponibilite: Disponibilite } {
+  return { disponibilite: 'disponible' }
 }
 
 // État attendu d'une œuvre au moment du paiement : publiée, disponible ou réservée.
@@ -75,7 +64,7 @@ function estDeclaree(e: EtatOeuvre): boolean {
 }
 
 /**
- * Œuvres payées (webhook Stripe) : `vendue`, `available` = false, pour les seules œuvres `disponible`
+ * Œuvres payées (webhook Stripe) : `vendue`, pour les seules œuvres `disponible`
  * ou `reservee` (le paiement est un fait). Idempotent. Une œuvre déclarée vendue ailleurs ou retirée
  * par l'artiste (session de paiement ouverte avant la déclaration, story 2.8) reste inchangée et est
  * signalée à l'équipe par console.error (slugs seulement : commande payée à traiter, remboursement).
@@ -101,7 +90,7 @@ export async function marquerVendues(slugs: string[]): Promise<number> {
     }
     await tx.artwork.updateMany({
       where: { slug: { in: slugs }, disponibilite: { in: ['disponible', 'reservee'] } },
-      data: { disponibilite: 'vendue', available: false },
+      data: { disponibilite: 'vendue' },
     })
     return lignes.length
   })
@@ -125,7 +114,7 @@ export async function definirDisponibilite(
     if (!basculePossible(actuel)) return { ok: false, code: 'transition_interdite' }
     await tx.artwork.update({
       where: { slug },
-      data: { disponibilite, ...champAvailable({ publication: actuel.publication, disponibilite }) },
+      data: { disponibilite },
     })
     return { ok: true }
   })
@@ -191,7 +180,7 @@ async function derniere(tx: Prisma.TransactionClient, artworkId: string) {
 
 /**
  * L'artiste propriétaire déclare une œuvre publiée, disponible ou réservée, « vendue ailleurs » ou
- * « retirée » : l'axe disponibilité change sur la ligne verrouillée (`available` devient fausse),
+ * « retirée » : l'axe disponibilité change sur la ligne verrouillée,
  * et la déclaration est enregistrée (œuvre, type, artiste, date, réservation interrompue). Dès la
  * validation de la transaction, le checkout refuse l'œuvre (estDisponible). Refus, sans rien écrire :
  * `acces_refuse`, `introuvable`, `non_recopiee`, `transition_interdite` (brouillon, en curation,
@@ -210,7 +199,7 @@ export async function declarerDisponibilite(acteur: Acteur, slug: unknown, type:
     const disponibilite: Disponibilite = type
     await tx.artwork.update({
       where: { id: ligne.id },
-      data: { disponibilite, ...champAvailable({ publication: ligne.publication, disponibilite }) },
+      data: { disponibilite },
     })
     const d = await tx.declarationDisponibilite.create({
       data: {
@@ -254,7 +243,7 @@ export async function annulerDeclaration(
     const disponibilite: Disponibilite = 'disponible'
     await tx.artwork.update({
       where: { id: ligne.id },
-      data: { disponibilite, ...champAvailable({ publication: ligne.publication, disponibilite }) },
+      data: { disponibilite },
     })
     await tx.declarationDisponibilite.update({ where: { id: d.id }, data: { annuleeLe: maintenant } })
     return { ok: true }

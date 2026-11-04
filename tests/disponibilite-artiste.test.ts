@@ -7,7 +7,6 @@ import {
   dansLeDelai,
   declarationsPossibles,
   ecrireAEquipe,
-  estDisponible,
   libelleEtat,
   libelleEtatArtiste,
   messageDeclaration,
@@ -114,7 +113,7 @@ describe('base : disponibilité tenue par l’artiste', () => {
   const etat = async (slug: string) =>
     (
       await db.query(
-        `SELECT publication::text AS publication, disponibilite::text AS disponibilite, available, "envoyeeEnCurationLe"
+        `SELECT publication::text AS publication, disponibilite::text AS disponibilite, "envoyeeEnCurationLe"
          FROM "Artwork" WHERE slug = $1`,
         [slug],
       )
@@ -129,11 +128,11 @@ describe('base : disponibilité tenue par l’artiste', () => {
 
   async function oeuvre(slug: string, publication: Publication, disponibilite: Disponibilite, artiste = 'artiste-1') {
     await db.query(
-      `INSERT INTO "Artwork" (id, slug, title, year, medium, dimensions, description, "imageUrl", price, "prixCentimes",
-                              "hauteurMm", "largeurMm", available, publication, disponibilite, "artistId", "createdAt", "updatedAt")
-       VALUES ($1, $1, $1, 2024, 'Huile', '60 × 80 cm', 'Histoire', 'https://res.cloudinary.com/x/image/upload/a.jpg',
-               950, 95000, 600, 800, $2, $3::"Publication", $4::"Disponibilite", $5, now(), now())`,
-      [slug, estDisponible({ publication, disponibilite }), publication, disponibilite, artiste],
+      `INSERT INTO "Artwork" (id, slug, title, year, medium, description, "imageUrl", "prixCentimes",
+                              "hauteurMm", "largeurMm", publication, disponibilite, "artistId", "createdAt", "updatedAt")
+       VALUES ($1, $1, $1, 2024, 'Huile', 'Histoire', 'https://res.cloudinary.com/x/image/upload/a.jpg',
+               95000, 600, 800, $2::"Publication", $3::"Disponibilite", $4, now(), now())`,
+      [slug, publication, disponibilite, artiste],
     )
   }
 
@@ -170,7 +169,7 @@ describe('base : disponibilité tenue par l’artiste', () => {
   })
 
   describe('matrice', () => {
-    it('vendue ailleurs : état, available, déclaration enregistrée avec son heure', async () => {
+    it('vendue ailleurs : état, déclaration enregistrée avec son heure', async () => {
       const { declarerDisponibilite } = await dispo()
       await oeuvre('nuit', 'publiee', 'disponible')
       const avant = Date.now()
@@ -178,7 +177,7 @@ describe('base : disponibilité tenue par l’artiste', () => {
       if (!r.ok) throw new Error(r.code)
       expect(r.declaration).toMatchObject({ type: 'vendue_ailleurs', reservationInterrompue: false, annuleeLe: null })
       expect(r.declaration.le.getTime()).toBeGreaterThanOrEqual(avant - 1000)
-      expect(await etat('nuit')).toMatchObject({ publication: 'publiee', disponibilite: 'vendue_ailleurs', available: false })
+      expect(await etat('nuit')).toMatchObject({ publication: 'publiee', disponibilite: 'vendue_ailleurs' })
       expect(await declarations()).toMatchObject([
         { slug: 'nuit', type: 'vendue_ailleurs', userId: 'utilisateur-1', reservationInterrompue: false, annuleeLe: null },
       ])
@@ -190,7 +189,7 @@ describe('base : disponibilité tenue par l’artiste', () => {
       // Story 2.9 : la redirection suppose une page artiste publique (une autre œuvre visible).
       await oeuvre('autre-visible', 'publiee', 'disponible')
       expect(await declarerDisponibilite(ARTISTE as never, 'aube', 'retiree')).toMatchObject({ ok: true })
-      expect(await etat('aube')).toMatchObject({ publication: 'publiee', disponibilite: 'retiree', available: false })
+      expect(await etat('aube')).toMatchObject({ publication: 'publiee', disponibilite: 'retiree' })
       const { default: Fiche } = await import('@/app/galerie/[id]/page')
       await expect(Fiche({ params: { id: 'aube' } })).rejects.toThrow('redirection-permanente:/artistes/mustapha-timija')
     })
@@ -209,7 +208,7 @@ describe('base : disponibilité tenue par l’artiste', () => {
       await oeuvre('nuit', 'publiee', 'disponible')
       await declarerDisponibilite(ARTISTE as never, 'nuit', 'vendue_ailleurs')
       expect(await annulerDeclaration(ARTISTE as never, 'nuit')).toEqual({ ok: true })
-      expect(await etat('nuit')).toMatchObject({ publication: 'publiee', disponibilite: 'disponible', available: true })
+      expect(await etat('nuit')).toMatchObject({ publication: 'publiee', disponibilite: 'disponible' })
       const [d] = await declarations()
       expect(d.annuleeLe).not.toBeNull()
       expect(await annulerDeclaration(ARTISTE as never, 'nuit')).toEqual({ ok: false, code: 'transition_interdite' })
@@ -238,7 +237,7 @@ describe('base : disponibilité tenue par l’artiste', () => {
       await declarerDisponibilite(ARTISTE as never, 'tard', 'retiree')
       await db.query(`UPDATE "DeclarationDisponibilite" SET "createdAt" = now() - interval '16 minutes'`)
       expect(await annulerDeclaration(ARTISTE as never, 'tard')).toEqual({ ok: false, code: 'delai_depasse' })
-      expect(await etat('tard')).toMatchObject({ disponibilite: 'retiree', available: false })
+      expect(await etat('tard')).toMatchObject({ disponibilite: 'retiree' })
       expect((await declarations())[0].annuleeLe).toBeNull()
     })
 
@@ -281,13 +280,13 @@ describe('base : disponibilité tenue par l’artiste', () => {
       const avant = Date.now()
       expect(await remettreEnVente(ARTISTE as never, 'retiree')).toEqual({ ok: true, slug: 'retiree' })
       const e = await etat('retiree')
-      expect(e).toMatchObject({ publication: 'en_curation', disponibilite: 'disponible', available: false })
+      expect(e).toMatchObject({ publication: 'en_curation', disponibilite: 'disponible' })
       expect(new Date(e.envoyeeEnCurationLe).getTime()).toBeGreaterThanOrEqual(avant - 1000)
       expect(await declarations()).toEqual([])
       const file = await fileDeCuration(ADMIN as never)
       expect(file.ok && file.file.map((o) => o.slug)).toEqual(['retiree'])
       expect(await validerOeuvre(ADMIN as never, 'retiree', TOUS)).toMatchObject({ ok: true })
-      expect(await etat('retiree')).toMatchObject({ publication: 'publiee', disponibilite: 'disponible', available: true })
+      expect(await etat('retiree')).toMatchObject({ publication: 'publiee', disponibilite: 'disponible' })
     })
 
     it.each([
@@ -338,7 +337,7 @@ describe('base : disponibilité tenue par l’artiste', () => {
       await oeuvre('double', 'publiee', 'disponible')
       for (let i = 0; i < 5; i++) {
         await db.query('DELETE FROM "DeclarationDisponibilite"')
-        await db.query(`UPDATE "Artwork" SET disponibilite = 'disponible', available = true WHERE slug = 'double'`)
+        await db.query(`UPDATE "Artwork" SET disponibilite = 'disponible' WHERE slug = 'double'`)
         const resultats = await Promise.all([
           declarerDisponibilite(ARTISTE as never, 'double', 'vendue_ailleurs'),
           declarerDisponibilite(ARTISTE as never, 'double', 'retiree'),
@@ -347,7 +346,7 @@ describe('base : disponibilité tenue par l’artiste', () => {
         expect(resultats.filter((r) => !r.ok)).toEqual([{ ok: false, code: 'transition_interdite' }])
         const [d] = await declarations()
         expect(await declarations()).toHaveLength(1)
-        expect(await etat('double')).toMatchObject({ disponibilite: d.type, available: false })
+        expect(await etat('double')).toMatchObject({ disponibilite: d.type })
       }
     })
 
@@ -365,11 +364,11 @@ describe('base : disponibilité tenue par l’artiste', () => {
         const e = await etat('en-file')
         if (declaration.ok) {
           // La validation est passée la première : l'œuvre publiée a été retirée ensuite.
-          expect(e).toMatchObject({ publication: 'publiee', disponibilite: 'retiree', available: false })
+          expect(e).toMatchObject({ publication: 'publiee', disponibilite: 'retiree' })
           expect(await declarations()).toHaveLength(1)
         } else {
           expect(declaration).toEqual({ ok: false, code: 'transition_interdite' })
-          expect(e).toMatchObject({ publication: 'publiee', disponibilite: 'disponible', available: true })
+          expect(e).toMatchObject({ publication: 'publiee', disponibilite: 'disponible' })
           expect(await declarations()).toEqual([])
         }
       }
@@ -386,10 +385,10 @@ describe('base : disponibilité tenue par l’artiste', () => {
         ])
         expect(remise).toMatchObject({ ok: true })
         const e = await etat('retiree')
-        if (validation.ok) expect(e).toMatchObject({ publication: 'publiee', disponibilite: 'disponible', available: true })
+        if (validation.ok) expect(e).toMatchObject({ publication: 'publiee', disponibilite: 'disponible' })
         else {
           expect(validation).toEqual({ ok: false, code: 'transition_interdite' })
-          expect(e).toMatchObject({ publication: 'en_curation', disponibilite: 'disponible', available: false })
+          expect(e).toMatchObject({ publication: 'en_curation', disponibilite: 'disponible' })
         }
       }
     })

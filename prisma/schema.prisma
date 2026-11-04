@@ -41,21 +41,18 @@ model Artwork {
   title       String
   year        Int
   medium      String
-  dimensions  String
   description String             @db.Text
   imageUrl    String
-  price       Float?
-  // AD-20 (story 2.1) : valeurs exactes. price et dimensions restent écrites jusqu'à la
-  // story 2.10 ; colonnes facultatives pour que l'ancien code insère encore sans elles.
+  // AD-5, AD-20 (story 2.1) : valeurs exactes, seules colonnes du prix et des dimensions depuis la
+  // story 2.10 (anciennes colonnes price et dimensions supprimées).
   prixCentimes Int?
   devise       String             @default("EUR")
   hauteurMm    Int?
   largeurMm    Int?
   profondeurMm Int?
-  available   Boolean            @default(true)
   // AD-6, AD-20 (story 2.2) : deux axes distincts. Écrits seulement par les modules curation
-  // (publication) et disponibilite (disponibilite) ; available reste écrit jusqu'à la story 2.10.
-  // Facultatives, sans valeur par défaut : l'ancien code insère encore sans elles.
+  // (publication) et disponibilite (disponibilite) ; l'ancienne colonne available est supprimée
+  // (story 2.10). Facultatives, sans valeur par défaut (œuvres antérieures à la story 2.2).
   publication   Publication?
   disponibilite Disponibilite?
   featured    Boolean            @default(false)

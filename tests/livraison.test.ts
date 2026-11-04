@@ -137,8 +137,8 @@ describe('base : zones de livraison', () => {
        VALUES ('artiste-1', 'artiste-1', 'Artiste Un', 'MA', 1980, 'Bio', '', now())`,
     )
     await db.query(
-      `INSERT INTO "Artwork" (id, slug, title, year, medium, dimensions, description, "imageUrl", "artistId", "updatedAt")
-       VALUES ('oeuvre-1', 'oeuvre-1', 'Titre', 2020, 'Huile', '10 × 10 cm', 'Description', '', 'artiste-1', now())`,
+      `INSERT INTO "Artwork" (id, slug, title, year, medium, description, "imageUrl", "artistId", "updatedAt")
+       VALUES ('oeuvre-1', 'oeuvre-1', 'Titre', 2020, 'Huile', 'Description', '', 'artiste-1', now())`,
     )
   })
 
@@ -419,8 +419,8 @@ describe('base : zones de livraison', () => {
       const monde = await creerZone(ADMIN, { nom: 'Reste du monde', pays: ['US'] })
       if (!maroc.ok || !monde.ok) throw new Error('zones')
       await db.query(
-        `INSERT INTO "Artwork" (id, slug, title, year, medium, dimensions, description, "imageUrl", "artistId", "updatedAt")
-         VALUES ('oeuvre-2', 'oeuvre-2', 'Titre 2', 2021, 'Huile', '', 'D', '', 'artiste-1', now()) ON CONFLICT DO NOTHING`,
+        `INSERT INTO "Artwork" (id, slug, title, year, medium, description, "imageUrl", "artistId", "updatedAt")
+         VALUES ('oeuvre-2', 'oeuvre-2', 'Titre 2', 2021, 'Huile', 'D', '', 'artiste-1', now()) ON CONFLICT DO NOTHING`,
       )
       const livree = { livree: true, fraisCentimes: 2500, preparationJours: 3, transportMinJours: 2, transportMaxJours: 5 }
       expect(await enregistrerOffre(prisma, 'oeuvre-1', maroc.id, livree)).toBe(true)
@@ -448,8 +448,8 @@ describe('base : zones de livraison', () => {
       if (!maroc.ok) throw new Error('zone')
       for (const [id, decalage] of [['ancienne', '-2 days'], ['recente', '-1 day'], ['cible', '0 day']] as const) {
         await db.query(
-          `INSERT INTO "Artwork" (id, slug, title, year, medium, dimensions, description, "imageUrl", "artistId", "createdAt", "updatedAt")
-           VALUES ($1, $1, $1, 2021, 'Huile', '', 'D', '', 'artiste-1', now() + $2::interval, now())`,
+          `INSERT INTO "Artwork" (id, slug, title, year, medium, description, "imageUrl", "artistId", "createdAt", "updatedAt")
+           VALUES ($1, $1, $1, 2021, 'Huile', 'D', '', 'artiste-1', now() + $2::interval, now())`,
           [id, decalage],
         )
       }

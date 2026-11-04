@@ -53,7 +53,7 @@ Rôles : `admin` → /dashboard/admin ; `artist` ou `admin` → /dashboard/artis
 
 - **Achat** : panier (Zustand, persistant) → `POST /api/checkout` (auth requise, prix revalidés
   côté serveur depuis la DB) → Stripe Checkout → webhook `checkout.session.completed` qui marque
-  les œuvres `available=false` et crée l'`Order` (upsert idempotent) ; `payment_intent.succeeded`
+  les œuvres `vendue` (colonne `disponibilite`, story 2.2 ; `available` supprimée en 2.10) et crée l'`Order` (upsert idempotent) ; `payment_intent.succeeded`
   sert de secours.
 - **Auth** : Google OAuth ou email/mot de passe ; le rôle est placé dans le JWT puis la session.
 

@@ -18,11 +18,8 @@ vi.mock('@/lib/prisma', () => ({
         {
           slug: 'oeuvre-1',
           title: 'Œuvre 1',
-          available: true,
           publication: 'publiee',
           disponibilite: 'disponible',
-          // Ancienne colonne volontairement différente : le montant vient de prixCentimes (story 2.1).
-          price: 1,
           prixCentimes: 125050,
           devise: 'EUR',
           year: 2020,
@@ -122,7 +119,7 @@ describe('chemin d’achat actuel', () => {
     it('POST /api/checkout refuse une œuvre dont le prix n’est pas recopié en centimes', async () => {
       const { prisma } = await import('@/lib/prisma')
       vi.mocked(prisma.artwork.findMany).mockResolvedValueOnce([
-        { slug: 'oeuvre-1', title: 'Œuvre 1', available: true, publication: 'publiee', disponibilite: 'disponible', price: 1200, prixCentimes: null, devise: 'EUR',
+        { slug: 'oeuvre-1', title: 'Œuvre 1', publication: 'publiee', disponibilite: 'disponible', prixCentimes: null, devise: 'EUR',
           year: 2020, medium: 'Huile', artist: { name: 'Artiste', accordSigneLe: new Date('2026-11-01'), active: true } },
       ] as never)
       const { POST } = await import('@/app/api/checkout/route')

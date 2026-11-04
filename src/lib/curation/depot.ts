@@ -2,13 +2,11 @@ import { randomBytes } from 'node:crypto'
 import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@/generated/prisma/client'
 import type { Acteur } from '@/lib/acces'
-import { champsDimensionsExactes, champsPrix } from '@/lib/catalogue/conversions'
+import { champsPrix } from '@/lib/catalogue/conversions'
 import {
-  champAvailable,
   disponibiliteInitiale,
   estBrouillon,
   estEnCuration,
-  lireEtatVerrouille,
   type EtatOeuvre,
   type Publication,
 } from '@/lib/disponibilite'
@@ -104,7 +102,7 @@ export function artisteDeposant(acteur: Acteur): string | null {
   return acteur.type === 'artist' && acteur.artiste ? acteur.artiste.id : null
 }
 
-export type OeuvreVerrouillee = { id: string; slug: string; hauteurMm: number | null; largeurMm: number | null; profondeurMm: number | null }
+export type OeuvreVerrouillee = { id: string; slug: string }
 
 /**
  * Œuvre en dépôt de l'acteur, ligne verrouillée jusqu'à la fin de la transaction (une curation ou
@@ -130,26 +128,22 @@ export async function verrouillerOeuvre(
   const artisteId = artisteDeposant(acteur)
   if (!artisteId) return { ok: false, code: 'acces_refuse' }
   const lignes = await tx.$queryRaw<(OeuvreVerrouillee & EtatOeuvre & { artistId: string })[]>`
-    SELECT "id", "slug", "artistId", "hauteurMm", "largeurMm", "profondeurMm",
-           "publication"::text AS publication, "disponibilite"::text AS disponibilite
+    SELECT "id", "slug", "artistId", "publication"::text AS publication, "disponibilite"::text AS disponibilite
     FROM "Artwork" WHERE "slug" = ${slug} FOR UPDATE`
   const l = lignes[0]
   if (!l) return { ok: false, code: 'introuvable' }
   if (l.artistId !== artisteId) return { ok: false, code: 'acces_refuse' }
   if (!accepte(l)) return { ok: false, code: 'transition_interdite' }
-  return { ok: true, oeuvre: { id: l.id, slug: l.slug, hauteurMm: l.hauteurMm, largeurMm: l.largeurMm, profondeurMm: l.profondeurMm } }
+  return { ok: true, oeuvre: { id: l.id, slug: l.slug } }
 }
 
 const slugProvisoire = () => `brouillon-${randomBytes(4).toString('hex')}`
 
 /**
  * Crée le brouillon d'une œuvre au premier enregistrement : `brouillon` + `disponible` (absente du
- * catalogue), champs obligatoires de l'ancien schéma vides, slug provisoire.
+ * catalogue), champs obligatoires vides, ni prix ni dimensions, slug provisoire.
  */
 export async function creerBrouillon(tx: Prisma.TransactionClient, artisteId: string): Promise<OeuvreVerrouillee> {
-  const initiale = publicationInitiale()
-  const prix = champsPrix(null)
-  if (!prix.ok) throw new Error('champsPrix(null) refusé')
   return tx.artwork.create({
     data: {
       slug: slugProvisoire(),
@@ -158,14 +152,12 @@ export async function creerBrouillon(tx: Prisma.TransactionClient, artisteId: st
       medium: '',
       description: '',
       imageUrl: '',
-      ...prix.champs,
-      ...champsDimensionsExactes({ hauteurMm: null, largeurMm: null, profondeurMm: null }),
-      ...initiale,
-      ...disponibiliteInitiale(initiale),
+      ...publicationInitiale(),
+      ...disponibiliteInitiale(),
       featured: false,
       artistId: artisteId,
     },
-    select: { id: true, slug: true, hauteurMm: true, largeurMm: true, profondeurMm: true },
+    select: { id: true, slug: true },
   })
 }
 
@@ -223,7 +215,6 @@ async function donneesDuChamp(
     case 'couleurDominante':
       return { couleurDominante: typeof valeur === 'string' ? valeur : null }
     case 'prix': {
-      // Double écriture (AD-20) : prixCentimes et l'ancienne colonne price, par champsPrix.
       const prix = champsPrix(centimesEnSaisie(nombre))
       if (!prix.ok) throw new Error('prix validé refusé par champsPrix')
       return prix.champs
@@ -237,13 +228,11 @@ async function donneesDuChamp(
     case 'engagementReprise':
       return { engagementReprise: valeur === true }
     case 'hauteur':
+      return { hauteurMm: nombre }
     case 'largeur':
-    case 'profondeur': {
-      const cle = ({ hauteur: 'hauteurMm', largeur: 'largeurMm', profondeur: 'profondeurMm' } as const)[champ]
-      const d = { hauteurMm: oeuvre.hauteurMm, largeurMm: oeuvre.largeurMm, profondeurMm: oeuvre.profondeurMm, [cle]: nombre }
-      // Double écriture (AD-20) : millimètres et ancien texte « h × l (× p) cm ».
-      return champsDimensionsExactes(d)
-    }
+      return { largeurMm: nombre }
+    case 'profondeur':
+      return { profondeurMm: nombre }
   }
 }
 
@@ -358,16 +347,10 @@ export async function envoyerEnCuration(acteur: Acteur, slug: unknown): Promise<
     if (!verrou.ok) return verrou
     const depot = await relireDepot(tx, verrou.oeuvre.id)
     if (elementsManquants(depot, await zonesOuvertes(tx)).length > 0) return { ok: false, code: 'depot_incomplet' }
-    const etat = await lireEtatVerrouille(tx, slug)
     const publication: Publication = 'en_curation'
     await tx.artwork.update({
       where: { id: verrou.oeuvre.id },
-      data: {
-        publication,
-        envoyeeEnCurationLe: new Date(),
-        // Double écriture (AD-20) : available reste égale à « disponible », donc fausse.
-        ...champAvailable({ publication, disponibilite: etat?.disponibilite ?? null }),
-      },
+      data: { publication, envoyeeEnCurationLe: new Date() },
     })
     return { ok: true, slug: verrou.oeuvre.slug }
   })

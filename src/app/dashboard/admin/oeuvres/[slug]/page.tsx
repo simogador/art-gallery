@@ -105,7 +105,7 @@ export default async function AdminEditOeuvrePage({ params }: Props) {
       <ArtworkForm
         mode="edit"
         apiBase="/api/admin/oeuvres"
-        // Prix et dimensions lus dans les colonnes exactes ; l'ancien texte seulement s'il est illisible.
+        // Prix et dimensions lus dans les colonnes exactes (vides si non renseignés).
         artwork={versOeuvreAEditer(artwork)}
       />
     </div>
