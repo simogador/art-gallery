@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import {
-  CHAMPS_ETAT, VENDUE, codeEtat, contactEquipeSeulement, declarationsPossibles, estDisponible, estVendue, estVisible,
-  libelleEtatArtiste, remiseEnVentePossible, type CodeEtat, type EtatOeuvre, type TypeDeclaration,
+  CHAMPS_ARTISTE_ACCORD, CHAMPS_ETAT, VENDUE, aUnAccord, codeEtat, contactEquipeSeulement, declarationsPossibles, estDisponible, estPubliee, estVendue, estVisible,
+  libelleEtatArtiste, remiseEnVentePossible, type ArtisteAccord, type CodeEtat, type EtatOeuvre, type TypeDeclaration,
 } from '@/lib/disponibilite'
 import { centimesEnEuros, formaterDimensions } from './conversions'
 
@@ -13,12 +13,15 @@ const CHAMPS_OEUVRE = {
   id: true, slug: true, title: true, year: true, medium: true,
   prixCentimes: true, hauteurMm: true, largeurMm: true, profondeurMm: true,
   featured: true, imageUrl: true, createdAt: true, ...CHAMPS_ETAT,
+  // Story 2.9 : « visible » dépend aussi de l'accord signé de l'artiste.
+  artist: { select: CHAMPS_ARTISTE_ACCORD },
 } as const
 
 type OeuvreLue = {
   id: string; slug: string; title: string; year: number; medium: string
   prixCentimes: number | null; hauteurMm: number | null; largeurMm: number | null; profondeurMm: number | null
   featured: boolean; imageUrl: string; createdAt: Date
+  artist: ArtisteAccord
 } & EtatOeuvre
 
 /** État affiché à l'artiste (story 2.2), calculé par le module disponibilite. */
@@ -29,8 +32,10 @@ export type EtatAffiche = {
   libelleEtat: string
   /** Publiée et disponible à la vente. */
   disponible: boolean
-  /** Visible dans la galerie (publiée, non retirée) : sa fiche publique existe. */
+  /** Visible dans la galerie (publiée, non retirée, accord signé) : sa fiche publique existe. */
   visible: boolean
+  /** Story 2.9 : publiée mais masquée du site public, faute d'accord signé enregistré (ou artiste inactif). */
+  masqueeSansAccord: boolean
   /** Vendue (même règle que le chiffre d'affaires). */
   vendue: boolean
   /** Story 2.8 : déclarations proposées (« Vendue ailleurs », « Retirer de la vente »). */
@@ -41,10 +46,11 @@ export type EtatAffiche = {
   remiseEnVente: boolean
 }
 
-function etatAffiche(e: EtatOeuvre): EtatAffiche {
+function etatAffiche(e: EtatOeuvre & { artist: ArtisteAccord }): EtatAffiche {
   return {
     etat: codeEtat(e), libelleEtat: libelleEtatArtiste(e),
-    disponible: estDisponible(e), visible: estVisible(e), vendue: estVendue(e),
+    disponible: estDisponible(e), visible: estVisible(e), masqueeSansAccord: estPubliee(e) && !aUnAccord(e.artist),
+    vendue: estVendue(e),
     declarations: declarationsPossibles(e), contactEquipe: contactEquipeSeulement(e), remiseEnVente: remiseEnVentePossible(e),
   }
 }
@@ -147,6 +153,7 @@ export function versOeuvreAEditer(w: {
   slug: string; title: string; year: number; medium: string; description: string; imageUrl: string
   dimensions: string; price: number | null
   prixCentimes: number | null; hauteurMm: number | null; largeurMm: number | null; profondeurMm: number | null
+  artist: ArtisteAccord
 } & EtatOeuvre): OeuvreAEditer {
   const dimensionsLues = formaterDimensions(w)
   return {
@@ -162,6 +169,7 @@ export function versOeuvreAEditer(w: {
 const CHAMPS_EDITION = {
   slug: true, title: true, year: true, medium: true, description: true, imageUrl: true,
   dimensions: true, price: true, artistId: true, ...CHAMPS_ETAT,
+  artist: { select: CHAMPS_ARTISTE_ACCORD },
   prixCentimes: true, hauteurMm: true, largeurMm: true, profondeurMm: true,
 } as const
 

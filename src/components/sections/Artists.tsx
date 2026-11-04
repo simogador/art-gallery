@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { Button, Badge } from '@/components/ui'
-import { ARTISTS } from '@/data/artists'
 import type { Artist } from '@/lib/types'
 
 /* ─── Variants ────────────────────────────────────────────────────────────── */
@@ -30,9 +29,11 @@ const cardVariants = {
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 
-export function Artists() {
-  const featured  = ARTISTS.filter((a) => a.featured)
-  const secondary = ARTISTS.filter((a) => !a.featured)
+// Story 2.9 : artistes visibles du catalogue réel (accord signé, au moins une œuvre visible),
+// lus par la page d'accueil, qui masque la section quand la liste est vide.
+export function Artists({ artists }: { artists: Artist[] }) {
+  const featured  = artists.filter((a) => a.featured)
+  const secondary = artists.filter((a) => !a.featured)
 
   return (
     <section id="artistes" className="py-24 md:py-32 bg-foreground overflow-hidden">

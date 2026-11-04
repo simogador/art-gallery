@@ -2,7 +2,6 @@
 // Cette liste ne fait que diminuer : on en retire un fichier quand il passe par un
 // module de src/lib/<module>/. La CI échoue si une entrée y est ajoutée.
 module.exports = [
-  'prisma/seed.ts',
   'scripts/upload-images.ts',
   'src/app/api/admin/artistes/[id]/route.ts',
   'src/app/api/admin/oeuvres/[slug]/route.ts',

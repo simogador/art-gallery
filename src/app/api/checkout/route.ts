@@ -4,7 +4,7 @@ import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import type { CartItem } from '@/lib/store/cart'
 import { lot2Ouvert } from '@/lib/reglages'
-import { estDisponible } from '@/lib/disponibilite'
+import { CHAMPS_ARTISTE_ACCORD, estDisponible, estVisible } from '@/lib/disponibilite'
 
 export async function POST(req: NextRequest) {
   // AD-17 : tant que le Lot 2 est fermé, aucune session de paiement n'est créée.
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   // Validate prices server-side against DB — never trust the client
   const dbArtworks = await prisma.artwork.findMany({
     where:   { slug: { in: slugs } },
-    include: { artist: { select: { name: true } } },
+    include: { artist: { select: { name: true, ...CHAMPS_ARTISTE_ACCORD } } },
   })
 
   const lineItems = []
@@ -43,8 +43,9 @@ export async function POST(req: NextRequest) {
     if (!artwork) {
       return NextResponse.json({ error: `Œuvre introuvable : ${slug}` }, { status: 400 })
     }
-    // Story 2.2 : définition unique de « disponible » (publiée et disponible).
-    if (!estDisponible(artwork)) {
+    // Story 2.2 : définition unique de « disponible » (publiée et disponible) ; story 2.9 : une
+    // œuvre devenue invisible (artiste sans accord signé ou inactif) est refusée de la même façon.
+    if (!estDisponible(artwork) || !estVisible(artwork)) {
       return NextResponse.json({ error: `"${artwork.title}" n'est plus disponible.` }, { status: 400 })
     }
     if (artwork.prixCentimes === null || artwork.prixCentimes <= 0) {

@@ -47,6 +47,12 @@ export function GalleryPage({ artworks, artistNames }: Props) {
   const artistOptions = ['Tous', ...artistNames]
   const totalAvailable = artworks.filter((a) => !a.sold).length
   const totalMediums   = new Set(artworks.map((a) => a.medium)).size
+  const stats = [
+    { value: artworks.length,    label: 'Œuvres' },
+    { value: totalAvailable,     label: 'Disponibles' },
+    { value: artistNames.length, label: 'Artistes' },
+    { value: totalMediums,       label: 'Médiums' },
+  ].filter(({ value }) => value > 0)
 
   const [activeMedium,     setActiveMedium]     = useState<ArtMedium>('Tout')
   const [activeArtist,     setActiveArtist]     = useState('Tous')
@@ -117,20 +123,17 @@ export function GalleryPage({ artworks, artistNames }: Props) {
             Livraison assurée, installation à domicile sur demande.
           </motion.p>
 
-          {/* Stats row */}
-          <motion.div variants={fadeUpVariants} className="mt-10 flex flex-wrap gap-8 md:gap-16">
-            {[
-              { value: artworks.length,   label: 'Œuvres' },
-              { value: totalAvailable,   label: 'Disponibles' },
-              { value: artistNames.length, label: 'Artistes' },
-              { value: totalMediums,     label: 'Médiums' },
-            ].map(({ value, label }) => (
-              <div key={label}>
-                <p className="font-serif text-3xl font-light text-foreground">{value}</p>
-                <p className="font-sans text-[10px] uppercase tracking-[0.2em] text-neutral-400 mt-0.5">{label}</p>
-              </div>
-            ))}
-          </motion.div>
+          {/* Stats row : chiffres nuls masqués, rangée absente s'il n'en reste aucun (story 2.9). */}
+          {stats.length > 0 && (
+            <motion.div variants={fadeUpVariants} className="mt-10 flex flex-wrap gap-8 md:gap-16">
+              {stats.map(({ value, label }) => (
+                <div key={label}>
+                  <p className="font-serif text-3xl font-light text-foreground">{value}</p>
+                  <p className="font-sans text-[10px] uppercase tracking-[0.2em] text-neutral-400 mt-0.5">{label}</p>
+                </div>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
       </section>
 
@@ -303,16 +306,28 @@ export function GalleryPage({ artworks, artistNames }: Props) {
                 className="py-32 flex flex-col items-center gap-4 text-center"
               >
                 <EmptyMotif />
-                <p className="font-serif text-2xl font-light text-neutral-300">Aucune œuvre</p>
-                <p className="font-sans text-sm text-neutral-400">
-                  Aucune œuvre ne correspond à cette sélection.
-                </p>
-                <button
-                  onClick={resetFilters}
-                  className="mt-2 font-sans text-xs uppercase tracking-widest text-foreground underline underline-offset-4 hover:text-gold transition-colors"
-                >
-                  Réinitialiser les filtres
-                </button>
+                {artworks.length === 0 ? (
+                  <>
+                    {/* Story 2.9 : aucune œuvre visible dans le catalogue réel. */}
+                    <p className="font-serif text-2xl font-light text-neutral-300">La collection arrive bientôt</p>
+                    <p className="font-sans text-sm text-neutral-400 max-w-sm text-pretty">
+                      Les premières œuvres de nos artistes sont en cours de sélection. Revenez nous voir très vite.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-serif text-2xl font-light text-neutral-300">Aucune œuvre</p>
+                    <p className="font-sans text-sm text-neutral-400">
+                      Aucune œuvre ne correspond à cette sélection.
+                    </p>
+                    <button
+                      onClick={resetFilters}
+                      className="mt-2 font-sans text-xs uppercase tracking-widest text-foreground underline underline-offset-4 hover:text-gold transition-colors"
+                    >
+                      Réinitialiser les filtres
+                    </button>
+                  </>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

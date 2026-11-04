@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { Button, Badge } from '@/components/ui'
-import { EXHIBITIONS } from '@/data/exhibitions'
 import type { Exhibition, ExhibitionStatus } from '@/lib/types'
 
 type FilterTab = 'toutes' | ExhibitionStatus
@@ -37,14 +36,16 @@ const fadeUpVariants = {
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 
-export function Exhibitions() {
+// Story 2.9 : expositions visibles du catalogue réel (au moins une œuvre visible), lues par la
+// page d'accueil, qui masque la section quand la liste est vide.
+export function Exhibitions({ exhibitions }: { exhibitions: Exhibition[] }) {
   const [activeTab, setActiveTab] = useState<FilterTab>('toutes')
 
   const filtered = activeTab === 'toutes'
-    ? EXHIBITIONS
-    : EXHIBITIONS.filter((e) => e.status === activeTab)
+    ? exhibitions
+    : exhibitions.filter((e) => e.status === activeTab)
 
-  const featured = EXHIBITIONS.find((e) => e.featured && e.status === 'en-cours')
+  const featured = exhibitions.find((e) => e.featured && e.status === 'en-cours')
 
   return (
     <section id="expositions" className="py-24 md:py-32 bg-neutral-50 overflow-hidden">
@@ -87,8 +88,8 @@ export function Exhibitions() {
         <motion.div variants={fadeUpVariants} className="flex items-center gap-1 mb-10 border-b border-neutral-200">
           {TABS.map(({ value, label }) => {
             const count = value === 'toutes'
-              ? EXHIBITIONS.length
-              : EXHIBITIONS.filter((e) => e.status === value).length
+              ? exhibitions.length
+              : exhibitions.filter((e) => e.status === value).length
             const isActive = activeTab === value
 
             return (
@@ -135,6 +136,11 @@ export function Exhibitions() {
             {filtered.map((expo, i) => (
               <ExhibitionRow key={expo.id} exhibition={expo} index={i} />
             ))}
+            {filtered.length === 0 && (
+              <p className="font-sans text-sm text-neutral-400 text-center py-10">
+                Aucune exposition dans cette catégorie pour le moment.
+              </p>
+            )}
           </motion.div>
         </AnimatePresence>
 

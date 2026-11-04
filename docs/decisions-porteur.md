@@ -77,6 +77,7 @@
 | 2026-11-02 | Invitation artiste (story 2.4) : lien valable 7 jours ; « Écrire à l'équipe » mène à `contact@errancy.art` ; charte artiste provisoire rédigée par l'agent, relue par le porteur ; la fiche artiste du porteur est créée par un SQL fourni, et le porteur s'invite avec une seconde adresse (un compte n'a qu'un rôle) | Choix du porteur (story 2.4, UXQ-8) |
 | 2026-11-02 | Pendant la maintenance, les comptes artistes accèdent à leur seul espace privé (`/dashboard/artiste`) pour déposer leurs œuvres avant l'ouverture ; le site public reste en maintenance pour eux | Choix du porteur (revue de la story 2.4) ; règle `passeLaMaintenance` de `src/lib/reglages` |
 | 2026-11-02 | Charte artiste provisoire (version `2026-11-02-provisoire`, 7 articles) validée telle quelle ; une relecture juridique pourra la compléter avant qu'elle ne devienne définitive | Relecture du porteur (story 2.4) |
+| 2026-11-04 | Les œuvres et artistes de démonstration déjà en base y restent, masqués du site public par la règle « accord signé requis », sans aucune modification des données ni migration ; leur suppression éventuelle viendra plus tard (story 2.10 ou à part) | Choix du porteur (story 2.9) |
 
 ## Conséquences à traiter (relevées le 2026-10-23, à valider en PRD et architecture)
 

@@ -1,9 +1,10 @@
 import { prisma } from '@/lib/prisma'
-import { VISIBLE } from '@/lib/disponibilite'
+import { EXPOSITION_VISIBLE, VISIBLE } from '@/lib/disponibilite'
 import { mapExhibition, mapArtwork, mapArtist } from './mappers'
 import type { Exhibition, Artwork, Artist } from '@/lib/types'
 
 // Pages publiques (story 2.2) : seules les œuvres visibles sont listées et comptées.
+// Story 2.9 : une exposition n'apparaît que si elle contient au moins une œuvre visible.
 const ARTWORK_INCLUDE = {
   artworks: {
     where: { artwork: VISIBLE },
@@ -18,6 +19,7 @@ const ARTWORK_INCLUDE = {
 
 export async function getAllExhibitions(): Promise<Exhibition[]> {
   const rows = await prisma.exhibition.findMany({
+    where: EXPOSITION_VISIBLE,
     orderBy: [{ featured: 'desc' }, { startDate: 'desc' }],
     include: ARTWORK_INCLUDE,
   })
@@ -25,8 +27,8 @@ export async function getAllExhibitions(): Promise<Exhibition[]> {
 }
 
 export async function getExhibitionBySlug(slug: string): Promise<Exhibition | null> {
-  const row = await prisma.exhibition.findUnique({
-    where: { slug },
+  const row = await prisma.exhibition.findFirst({
+    where: { slug, ...EXPOSITION_VISIBLE },
     include: ARTWORK_INCLUDE,
   })
   return row ? mapExhibition(row) : null
@@ -84,7 +86,7 @@ export async function getExhibitionArtistsBySlug(slug: string): Promise<Artist[]
 
 export async function getRelatedExhibitions(slug: string, count = 3): Promise<Exhibition[]> {
   const rows = await prisma.exhibition.findMany({
-    where: { slug: { not: slug } },
+    where: { slug: { not: slug }, ...EXPOSITION_VISIBLE },
     orderBy: [{ featured: 'desc' }, { startDate: 'desc' }],
     take: count,
     include: ARTWORK_INCLUDE,

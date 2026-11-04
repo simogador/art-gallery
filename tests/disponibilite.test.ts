@@ -50,11 +50,15 @@ const DISPONIBILITES: (Disponibilite | null)[] = ['disponible', 'reservee', 'ven
 
 describe('définitions de « visible » et « disponible »', () => {
   it('visible : publiée et non retirée ; disponible : publiée et disponible ; colonnes vides : ni l’un ni l’autre', () => {
+    const accord = { accordSigneLe: new Date('2026-11-01'), active: true }
     for (const publication of PUBLICATIONS) {
       for (const disponibilite of DISPONIBILITES) {
         const e: EtatOeuvre = { publication, disponibilite }
         const publiee = publication === 'publiee'
-        expect(estVisible(e), JSON.stringify(e)).toBe(publiee && disponibilite !== null && disponibilite !== 'retiree')
+        expect(estVisible({ ...e, artist: accord }), JSON.stringify(e)).toBe(publiee && disponibilite !== null && disponibilite !== 'retiree')
+        // Story 2.9 : sans accord signé, ou artiste inactif, jamais visible.
+        expect(estVisible({ ...e, artist: { accordSigneLe: null, active: true } })).toBe(false)
+        expect(estVisible({ ...e, artist: { ...accord, active: false } })).toBe(false)
         expect(estDisponible(e), JSON.stringify(e)).toBe(publiee && disponibilite === 'disponible')
         expect(champAvailable(e)).toEqual({ available: estDisponible(e) })
       }
@@ -300,7 +304,8 @@ describe('base : recopie, lectures et écritures', () => {
     // Sans œuvre visible, l'artiste n'apparaît plus dans l'exposition.
     await db.query(`UPDATE "Artwork" SET publication = 'brouillon'`)
     expect(await catalogue.getExhibitionArtistsBySlug('expo-1')).toEqual([])
-    expect((await catalogue.getExhibitionBySlug('expo-1'))?.worksCount).toBe(0)
+    // Story 2.9 : une exposition sans œuvre visible n'est plus publique.
+    expect(await catalogue.getExhibitionBySlug('expo-1')).toBeNull()
   })
 
   it('une réservée ou une vendue ailleurs reste visible, comme vendue', async () => {
@@ -319,9 +324,15 @@ describe('base : recopie, lectures et écritures', () => {
       return Page({ params: { id } })
     }
 
-    it('retirée : redirection permanente vers la page de son artiste', async () => {
+    it('retirée : redirection permanente vers la page de son artiste, qui a une autre œuvre visible', async () => {
       await oeuvre('retiree', 'publiee', 'retiree')
+      await oeuvre('autre-visible', 'publiee', 'disponible')
       await expect(fiche('retiree')).rejects.toThrow('redirection-permanente:/artistes/artiste-1')
+    })
+
+    it('retirée, seule œuvre de son artiste : 404, pas de redirection vers une page artiste en 404 (story 2.9)', async () => {
+      await oeuvre('retiree', 'publiee', 'retiree')
+      await expect(fiche('retiree')).rejects.toThrow('introuvable')
     })
 
     it.each([

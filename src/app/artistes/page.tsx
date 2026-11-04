@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getAllArtists } from '@/lib/catalogue'
+import { getAllArtists, getAllExhibitions } from '@/lib/catalogue'
 import { ArtistsList } from './ArtistsList'
 
 export const metadata: Metadata = {
@@ -8,6 +8,6 @@ export const metadata: Metadata = {
 }
 
 export default async function ArtistesPage() {
-  const artists = await getAllArtists()
-  return <ArtistsList artists={artists} />
+  const [artists, exhibitions] = await Promise.all([getAllArtists(), getAllExhibitions()])
+  return <ArtistsList artists={artists} exhibitionsCount={exhibitions.length} />
 }
