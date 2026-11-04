@@ -452,7 +452,12 @@ export type DepotLu = DonneesDepot & {
   photosLues: Partial<Record<TypePhoto, PhotoDepot>>
   /** Une autre œuvre de l'artiste a des offres : « Reprendre les zones de ma dernière œuvre » est proposé. */
   repriseDisponible: boolean
+  /** Dernier renvoi de l'équipe (story 2.7), affiché jusqu'au prochain envoi en curation ; null sinon. */
+  renvoi: RenvoiCuration | null
 }
+
+/** Commentaire de l'équipe quand elle renvoie une œuvre à l'artiste (story 2.7). */
+export type RenvoiCuration = { commentaire: string; le: Date }
 
 export type IdSection = 'photos' | 'informations' | 'dimensions' | 'expedition' | 'engagements'
 

@@ -6,6 +6,7 @@ import { ToggleAction } from '@/components/dashboard/ToggleAction'
 import { DeleteButton } from '@/components/dashboard/DeleteButton'
 import { acteurCourant, invitationsEnAttente } from '@/lib/acces'
 import { InvitationArtiste } from './InvitationArtiste'
+import { AccordArtiste } from './AccordArtiste'
 
 export const metadata: Metadata = { title: 'Artistes — Admin Errancy' }
 
@@ -112,6 +113,12 @@ export default async function AdminArtistesPage() {
               </Link>
             </div>
           </div>
+          {/* Story 2.7 (FR-16) : accord écrit signé, enregistré par le module curation. */}
+          <AccordArtiste
+            artistId={artist.id}
+            nom={artist.name}
+            accordSigneLe={artist.accordSigneLe ? artist.accordSigneLe.toISOString() : null}
+          />
           {!artist.user && (
             <InvitationArtiste
               artistId={artist.id}

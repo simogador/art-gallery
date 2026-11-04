@@ -35,6 +35,9 @@ export const RETIREE = {
 /** Vendue (par Errancy ou marquée vendue par l'équipe) : chiffre d'affaires et comptages. */
 export const VENDUE = { disponibilite: 'vendue' } satisfies Prisma.ArtworkWhereInput
 
+/** En curation (axe publication seul) : file de l'équipe (story 2.7). */
+export const EN_CURATION = { publication: 'en_curation' } satisfies Prisma.ArtworkWhereInput
+
 /** Publiée (axe publication seul) : comptages de l'administration. */
 export const PUBLIEE = { publication: 'publiee' } satisfies Prisma.ArtworkWhereInput
 

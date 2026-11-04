@@ -48,6 +48,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-6-expedition-engagements-curation.md`
   summary: Interdire à la bascule admin `definirPublication` de publier ou dépublier une œuvre `en_curation` hors de la file de curation (story 2.7).
   evidence: un admin peut publier une œuvre en curation sans relecture, ou la renvoyer en brouillon sans prévenir l'artiste.
+  resolution: Résolu par la story 2.7 : `definirPublication` répond `transition_interdite` pour une œuvre `en_curation` (et la route admin 409) ; la bascule est masquée dans la liste, la file de curation est le seul chemin (test dans `tests/curation.test.ts`).
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-6-expedition-engagements-curation.md`
   summary: Mettre à jour la puce « Dépôt d'une œuvre (story 2.5) » d'AGENTS.md : en curation → récapitulatif en lecture seule, publiée → ancienne page.
   evidence: la puce 2.5 dit encore qu'une œuvre hors brouillon ouvre l'ancienne page d'édition.
@@ -57,3 +58,18 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-6-expedition-engagements-curation.md`
   summary: Fixer la règle pour une œuvre envoyée ou publiée sans offre pour une zone créée ensuite (« pas d'offre = non livrée » ?).
   evidence: non vérifié ; à trancher avec l'affichage du prix livré (épopée 3).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-7-curation-par-l-equipe.md`
+  summary: Décider si la bascule admin historique `definirPublication` doit aussi exiger l'accord signé (ou refuser tout brouillon de dépôt) quand elle publie.
+  evidence: la story 2.7 ne la ferme que pour `en_curation` (spec) ; un admin peut encore publier par la bascule un brouillon jamais envoyé, ou republier une œuvre dépubliée, sans accord signé (œuvres de démonstration comprises, retirées en 2.9). Question au porteur.
+  resolution: Résolu dans la story 2.7 (relecture) : pour publier, `definirPublication` refuse `accord_absent` sans `Artist.accordSigneLe`, et `transition_interdite` pour une œuvre passée par le dépôt (`envoyeeEnCurationLe`, décision de curation ou photo de dépôt) dont la dernière décision n'est pas `valider` ; dépublier reste permis. La bascule est masquée dans l'administration là où elle serait refusée (`basculesPublication`). Conséquence : les œuvres de démonstration ne se republient plus sans accord signé de leur artiste. Tests dans `tests/curation.test.ts`.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-7-curation-par-l-equipe.md`
+  summary: Tester la logique client de la page de curation (bouton « Valider » indisponible tant que la liste n'est pas cochée, erreur du commentaire avant envoi).
+  evidence: Vitest tourne sans DOM ; le serveur revérifie tout (`controle_incomplet`, `commentaire_invalide`, couverts par `tests/curation.test.ts`). Vérification manuelle en préversion.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-7-curation-par-l-equipe.md`
+  summary: Conserver l'historique des décisions de curation quand une œuvre est supprimée (`RESTRICT` ou suppression logique).
+  evidence: `DecisionCuration` est supprimée en cascade avec l'œuvre.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-7-curation-par-l-equipe.md`
+  summary: Signaler « Renvoyée — à corriger » dans les listes d'œuvres de l'artiste.
+  evidence: le renvoi n'est visible que sur la fiche de dépôt ; aucun e-mail avant l'épopée 4.

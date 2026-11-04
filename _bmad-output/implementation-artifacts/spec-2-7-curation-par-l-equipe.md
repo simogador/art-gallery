@@ -2,7 +2,7 @@
 title: 'Story 2.7 — Curation par l''équipe'
 type: 'feature'
 created: '2026-11-04'
-status: 'in-progress'
+status: 'done'
 route: 'dispatch'
 baseline_commit: '02f8d9d5df8ed1485f966fcc57787602e46d635a'
 review_loop_iteration: 0
@@ -65,13 +65,13 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `prisma/schema.prisma` + `prisma/migrations/<horodatage>_curation/` -- colonne et table, `migrate dev --create-only` -- migration additive.
-- [ ] `src/lib/curation/` -- file, récapitulatif, valider, renvoyer, accord, dernier renvoi ; garde de `definirPublication` -- logique métier.
-- [ ] `src/app/dashboard/admin/oeuvres/` -- file en tête, page de curation avec liste de contrôle, valider, renvoyer -- interface admin.
-- [ ] `src/app/dashboard/admin/artistes/` -- date d'accord signé -- interface admin.
-- [ ] `src/app/dashboard/artiste/oeuvres/depot/` -- bandeau du commentaire de renvoi -- interface artiste.
-- [ ] `tests/curation.test.ts` -- matrice, ordre de la file, accès, bandeau.
-- [ ] `docs/migrations.md`, `AGENTS.md`, `deferred-work.md` (entrée `definirPublication` close) -- journal et repères.
+- [x] `prisma/schema.prisma` + `prisma/migrations/<horodatage>_curation/` -- colonne et table, `migrate dev --create-only` -- migration additive.
+- [x] `src/lib/curation/` -- file, récapitulatif, valider, renvoyer, accord, dernier renvoi ; garde de `definirPublication` -- logique métier.
+- [x] `src/app/dashboard/admin/oeuvres/` -- file en tête, page de curation avec liste de contrôle, valider, renvoyer -- interface admin.
+- [x] `src/app/dashboard/admin/artistes/` -- date d'accord signé -- interface admin.
+- [x] `src/app/dashboard/artiste/oeuvres/depot/` -- bandeau du commentaire de renvoi -- interface artiste.
+- [x] `tests/curation.test.ts` -- matrice, ordre de la file, accès, bandeau.
+- [x] `docs/migrations.md`, `AGENTS.md`, `deferred-work.md` (entrée `definirPublication` close) -- journal et repères.
 
 **Acceptance Criteria:**
 - Given une œuvre validée, when un visiteur consulte la galerie, then elle y figure comme les autres œuvres publiées.
@@ -79,9 +79,36 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-2-context.m
 
 ## Implementation Notes
 
+- Migration `20261104060111_curation`, créée par `migrate dev --create-only` sur PostgreSQL local ; `migrate diff` : aucune différence. Énumération `TypeDecisionCuration` ; `DecisionCuration.controle` (`TEXT[]`) retient les points cochés (décision du porteur), aussi pour un renvoi ; `adminId` sans clé étrangère, comme `Invitation.creeParId`.
+- `src/lib/curation/file.ts` (file, récapitulatif, valider, renvoyer, accord), `curation-regles.ts` (pur), `decisions.ts` (`dernierRenvoi`, lu par `lireLigne` de `depot.ts`, devenu exporté pour le récapitulatif admin). Ordre des refus de « Valider » : `acces_refuse`, `controle_incomplet` (avant la base), `introuvable`, `transition_interdite`, `accord_absent`. Lignes de l'œuvre et de l'artiste verrouillées ensemble (`FOR UPDATE` sur la jointure) : l'effacement concurrent de l'accord attend.
+- Valider n'écrit pas l'axe disponibilité : il exige `disponible` (posée au dépôt), sinon `transition_interdite` ; `available` devient vraie via `champAvailable`.
+- Bandeau de renvoi : dernière décision = renvoi, postérieure à `envoyeeEnCurationLe` ; il reste affiché pendant les corrections et disparaît au prochain envoi (la date d'envoi est mise à jour par `envoyerEnCuration`).
+- Date d'accord : `AAAA-MM-JJ` stockée à minuit UTC ; « future » = après le jour en cours à UTC+14 (une signature datée du jour n'est jamais refusée, quel que soit le fuseau) ; avant 2000 = illisible.
+- Récapitulatif partagé : `src/components/dashboard/RecapitulatifOeuvre.tsx` (cinq sections, `photosEnGrand` avec lien « Ouvrir en taille réelle ») utilisé par `RecapitulatifCuration` (artiste) et `PageCuration` (équipe).
+- Liste des œuvres : bascule « Publiée / Brouillon » masquée pour une œuvre en curation (lien « Relire ») ; la route admin répond 409 avec un message propre à la file.
+- Relecture (coordinateur) : `definirPublication` exige aussi, pour publier, l'accord signé (`accord_absent`) et refuse une œuvre passée par le dépôt (date d'envoi, décision ou photo de dépôt) sans validation en dernier lieu ; bascule masquée là où elle serait refusée (`basculesPublication`). Valider une œuvre en curation non disponible : code `indisponible` (lu par `estMarqueeDisponible`), file lue par le fragment `EN_CURATION`. Enregistrer l'accord sans date : « Choisissez une date. » (seule l'action « Effacer » efface), un seul état de formulaire. La page de curation montre le dernier renvoi (date, commentaire) même après un nouvel envoi. Migration modifiée en place (non appliquée) : `accordSigneLe` en `DATE`, `controle` non nul, `CHECK` du commentaire de renvoi (avec `COALESCE` : `char_length(NULL)` laisserait passer un renvoi sans commentaire) ; commentaire normalisé NFC avant comptage. Dates de ces écrans par `dateLisible` (Europe/Paris). Tests ajoutés : bascule, `CHECK`, décisions concurrentes, accord sans date.
+
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Constat (relecteur) | Verdict | Preuve | Suite |
+|---|---|---|---|---|
+| 1 | L'ancienne bascule publie un brouillon de dépôt (jamais envoyé ou renvoyé) sans accord ni liste de contrôle (3 relecteurs) | high | `definirPublication` ne refusait que `en_curation` | patch : accord exigé, œuvres déposées publiables seulement après une validation |
+| 2 | Enregistrer l'accord sans champ date efface l'accord (cas limites) | medium | `validerDateAccord(null)` | patch : « Choisissez une date. » |
+| 3 | Messages « enregistrée » et « effacée » affichés ensemble (cas limites, aveugle) | low | deux `useFormState` | patch : état partagé |
+| 4 | Œuvre en curation non disponible : message « décision déjà prise » faux ; lecture littérale de « disponible » (cas limites, aveugle) | low | comparaison directe dans `file.ts` | patch : code `indisponible`, prédicats de `disponibilite`, fragment `EN_CURATION` |
+| 5 | Échec de lecture de la file affiché comme file vide (cas limites) | low | `[]` par défaut | patch : message d'erreur |
+| 6 | Aucun historique du renvoi sur la page de curation (aveugle) | medium | `renvoi: null` après un nouvel envoi | patch : dernier renvoi affiché |
+| 7 | Pas de contrainte en base sur le commentaire de renvoi ; `controle` nullable ; date d'accord en horodatage (aveugle) | low | migration | patch : `CHECK` (avec `COALESCE`), `NOT NULL`, `DATE` |
+| 8 | Fuseaux horaires différents selon les écrans (aveugle) | low | `RecapitulatifCuration` sans fuseau | patch : `dateLisible` en Europe/Paris |
+| 9 | Verrou de ligne non testé en concurrence (vérification) | medium | tests séquentiels seulement | patch : 2 tests concurrents |
+| 10 | Statut du suivi divergent (aveugle) | low | `in-progress` | patch |
+| 11 | Erreur serveur du commentaire restée affichée après correction (cas limites) | low | disparaît au prochain envoi | rejeté |
+| 12 | Bandeau de renvoi visible si envoi et renvoi à la même milliseconde (cas limites) | low | improbable | rejeté |
+| 13 | Décisions supprimées en cascade avec l'œuvre (cas limites) | low | seule une œuvre publiée ou un brouillon peut être supprimé | defer |
+| 14 | Listes de l'artiste sans mention « renvoyée » (aveugle) | low | badge « Brouillon » | defer |
+| 15 | Puce 2.5 d'AGENTS.md obsolète (aveugle) | low | fichier de contexte des agents | defer (déjà inscrit) |
 
 ## Verification
 

@@ -12,6 +12,14 @@ const REFUS = {
   transition_interdite: { error: 'Cette œuvre est réservée, vendue ailleurs ou retirée : elle ne peut pas basculer entre disponible et vendue.', status: 409 },
 } as const
 
+// Story 2.7 : la bascule « Publiée / Brouillon » refuse une œuvre en curation, une œuvre déposée non
+// validée, et toute publication sans accord signé.
+const REFUS_PUBLICATION = {
+  ...REFUS,
+  transition_interdite: { error: 'Cette œuvre est en curation ou déposée par l’artiste sans validation : elle se publie seulement depuis la file de curation.', status: 409 },
+  accord_absent: { error: 'L’artiste n’a pas d’accord écrit signé enregistré : enregistrez la date de signature sur la page Artistes avant de publier.', status: 409 },
+} as const
+
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const acteur = await acteurCourant()
   if (acteur.type !== 'admin') return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
@@ -53,7 +61,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
   }
   if (publiee !== undefined) {
     const resultat = await definirPublication(acteur, slug, publiee)
-    if (!resultat.ok) return NextResponse.json({ error: REFUS[resultat.code].error }, { status: REFUS[resultat.code].status })
+    if (!resultat.ok) {
+      const refus = REFUS_PUBLICATION[resultat.code]
+      return NextResponse.json({ error: refus.error }, { status: refus.status })
+    }
   }
   if (disponible !== undefined) {
     const resultat = await definirDisponibilite(acteur, slug, disponible)

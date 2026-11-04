@@ -146,8 +146,9 @@ describe('base : recopie, lectures et écritures', () => {
       [UTILISATEUR],
     )
     await db.query(
-      `INSERT INTO "Artist" (id, slug, name, nationality, "birthYear", bio, "imageUrl", "updatedAt", "userId")
-       VALUES ('artiste-1', 'artiste-1', 'Artiste Un', 'FR', 1980, 'Bio', '', now(), $1)`,
+      // Accord signé (story 2.7) : sans lui, la bascule admin ne publie rien.
+      `INSERT INTO "Artist" (id, slug, name, nationality, "birthYear", bio, "imageUrl", "updatedAt", "userId", "accordSigneLe")
+       VALUES ('artiste-1', 'artiste-1', 'Artiste Un', 'FR', 1980, 'Bio', '', now(), $1, '2026-11-01')`,
       [UTILISATEUR],
     )
   })
