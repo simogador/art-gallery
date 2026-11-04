@@ -3,6 +3,11 @@ import type { Metadata } from 'next'
 import { getArtworkBySlug, getRelatedArtworks, getArtistBySlug, artisteDOeuvreRetiree } from '@/lib/catalogue'
 import { ArtworkDetail } from './ArtworkDetail'
 
+// Story 2.8 : une déclaration de l'artiste (vendue ailleurs, retirée) se voit en moins de 60 s.
+// La page est rendue à chaque requête (mise en page dynamique) et l'action de l'artiste la
+// revalide aussitôt ; ce plafond ne joue que si elle redevenait statique un jour.
+export const revalidate = 60
+
 interface Props {
   params: { id: string }
 }

@@ -92,7 +92,7 @@ export function champAvailable(e: EtatOeuvre): { available: boolean } {
   return { available: estDisponible(e) }
 }
 
-/** Les sept états affichés à l'artiste, calculés à partir des deux axes. */
+/** Les sept états, calculés à partir des deux axes (administration comprise). */
 export type CodeEtat = 'brouillon' | 'en_curation' | Disponibilite
 
 export const LIBELLES_ETAT: Record<CodeEtat, string> = {
@@ -114,4 +114,107 @@ export function codeEtat(e: EtatOeuvre): CodeEtat {
 
 export function libelleEtat(e: EtatOeuvre): string {
   return LIBELLES_ETAT[codeEtat(e)]
+}
+
+/** Badge de l'espace artiste (story 2.8) : une œuvre publiée et disponible s'y affiche « Publiée ». */
+export function libelleEtatArtiste(e: EtatOeuvre): string {
+  const code = codeEtat(e)
+  return code === 'disponible' ? 'Publiée' : LIBELLES_ETAT[code]
+}
+
+// ── Story 2.8 (FR-21) : l'artiste tient la disponibilité de ses œuvres publiées ──────────────
+
+/** Déclarations de l'artiste sur une œuvre publiée (table DeclarationDisponibilite). */
+export type TypeDeclaration = 'vendue_ailleurs' | 'retiree'
+
+export const TYPES_DECLARATION: readonly TypeDeclaration[] = ['vendue_ailleurs', 'retiree']
+
+export function estTypeDeclaration(x: unknown): x is TypeDeclaration {
+  return typeof x === 'string' && (TYPES_DECLARATION as readonly string[]).includes(x)
+}
+
+/** Libellés du choix « Changer la disponibilité ». */
+export const LIBELLES_DECLARATION: Record<TypeDeclaration, string> = {
+  vendue_ailleurs: 'Vendue ailleurs',
+  retiree: 'Retirer de la vente',
+}
+
+/**
+ * Déclarations proposées à l'artiste : seulement sur une œuvre publiée, disponible ou réservée.
+ * Une œuvre vendue (par Errancy) n'en a aucune : « Écrire à l'équipe » la remplace.
+ */
+export function declarationsPossibles(e: EtatOeuvre): TypeDeclaration[] {
+  if (e.publication !== 'publiee') return []
+  if (e.disponibilite === 'disponible' || e.disponibilite === 'reservee') return [...TYPES_DECLARATION]
+  return []
+}
+
+/** Œuvre vendue par Errancy : l'artiste ne la modifie pas, il écrit à l'équipe. */
+export function contactEquipeSeulement(e: EtatOeuvre): boolean {
+  return e.publication === 'publiee' && e.disponibilite === 'vendue'
+}
+
+/**
+ * « Écrire à l'équipe » proposé à l'artiste : œuvre vendue par Errancy, ou vendue ailleurs dont la
+ * déclaration ne s'annule plus (délai dépassé, réservation interrompue) — seule l'équipe la rouvre.
+ */
+export function ecrireAEquipe(etat: CodeEtat, annulable: boolean): boolean {
+  return etat === 'vendue' || (etat === 'vendue_ailleurs' && !annulable)
+}
+
+/** « Remettre en vente » : seulement une œuvre publiée puis retirée (elle repasse en curation). */
+export function remiseEnVentePossible(e: EtatOeuvre): boolean {
+  return e.publication === 'publiee' && e.disponibilite === 'retiree'
+}
+
+export type DeclarationLue = {
+  type: TypeDeclaration
+  le: Date
+  reservationInterrompue: boolean
+  annuleeLe: Date | null
+}
+
+/**
+ * « Annuler » une déclaration possible (refus `transition_interdite`) : non annulée, sans
+ * réservation interrompue, et l'œuvre est toujours publiée dans l'état déclaré.
+ */
+export function annulationAdmise(d: DeclarationLue, e: EtatOeuvre): boolean {
+  return d.annuleeLe === null && !d.reservationInterrompue && e.publication === 'publiee' && e.disponibilite === d.type
+}
+
+/** Dans le délai d'annulation (décision du porteur du 2026-11-04), sinon `delai_depasse`. */
+export function dansLeDelai(d: Pick<DeclarationLue, 'le'>, maintenant: Date, delaiMinutes: number): boolean {
+  return maintenant.getTime() - d.le.getTime() <= delaiMinutes * 60_000
+}
+
+/** « 10 h 12 », heure de Paris. */
+export function heureLisible(date: Date): string {
+  const parties = new Intl.DateTimeFormat('fr-FR', {
+    hour: 'numeric', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Paris',
+  }).formatToParts(date)
+  const h = parties.find((p) => p.type === 'hour')?.value ?? ''
+  const m = parties.find((p) => p.type === 'minute')?.value ?? ''
+  return `${Number(h)} h ${m}`
+}
+
+/** Texte du bandeau après une déclaration : « Vendue ailleurs à 10 h 12. » */
+export function messageDeclaration(type: TypeDeclaration, le: Date): string {
+  const quoi = type === 'vendue_ailleurs' ? 'Vendue ailleurs' : 'Retirée de la vente'
+  return `${quoi} à ${heureLisible(le)}.`
+}
+
+export type CodeRefusDisponibilite = 'acces_refuse' | 'introuvable' | 'non_recopiee' | 'transition_interdite' | 'delai_depasse'
+
+export function messageRefusDisponibilite(code: CodeRefusDisponibilite): string {
+  switch (code) {
+    case 'acces_refuse':
+      return 'Cette œuvre n’est pas accessible depuis votre compte.'
+    case 'introuvable':
+      return 'Cette œuvre n’existe plus. Rechargez la page.'
+    case 'non_recopiee':
+    case 'transition_interdite':
+      return 'L’état de cette œuvre a changé entre-temps : rien n’a été modifié. Rechargez la page.'
+    case 'delai_depasse':
+      return 'Le délai d’annulation est dépassé : rien n’a été modifié. Écrivez à l’équipe, ou remettez l’œuvre en vente si elle est retirée.'
+  }
 }

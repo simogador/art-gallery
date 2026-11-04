@@ -96,6 +96,19 @@ describe('seuls les modules disponibilite et curation lisent ou écrivent les de
     expect(trouves).toEqual([])
   })
 
+  it('la table DeclarationDisponibilite n’est lue ni écrite que par disponibilite (story 2.8)', () => {
+    const acces = /\bdeclarations?Disponibilite\b|DeclarationDisponibilite/
+    const trouves = fichiers('src')
+      .filter((f) => !['src/generated/', 'src/lib/disponibilite/'].some((a) => f.split(path.sep).join('/').startsWith(a)))
+      .flatMap((f) =>
+        readFileSync(f, 'utf8')
+          .split('\n')
+          .filter((ligne) => !/^\s*(\/\/|\*|\/\*)/.test(ligne) && acces.test(ligne))
+          .map((ligne) => `${f}: ${ligne.trim()}`),
+      )
+    expect(trouves).toEqual([])
+  })
+
   it('aucune lecture de l’ancienne colonne available hors des deux modules', () => {
     // Seule exception : le champ `available` du corps de la requête admin (bascule), transmis à disponibilite.
     const lecture = /\.available\b|\bavailable\s*[:?]/
@@ -403,7 +416,7 @@ describe('base : recopie, lectures et écritures', () => {
       expect((await db.query('SELECT count(*)::int AS n FROM "Order"')).rows[0].n).toBe(1)
     })
 
-    it('payée alors qu’elle n’était pas en vente : vendue quand même, slugs journalisés', async () => {
+    it('payée alors qu’elle n’était pas en vente : vendue si disponible ou réservée, déclarée laissée inchangée, slugs journalisés', async () => {
       const etats: [string, Publication, Disponibilite][] = [
         ['p-dispo', 'publiee', 'disponible'],
         ['p-reservee', 'publiee', 'reservee'],
@@ -414,17 +427,25 @@ describe('base : recopie, lectures et écritures', () => {
       ]
       for (const [slug, publication, disponibilite] of etats) await oeuvre(slug, publication, disponibilite)
       const journal = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const alerte = vi.spyOn(console, 'error').mockImplementation(() => {})
       try {
         const { marquerVendues } = await import('@/lib/disponibilite')
         expect(await marquerVendues(etats.map(([slug]) => slug))).toBe(6)
         expect(journal).toHaveBeenCalledOnce()
-        const [, slugs] = journal.mock.calls[0]
-        expect(slugs).toEqual(['p-ailleurs', 'p-brouillon', 'p-deja-vendue', 'p-retiree'])
-        expect(JSON.stringify(journal.mock.calls)).not.toContain('@')
+        expect(journal.mock.calls[0][1]).toEqual(['p-brouillon', 'p-deja-vendue'])
+        // Story 2.8 : une déclaration de l'artiste n'est jamais effacée par un paiement ; l'équipe est alertée.
+        expect(alerte).toHaveBeenCalledOnce()
+        expect(alerte.mock.calls[0][1]).toEqual(['p-ailleurs', 'p-retiree'])
+        expect(JSON.stringify([journal.mock.calls, alerte.mock.calls])).not.toContain('@')
       } finally {
         journal.mockRestore()
+        alerte.mockRestore()
       }
-      for (const [slug] of etats) expect(await etat(slug), slug).toMatchObject({ disponibilite: 'vendue', available: false })
+      for (const slug of ['p-dispo', 'p-reservee', 'p-brouillon', 'p-deja-vendue']) {
+        expect(await etat(slug), slug).toMatchObject({ disponibilite: 'vendue', available: false })
+      }
+      expect(await etat('p-retiree')).toMatchObject({ disponibilite: 'retiree', available: false })
+      expect(await etat('p-ailleurs')).toMatchObject({ disponibilite: 'vendue_ailleurs', available: false })
     })
 
     it('paiement de secours (payment_intent) : vendue et available = false', async () => {
@@ -588,7 +609,7 @@ describe('base : recopie, lectures et écritures', () => {
     await oeuvre('e-retiree', 'publiee', 'retiree')
     const { accueilArtiste, oeuvresDeLArtiste, oeuvreAEditer } = await import('@/lib/catalogue')
     const libelles = Object.fromEntries((await oeuvresDeLArtiste(UTILISATEUR))!.oeuvres.map((o) => [o.slug, o.libelleEtat]))
-    expect(libelles).toEqual({ 'e-dispo': 'Disponible', 'e-vendue': 'Vendue', 'e-curation': 'En curation', 'e-retiree': 'Retirée' })
+    expect(libelles).toEqual({ 'e-dispo': 'Publiée', 'e-vendue': 'Vendue', 'e-curation': 'En curation', 'e-retiree': 'Retirée' })
     expect((await accueilArtiste(UTILISATEUR))?.chiffreAffairesCentimes).toBe(10000)
     expect(await oeuvreAEditer(UTILISATEUR, 'e-curation')).toMatchObject({ etat: 'en_curation', disponible: false })
   })

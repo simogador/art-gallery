@@ -121,7 +121,7 @@ export function verrouillerDepot(
 }
 
 /** Comme verrouillerDepot, pour une œuvre de l'acteur dont l'état satisfait `accepte`. */
-async function verrouillerOeuvre(
+export async function verrouillerOeuvre(
   tx: Prisma.TransactionClient,
   acteur: Acteur,
   slug: string,
