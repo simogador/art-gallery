@@ -20,8 +20,8 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
   - `prixLivre(oeuvre, codePays)` → `{ livree: true, totalCentimes, devise, fraisCentimes, delaiMinJours, delaiMaxJours }` ou `{ livree: false, raison: 'pas_de_zone' | 'non_livree' | 'sans_prix' }` ; total = `prixCentimes` + `fraisCentimes` de l'offre de la zone du pays ; délai = `preparationJours` + `transportMin/MaxJours` ; pays sans zone, offre absente ou `livree = false` → non livrée ; devises différentes entre œuvre et offre → non livrée (`devise_differente`).
   - `prixLivresPourPays(codePays)` : même règle en SQL (fragment `Prisma.sql`, jointure `ZonePays` → `OffreLivraison`), qui renvoie le total par œuvre visible pour filtrer et trier ; un test sur base prouve que les deux formes donnent le même montant pour chaque œuvre.
 - Pays du visiteur : cookie `pays` (code ISO, un an, comme `unite` en 3.2), lu par le serveur et passé explicitement aux fonctions de prix ; défaut `FR` (hypothèse en attendant OQ-13) ; valeur invalide → `FR`.
-- Composant `PaysLivraison` : pays affiché, lien « Modifier » ouvrant la liste des pays (noms de `livraison/pays`), choix enregistré par une action serveur qui pose le cookie puis rafraîchit la page (`router.refresh`) ; zone `aria-live="polite"` annonçant « Prix et délais recalculés pour [pays] ».
-- Affichage minimal, en attendant les refontes 3.5 et 3.9 : la fiche montre « Prix livré » (total, pays, « Modifier »), le délai (« Livrée sous 12 à 16 jours ») ou « Pas de livraison vers [pays] » ; les cartes de la galerie montrent le prix livré et le délai ; chaque prix total porte « Droits et taxes d'import éventuels non inclus ». Les pages qui affichent un prix livré sont rendues à chaque requête (fiche : retrait de `revalidate = 60`).
+- Composant `PaysLivraison` : pays affiché, lien « Modifier » ouvrant la liste des pays (noms de `livraison/pays`), choix enregistré par une action serveur qui pose le cookie puis rafraîchit la page (`router.refresh`) ; zone `aria-live="polite"` annonçant « Prix et délais recalculés : [pays] ».
+- Affichage minimal, en attendant les refontes 3.5 et 3.9 : la fiche montre « Prix livré » (total, pays, « Modifier »), le délai (« Livrée sous 12 à 16 jours ») ou « Pas de livraison vers ce pays ([pays]) » ; les cartes de la galerie montrent le prix livré et le délai ; chaque prix total porte « Droits et taxes d'import éventuels non inclus ». Les pages qui affichent un prix livré sont rendues à chaque requête (fiche : retrait de `revalidate = 60`).
 - Textes dans le dictionnaire `fr` (story 3.2).
 
 ## Boundaries & Constraints
@@ -35,8 +35,8 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 | Scenario | Input / State | Expected Output / Behavior | Error Handling |
 |----------|--------------|---------------------------|----------------|
 | Livrée | œuvre 1 450 €, zone UE 40 €, prépa 3, transport 5-9, pays `FR` | total 1 490 €, « Livrée sous 8 à 12 jours » | — |
-| Zone non livrée | offre `livree = false` pour la zone du pays | « Pas de livraison vers [pays] » | — |
-| Pays sans zone | pays absent de `ZonePays` | « Pas de livraison vers [pays] » | — |
+| Zone non livrée | offre `livree = false` pour la zone du pays | « Pas de livraison vers ce pays ([pays]) » | — |
+| Pays sans zone | pays absent de `ZonePays` | « Pas de livraison vers ce pays ([pays]) » | — |
 | Sans offre | aucune offre pour la zone | non livrée | — |
 | Sans prix | `prixCentimes` nul | non livrée (`sans_prix`) | — |
 | Cookie | absent ou code invalide | pays `FR` | — |
@@ -77,6 +77,8 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 - Action serveur `choisirPaysLivraison` dans `src/app/actions/pays.ts` (pas de route). Tests qui rendent la galerie ou la fiche : `next/headers` simulé (cookie absent).
 
 ## Spec Change Log
+
+- 2026-11-05 — relecture (constat 3) : « Pas de livraison vers Canada » omet l'article. Le porteur accepte « Pas de livraison vers ce pays ([pays]) » et « Prix et délais recalculés : [pays] » (bloc figé modifié avec son accord). État évité : article manquant ou liste d'articles par pays saisie à la main. À garder : nom du pays tiré de `livraison/pays`.
 
 ## Review Triage Log
 
