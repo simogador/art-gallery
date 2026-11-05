@@ -2,9 +2,10 @@
 title: 'Story 3.3 — Pays de livraison et prix total calculé en un seul endroit'
 type: 'feature'
 created: '2026-11-05'
-status: 'draft'
+status: 'in-progress'
 route: 'dispatch'
 review_loop_iteration: 0
+baseline_commit: '6c335206d4fcd0c5c8cbfa4d39360f78b747d9f8'
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-3-2-formats-textes-montants.md']
 ---
 
