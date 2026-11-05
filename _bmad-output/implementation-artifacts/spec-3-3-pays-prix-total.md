@@ -2,7 +2,7 @@
 title: 'Story 3.3 — Pays de livraison et prix total calculé en un seul endroit'
 type: 'feature'
 created: '2026-11-05'
-status: 'in-progress'
+status: 'done'
 route: 'dispatch'
 review_loop_iteration: 0
 baseline_commit: '6c335206d4fcd0c5c8cbfa4d39360f78b747d9f8'
@@ -58,12 +58,12 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/lib/livraison/{index,prix}.ts` -- `prixLivre`, `prixLivresPourPays`, cookie `pays` (`lirePays`, `cookiePays`).
-- [ ] `src/lib/catalogue/*`, `src/app/galerie/**` -- prix livré et délai par œuvre pour le pays du visiteur, tri sur le prix livré, rendu par requête.
-- [ ] `src/components/ui/PaysLivraison.tsx` et action serveur -- choix du pays, rafraîchissement, annonce.
-- [ ] `src/lib/i18n/fr.ts` -- textes (prix livré, délai, pas de livraison, mention des droits, annonce).
-- [ ] `tests/livraison.test.ts` -- matrice, égalité des deux formes.
-- [ ] `AGENTS.md` -- règle du prix livré.
+- [x] `src/lib/livraison/{index,prix}.ts` -- `prixLivre`, `prixLivresPourPays`, cookie `pays` (`lirePays`, `cookiePays`).
+- [x] `src/lib/catalogue/*`, `src/app/galerie/**` -- prix livré et délai par œuvre pour le pays du visiteur, tri sur le prix livré, rendu par requête.
+- [x] `src/components/ui/PaysLivraison.tsx` et action serveur -- choix du pays, rafraîchissement, annonce.
+- [x] `src/lib/i18n/fr.ts` -- textes (prix livré, délai, pas de livraison, mention des droits, annonce).
+- [x] `tests/livraison.test.ts` -- matrice, égalité des deux formes.
+- [x] `AGENTS.md` -- règle du prix livré.
 
 **Acceptance Criteria:**
 - Given un composant de `src/`, when on cherche une addition de `prixCentimes` et de frais hors de `livraison`, then il n'y en a aucune.
@@ -71,9 +71,39 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 
 ## Implementation Notes
 
+- `livraison/prix.ts` (pur) : `calculerPrixLivre(oeuvre, zoneTrouvee, offre)` porte la règle (ordre : `sans_prix`, `pas_de_zone`, `non_livree` — offre absente, `livree = false` ou incomplète —, `devise_differente`, casse ignorée), `lirePays` (trim, majuscules, `FR` sinon), `cookiePays` (options de `cookies().set`, un an, `Path=/`, `SameSite=Lax`). `livraison/index.ts` : `prixLivre` (Prisma) et `prixLivresPourPays(codePays, ids?)` (SQL : `jointuresPrixLivre`, `TOTAL_LIVRE_SQL`, `RAISON_NON_LIVREE_SQL`, réutilisables par 3.9 pour filtrer/trier). Sans `ids`, œuvres visibles lues par le fragment `VISIBLE` de `disponibilite/etats` (le SQL ne nomme jamais `publication`/`disponibilite`, test de 2.2). Repli œuvre par œuvre quand le client en lecture seule de `garde-production` refuse `$queryRaw` (préversion branchée sur la base de production).
+- `catalogue` : `getAllArtworks(pays?)`, `getArtworkBySlug(slug, pays?)`, `getRelatedArtworks(…, pays?)` ajoutent `Artwork.prixLivre` (type d'affichage) quand un pays est passé ; sans pays, rien ne change (accueil, artistes).
+- Galerie : `PaysLivraison` à côté de la bascule d'unité ; tri sur `prixLivre.totalCentimes`, non livrées en dernier dans les deux sens ; `useMemo` dépend désormais de `artworks` (sinon le rafraîchissement après changement de pays ne se voyait pas). Fiche : bloc « Prix livré » (total, délai, mention, `PaysLivraison`) pour une œuvre disponible ; le bloc « vendue » (prix barré) est laissé à 3.7. Les œuvres proches de la fiche affichent aussi le prix livré et la mention. `sans_prix` s'affiche « — ».
+- Action serveur `choisirPaysLivraison` dans `src/app/actions/pays.ts` (pas de route). Tests qui rendent la galerie ou la fiche : `next/headers` simulé (cookie absent).
+
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Relecteur | Constat | Verdict | Route | Preuve |
+|---|-----------|---------|---------|-------|--------|
+| 1 | BH, ECH | `TOTAL_LIVRE_SQL` int4 + int4 déborde au-delà de 2 147 483 647 | low | patch | addition SQL sans conversion, la forme JS ne lève pas ; correction directe (`::bigint`). |
+| 2 | BH, ECH | repli lecture seule : 2 requêtes par œuvre en parallèle | medium | patch | `Promise.all(oeuvres.map(prixLivre))`, chaque appel lit `zonePays` puis `offreLivraison`. |
+| 3 | BH | « Pas de livraison vers Canada » : article manquant | medium | patch | `fr.livraison.pasDeLivraison` met le nom nu après « vers » ; formulation sans préposition. |
+| 4 | BH, ECH | annonce `aria-live` avant le rafraîchissement, non répétée au même choix | medium | patch | `setAnnonce` juste après `router.refresh()` non attendu. |
+| 5 | BH, ECH | « Annuler » garde `choix` et `erreur` | low | patch | `onClick={() => setOuvert(false)}` seul. |
+| 6 | BH | focus perdu à la fermeture, pas d'Échap | medium | patch | formulaire démonté, focus sur `<body>`. |
+| 7 | ECH | rejet de l'action serveur non intercepté | low | patch | `await choisirPaysLivraison` sans try/catch dans la transition. |
+| 8 | ECH | `aria-controls` vers un id absent | low | patch | correction directe. |
+| 9 | ECH | œuvre proche non livrée : ni prix ni explication | low | patch | `RelatedSection` n'affiche que `livree`. |
+| 10 | VG | tri sur le prix livré non testé | medium | patch | aucune occurrence de `comparerPrixLivre` dans `tests/`. |
+| 11 | VG | mention des droits de la fiche satisfaite par les œuvres proches ; cartes non vérifiées | medium | patch | `tests/livraison.test.ts` cherche dans toute la page. |
+| 12 | VG | affichage « — » de `sans_prix` non vérifié | low | patch | aucune assertion HTML sur `sans-prix`. |
+| 13 | BH, VG | repli testé par simulation de `$queryRaw`, pas par la vraie garde | medium | patch | `vi.spyOn(prisma, '$queryRaw')` ; la garde lève bien la classe (`OPERATIONS_ECRITURE` contient `$queryRaw`), mais rien ne le prouve. |
+| 14 | BH, ECH | scan « aucune addition » faible, dépend du répertoire courant | low | patch | regex limitée aux identifiants `frais*`, chemin relatif `'src'`. |
+| 15 | BH | cookie `pays` sans `httpOnly`/`secure` | low | patch | le client ne lit jamais le cookie ; correction directe. |
+| 16 | BH | statut du sprint `in-progress` au lieu de `review` | low | patch | `sprint-status.yaml:66`. |
+| 17 | BH | panier : prix nu et « Transport : Offert », contradictoires avec le prix livré | medium | defer | panier et paiement hors périmètre (Lot 2 fermé, OQ-3 ouverte) ; préexistant. |
+| 18 | BH | accueil et profil artiste : prix nu ; fiche : « TVA non applicable » retirée | medium | defer | prix de l'œuvre seule, non total (refontes 3.5/3.9) ; mention TVA à trancher par le porteur. |
+| 19 | BH | œuvre non livrée encore ajoutable au panier | low | defer | Lot 2 fermé, aucun paiement possible ; à traiter avec le panier (epic 6). |
+| 20 | VG | interaction de `PaysLivraison` non testée | medium | defer | pas d'outillage DOM dans le dépôt ; vérification manuelle en préversion. |
+| 21 | ECH | `prix.get(id)` peut manquer | false | — | la carte est construite sur les mêmes `ids` que les lignes lues (`artworks.ts:19,49`, repli `findMany` sur `cibles`). |
+| 22 | BH | signature de `getRelatedArtworks` (`3` répété) | low | rejet | cosmétique, aucun défaut constaté. |
 
 ## Verification
 

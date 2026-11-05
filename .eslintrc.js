@@ -39,7 +39,7 @@ const IMPORTS_PRISMA = [
 ]
 
 // Story 3.2 (AD-18) : surfaces de l'epic 3 (accueil, galerie, fiche, artistes, en-tête, pied de page,
-// bascule d'unité) sans texte visible en dur ; les textes viennent du dictionnaire (src/lib/i18n/fr.ts).
+// bascule d'unité, pays de livraison) sans texte visible en dur ; les textes viennent du dictionnaire (src/lib/i18n/fr.ts).
 const SURFACES_TEXTES = [
   'src/app/page.tsx',
   'src/components/sections/**/*.tsx',
@@ -47,6 +47,7 @@ const SURFACES_TEXTES = [
   'src/app/artistes/**/*.tsx',
   'src/components/layout/**/*.tsx',
   'src/components/ui/UniteToggle.tsx',
+  'src/components/ui/PaysLivraison.tsx',
 ]
 
 module.exports = {

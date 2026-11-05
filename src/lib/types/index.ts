@@ -1,3 +1,5 @@
+import type { PrixLivre } from '@/lib/livraison/prix'
+
 export type ArtMedium = 'Tout' | 'Peinture' | 'Sculpture' | 'Photographie' | 'Art numérique'
 
 export interface Artwork {
@@ -9,6 +11,11 @@ export interface Artwork {
   medium:      Exclude<ArtMedium, 'Tout'>
   technique:   string
   price:       number
+  /**
+   * Prix livré vers le pays du visiteur (story 3.3), calculé par le module livraison ; absent quand
+   * la page ne l'a pas demandé. Aucun composant ne calcule de prix.
+   */
+  prixLivre?:  PrixLivre
   /** Dimensions en millimètres (AD-5), affichées par formaterDimensions de i18n dans l'unité choisie. */
   hauteurMm:   number | null
   largeurMm:   number | null

@@ -4,9 +4,10 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
-import { Button, Badge, ArtworkImage, UniteToggle, useUnite } from '@/components/ui'
-import { formatPrice } from '@/lib/utils/artworks'
-import { formaterDimensions, SEPARATEUR } from '@/lib/i18n'
+import { Button, Badge, ArtworkImage, PaysLivraison, UniteToggle, useUnite } from '@/components/ui'
+import { formaterDimensions, formaterMontant, fr, SEPARATEUR } from '@/lib/i18n'
+// Story 3.3 : tri sur le prix livré (module livraison, partie pure), non livrées en dernier.
+import { comparerPrixLivre } from '@/lib/livraison/prix'
 import type { Artwork, ArtMedium } from '@/lib/types'
 
 /* ─── Constants ───────────────────────────────────────────────────────────── */
@@ -43,9 +44,11 @@ const cardVariants = {
 interface Props {
   artworks:    Artwork[]
   artistNames: string[]
+  /** Pays de livraison du visiteur (cookie `pays`), nom français compris (story 3.3). */
+  pays:        { code: string; nom: string }
 }
 
-export function GalleryPage({ artworks, artistNames }: Props) {
+export function GalleryPage({ artworks, artistNames, pays }: Props) {
   const artistOptions = ['Tous', ...artistNames]
   const totalAvailable = artworks.filter((a) => !a.sold).length
   const totalMediums   = new Set(artworks.map((a) => a.medium)).size
@@ -75,12 +78,12 @@ export function GalleryPage({ artworks, artistNames }: Props) {
       list = list.filter((a) => !a.sold)
 
     if (sort === 'price-asc')
-      list = list.sort((a, b) => a.price - b.price)
+      list = list.sort((a, b) => comparerPrixLivre(a, b, 1))
     else if (sort === 'price-desc')
-      list = list.sort((a, b) => b.price - a.price)
+      list = list.sort((a, b) => comparerPrixLivre(a, b, -1))
 
     return list
-  }, [activeMedium, activeArtist, onlyAvailable, sort])
+  }, [artworks, activeMedium, activeArtist, onlyAvailable, sort])
 
   const hasActiveFilters = activeMedium !== 'Tout' || activeArtist !== 'Tous' || onlyAvailable || sort !== 'default'
 
@@ -237,6 +240,9 @@ export function GalleryPage({ artworks, artistNames }: Props) {
             {/* Story 3.2 : unité des dimensions (cm / in), mémorisée sur l'appareil. */}
             <UniteToggle className="shrink-0 self-start sm:self-auto" />
 
+            {/* Story 3.3 : pays de livraison (prix livrés et délais recalculés côté serveur). */}
+            <PaysLivraison code={pays.code} nom={pays.nom} className="shrink-0" />
+
             {/* Sort buttons */}
             <div className="flex items-center gap-1 shrink-0 border border-neutral-200 rounded-sm p-0.5">
               {SORTS.map(({ value, label }) => (
@@ -298,6 +304,7 @@ export function GalleryPage({ artworks, artistNames }: Props) {
                       index={i}
                       hovered={hovered === artwork.id}
                       onHover={setHovered}
+                      paysNom={pays.nom}
                     />
                   ))}
                 </AnimatePresence>
@@ -401,9 +408,11 @@ interface ArtworkCardProps {
   index:   number
   hovered: boolean
   onHover: (id: string | null) => void
+  paysNom: string
 }
 
-function ArtworkCard({ artwork, index, hovered, onHover }: ArtworkCardProps) {
+function ArtworkCard({ artwork, index, hovered, onHover, paysNom }: ArtworkCardProps) {
+  const prix = artwork.prixLivre
   const taille = formaterDimensions(artwork, useUnite())
   const isLarge = index === 0 || index === 4
 
@@ -496,13 +505,28 @@ function ArtworkCard({ artwork, index, hovered, onHover }: ArtworkCardProps) {
           <div className="text-right flex-shrink-0">
             {artwork.sold ? (
               <span className="font-sans text-xs text-neutral-400 uppercase tracking-widest">Vendue</span>
+            ) : prix?.livree ? (
+              // Story 3.3 : prix livré vers le pays choisi et délai, calculés par le module livraison.
+              <>
+                <span className="block font-serif text-lg font-light text-foreground">
+                  {formaterMontant(prix.totalCentimes, prix.devise)}
+                </span>
+                <span className="block font-sans text-xs text-neutral-600 mt-0.5">
+                  {fr.livraison.delai(prix.delaiMinJours, prix.delaiMaxJours)}
+                </span>
+              </>
             ) : (
-              <span className="font-serif text-lg font-light text-foreground">
-                {formatPrice(artwork.price)}
+              <span className="font-sans text-xs text-neutral-600">
+                {prix?.livree === false && prix.raison === 'sans_prix'
+                  ? formaterMontant(null)
+                  : fr.livraison.pasDeLivraison(paysNom)}
               </span>
             )}
           </div>
         </div>
+        {!artwork.sold && prix?.livree && (
+          <p className="font-sans text-xs text-neutral-600 mt-1">{fr.livraison.droitsNonInclus}</p>
+        )}
       </Link>
     </motion.article>
   )

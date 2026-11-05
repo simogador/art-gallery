@@ -1,9 +1,13 @@
 import { prisma } from '@/lib/prisma'
 import { ARTISTE_VISIBLE, RETIREE, VISIBLE } from '@/lib/disponibilite'
+import { prixLivre, prixLivresPourPays } from '@/lib/livraison'
 import { mapArtwork } from './mappers'
 import type { Artwork } from '@/lib/types'
 
-export async function getAllArtworks(): Promise<Artwork[]> {
+// Story 3.3 : avec `codePays` (cookie `pays` lu par la page), chaque œuvre porte son prix livré vers
+// ce pays (`Artwork.prixLivre`), calculé par le module livraison (seul endroit du calcul).
+
+export async function getAllArtworks(codePays?: string): Promise<Artwork[]> {
   // Pages publiques (stories 2.2, 2.9) : œuvres visibles seulement (publiées, non retirées, d'un
   // artiste avec accord signé et actif).
   const rows = await prisma.artwork.findMany({
@@ -11,19 +15,23 @@ export async function getAllArtworks(): Promise<Artwork[]> {
     orderBy: [{ featured: 'desc' }, { year: 'desc' }],
     include: { artist: { select: { slug: true, name: true } } },
   })
-  return rows.map(mapArtwork)
+  if (codePays === undefined) return rows.map(mapArtwork)
+  const prix = await prixLivresPourPays(codePays, rows.map((r) => r.id))
+  return rows.map((r) => ({ ...mapArtwork(r), prixLivre: prix.get(r.id) }))
 }
 
 // null si l'œuvre n'existe pas ou n'est pas visible (non publiée, ou retirée : voir artisteDOeuvreRetiree).
-export async function getArtworkBySlug(slug: string): Promise<Artwork | null> {
+export async function getArtworkBySlug(slug: string, codePays?: string): Promise<Artwork | null> {
   const row = await prisma.artwork.findFirst({
     where: { slug, ...VISIBLE },
     include: { artist: { select: { slug: true, name: true } } },
   })
-  return row ? mapArtwork(row) : null
+  if (!row) return null
+  if (codePays === undefined) return mapArtwork(row)
+  return { ...mapArtwork(row), prixLivre: await prixLivre(row, codePays) }
 }
 
-export async function getRelatedArtworks(artwork: Artwork, count = 3): Promise<Artwork[]> {
+export async function getRelatedArtworks(artwork: Artwork, count = 3, codePays?: string): Promise<Artwork[]> {
   const rows = await prisma.artwork.findMany({
     where: {
       ...VISIBLE,
@@ -37,7 +45,9 @@ export async function getRelatedArtworks(artwork: Artwork, count = 3): Promise<A
     orderBy: { featured: 'desc' },
     include: { artist: { select: { slug: true, name: true } } },
   })
-  return rows.map(mapArtwork)
+  if (codePays === undefined) return rows.map(mapArtwork)
+  const prix = await prixLivresPourPays(codePays, rows.map((r) => r.id))
+  return rows.map((r) => ({ ...mapArtwork(r), prixLivre: prix.get(r.id) }))
 }
 
 // Œuvre retirée après publication : slug de son artiste, vers lequel sa fiche redirige (permanentRedirect).

@@ -1,8 +1,11 @@
 import { prisma } from '@/lib/prisma'
-import type { Prisma } from '@/generated/prisma/client'
+import { Prisma } from '@/generated/prisma/client'
 import type { Acteur } from '@/lib/acces'
+import { VISIBLE } from '@/lib/disponibilite/etats'
+import { EcritureProductionInterdite } from '@/lib/garde-production'
 import { LONGUEUR_MAX_NOM, type RefusZone } from './messages'
 import { estCodePays, trierParNom } from './pays'
+import { calculerPrixLivre, type OeuvreAPrix, type PrixLivre, type RaisonNonLivree } from './prix'
 
 // Module livraison (AD-12, story 2.3) : seul module qui lit et écrit les zones de livraison et
 // leurs pays. Les zones sont des données gérées par l'équipe (OQ-5), jamais codées en dur.
@@ -12,6 +15,18 @@ import { estCodePays, trierParNom } from './pays'
 
 export { CODES_PAYS, estCodePays, nomPays, trierParNom } from './pays'
 export { LONGUEUR_MAX_NOM, messageRefusZone, type RefusZone } from './messages'
+export {
+  COOKIE_PAYS,
+  DUREE_COOKIE_PAYS_S,
+  PAYS_PAR_DEFAUT,
+  calculerPrixLivre,
+  cookiePays,
+  lirePays,
+  type OeuvreAPrix,
+  type OffreAPrix,
+  type PrixLivre,
+  type RaisonNonLivree,
+} from './prix'
 
 export type ZoneLue = { id: string; nom: string; pays: string[]; offres: number }
 
@@ -234,4 +249,125 @@ export async function derniereOeuvreAvecOffres(
     select: { id: true },
   })
   return oeuvre?.id ?? null
+}
+
+/* ── Prix livré (story 3.3, FR-3, FR-4) ─────────────────────────────────── */
+
+// Seul endroit du calcul du prix total : prix de l'œuvre + frais de l'offre de la zone du pays, délai
+// = préparation + transport. Deux formes de la même règle (./prix.ts, `calculerPrixLivre`) : une par
+// œuvre (`prixLivre`, fiche) et une en SQL (`TOTAL_LIVRE_SQL`, `prixLivresPourPays`) pour filtrer et
+// trier la galerie ; un test sur base prouve qu'elles donnent le même résultat pour chaque œuvre.
+// Le pays est toujours passé par l'appelant (cookie `pays` lu par la page, `lirePays`).
+
+/** Prix livré d'une œuvre vers un pays (code ISO) ; pays inconnu ou sans zone : non livrée. */
+export async function prixLivre(oeuvre: OeuvreAPrix & { id: string }, codePays: string): Promise<PrixLivre> {
+  if (oeuvre.prixCentimes === null) return calculerPrixLivre(oeuvre, false, null)
+  const zone = await prisma.zonePays.findUnique({ where: { codePays }, select: { zoneId: true } })
+  if (!zone) return calculerPrixLivre(oeuvre, false, null)
+  const offre = await prisma.offreLivraison.findUnique({
+    where: { artworkId_zoneId: { artworkId: oeuvre.id, zoneId: zone.zoneId } },
+    select: {
+      livree: true, fraisCentimes: true, devise: true, preparationJours: true, transportMinJours: true, transportMaxJours: true,
+    },
+  })
+  return calculerPrixLivre(oeuvre, true, offre)
+}
+
+/**
+ * Jointures du prix livré vers `codePays` pour une requête sur `"Artwork" a` : zone du pays (`zp`,
+ * un pays dans au plus une zone) puis offre de l'œuvre pour cette zone (`o`). À placer après
+ * `FROM "Artwork" a` ; `TOTAL_LIVRE_SQL` et `RAISON_NON_LIVREE_SQL` s'en servent.
+ */
+export function jointuresPrixLivre(codePays: string): Prisma.Sql {
+  return Prisma.sql`
+    LEFT JOIN "ZonePays" zp ON zp."codePays" = ${codePays}
+    LEFT JOIN "OffreLivraison" o ON o."artworkId" = a.id AND o."zoneId" = zp."zoneId"`
+}
+
+const OFFRE_COMPLETE_SQL = Prisma.sql`(o.livree AND o."fraisCentimes" IS NOT NULL AND o."preparationJours" IS NOT NULL
+  AND o."transportMinJours" IS NOT NULL AND o."transportMaxJours" IS NOT NULL)`
+
+/** Total livré en centimes (NULL si non livrée) : même règle que `calculerPrixLivre`. En bigint : int4 + int4 déborderait. */
+export const TOTAL_LIVRE_SQL = Prisma.sql`(CASE
+  WHEN a."prixCentimes" IS NOT NULL AND zp."zoneId" IS NOT NULL AND ${OFFRE_COMPLETE_SQL}
+    AND upper(o.devise) = upper(a.devise)
+  THEN a."prixCentimes"::bigint + o."fraisCentimes" END)`
+
+/** Raison de non-livraison (NULL si livrée), dans l'ordre de `calculerPrixLivre`. */
+export const RAISON_NON_LIVREE_SQL = Prisma.sql`(CASE
+  WHEN a."prixCentimes" IS NULL THEN 'sans_prix'
+  WHEN zp."zoneId" IS NULL THEN 'pas_de_zone'
+  WHEN o.id IS NULL OR NOT ${OFFRE_COMPLETE_SQL} THEN 'non_livree'
+  WHEN upper(o.devise) <> upper(a.devise) THEN 'devise_differente' END)`
+
+type LignePrixLivre = {
+  id: string
+  /** bigint en SQL : rendu en bigint (ou chaîne) par le pilote, converti en Number. */
+  totalCentimes: number | bigint | string | null
+  raison: RaisonNonLivree | null
+  devise: string
+  fraisCentimes: number | null
+  delaiMinJours: number | null
+  delaiMaxJours: number | null
+}
+
+/**
+ * Prix livré vers `codePays` de chaque œuvre visible (ou des œuvres `ids`, sans filtre de
+ * visibilité), calculé en SQL : id de l'œuvre → prix livré.
+ */
+export async function prixLivresPourPays(codePays: string, ids?: readonly string[]): Promise<Map<string, PrixLivre>> {
+  const cibles = ids ?? (await prisma.artwork.findMany({ where: VISIBLE, select: { id: true } })).map((o) => o.id)
+  if (cibles.length === 0) return new Map()
+  let lignes: LignePrixLivre[]
+  try {
+    lignes = await prisma.$queryRaw<LignePrixLivre[]>`
+      SELECT a.id,
+             ${TOTAL_LIVRE_SQL} AS "totalCentimes",
+             ${RAISON_NON_LIVREE_SQL} AS raison,
+             upper(a.devise) AS devise,
+             o."fraisCentimes" AS "fraisCentimes",
+             o."preparationJours" + o."transportMinJours" AS "delaiMinJours",
+             o."preparationJours" + o."transportMaxJours" AS "delaiMaxJours"
+      FROM "Artwork" a ${jointuresPrixLivre(codePays)}
+      WHERE a.id IN (${Prisma.join(cibles)})`
+  } catch (erreur) {
+    // Préversion ou poste local branché sur la base de production : le client en lecture seule
+    // refuse tout SQL brut (garde-production). Même règle (calculerPrixLivre), en trois lectures.
+    if (!(erreur instanceof EcritureProductionInterdite)) throw erreur
+    return prixLivresSansSql(codePays, cibles)
+  }
+  return new Map(
+    lignes.map((l): [string, PrixLivre] => [
+      l.id,
+      l.totalCentimes === null
+        ? { livree: false, raison: l.raison ?? 'non_livree' }
+        : {
+            livree: true,
+            totalCentimes: Number(l.totalCentimes),
+            devise: l.devise,
+            fraisCentimes: Number(l.fraisCentimes),
+            delaiMinJours: Number(l.delaiMinJours),
+            delaiMaxJours: Number(l.delaiMaxJours),
+          },
+    ]),
+  )
+}
+
+/** Forme Prisma de `prixLivresPourPays` (repli) : zone du pays lue une fois, offres en une requête. */
+async function prixLivresSansSql(codePays: string, ids: readonly string[]): Promise<Map<string, PrixLivre>> {
+  const oeuvres = await prisma.artwork.findMany({
+    where: { id: { in: [...ids] } },
+    select: { id: true, prixCentimes: true, devise: true },
+  })
+  const zone = await prisma.zonePays.findUnique({ where: { codePays }, select: { zoneId: true } })
+  const offres = zone
+    ? await prisma.offreLivraison.findMany({
+        where: { zoneId: zone.zoneId, artworkId: { in: [...ids] } },
+        select: {
+          artworkId: true, livree: true, fraisCentimes: true, devise: true, preparationJours: true, transportMinJours: true, transportMaxJours: true,
+        },
+      })
+    : []
+  const parOeuvre = new Map(offres.map((o) => [o.artworkId, o]))
+  return new Map(oeuvres.map((o) => [o.id, calculerPrixLivre(o, zone !== null, parOeuvre.get(o.id) ?? null)]))
 }

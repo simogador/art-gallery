@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { formatPrice } from '@/lib/utils/artworks'
-import { Button, Badge, Modal, UniteToggle, useUnite } from '@/components/ui'
-import { formaterDimensionsDouble, fr } from '@/lib/i18n'
+import { Button, Badge, Modal, PaysLivraison, UniteToggle, useUnite } from '@/components/ui'
+import { formaterDimensionsDouble, formaterMontant, fr } from '@/lib/i18n'
 import { useCartStore } from '@/lib/store/cart'
 import { ArtworkImage } from '@/components/ui'
 import type { Artwork, Artist } from '@/lib/types'
@@ -40,9 +40,11 @@ interface Props {
   artwork: Artwork
   related: Artwork[]
   artist:  Artist | null
+  /** Pays de livraison du visiteur (cookie `pays`, France par défaut), nom français compris (story 3.3). */
+  pays:    { code: string; nom: string }
 }
 
-export function ArtworkDetail({ artwork, related, artist }: Props) {
+export function ArtworkDetail({ artwork, related, artist, pays }: Props) {
   const [activeTab,    setActiveTab]    = useState<Tab>('oeuvre')
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [contactOpen,  setContactOpen]  = useState(false)
@@ -229,14 +231,28 @@ export function ArtworkDetail({ artwork, related, artist }: Props) {
                     </p>
                   </div>
                 ) : (
+                  // Story 3.3 : prix livré vers le pays choisi et délai, calculés par le module
+                  // livraison (aucun calcul ici) ; « Modifier » change le pays et recalcule côté serveur.
                   <div>
-                    <p className="font-sans text-xs uppercase tracking-widest text-neutral-400 mb-1">Prix</p>
-                    <p className="font-serif text-3xl font-light text-foreground">
-                      {formatPrice(artwork.price)}
-                    </p>
-                    <p className="font-sans text-xs text-neutral-400 mt-1">
-                      Frais de port et d&apos;assurance inclus · TVA non applicable
-                    </p>
+                    <p className="font-sans text-xs uppercase tracking-widest text-neutral-600 mb-1">{fr.livraison.prixLivre}</p>
+                    {artwork.prixLivre?.livree ? (
+                      <>
+                        <p className="font-serif text-3xl font-light text-foreground">
+                          {formaterMontant(artwork.prixLivre.totalCentimes, artwork.prixLivre.devise)}
+                        </p>
+                        <p className="font-sans text-sm text-foreground mt-1">
+                          {fr.livraison.delai(artwork.prixLivre.delaiMinJours, artwork.prixLivre.delaiMaxJours)}
+                        </p>
+                        <p className="font-sans text-xs text-neutral-600 mt-1">{fr.livraison.droitsNonInclus}</p>
+                      </>
+                    ) : (
+                      <p className="font-serif text-xl font-light text-foreground">
+                        {artwork.prixLivre?.livree === false && artwork.prixLivre.raison === 'sans_prix'
+                          ? formaterMontant(null)
+                          : fr.livraison.pasDeLivraison(pays.nom)}
+                      </p>
+                    )}
+                    <PaysLivraison code={pays.code} nom={pays.nom} className="mt-2" />
                   </div>
                 )}
               </motion.div>
@@ -360,7 +376,7 @@ export function ArtworkDetail({ artwork, related, artist }: Props) {
 
         {/* ── Related artworks ── */}
         {related.length > 0 && (
-          <RelatedSection artworks={related} />
+          <RelatedSection artworks={related} paysNom={pays.nom} />
         )}
       </div>
 
@@ -566,7 +582,7 @@ function TabProvenance({ artwork }: { artwork: Artwork }) {
 
 /* ─── Related section ─────────────────────────────────────────────────────── */
 
-function RelatedSection({ artworks }: { artworks: Artwork[] }) {
+function RelatedSection({ artworks, paysNom }: { artworks: Artwork[]; paysNom: string }) {
   return (
     <section className="border-t border-neutral-200 py-16 md:py-20 bg-neutral-50">
       <div className="container-premium">
@@ -619,12 +635,21 @@ function RelatedSection({ artworks }: { artworks: Artwork[] }) {
                       {a.artist}
                     </p>
                   </div>
-                  {!a.sold && (
+                  {/* Story 3.3 : prix livré vers le pays choisi (module livraison), comme la fiche. */}
+                  {!a.sold && a.prixLivre?.livree && (
                     <p className="font-serif text-base font-light text-foreground flex-shrink-0">
-                      {formatPrice(a.price)}
+                      {formaterMontant(a.prixLivre.totalCentimes, a.prixLivre.devise)}
+                    </p>
+                  )}
+                  {!a.sold && a.prixLivre?.livree === false && (
+                    <p className="font-sans text-xs text-neutral-600 flex-shrink-0">
+                      {a.prixLivre.raison === 'sans_prix' ? formaterMontant(null) : fr.livraison.pasDeLivraison(paysNom)}
                     </p>
                   )}
                 </div>
+                {!a.sold && a.prixLivre?.livree && (
+                  <p className="font-sans text-xs text-neutral-600 mt-1">{fr.livraison.droitsNonInclus}</p>
+                )}
               </Link>
             </motion.div>
           ))}

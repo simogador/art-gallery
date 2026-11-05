@@ -35,6 +35,8 @@ vi.mock('@/lib/stripe', () => ({
   getStripe: () => ({ checkout: { sessions: { create: stripe.creerSession } } }),
 }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+// Story 3.3 : la galerie et la fiche lisent le cookie `pays` (absent ici : France).
+vi.mock('next/headers', () => ({ cookies: () => ({ get: () => undefined }), headers: () => new Headers() }))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: () => {}, refresh: () => {}, back: () => {} }),
   redirect: (url: string) => {
@@ -426,8 +428,10 @@ describe('base : disponibilité tenue par l’artiste', () => {
       await oeuvre('ailleurs', 'publiee', 'disponible')
       await declarerDisponibilite(ARTISTE as never, 'ailleurs', 'vendue_ailleurs')
       expect(await getArtworkBySlug('ailleurs')).toMatchObject({ id: 'ailleurs', sold: true })
-      const { default: Fiche, revalidate } = await import('@/app/galerie/[id]/page')
-      expect(revalidate).toBeLessThanOrEqual(60)
+      // Story 3.3 : fiche rendue à chaque requête (cookie `pays`), sans revalidate.
+      const fiche = await import('@/app/galerie/[id]/page')
+      const Fiche = fiche.default
+      expect('revalidate' in fiche).toBe(false)
       await expect(Fiche({ params: { id: 'ailleurs' } })).resolves.toBeTruthy()
     })
   })

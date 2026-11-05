@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { Client } from 'pg'
 import { createElement, isValidElement, type ReactElement, type ReactNode } from 'react'
@@ -6,6 +6,9 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CODES_PAYS, estCodePays, nomPays, paysSansZone } from '@/lib/livraison/pays'
 import { messageRefusZone } from '@/lib/livraison/messages'
+import { calculerPrixLivre, comparerPrixLivre, cookiePays, lirePays, totalLivre, type OffreAPrix } from '@/lib/livraison/prix'
+import { formaterMontant, fr } from '@/lib/i18n'
+import { PaysLivraison } from '@/components/ui/PaysLivraison'
 import { SectionExpedition } from '@/app/dashboard/artiste/oeuvres/depot/SectionExpedition'
 import { creerBaseJetable, type BaseJetable } from './utils/base-jetable'
 
@@ -15,7 +18,17 @@ const acteur = vi.hoisted(() => ({ courant: { type: 'visiteur' } as Record<strin
 vi.mock('@/lib/acces', () => ({ acteurCourant: async () => acteur.courant }))
 vi.mock('@/auth', () => ({ auth: vi.fn(async () => null) }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+// Story 3.3 : cookie `pays` lu par la fiche et la galerie, posé par l'action du choix du pays.
+const jar = vi.hoisted(() => ({ valeurs: new Map<string, string>(), poses: [] as unknown[] }))
+vi.mock('next/headers', () => ({
+  cookies: () => ({
+    get: (nom: string) => (jar.valeurs.has(nom) ? { name: nom, value: jar.valeurs.get(nom) } : undefined),
+    set: (c: unknown) => jar.poses.push(c),
+  }),
+  headers: () => new Headers(),
+}))
 vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: () => {}, push: () => {} }),
   redirect: (url: string) => {
     throw new Error(`redirection:${url}`)
   },
@@ -516,5 +529,301 @@ describe('base : zones de livraison', () => {
     const apres = await zones()
     expect(apres.map((z) => z.nom)).toEqual(['Maghreb', 'Union européenne', 'Europe hors UE', 'Amérique du Nord', 'Reste du monde'])
     expect(apres.flatMap((z) => z.pays)).not.toContain('TR')
+  })
+
+  describe('base : prix livré (story 3.3)', () => {
+    const F = '\u202f'
+
+    async function oeuvre(slug: string, prixCentimes: number | null, publication = 'publiee', devise = 'EUR') {
+      await db.query(
+        `INSERT INTO "Artwork" (id, slug, title, year, medium, description, "imageUrl", "prixCentimes", devise, "hauteurMm", "largeurMm",
+           publication, disponibilite, "artistId", "updatedAt")
+         VALUES ($1, $1, $1, 2024, 'Huile sur toile', 'Description', '', $2, $3, 610, 760, $4::"Publication", 'disponible', 'artiste-prix', now())`,
+        [slug, prixCentimes, devise, publication],
+      )
+    }
+    async function offre(slug: string, zoneId: string, valeurs: string) {
+      await db.query(
+        `INSERT INTO "OffreLivraison" (id, "artworkId", "zoneId", livree, "fraisCentimes", "preparationJours", "transportMinJours", "transportMaxJours", devise, "updatedAt")
+         VALUES (gen_random_uuid()::text, $1, $2, ${valeurs}, now())`,
+        [slug, zoneId],
+      )
+    }
+
+    // Imbriqué dans « base : zones de livraison » (même base jetable, un seul client Prisma) : le
+    // beforeEach parent vide zones et offres, recréées ici avant chaque test.
+    beforeAll(async () => {
+      await db.query(
+        `INSERT INTO "Artist" (id, slug, name, nationality, "birthYear", bio, "imageUrl", "accordSigneLe", "updatedAt")
+         VALUES ('artiste-prix', 'artiste-prix', 'Artiste Prix', 'MA', 1980, 'Bio', '', now(), now())`,
+      )
+      await oeuvre('livree', 145000)
+      await oeuvre('moins-chere', 50000)
+      await oeuvre('sans-prix', null)
+      await oeuvre('autre-devise', 80000)
+      await oeuvre('brouillon', 10000, 'brouillon')
+    })
+
+    afterAll(async () => {
+      await db.query(`DELETE FROM "Artwork" WHERE "artistId" = 'artiste-prix'`)
+      await db.query(`DELETE FROM "Artist" WHERE id = 'artiste-prix'`)
+    })
+
+    beforeEach(async () => {
+      jar.valeurs.clear()
+      jar.poses.length = 0
+      const zone = async (nom: string, pays: string[]) => {
+        const id = `zone-${nom}`
+        await db.query(`INSERT INTO "Zone" (id, nom, "updatedAt") VALUES ($1, $1, now())`, [id])
+        for (const p of pays) await db.query(`INSERT INTO "ZonePays" ("codePays", "zoneId") VALUES ($1, $2)`, [p, id])
+        return id
+      }
+      const ue = await zone('ue', ['FR', 'DE'])
+      const amerique = await zone('amerique', ['CA', 'US'])
+      const maroc = await zone('maroc', ['MA'])
+      await offre('livree', ue, `true, 4000, 3, 5, 9, 'EUR'`)
+      await offre('livree', amerique, `false, NULL, NULL, NULL, NULL, 'EUR'`)
+      await offre('moins-chere', ue, `true, 2500, 2, 2, 4, 'EUR'`)
+      await offre('moins-chere', amerique, `true, 9000, 2, 7, 14, 'EUR'`)
+      await offre('moins-chere', maroc, `true, 0, 0, 2, 2, 'EUR'`)
+      await offre('sans-prix', ue, `true, 4000, 3, 5, 9, 'EUR'`)
+      await offre('autre-devise', ue, `true, 4000, 3, 5, 9, 'USD'`)
+      await offre('brouillon', ue, `true, 4000, 3, 5, 9, 'EUR'`)
+    })
+
+    const lire = async (slug: string) =>
+      (await db.query(`SELECT id, "prixCentimes", devise FROM "Artwork" WHERE slug = $1`, [slug])).rows[0] as {
+        id: string
+        prixCentimes: number | null
+        devise: string
+      }
+
+    it('matrice : livrée, zone non livrée, sans offre, pays sans zone, sans prix, devise différente', async () => {
+      const { prixLivre } = await import('@/lib/livraison')
+      expect(await prixLivre(await lire('livree'), 'FR')).toEqual({
+        livree: true, totalCentimes: 149000, devise: 'EUR', fraisCentimes: 4000, delaiMinJours: 8, delaiMaxJours: 12,
+      })
+      expect(await prixLivre(await lire('livree'), 'CA')).toEqual({ livree: false, raison: 'non_livree' })
+      expect(await prixLivre(await lire('livree'), 'MA')).toEqual({ livree: false, raison: 'non_livree' })
+      expect(await prixLivre(await lire('livree'), 'RU')).toEqual({ livree: false, raison: 'pas_de_zone' })
+      expect(await prixLivre(await lire('sans-prix'), 'FR')).toEqual({ livree: false, raison: 'sans_prix' })
+      expect(await prixLivre(await lire('autre-devise'), 'FR')).toEqual({ livree: false, raison: 'devise_differente' })
+    })
+
+    it('les deux formes (par œuvre et SQL) donnent le même résultat pour chaque œuvre visible et chaque pays', async () => {
+      const { prixLivre, prixLivresPourPays } = await import('@/lib/livraison')
+      const visibles = (await db.query(`SELECT slug FROM "Artwork" WHERE publication = 'publiee' ORDER BY slug`)).rows.map((r) => r.slug as string)
+      expect(visibles).toHaveLength(4)
+      for (const pays of ['FR', 'DE', 'CA', 'US', 'MA', 'RU']) {
+        const sql = await prixLivresPourPays(pays)
+        // Œuvres visibles seulement (le brouillon n'y est pas).
+        expect([...sql.keys()].sort(), pays).toEqual([...visibles].sort())
+        for (const slug of visibles) {
+          const o = await lire(slug)
+          expect(sql.get(o.id), `${slug} ${pays}`).toEqual(await prixLivre(o, pays))
+        }
+      }
+      expect((await prixLivresPourPays('FR')).get('moins-chere')).toMatchObject({ totalCentimes: 52500, delaiMinJours: 4, delaiMaxJours: 6 })
+      expect((await prixLivresPourPays('MA')).get('moins-chere')).toMatchObject({ totalCentimes: 50000, delaiMinJours: 2, delaiMaxJours: 2 })
+      expect(await prixLivresPourPays('FR', [])).toEqual(new Map())
+    })
+
+    it('base de production en lecture seule (préversion) : SQL brut refusé, même résultat œuvre par œuvre', async () => {
+      const { prixLivresPourPays } = await import('@/lib/livraison')
+      const { prisma } = await import('@/lib/prisma')
+      const { EcritureProductionInterdite } = await import('@/lib/garde-production')
+      const attendu = await prixLivresPourPays('FR')
+      const espion = vi.spyOn(prisma, '$queryRaw').mockRejectedValueOnce(new EcritureProductionInterdite())
+      expect(await prixLivresPourPays('FR')).toEqual(attendu)
+      espion.mockRestore()
+    })
+
+    it('client réellement en lecture seule (DATABASE_URL sur DATABASE_PRODUCTION_ID) : même résultat sans SQL brut', async () => {
+      const { prixLivresPourPays } = await import('@/lib/livraison')
+      const attendu = await prixLivresPourPays('FR')
+      const globale = globalThis as unknown as { prisma?: unknown }
+      const original = globale.prisma
+      const env = { id: process.env.DATABASE_PRODUCTION_ID, vercel: process.env.VERCEL_ENV }
+      // Même point d'injection que l'application : @/lib/prisma crée un client protégé
+      // (interdireEcritures) quand DATABASE_URL vise DATABASE_PRODUCTION_ID.
+      process.env.DATABASE_PRODUCTION_ID = new URL(base.url).hostname
+      delete process.env.VERCEL_ENV
+      delete globale.prisma
+      vi.resetModules()
+      try {
+        const { prisma: protege } = await import('@/lib/prisma')
+        await expect(protege.$queryRaw`SELECT 1`).rejects.toMatchObject({ code: 'ecriture_production_interdite' })
+        const livraison = await import('@/lib/livraison')
+        for (const pays of ['FR', 'CA', 'MA', 'RU']) {
+          expect(await livraison.prixLivresPourPays(pays), pays).toEqual(await prixLivresPourPays(pays))
+        }
+        expect(await livraison.prixLivresPourPays('FR')).toEqual(attendu)
+        await protege.$disconnect()
+      } finally {
+        globale.prisma = original
+        if (env.id === undefined) delete process.env.DATABASE_PRODUCTION_ID
+        else process.env.DATABASE_PRODUCTION_ID = env.id
+        if (env.vercel !== undefined) process.env.VERCEL_ENV = env.vercel
+        vi.resetModules()
+      }
+    })
+
+    it('fiche sans cookie : prix livré France, délai et mention des droits', async () => {
+      const { default: Fiche } = await import('@/app/galerie/[id]/page')
+      const html = renderToStaticMarkup(await Fiche({ params: { id: 'livree' } }))
+      expect(html).toContain('Prix livré')
+      expect(html).toContain(formaterMontant(149000))
+      expect(html).toContain(`1${F}490${F}€`)
+      expect(html).toContain('Livrée sous 8 à 12 jours')
+      // Mention dans le bloc principal, pas seulement sur les œuvres proches.
+      const principal = html.slice(0, html.indexOf('Vous pourriez aimer'))
+      expect(principal).toContain('Livrée sous 8 à 12 jours')
+      expect(principal).toContain('Droits et taxes d’import éventuels non inclus')
+      expect(html).toContain('Livraison\u00a0: France')
+      expect(html).not.toContain(`1${F}450${F}€`)
+    })
+
+    it('fiche, cookie `pays=CA` : pas de livraison vers le Canada ; cookie invalide : France', async () => {
+      const { default: Fiche } = await import('@/app/galerie/[id]/page')
+      jar.valeurs.set('pays', 'CA')
+      const html = renderToStaticMarkup(await Fiche({ params: { id: 'livree' } }))
+      // Bloc principal (avant les œuvres proches, elles livrées au Canada) : ni prix, ni délai, ni mention.
+      const principal = html.slice(0, html.indexOf('Vous pourriez aimer'))
+      expect(principal).toContain('Pas de livraison vers ce pays (Canada)')
+      expect(principal).not.toContain('Droits et taxes')
+      expect(principal).not.toContain('Livrée sous')
+      expect(html).toContain(`590${F}€`)
+      jar.valeurs.set('pays', 'ZZ')
+      expect(renderToStaticMarkup(await Fiche({ params: { id: 'livree' } }))).toContain('Livrée sous 8 à 12 jours')
+    })
+
+    it('galerie : chaque œuvre porte son prix livré vers le pays du cookie', async () => {
+      const { default: Galerie } = await import('@/app/galerie/page')
+      const { GalleryPage } = await import('@/app/galerie/GalleryPage')
+      jar.valeurs.set('pays', 'US')
+      const element = trouverElement(await Galerie(), GalleryPage)
+      if (!element) throw new Error('galerie absente')
+      const props = element.props as Parameters<typeof GalleryPage>[0]
+      expect(props.pays).toEqual({ code: 'US', nom: 'États-Unis' })
+      const par = Object.fromEntries(props.artworks.map((a) => [a.id, a.prixLivre]))
+      expect(par['moins-chere']).toMatchObject({ livree: true, totalCentimes: 59000, delaiMinJours: 9, delaiMaxJours: 16 })
+      expect(par['livree']).toEqual({ livree: false, raison: 'non_livree' })
+      expect(par['brouillon']).toBeUndefined()
+      const html = renderToStaticMarkup(await Galerie())
+      expect(html).toContain(`590${F}€`)
+      expect(html).toContain('Livrée sous 9 à 16 jours')
+      expect(html).toContain('Pas de livraison vers ce pays (États-Unis)')
+      const carte = (slug: string) => {
+        const debut = html.indexOf(`>${slug}</h3>`)
+        return html.slice(debut, html.indexOf('</article>', debut))
+      }
+      expect(carte('moins-chere')).toContain('Droits et taxes d’import éventuels non inclus')
+      expect(carte('livree')).not.toContain('Droits et taxes')
+      expect(carte('sans-prix')).toContain('—')
+      expect(carte('sans-prix')).not.toContain('Pas de livraison')
+    })
+
+    it('choix du pays : cookie `pays` posé pour un code valide, rien sinon', async () => {
+      const { choisirPaysLivraison } = await import('@/app/actions/pays')
+      expect(await choisirPaysLivraison('ZZ')).toEqual({ ok: false })
+      expect(await choisirPaysLivraison(42)).toEqual({ ok: false })
+      expect(jar.poses).toEqual([])
+      expect(await choisirPaysLivraison('CA')).toEqual({ ok: true, code: 'CA', nom: 'Canada' })
+      expect(jar.poses).toEqual([cookiePays('CA')])
+      expect(fr.livraison.recalcules('Canada')).toBe('Prix et délais recalculés\u00a0: Canada')
+    })
+  })
+})
+
+
+/* ── Story 3.3 : prix livré ─────────────────────────────────────────────── */
+
+describe('prix livré : règle pure', () => {
+  const oeuvre = { prixCentimes: 145000, devise: 'EUR' }
+  const offre: OffreAPrix = {
+    livree: true, fraisCentimes: 4000, devise: 'EUR', preparationJours: 3, transportMinJours: 5, transportMaxJours: 9,
+  }
+
+  it('livrée : total = prix + frais, délai = préparation + transport', () => {
+    expect(calculerPrixLivre(oeuvre, true, offre)).toEqual({
+      livree: true, totalCentimes: 149000, devise: 'EUR', fraisCentimes: 4000, delaiMinJours: 8, delaiMaxJours: 12,
+    })
+    expect(fr.livraison.delai(8, 12)).toBe('Livrée sous 8 à 12 jours')
+    expect(fr.livraison.delai(1, 1)).toBe('Livrée sous 1 jour')
+    expect(fr.livraison.pasDeLivraison('Canada')).toBe('Pas de livraison vers ce pays (Canada)')
+    expect(fr.livraison.droitsNonInclus).toBe('Droits et taxes d’import éventuels non inclus')
+  })
+
+  it('non livrée : sans prix, pays sans zone, sans offre, zone non livrée, devise différente', () => {
+    expect(calculerPrixLivre({ prixCentimes: null, devise: 'EUR' }, true, offre)).toEqual({ livree: false, raison: 'sans_prix' })
+    expect(calculerPrixLivre(oeuvre, false, null)).toEqual({ livree: false, raison: 'pas_de_zone' })
+    expect(calculerPrixLivre(oeuvre, true, null)).toEqual({ livree: false, raison: 'non_livree' })
+    const nonLivree = { ...offre, livree: false, fraisCentimes: null, preparationJours: null, transportMinJours: null, transportMaxJours: null }
+    expect(calculerPrixLivre(oeuvre, true, nonLivree)).toEqual({ livree: false, raison: 'non_livree' })
+    expect(calculerPrixLivre(oeuvre, true, { ...offre, devise: 'USD' })).toEqual({ livree: false, raison: 'devise_differente' })
+    // Casse ignorée.
+    expect(calculerPrixLivre({ ...oeuvre, devise: 'eur' }, true, offre)).toMatchObject({ livree: true, devise: 'EUR' })
+  })
+
+  it('cookie `pays` : absent ou invalide → FR ; un an sur tout le site', () => {
+    expect(lirePays(undefined)).toBe('FR')
+    expect(lirePays('')).toBe('FR')
+    expect(lirePays('ZZ')).toBe('FR')
+    expect(lirePays('<script>')).toBe('FR')
+    expect(lirePays('CA')).toBe('CA')
+    expect(lirePays(' ca ')).toBe('CA')
+    expect(cookiePays('CA')).toEqual({
+      name: 'pays', value: 'CA', path: '/', maxAge: 365 * 24 * 60 * 60, sameSite: 'lax', httpOnly: true, secure: false,
+    })
+  })
+
+  it('tri sur le prix livré : croissant et décroissant, non livrées et sans prix en dernier', () => {
+    const livree = (totalCentimes: number) => ({
+      prixLivre: { livree: true as const, totalCentimes, devise: 'EUR', fraisCentimes: 0, delaiMinJours: 1, delaiMaxJours: 2 },
+    })
+    const oeuvres = [
+      { id: 'non-livree', prixLivre: { livree: false as const, raison: 'non_livree' as const } },
+      { id: 'chere', ...livree(300000) },
+      { id: 'sans-prix', prixLivre: { livree: false as const, raison: 'sans_prix' as const } },
+      { id: 'abordable', ...livree(50000) },
+      { id: 'sans-calcul' },
+      { id: 'moyenne', ...livree(120000) },
+    ]
+    const trier = (sens: 1 | -1) => [...oeuvres].sort((a, b) => comparerPrixLivre(a, b, sens)).map((o) => o.id)
+    expect(trier(1).slice(0, 3)).toEqual(['abordable', 'moyenne', 'chere'])
+    expect(trier(-1).slice(0, 3)).toEqual(['chere', 'moyenne', 'abordable'])
+    for (const sens of [1, -1] as const) {
+      expect(new Set(trier(sens).slice(3))).toEqual(new Set(['non-livree', 'sans-prix', 'sans-calcul']))
+    }
+    expect(totalLivre(livree(42))).toBe(42)
+    expect(totalLivre({ prixLivre: { livree: false, raison: 'pas_de_zone' } })).toBeNull()
+  })
+
+  it('composant PaysLivraison : pays affiché, « Modifier » fermé, zone aria-live', () => {
+    const html = renderToStaticMarkup(createElement(PaysLivraison, { code: 'FR', nom: 'France' }))
+    expect(html).toContain('Livraison\u00a0: France')
+    expect(html).toMatch(/<button[^>]*aria-expanded="false"[^>]*>Modifier<\/button>/)
+    expect(html).toContain('aria-live="polite"')
+    expect(html).not.toContain('<select')
+  })
+
+  it('aucune addition de prix ou de frais hors du module livraison (src/)', () => {
+    const SRC = path.resolve(__dirname, '../src')
+    const fichiers = (dossier: string): string[] =>
+      readdirSync(dossier).flatMap((nom) => {
+        const chemin = path.join(dossier, nom)
+        return statSync(chemin).isDirectory() ? fichiers(chemin) : /\.(ts|tsx)$/.test(nom) ? [chemin] : []
+      })
+    // Une ligne qui additionne des frais, ou qui additionne à/avec prixCentimes ou totalCentimes.
+    const addition = /\b(frais\w*|prixCentimes|totalCentimes)\b[^;\n]*\+|\+[^;\n]*\b(frais\w*|prixCentimes|totalCentimes)\b/i
+    const trouves = fichiers(SRC)
+      .filter((f) => !['generated/', 'lib/livraison/'].some((a) => path.relative(SRC, f).split(path.sep).join('/').startsWith(a)))
+      .flatMap((f) =>
+        readFileSync(f, 'utf8')
+          .split('\n')
+          .filter((ligne) => !/^\s*(\/\/|\*|\/\*)/.test(ligne) && addition.test(ligne))
+          .map((ligne) => `${f}: ${ligne.trim()}`),
+      )
+    expect(trouves).toEqual([])
   })
 })
