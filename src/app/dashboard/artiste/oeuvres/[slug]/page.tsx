@@ -6,6 +6,8 @@ import { oeuvreAEditer } from '@/lib/catalogue'
 import { ArtworkForm } from '@/components/dashboard/ArtworkForm'
 import { acteurCourant } from '@/lib/acces'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
+import { DimensionsChoisies } from '@/components/ui'
+import { SEPARATEUR } from '@/lib/i18n'
 import { lireDepot, lireOeuvreEnCuration } from '@/lib/curation'
 import { zonesOuvertes } from '@/lib/livraison'
 import { CONTACT_EQUIPE, DELAI_ANNULATION_DECLARATION_MINUTES, DELAI_REPONSE_CURATION_JOURS } from '@/lib/reglages'
@@ -91,7 +93,9 @@ export default async function EditOeuvrePage({ params, searchParams }: Props) {
               {artwork.title}
             </h1>
             <p className="font-sans text-sm text-neutral-600 mt-2">
-              {artwork.year}{artwork.dimensions ? ` · ${artwork.dimensions}` : ''}
+              {/* Story 3.2 : dimensions dans l'unité choisie ; le formulaire garde le texte en cm. */}
+              {artwork.year}{artwork.hauteurMm !== null && artwork.largeurMm !== null ? SEPARATEUR : ''}
+              <DimensionsChoisies mm={artwork} />
             </p>
             {artwork.masqueeSansAccord && (
               <p className="font-sans text-sm text-neutral-600 mt-2">

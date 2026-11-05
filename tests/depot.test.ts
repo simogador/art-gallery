@@ -95,9 +95,9 @@ const COMPLET: DonneesDepot = {
 
 describe('règles pures du dépôt', () => {
   it('60 × 80 cm : « 23,6 × 31,5 in · paysage » ; orientation', () => {
-    expect(apercuDimensions({ hauteur: '60', largeur: '80', profondeur: '' })).toBe('23,6 × 31,5 in · paysage')
-    expect(apercuDimensions({ hauteur: '80', largeur: '60', profondeur: '4' })).toBe('31,5 × 23,6 × 1,6 in · portrait')
-    expect(apercuDimensions({ hauteur: '50', largeur: '50', profondeur: '' })).toBe('19,7 × 19,7 in · carré')
+    expect(apercuDimensions({ hauteur: '60', largeur: '80', profondeur: '' })).toBe('23,6\u202f×\u202f31,5\u202fin\u00a0· paysage')
+    expect(apercuDimensions({ hauteur: '80', largeur: '60', profondeur: '4' })).toBe('31,5\u202f×\u202f23,6\u202f×\u202f1,6\u202fin\u00a0· portrait')
+    expect(apercuDimensions({ hauteur: '50', largeur: '50', profondeur: '' })).toBe('19,7\u202f×\u202f19,7\u202fin\u00a0· carré')
     expect(apercuDimensions({ hauteur: '60', largeur: '', profondeur: '' })).toBeNull()
     expect(apercuDimensions({ hauteur: '0', largeur: '80', profondeur: '' })).toBeNull()
     expect(orientation(600, 800)).toBe('paysage')
@@ -863,7 +863,9 @@ describe('base : dépôt de l’artiste', () => {
       const html = renderToStaticMarkup(createElement(RecapitulatifCuration, page.props))
       expect(html).toContain('sous 7 jours')
       expect(html).toContain('En curation')
-      expect(html).toContain('25 € · préparation 3 j · transport 2 à 5 j')
+      expect(html).toContain('25\u202f€\u00a0· préparation 3 j\u00a0· transport 2 à 5 j')
+      // Story 3.2 : dimensions dans l'unité choisie (cm par défaut), puis l'autre et l'orientation.
+      expect(html).toContain('60\u202f×\u202f80\u202fcm (23,6\u202f×\u202f31,5\u202fin\u00a0· paysage)')
       expect(html).toContain('Je ne livre pas cette zone')
       expect(html).not.toMatch(/<(input|textarea|select|button|form)\b/)
       expect(html).not.toMatch(/gratuit|garantie/i)

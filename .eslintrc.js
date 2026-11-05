@@ -1,4 +1,5 @@
 const EXCEPTIONS_PRISMA = require('./eslint/exceptions-prisma.cjs')
+const EXCEPTIONS_TEXTES = require('./eslint/exceptions-textes.cjs')
 
 // Les chemins Next.js « [id] » ou « [slug] » sont des classes de caractères pour les globs : on les échappe.
 const echapperGlob = (chemin) => chemin.replace(/[[\]]/g, '\\$&')
@@ -37,6 +38,17 @@ const IMPORTS_PRISMA = [
   'pg',
 ]
 
+// Story 3.2 (AD-18) : surfaces de l'epic 3 (accueil, galerie, fiche, artistes, en-tête, pied de page,
+// bascule d'unité) sans texte visible en dur ; les textes viennent du dictionnaire (src/lib/i18n/fr.ts).
+const SURFACES_TEXTES = [
+  'src/app/page.tsx',
+  'src/components/sections/**/*.tsx',
+  'src/app/galerie/**/*.tsx',
+  'src/app/artistes/**/*.tsx',
+  'src/components/layout/**/*.tsx',
+  'src/components/ui/UniteToggle.tsx',
+]
+
 module.exports = {
   extends: ['next/core-web-vitals'],
   overrides: [
@@ -59,6 +71,24 @@ module.exports = {
                   "AD-1 : la base (Prisma, pg) est réservée aux modules métier (src/lib/<module>/) et à src/auth.ts. Passez par l'API publique d'un module.",
               },
             ],
+          },
+        ],
+      },
+    },
+    {
+      // Fichiers refaits par les stories 3.5 à 3.11 : exemptés par une liste qui ne fait que diminuer
+      // (eslint/exceptions-textes.cjs, contrôlée en CI comme eslint/exceptions-prisma.cjs).
+      files: SURFACES_TEXTES,
+      excludedFiles: EXCEPTIONS_TEXTES.map(echapperGlob),
+      rules: {
+        'react/jsx-no-literals': [
+          'error',
+          {
+            // Chaînes entre accolades comprises ; les attributs (classes, href…) ne sont pas visés.
+            noStrings: true,
+            ignoreProps: true,
+            // Ponctuation seule, sans texte à traduire.
+            allowedStrings: ['·', '—', '×', '/', ',', '(', ')'],
           },
         ],
       },

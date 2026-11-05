@@ -1,7 +1,10 @@
 // Conversions exactes du prix et des dimensions (AD-5, AD-20, story 2.1).
 // Module pur : aucun accès à la base, utilisable côté client comme côté serveur.
+// Story 3.2 : la mise en forme à l'affichage passe par src/lib/i18n (formaterDimensions délègue).
 // Story 2.10 : les anciennes colonnes `price` et `dimensions` ont disparu ; seules les colonnes
 // exactes (prixCentimes, devise, hauteurMm, largeurMm, profondeurMm) sont écrites.
+
+import { enCentimetres, formaterDimensions as formaterDimensionsI18n } from '@/lib/i18n/formats'
 
 export const DEVISE = 'EUR'
 
@@ -30,7 +33,7 @@ export type DimensionsEnBase = {
 
 /* ── Prix ───────────────────────────────────────────────────────────────── */
 
-// Espaces ignorés (y compris insécables, que produit toLocaleString('fr-FR')).
+// Espaces ignorés (y compris insécables U+00A0 et fines U+202F, que produit formaterMontant).
 const ESPACES = /[ \t\u00a0\u202f]/g
 
 export type PrixLu = { ok: true; centimes: number | null } | { ok: false }
@@ -59,7 +62,7 @@ export function prixEnCentimes(saisie: unknown): PrixLu {
   return { ok: true, centimes: centimes === 0 ? null : centimes }
 }
 
-// Centimes → euros, pour l'affichage (formatPrice).
+// Centimes → euros (type d'affichage `price`) ; l'affichage passe par formaterMontant (i18n).
 export function centimesEnEuros(centimes: number | null | undefined): number | null {
   return centimes === null || centimes === undefined ? null : centimes / 100
 }
@@ -94,17 +97,15 @@ export function lireDimensions(texte: string | null | undefined): Dimensions | n
   return { hauteurMm, largeurMm, profondeurMm }
 }
 
-function enCentimetres(mm: number): string {
-  const reste = mm % 10
-  return reste === 0 ? String((mm - reste) / 10) : `${(mm - reste) / 10},${reste}`
+// Millimètres → « 120 × 90 cm » (ou « 45 × 30 × 28 cm »), en centimètres, espaces fines
+// insécables (U+202F) : délègue à formaterDimensions de i18n. Vide sans hauteur ni largeur.
+// Ce texte prérempli les formulaires d'édition et se relit à l'identique (lireDimensions).
+export function formaterDimensions(d: DimensionsEnBase | null | undefined): string {
+  return formaterDimensionsI18n(d, 'cm')
 }
 
-// Millimètres → « 120 × 90 cm » (ou « 45 × 30 × 28 cm »). Vide sans hauteur ni largeur.
-export function formaterDimensions(d: DimensionsEnBase | null | undefined): string {
-  if (!d || d.hauteurMm === null || d.largeurMm === null) return ''
-  const valeurs = [d.hauteurMm, d.largeurMm, ...(d.profondeurMm === null ? [] : [d.profondeurMm])]
-  return `${valeurs.map(enCentimetres).join(' × ')} cm`
-}
+// Espaces normalisés pour comparer un texte posté au texte prérempli (U+202F, U+00A0, espaces multiples).
+const normaliserEspaces = (texte: string) => texte.replace(/[\s\u00a0\u202f]+/g, ' ').trim()
 
 /* ── Saisie du formulaire (colonnes exactes seulement, story 2.10) ──────── */
 
@@ -135,13 +136,13 @@ export function champsDimensions(saisie: unknown): SaisieLue<ChampsDimensions> {
 }
 
 // Modification (routes PUT d'édition) : le formulaire est prérempli avec formaterDimensions des
-// millimètres en base. Ce texte renvoyé tel quel laisse les trois colonnes intactes : une œuvre aux
+// millimètres en base. Ce texte renvoyé tel quel (aux espaces près) laisse les trois colonnes intactes : une œuvre aux
 // dimensions partielles (hauteur seule, préremplie vide) ne perd pas les autres à l'enregistrement.
 export function champsDimensionsModifiees(
   saisie: unknown,
   enBase: DimensionsEnBase,
 ): SaisieLue<ChampsDimensions | Record<string, never>> {
-  if (typeof saisie === 'string' && saisie.trim() === formaterDimensions(enBase)) {
+  if (typeof saisie === 'string' && normaliserEspaces(saisie) === normaliserEspaces(formaterDimensions(enBase))) {
     return { ok: true, champs: {} }
   }
   return champsDimensions(saisie)

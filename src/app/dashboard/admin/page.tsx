@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/utils/artworks'
+import { formaterDate } from '@/lib/i18n'
 import { acteurCourant } from '@/lib/acces'
 import { compterInscriptionsOuverture } from '@/lib/demandes'
 import { compterOeuvres } from '@/lib/disponibilite'
@@ -116,7 +117,7 @@ export default async function AdminPage() {
                     {order.customerEmail ?? '—'}
                   </p>
                   <p className="font-sans text-[10px] text-neutral-600 mt-0.5">
-                    {new Date(order.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {formaterDate(order.createdAt, { mois: 'court' })}
                     {' · '}#{order.stripeSessionId.slice(-6).toUpperCase()}
                   </p>
                 </div>

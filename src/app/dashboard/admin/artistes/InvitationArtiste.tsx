@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
+import { formaterDateHeure } from '@/lib/i18n'
 import { actionInviter, type EtatInvitation } from './actions'
 
 // Invitation d'un artiste sans compte (story 2.4) : saisie de l'e-mail, puis lien affiché une seule
@@ -14,8 +15,8 @@ type Props = {
   enAttente: { email: string; echeance: string } | null
 }
 
-const dateLongue = (iso: string) =>
-  new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+// « 12 novembre à 15 h 42 », heure de Paris (story 3.2).
+const dateLongue = (iso: string) => formaterDateHeure(iso, { annee: false })
 
 function BoutonCreer() {
   const { pending } = useFormStatus()

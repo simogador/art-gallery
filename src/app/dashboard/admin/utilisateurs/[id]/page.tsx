@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/utils/artworks'
+import { formaterDate } from '@/lib/i18n'
 import { RoleSelect } from '@/components/dashboard/RoleSelect'
 import { acteurCourant } from '@/lib/acces'
 
@@ -72,7 +73,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
         </div>
 
         {[
-          { label: 'Inscrit le',  value: new Date(user.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) },
+          { label: 'Inscrit le',  value: formaterDate(user.createdAt) },
           { label: 'Commandes',   value: `${user.orders.length}` },
           { label: 'Total dépensé', value: totalSpent > 0 ? formatPrice(totalSpent) : '—' },
           ...(user.artist ? [{ label: 'Profil artiste', value: user.artist.name }] : []),
@@ -107,7 +108,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
                         #{order.stripeSessionId.slice(-8).toUpperCase()}
                       </p>
                       <p className="font-sans text-[10px] text-neutral-600 mt-0.5">
-                        {new Date(order.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        {formaterDate(order.createdAt)}
                       </p>
                     </div>
                     <div className="flex items-center gap-4">

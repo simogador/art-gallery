@@ -5,52 +5,26 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { Button, Input } from '@/components/ui'
+import { fr } from '@/lib/i18n'
 
-const NAV_COLUMNS = [
-  {
-    title: 'Collection',
-    links: [
-      { href: '#galerie',      label: 'Toutes les œuvres' },
-      { href: '#galerie',      label: 'Peintures' },
-      { href: '#galerie',      label: 'Sculptures' },
-      { href: '#galerie',      label: 'Photographies' },
-      { href: '#galerie',      label: 'Art numérique' },
-    ],
-  },
-  {
-    title: 'La galerie',
-    links: [
-      { href: '#artistes',     label: 'Nos artistes' },
-      { href: '#expositions',  label: 'Expositions' },
-      { href: '#about',        label: 'À propos' },
-      { href: '#about',        label: 'Notre histoire' },
-      { href: '#about',        label: 'Presse & média' },
-    ],
-  },
-  {
-    title: 'Services',
-    links: [
-      { href: '#contact',      label: 'Conseil en acquisition' },
-      { href: '#contact',      label: 'Art sur commande' },
-      { href: '#contact',      label: 'Prêt & location' },
-      { href: '#contact',      label: 'Estimation d\'œuvres' },
-      { href: '#contact',      label: 'Transport & assurance' },
-    ],
-  },
-] as const
+// Story 3.2 : textes du dictionnaire (fr.piedDePage), aucun texte visible en dur (react/jsx-no-literals).
+const T = fr.piedDePage
+
+// Colonnes du dictionnaire : chaque lien porte son libellé et son ancre.
+const NAV_COLUMNS = [T.colonnes.collection, T.colonnes.galerie, T.colonnes.services]
 
 const SOCIAL_LINKS = [
-  { href: '#', label: 'Instagram', icon: InstagramIcon },
-  { href: '#', label: 'LinkedIn',  icon: LinkedInIcon },
-  { href: '#', label: 'Pinterest', icon: PinterestIcon },
-  { href: '#', label: 'Facebook',  icon: FacebookIcon },
+  { href: '#', label: T.reseaux.instagram, icon: InstagramIcon },
+  { href: '#', label: T.reseaux.linkedin,  icon: LinkedInIcon },
+  { href: '#', label: T.reseaux.pinterest, icon: PinterestIcon },
+  { href: '#', label: T.reseaux.facebook,  icon: FacebookIcon },
 ] as const
 
 const LEGAL_LINKS = [
-  { href: '#', label: 'Mentions légales' },
-  { href: '#', label: 'Politique de confidentialité' },
-  { href: '#', label: 'CGV' },
-  { href: '#', label: 'Cookies' },
+  { href: '#', label: T.mentions.mentionsLegales },
+  { href: '#', label: T.mentions.confidentialite },
+  { href: '#', label: T.mentions.cgv },
+  { href: '#', label: T.mentions.cookies },
 ] as const
 
 /* ─── Variants ────────────────────────────────────────────────────────────── */
@@ -98,16 +72,15 @@ export function Footer() {
             {/* Logo */}
             <Link href="/" className="group inline-block mb-6">
               <span className="font-serif text-2xl font-light text-background group-hover:underline underline-offset-[3px] transition-colors duration-300 block leading-none">
-                Galerie
+                {fr.commun.marque}
               </span>
               <span className="font-sans text-[9px] uppercase tracking-[0.3em] mt-0.5 block">
-                D&apos;Art Contemporain
+                {fr.commun.sousTitreMarque}
               </span>
             </Link>
 
             <p className="font-sans text-sm leading-relaxed text-pretty mb-8 max-w-xs">
-              Une galerie d&apos;exception au cœur de Paris, dédiée à la promotion
-              des artistes contemporains les plus singuliers.
+              {T.presentation}
             </p>
 
             {/* Social */}
@@ -132,7 +105,7 @@ export function Footer() {
             {/* Newsletter */}
             <div>
               <p className="font-sans text-xs uppercase tracking-widest mb-3">
-                Lettre de la galerie
+                {T.lettre.titre}
               </p>
               {submitted ? (
                 <motion.div
@@ -141,18 +114,18 @@ export function Footer() {
                   className="flex items-center gap-2 text-sm font-sans"
                 >
                   <CheckIcon />
-                  Inscription confirmée — à bientôt.
+                  {T.lettre.confirmee}
                 </motion.div>
               ) : (
                 <form onSubmit={handleNewsletter} className="flex flex-col gap-2">
                   <Input
                     type="email"
-                    placeholder="votre@email.fr"
+                    placeholder={T.lettre.exemple}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     variant="underline"
                     surSombre
-                    aria-label="Adresse email pour la newsletter"
+                    aria-label={T.lettre.libelleChamp}
                     required
                   />
                   <Button
@@ -163,7 +136,7 @@ export function Footer() {
                     fullWidth
                     className="mt-1 text-background"
                   >
-                    S&apos;inscrire
+                    {T.lettre.inscrire}
                   </Button>
                 </form>
               )}
@@ -172,18 +145,18 @@ export function Footer() {
 
           {/* ── Nav columns ── */}
           {NAV_COLUMNS.map((col, i) => (
-            <motion.div key={col.title} custom={i + 1} variants={columnVariants}>
+            <motion.div key={col.titre} custom={i + 1} variants={columnVariants}>
               <p className="font-sans text-[10px] uppercase tracking-[0.2em] mb-5">
-                {col.title}
+                {col.titre}
               </p>
               <ul className="flex flex-col gap-3">
-                {col.links.map(({ href, label }) => (
-                  <li key={label}>
+                {col.liens.map(({ ancre, libelle }) => (
+                  <li key={libelle}>
                     <Link
-                      href={href}
+                      href={ancre}
                       className="font-sans text-sm hover:text-background hover:underline underline-offset-[3px] transition-colors duration-300 inline-block"
                     >
-                      {label}
+                      {libelle}
                     </Link>
                   </li>
                 ))}
@@ -200,21 +173,21 @@ export function Footer() {
           transition={{ delay: 0.4, duration: 0.6 }}
           className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-16 pt-8 border-t border-neutral-800"
         >
-          <InfoBlock label="Adresse">
-            12 Rue de l&apos;Art, 75008 Paris
+          <InfoBlock label={T.adresse.libelle}>
+            {T.adresse.valeur}
           </InfoBlock>
-          <InfoBlock label="Horaires">
-            Mardi — Dimanche · 10h – 19h
+          <InfoBlock label={T.horaires.libelle}>
+            {T.horaires.valeur}
           </InfoBlock>
-          <InfoBlock label="Contact">
-            <a href="mailto:contact@galerie-art.fr"
+          <InfoBlock label={T.contact.libelle}>
+            <a href={`mailto:${T.contact.email}`}
                className="hover:text-background hover:underline underline-offset-[3px] transition-colors duration-300">
-              contact@galerie-art.fr
+              {T.contact.email}
             </a>
-            {' · '}
-            <a href="tel:+33123456789"
+            {fr.commun.separateur}
+            <a href={`tel:${T.contact.telephoneLien}`}
                className="hover:text-background hover:underline underline-offset-[3px] transition-colors duration-300">
-              +33 1 23 45 67 89
+              {T.contact.telephone}
             </a>
           </InfoBlock>
         </motion.div>
@@ -222,7 +195,7 @@ export function Footer() {
         {/* ── Bottom bar ── */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-10 pt-6 border-t border-neutral-800">
           <p className="font-sans text-xs">
-            © {new Date().getFullYear()} Galerie d&apos;Art Contemporain. Tous droits réservés.
+            {T.droits(new Date().getFullYear())}
           </p>
           <div className="flex items-center gap-6">
             {LEGAL_LINKS.map(({ href, label }) => (

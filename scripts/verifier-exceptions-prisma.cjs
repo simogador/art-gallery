@@ -1,5 +1,6 @@
 // Story 1.6 (AD-1) : la liste d'exceptions Prisma ne peut que raccourcir par rapport à main.
 // Story 3.1 : même contrôle pour la liste d'exceptions d'interface (tests/exceptions-interface.cjs).
+// Story 3.2 : et pour celle des textes en dur (eslint/exceptions-textes.cjs).
 // Usage : node scripts/verifier-exceptions-prisma.cjs [référence git, par défaut origin/main] [liste]
 // (liste par défaut : eslint/exceptions-prisma.cjs)
 const { execFileSync } = require('node:child_process')
@@ -46,7 +47,9 @@ if (ajouts.length > 0) {
   console.error(
     PRISMA
       ? 'Passez par un module de src/lib/<module>/ au lieu d’ajouter une exception.'
-      : 'Corrigez le fichier (règles d’interface, story 3.1) au lieu d’ajouter une exception.',
+      : CHEMIN === 'eslint/exceptions-textes.cjs'
+        ? 'Passez les textes du fichier au dictionnaire (src/lib/i18n/fr.ts, story 3.2) au lieu d’ajouter une exception.'
+        : 'Corrigez le fichier (règles d’interface, story 3.1) au lieu d’ajouter une exception.',
   )
   console.error(`Si ces entrées ont été retirées sur ${reference} par une autre PR, fusionnez ${reference} dans votre branche.`)
   process.exit(1)

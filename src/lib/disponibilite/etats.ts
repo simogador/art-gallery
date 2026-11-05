@@ -1,4 +1,5 @@
 import type { Prisma } from '@/generated/prisma/client'
+import { formaterHeure } from '@/lib/i18n/formats'
 
 // Module disponibilite (AD-6, AD-7, story 2.2) : partie pure, sans accès à la base.
 // Seule définition de « visible » et de « disponible », en prédicat (objet déjà lu) et en
@@ -218,12 +219,7 @@ export function dansLeDelai(d: Pick<DeclarationLue, 'le'>, maintenant: Date, del
 
 /** « 10 h 12 », heure de Paris. */
 export function heureLisible(date: Date): string {
-  const parties = new Intl.DateTimeFormat('fr-FR', {
-    hour: 'numeric', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Paris',
-  }).formatToParts(date)
-  const h = parties.find((p) => p.type === 'hour')?.value ?? ''
-  const m = parties.find((p) => p.type === 'minute')?.value ?? ''
-  return `${Number(h)} h ${m}`
+  return formaterHeure(date)
 }
 
 /** Texte du bandeau après une déclaration : « Vendue ailleurs à 10 h 12. » */

@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Button, Badge, ArtworkImage } from '@/components/ui'
+import { Button, Badge, ArtworkImage, useUnite } from '@/components/ui'
+import { formaterDimensions, SEPARATEUR } from '@/lib/i18n'
 import { cn } from '@/lib/utils/cn'
 import { formatPrice } from '@/lib/utils/artworks'
 import type { Artwork } from '@/lib/types'
@@ -61,6 +62,8 @@ interface HeroProps {
 }
 
 export function Hero({ oeuvre, chiffres, expositionEnCours }: HeroProps) {
+  const unite = useUnite()
+  const taille = oeuvre ? formaterDimensions(oeuvre, unite) : ''
   const stats = statistiques(chiffres)
   // Story 3.1 (UX-DR6) : ni parallaxe ni animation liée au défilement.
 
@@ -203,7 +206,7 @@ export function Hero({ oeuvre, chiffres, expositionEnCours }: HeroProps) {
                       <span className="text-neutral-500 font-sans text-xs">{oeuvre.artist}, {oeuvre.year}</span>
                     </p>
                     <p className="font-sans text-xs text-gold mt-0.5 uppercase tracking-widest">
-                      {oeuvre.technique}{oeuvre.size ? ` · ${oeuvre.size}` : ''}
+                      {oeuvre.technique}{taille ? `${SEPARATEUR}${taille}` : ''}
                     </p>
                   </Link>
                 </motion.div>

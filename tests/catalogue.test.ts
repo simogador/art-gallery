@@ -99,8 +99,9 @@ describe('lireDimensions', () => {
   )
 
   it('formate en centimètres et se relit à l’identique', () => {
-    expect(formaterDimensions({ hauteurMm: 2946, largeurMm: 2321, profondeurMm: null })).toBe('294,6 × 232,1 cm')
-    expect(formaterDimensions({ hauteurMm: 450, largeurMm: 300, profondeurMm: 280 })).toBe('45 × 30 × 28 cm')
+    // Story 3.2 : espaces fines insécables (U+202F) autour de « × » et avant l'unité.
+    expect(formaterDimensions({ hauteurMm: 2946, largeurMm: 2321, profondeurMm: null })).toBe('294,6\u202f×\u202f232,1\u202fcm')
+    expect(formaterDimensions({ hauteurMm: 450, largeurMm: 300, profondeurMm: 280 })).toBe('45\u202f×\u202f30\u202f×\u202f28\u202fcm')
     expect(formaterDimensions({ hauteurMm: null, largeurMm: 300, profondeurMm: null })).toBe('')
     for (const texte of DIMENSIONS_ECHANTILLON) {
       const d = lireDimensions(texte)
@@ -127,6 +128,8 @@ describe('saisie du formulaire (colonnes exactes seulement, story 2.10)', () => 
     expect(champsDimensionsModifiees('', partielle)).toEqual({ ok: true, champs: {} })
     const complete = { hauteurMm: 600, largeurMm: 805, profondeurMm: null }
     expect(champsDimensionsModifiees(' 60 × 80,5 cm ', complete)).toEqual({ ok: true, champs: {} })
+    // Story 3.2 : le texte prérempli (espaces fines) renvoyé tel quel, aux espaces près.
+    expect(champsDimensionsModifiees('60\u202f×\u202f80,5\u202fcm', complete)).toEqual({ ok: true, champs: {} })
     expect(champsDimensionsModifiees('70 × 80 cm', complete)).toEqual({
       ok: true,
       champs: { hauteurMm: 700, largeurMm: 800, profondeurMm: null },
@@ -213,9 +216,10 @@ describe('base : lectures et écritures', () => {
     await oeuvre('sans-dimensions')
 
     const { getArtworkBySlug, getAllArtworks } = await import('@/lib/catalogue')
-    expect(await getArtworkBySlug('exacte')).toMatchObject({ price: 1250.5, size: '60 × 80 cm' })
+    // Story 3.2 : le type d'affichage porte les millimètres, mis en forme dans l'unité choisie.
+    expect(await getArtworkBySlug('exacte')).toMatchObject({ price: 1250.5, hauteurMm: 600, largeurMm: 800, profondeurMm: null })
     // Sans millimètres : aucune taille affichée ; prix absent affiché comme aujourd'hui (0).
-    expect(await getArtworkBySlug('sans-dimensions')).toMatchObject({ price: 0, size: '' })
+    expect(await getArtworkBySlug('sans-dimensions')).toMatchObject({ price: 0, hauteurMm: null, largeurMm: null })
     expect((await getAllArtworks()).map((w) => w.id).sort()).toEqual(['exacte', 'sans-dimensions'])
   })
 
@@ -226,9 +230,9 @@ describe('base : lectures et écritures', () => {
     const { accueilArtiste, oeuvresDeLArtiste, oeuvreAEditer } = await import('@/lib/catalogue')
     expect((await accueilArtiste(UTILISATEUR))?.chiffreAffairesCentimes).toBe(30)
     const lues = await oeuvresDeLArtiste(UTILISATEUR)
-    expect(lues?.oeuvres.find((o) => o.slug === 'vendue-1')).toMatchObject({ prix: 0.1, dimensions: '10 × 10 cm' })
+    expect(lues?.oeuvres.find((o) => o.slug === 'vendue-1')).toMatchObject({ prix: 0.1, hauteurMm: 100, largeurMm: 100, profondeurMm: null })
     // Édition : dimensions exactes formatées ; sans millimètres, champ vide (story 2.10).
-    expect(await oeuvreAEditer(UTILISATEUR, 'vendue-1')).toMatchObject({ dimensions: '10 × 10 cm', price: 0.1 })
+    expect(await oeuvreAEditer(UTILISATEUR, 'vendue-1')).toMatchObject({ dimensions: '10\u202f×\u202f10\u202fcm', hauteurMm: 100, largeurMm: 100, price: 0.1 })
     expect(await oeuvreAEditer(UTILISATEUR, 'vendue-2')).toMatchObject({ dimensions: '', price: 0.2 })
     expect(await oeuvreAEditer('quelqu-un-d-autre', 'vendue-1')).toBeNull()
   })

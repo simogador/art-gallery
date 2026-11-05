@@ -14,3 +14,5 @@ export { Modal } from './Modal'
 export type { ModalProps, ModalSize } from './Modal'
 
 export { ArtworkImage } from './ArtworkImage'
+
+export { UniteToggle, UniteProvider, useUnite, DimensionsChoisies } from './UniteToggle'

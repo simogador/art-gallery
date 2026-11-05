@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { formatPrice } from '@/lib/utils/artworks'
-import { Button, Badge, Modal } from '@/components/ui'
+import { Button, Badge, Modal, UniteToggle, useUnite } from '@/components/ui'
+import { formaterDimensionsDouble, fr } from '@/lib/i18n'
 import { useCartStore } from '@/lib/store/cart'
 import { ArtworkImage } from '@/components/ui'
 import type { Artwork, Artist } from '@/lib/types'
@@ -51,6 +52,8 @@ export function ArtworkDetail({ artwork, related, artist }: Props) {
 
   const { addItem, removeItem, hasItem } = useCartStore()
   const inCart = hasItem(artwork.id)
+  // Story 3.2 : les deux unités toujours visibles, celle choisie d'abord (« 24 × 29,9 in » puis « 61 × 76 cm »).
+  const tailles = formaterDimensionsDouble(artwork, useUnite())
 
   const handleContact = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -242,15 +245,22 @@ export function ArtworkDetail({ artwork, related, artist }: Props) {
               <motion.div custom={5} variants={fadeUp} className="grid grid-cols-2 gap-3 mb-8">
                 {[
                   { label: 'Technique',  value: artwork.technique },
-                  { label: 'Format',     value: artwork.size },
+                  { label: fr.fiche.format, value: tailles?.[0] ?? '', autre: tailles?.[1] },
                   { label: 'Médium',     value: artwork.medium },
                   { label: 'Année',      value: String(artwork.year) },
-                ].filter(({ value }) => value).map(({ label, value }) => (
+                ].filter(({ value }) => value).map(({ label, value, autre }) => (
                   <div key={label} className="bg-neutral-50 border border-neutral-100 rounded-sm px-4 py-3">
                     <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{label}</p>
                     <p className="font-sans text-sm text-foreground mt-0.5 leading-snug">{value}</p>
+                    {autre && <p className="font-sans text-xs text-neutral-600 mt-0.5 leading-snug">{autre}</p>}
                   </div>
                 ))}
+                {tailles && (
+                  <div className="col-span-2 flex items-center justify-between gap-3">
+                    <p id="libelle-unite" className="font-sans text-xs text-neutral-600">{fr.unite.libelle}</p>
+                    <UniteToggle libelleId="libelle-unite" />
+                  </div>
+                )}
               </motion.div>
 
               {/* CTA buttons */}

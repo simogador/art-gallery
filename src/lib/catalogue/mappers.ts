@@ -1,5 +1,6 @@
 import type { Artist, Artwork, Exhibition, ArtMedium, ExhibitionStatus } from '@/lib/types'
-import { centimesEnEuros, formaterDimensions } from './conversions'
+import { centimesEnEuros } from './conversions'
+import { formaterDate } from '@/lib/i18n/formats'
 // Partie pure du module disponibilite : ce fichier reste importable par un composant client.
 import { estDisponible, type EtatOeuvre } from '@/lib/disponibilite/etats'
 
@@ -49,8 +50,9 @@ export function computeStatus(start: Date, end: Date): ExhibitionStatus {
   return 'en-cours'
 }
 
+// « 4 novembre 2026 », heure de Paris (story 3.2 : formaterDate de i18n).
 export function formatDate(date: Date): string {
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  return formaterDate(date)
 }
 
 /* ── DB → UI type mappers ───────────────────────────────────────────────── */
@@ -121,8 +123,11 @@ export function mapArtwork(w: DbArtwork): Artwork {
     medium: toArtMedium(w.medium),
     technique: w.medium,
     price: centimesEnEuros(w.prixCentimes) ?? 0,
-    // Dimensions illisibles (colonnes vides) : aucune taille affichée.
-    size: formaterDimensions(w),
+    // Story 3.2 : millimètres, mis en forme à l'affichage dans l'unité choisie (formaterDimensions
+    // de i18n) ; hauteur ou largeur vide : aucune taille affichée.
+    hauteurMm: w.hauteurMm,
+    largeurMm: w.largeurMm,
+    profondeurMm: w.profondeurMm,
     description: w.description,
     tags: [],
     featured: w.featured,
