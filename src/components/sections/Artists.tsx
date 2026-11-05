@@ -36,7 +36,7 @@ export function Artists({ artists }: { artists: Artist[] }) {
   const secondary = artists.filter((a) => !a.featured)
 
   return (
-    <section id="artistes" className="py-24 md:py-32 bg-foreground overflow-hidden">
+    <section id="artistes" className="fond-sombre py-24 md:py-32 bg-foreground overflow-hidden">
       <motion.div
         className="container-premium"
         variants={sectionVariants}
@@ -97,7 +97,7 @@ export function Artists({ artists }: { artists: Artist[] }) {
             <Button variant="ghost" size="md" className="border-neutral-700 text-neutral-300 hover:border-neutral-400 hover:text-background">
               <Link href="/artistes">Voir tous les artistes</Link>
             </Button>
-            <Button variant="gold" size="md">
+            <Button variant="clair" size="md">
               Soumettre son travail
             </Button>
           </div>

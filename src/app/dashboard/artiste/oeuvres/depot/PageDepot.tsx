@@ -26,7 +26,7 @@ export function PageDepot({
           >
             Mes œuvres
           </Link>
-          <span aria-hidden="true" className="text-neutral-300">›</span>
+          <span aria-hidden="true" className="text-neutral-600">›</span>
           <span className="font-sans text-xs uppercase tracking-widest text-neutral-600 truncate max-w-xs">
             {depot?.titre || 'Nouvelle œuvre'}
           </span>
@@ -46,7 +46,7 @@ export function PageDepot({
             <p className="font-medium">
               L&apos;équipe Errancy vous a renvoyé cette œuvre le {dateLisible(depot.renvoi.le)} :
             </p>
-            <blockquote className="whitespace-pre-line mt-2 border-l-2 border-amber-300 pl-3">{depot.renvoi.commentaire}</blockquote>
+            <blockquote className="whitespace-pre-line mt-2 border-s-2 border-amber-300 ps-3">{depot.renvoi.commentaire}</blockquote>
             <p className="mt-2">Corrigez-la, puis envoyez-la de nouveau en curation.</p>
           </div>
         )}

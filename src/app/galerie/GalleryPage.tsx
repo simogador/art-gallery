@@ -110,7 +110,7 @@ export function GalleryPage({ artworks, artistNames }: Props) {
             style={{ fontSize: 'clamp(2.75rem, 6vw, 5rem)' }}
           >
             La{' '}
-            <em className="gold-text not-italic">collection</em>
+            <em className="not-italic">collection</em>
           </motion.h1>
           <motion.div variants={fadeUpVariants} className="my-6">
             <div className="divider" />
@@ -352,7 +352,7 @@ export function GalleryPage({ artworks, artistNames }: Props) {
       </section>
 
       {/* ── Acquisition CTA ── */}
-      <section className="py-24 bg-foreground overflow-hidden relative">
+      <section className="fond-sombre py-24 bg-foreground overflow-hidden relative">
         <BackgroundDecor />
         <div className="container-premium relative z-10">
           <div className="max-w-2xl">
@@ -371,7 +371,7 @@ export function GalleryPage({ artworks, artistNames }: Props) {
               Livraison internationale assurée, facilités de paiement disponibles.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Button variant="gold" size="lg" rightIcon={<ArrowIcon />}>
+              <Button variant="clair" size="lg" rightIcon={<ArrowIcon />}>
                 Contacter la galerie
               </Button>
               <Button

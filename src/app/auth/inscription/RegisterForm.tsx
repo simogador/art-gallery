@@ -41,17 +41,17 @@ export function RegisterForm() {
         initial={{ opacity: 0, x: -24 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className="hidden md:flex flex-col justify-between bg-foreground px-12 py-16 relative overflow-hidden"
+        className="hidden md:flex flex-col justify-between bg-foreground text-neutral-200 px-12 py-16 relative overflow-hidden"
       >
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           {[25, 50, 75].map((pos) => (
-            <div key={pos} className="absolute top-0 bottom-0 w-px bg-neutral-800" style={{ left: `${pos}%` }} />
+            <div key={pos} className="absolute top-0 bottom-0 w-px bg-neutral-800" style={{ insetInlineStart: `${pos}%` }} />
           ))}
-          <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" style={{ top: '60%' }} />
+          <div className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" style={{ top: '60%' }} />
         </div>
 
         <div className="relative z-10">
-          <p className="font-sans text-[9px] uppercase tracking-[0.35em] text-neutral-600 mb-1">Galerie</p>
+          <p className="font-sans text-[9px] uppercase tracking-[0.35em] mb-1">Galerie</p>
           <p className="font-serif text-3xl font-light text-background tracking-tight">Errancy</p>
         </div>
 
@@ -60,7 +60,7 @@ export function RegisterForm() {
           <p className="font-serif font-light text-background text-balance leading-relaxed" style={{ fontSize: 'clamp(1.5rem, 2.5vw, 2rem)' }}>
             Rejoignez la collection
           </p>
-          <p className="font-sans text-sm text-neutral-500 mt-4 text-pretty leading-relaxed max-w-xs">
+          <p className="font-sans text-sm mt-4 text-pretty leading-relaxed max-w-xs">
             Créez votre espace personnel pour sauvegarder des œuvres, suivre vos artistes et recevoir les actualités en avant-première.
           </p>
 
@@ -71,7 +71,7 @@ export function RegisterForm() {
               'Alertes nouvelles œuvres',
               'Accès prioritaire aux vernissages',
             ].map((item) => (
-              <li key={item} className="flex items-center gap-3 font-sans text-xs text-neutral-500">
+              <li key={item} className="flex items-center gap-3 font-sans text-xs">
                 <span className="w-1 h-1 rounded-full bg-gold flex-shrink-0" />
                 {item}
               </li>
@@ -98,7 +98,7 @@ export function RegisterForm() {
           <motion.div custom={0} variants={fadeUp}>
             <Link
               href="/"
-              className="inline-flex items-center gap-2 font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-300 mb-10"
+              className="inline-flex items-center gap-2 font-sans text-xs uppercase tracking-widest text-neutral-600 hover:text-foreground transition-colors duration-300 mb-10"
             >
               <ArrowLeftIcon />
               Errancy
@@ -139,7 +139,7 @@ export function RegisterForm() {
           {/* Separator */}
           <motion.div custom={3} variants={fadeUp} className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px bg-neutral-200" />
-            <span className="font-sans text-xs text-neutral-400 uppercase tracking-widest">ou</span>
+            <span className="font-sans text-xs text-neutral-600 uppercase tracking-widest">ou</span>
             <div className="flex-1 h-px bg-neutral-200" />
           </motion.div>
 
@@ -189,7 +189,7 @@ export function RegisterForm() {
               autoComplete="new-password"
             />
 
-            <p className="font-sans text-[11px] text-neutral-400 leading-relaxed">
+            <p className="font-sans text-[11px] text-neutral-600 leading-relaxed">
               En créant un compte, vous acceptez nos{' '}
               <Link href="/mentions-legales" className="underline underline-offset-4 hover:text-foreground transition-colors">
                 conditions d&apos;utilisation
@@ -201,7 +201,7 @@ export function RegisterForm() {
               type="submit"
               disabled={isPending || googlePending}
               className={cn(
-                'w-full py-3.5 mt-2',
+                'w-full min-h-touch-target py-3.5 mt-2',
                 'bg-foreground text-background',
                 'font-sans text-xs uppercase tracking-widest',
                 'rounded-sm border border-foreground',
@@ -220,7 +220,7 @@ export function RegisterForm() {
           {/* Login link */}
           <motion.p custom={5} variants={fadeUp} className="mt-8 font-sans text-sm text-neutral-500 text-center">
             Déjà un compte ?{' '}
-            <Link href="/auth/connexion" className="text-foreground underline underline-offset-4 hover:text-gold transition-colors duration-300">
+            <Link href="/auth/connexion" className="text-foreground underline underline-offset-4 hover:text-neutral-600 transition-colors duration-300">
               Se connecter
             </Link>
           </motion.p>
@@ -237,7 +237,7 @@ function Field({ label, name, type = 'text', placeholder, required, autoComplete
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={name} className="font-sans text-xs font-medium uppercase tracking-widest text-neutral-500">
+      <label htmlFor={name} className="font-sans text-xs font-medium uppercase tracking-widest text-neutral-600">
         {label}
       </label>
       <input
@@ -248,11 +248,11 @@ function Field({ label, name, type = 'text', placeholder, required, autoComplete
         required={required}
         autoComplete={autoComplete}
         className={cn(
-          'px-4 py-3 rounded-sm',
-          'border border-neutral-200 bg-transparent',
-          'font-sans text-sm text-foreground',
-          'placeholder:text-neutral-300',
-          'outline-none focus:border-foreground',
+          'min-h-touch-target px-4 py-3 rounded-sm',
+          'border border-neutral-500 bg-transparent',
+          'font-sans text-base text-foreground',
+          'placeholder:text-neutral-500',
+          'focus:border-foreground',
           'transition-colors duration-300',
         )}
       />

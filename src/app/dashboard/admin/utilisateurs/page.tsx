@@ -24,17 +24,17 @@ export default async function AdminUsersPage() {
   return (
     <div>
       <div className="mb-10">
-        <p className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3">Gestion</p>
+        <p className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-3">Gestion</p>
         <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
           Utilisateurs
         </h1>
-        <p className="font-sans text-sm text-neutral-400 mt-2">{users.length} compte{users.length > 1 ? 's' : ''}</p>
+        <p className="font-sans text-sm text-neutral-600 mt-2">{users.length} compte{users.length > 1 ? 's' : ''}</p>
       </div>
 
       {/* Column headers */}
       <div className="hidden lg:grid grid-cols-[1fr_100px_90px_80px_24px] gap-4 px-4 mb-2">
         {['Utilisateur', 'Rôle', 'Commandes', 'Total dépensé', ''].map((h) => (
-          <span key={h} className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{h}</span>
+          <span key={h} className="font-sans text-[10px] uppercase tracking-widest text-neutral-600">{h}</span>
         ))}
       </div>
 
@@ -59,7 +59,7 @@ export default async function AdminUsersPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="font-sans text-sm text-foreground truncate">{user.name ?? '—'}</p>
-                  <p className="font-sans text-xs text-neutral-400 truncate">{user.email}</p>
+                  <p className="font-sans text-xs text-neutral-600 truncate">{user.email}</p>
                   {user.artist && (
                     <p className="font-sans text-[10px] text-violet-600 mt-0.5">
                       ↳ {user.artist.name}
@@ -86,7 +86,7 @@ export default async function AdminUsersPage() {
               {/* Detail link */}
               <Link
                 href={`/dashboard/admin/utilisateurs/${user.id}`}
-                className="font-sans text-[10px] text-neutral-400 hover:text-foreground transition-colors duration-200"
+                className="font-sans text-[10px] text-neutral-600 hover:text-foreground transition-colors duration-200"
               >
                 ›
               </Link>

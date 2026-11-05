@@ -72,7 +72,7 @@ export function ExhibitionsList({ exhibitions }: Props) {
           initial="hidden"
           animate="visible"
         >
-          <motion.span variants={fadeUpVariants} className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-4 block">
+          <motion.span variants={fadeUpVariants} className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-4 block">
             Programme
           </motion.span>
           <motion.h1
@@ -81,7 +81,7 @@ export function ExhibitionsList({ exhibitions }: Props) {
             style={{ fontSize: 'clamp(2.75rem, 6vw, 5rem)' }}
           >
             Les{' '}
-            <em className="gold-text not-italic">expositions</em>
+            <em className="not-italic">expositions</em>
           </motion.h1>
           <motion.div variants={fadeUpVariants} className="my-6">
             <div className="divider" />
@@ -132,18 +132,18 @@ export function ExhibitionsList({ exhibitions }: Props) {
                   key={value}
                   onClick={() => setActiveTab(value)}
                   className={cn(
-                    'relative px-4 py-3 flex items-center gap-2',
+                    'relative min-h-touch-target px-4 py-3 flex items-center gap-2',
                     'font-sans text-xs uppercase tracking-widest',
                     'transition-colors duration-300',
-                    isActive ? 'text-foreground' : 'text-neutral-400 hover:text-neutral-600',
+                    isActive ? 'text-foreground' : 'text-neutral-600 hover:text-foreground',
                   )}
                 >
                   {label}
-                  <span className={cn('text-[10px]', isActive ? 'text-gold' : 'text-neutral-300')}>{count}</span>
+                  <span className="text-[10px] text-neutral-600">{count}</span>
                   {isActive && (
                     <motion.div
                       layoutId="expo-list-tab"
-                      className="absolute bottom-0 left-0 right-0 h-px bg-foreground"
+                      className="absolute bottom-0 inset-x-0 h-px bg-foreground"
                       transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                     />
                   )}
@@ -178,10 +178,10 @@ export function ExhibitionsList({ exhibitions }: Props) {
 
               {filtered.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-neutral-200 rounded-sm">
-                  <p className="font-serif text-xl font-light text-neutral-400">
+                  <p className="font-serif text-xl font-light text-neutral-600">
                     {exhibitions.length === 0 ? 'Les expositions arrivent bientôt' : 'Aucune exposition'}
                   </p>
-                  <p className="font-sans text-sm text-neutral-400 mt-2">
+                  <p className="font-sans text-sm text-neutral-600 mt-2">
                     {exhibitions.length === 0
                       ? 'Aucune exposition n’est programmée pour le moment.'
                       : 'Il n’y a pas d’exposition dans cette catégorie pour le moment.'}
@@ -194,11 +194,11 @@ export function ExhibitionsList({ exhibitions }: Props) {
       </section>
 
       {/* ── Visit CTA ── */}
-      <section className="py-24 bg-foreground relative overflow-hidden">
+      <section className="fond-sombre py-24 bg-foreground text-neutral-200 relative overflow-hidden">
         <BackgroundDecor />
         <div className="container-premium relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
           <div>
-            <span className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3 block">Préparer sa visite</span>
+            <span className="font-sans text-xs uppercase tracking-[0.25em] mb-3 block">Préparer sa visite</span>
             <p
               className="font-serif font-light text-background leading-tight"
               style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', maxWidth: '32rem' }}
@@ -206,19 +206,19 @@ export function ExhibitionsList({ exhibitions }: Props) {
               Ouvert du mardi au dimanche
             </p>
             <div className="flex flex-col gap-1.5 mt-4">
-              <p className="font-sans text-sm text-neutral-400">10h – 19h · Entrée libre</p>
-              <p className="font-sans text-sm text-neutral-400">Visites guidées sur réservation</p>
+              <p className="font-sans text-sm">10h – 19h · Entrée libre</p>
+              <p className="font-sans text-sm">Visites guidées sur réservation</p>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3 flex-shrink-0">
             <Button
               variant="ghost"
               size="lg"
-              className="border-neutral-700 text-neutral-300 hover:border-neutral-400 hover:text-background"
+              className="border-neutral-700 text-background hover:border-background hover:bg-transparent"
             >
               <Link href="/">Retour à la galerie</Link>
             </Button>
-            <Button variant="gold" size="lg">
+            <Button variant="clair" size="lg">
               Réserver une visite guidée
             </Button>
           </div>
@@ -248,10 +248,10 @@ function FeaturedCard({ exhibition: expo }: { exhibition: Exhibition }) {
         )}>
           <ExpoMotif color={expo.accentColor} size={220} />
           <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/8 transition-colors duration-500" />
-          <div className="absolute top-5 left-5">
+          <div className="absolute top-5 start-5">
             <Badge variant="gold" dot label="À la une" />
           </div>
-          <div className="absolute bottom-5 right-5">
+          <div className="absolute bottom-5 end-5">
             <span className="font-sans text-[10px] uppercase tracking-widest bg-background/90 text-foreground px-2 py-1 rounded-sm">
               {expo.worksCount} œuvres
             </span>
@@ -263,15 +263,15 @@ function FeaturedCard({ exhibition: expo }: { exhibition: Exhibition }) {
           <div>
             <div className="flex items-center gap-3 mb-5">
               <Badge variant={cfg.variant} dot label={cfg.label} />
-              <span className="font-sans text-xs text-neutral-400">{expo.dateStart} — {expo.dateEnd}</span>
+              <span className="font-sans text-xs text-neutral-600">{expo.dateStart} — {expo.dateEnd}</span>
             </div>
             <h2
-              className="font-serif font-light text-foreground group-hover:text-gold transition-colors duration-300 leading-tight"
+              className="font-serif font-light text-foreground group-hover:text-neutral-600 transition-colors duration-300 leading-tight"
               style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)' }}
             >
               {expo.title}
             </h2>
-            <p className="font-sans text-sm text-gold uppercase tracking-widest mt-2 mb-5">{expo.subtitle}</p>
+            <p className="font-sans text-sm text-neutral-600 uppercase tracking-widest mt-2 mb-5">{expo.subtitle}</p>
             <div className="flex flex-wrap gap-2 mb-5">
               {expo.artists.map((a) => (
                 <span key={a} className="font-sans text-xs text-neutral-500 border border-neutral-200 px-3 py-1 rounded-sm">
@@ -285,10 +285,10 @@ function FeaturedCard({ exhibition: expo }: { exhibition: Exhibition }) {
           </div>
           <div className="mt-8 flex items-center justify-between gap-4 pt-6 border-t border-neutral-100">
             <div>
-              <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">Lieu</p>
+              <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-600">Lieu</p>
               <p className="font-sans text-sm text-foreground mt-0.5">{expo.venue}</p>
             </div>
-            <div className="flex items-center gap-1.5 font-sans text-xs uppercase tracking-widest text-foreground group-hover:text-gold transition-colors duration-300 flex-shrink-0">
+            <div className="flex items-center gap-1.5 font-sans text-xs uppercase tracking-widest text-foreground group-hover:text-neutral-600 transition-colors duration-300 flex-shrink-0">
               Découvrir
               <ArrowSmIcon />
             </div>
@@ -336,19 +336,19 @@ function ExhibitionCard({ exhibition: expo, index }: { exhibition: Exhibition; i
               animate={{ y: hovered ? 0 : 8, opacity: hovered ? 1 : 0 }}
               transition={{ duration: 0.3, delay: 0.04 }}
             >
-              <p className="font-sans text-xs text-neutral-300 leading-relaxed text-pretty">
+              <p className="font-sans text-xs text-background leading-relaxed text-pretty">
                 {expo.description.slice(0, 115)}…
               </p>
-              <div className="flex items-center gap-1.5 mt-3 font-sans text-xs uppercase tracking-widest text-gold">
+              <div className="flex items-center gap-1.5 mt-3 font-sans text-xs uppercase tracking-widest text-background">
                 Voir l&apos;exposition <ArrowSmIcon />
               </div>
             </motion.div>
           </motion.div>
           {/* Badges */}
-          <div className="absolute top-3 left-3">
+          <div className="absolute top-3 start-3">
             <Badge variant={cfg.variant} dot label={cfg.label} size="sm" />
           </div>
-          <div className="absolute bottom-3 right-3">
+          <div className="absolute bottom-3 end-3">
             <span className="font-sans text-[10px] uppercase tracking-widest bg-background/90 text-foreground px-2 py-1 rounded-sm">
               {expo.worksCount} œuvres
             </span>
@@ -357,16 +357,16 @@ function ExhibitionCard({ exhibition: expo, index }: { exhibition: Exhibition; i
 
         {/* Info */}
         <div>
-          <h2 className="font-serif text-xl font-light text-foreground group-hover:text-gold transition-colors duration-300 leading-tight">
+          <h2 className="font-serif text-xl font-light text-foreground group-hover:text-neutral-600 transition-colors duration-300 leading-tight">
             {expo.title}
           </h2>
-          <p className="font-sans text-xs text-gold uppercase tracking-widest mt-1">{expo.subtitle}</p>
-          <p className="font-sans text-xs text-neutral-400 mt-2 uppercase tracking-widest">
+          <p className="font-sans text-xs text-neutral-600 uppercase tracking-widest mt-1">{expo.subtitle}</p>
+          <p className="font-sans text-xs text-neutral-600 mt-2 uppercase tracking-widest">
             {expo.artists.join(' · ')}
           </p>
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-neutral-100">
-            <span className="font-sans text-xs text-neutral-400">{expo.dateStart} — {expo.dateEnd}</span>
-            <span className="font-sans text-xs text-neutral-500 truncate max-w-[130px] text-right">
+            <span className="font-sans text-xs text-neutral-600">{expo.dateStart} — {expo.dateEnd}</span>
+            <span className="font-sans text-xs text-neutral-500 truncate max-w-[130px] text-end">
               {expo.venue.split('—')[0].trim()}
             </span>
           </div>
@@ -409,9 +409,9 @@ function GridLines() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
       {[20, 50, 80].map((pos) => (
-        <div key={pos} className="absolute top-0 bottom-0 w-px bg-neutral-200/60" style={{ left: `${pos}%` }} />
+        <div key={pos} className="absolute top-0 bottom-0 w-px bg-neutral-200/60" style={{ insetInlineStart: `${pos}%` }} />
       ))}
-      <div className="absolute top-[40%] left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" />
+      <div className="absolute top-[40%] inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" />
     </div>
   )
 }
@@ -419,9 +419,9 @@ function GridLines() {
 function BackgroundDecor() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-      <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full border border-neutral-800" />
-      <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full border border-neutral-800" />
-      <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/10 to-transparent" />
+      <div className="absolute -top-32 -end-32 w-96 h-96 rounded-full border border-neutral-800" />
+      <div className="absolute -bottom-16 -start-16 w-64 h-64 rounded-full border border-neutral-800" />
+      <div className="absolute top-1/2 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold/10 to-transparent" />
     </div>
   )
 }

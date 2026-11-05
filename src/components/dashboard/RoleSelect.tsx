@@ -50,7 +50,7 @@ export function RoleSelect({ userId, currentRole }: Props) {
         disabled={loading}
         className={cn(
           'inline-flex items-center gap-1.5 font-sans text-[10px] uppercase tracking-widest',
-          'px-2.5 py-1 rounded-sm border transition-all duration-200',
+          'min-h-touch-target px-2.5 py-1 rounded-sm border transition-all duration-200',
           'disabled:opacity-50 cursor-pointer hover:opacity-80',
           colors[role],
         )}
@@ -62,15 +62,15 @@ export function RoleSelect({ userId, currentRole }: Props) {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full mt-1 z-20 bg-background border border-neutral-200 rounded-sm shadow-lg py-1 min-w-[100px]">
+          <div className="absolute start-0 top-full mt-1 z-20 bg-background border border-neutral-200 rounded-sm shadow-lg py-1 min-w-[100px]">
             {ROLES.map((r) => (
               <button
                 key={r}
                 onClick={() => changeRole(r)}
                 className={cn(
-                  'w-full text-left px-3 py-2 font-sans text-xs uppercase tracking-widest',
+                  'w-full min-h-touch-target text-start px-3 py-2 font-sans text-xs uppercase tracking-widest',
                   'hover:bg-neutral-50 transition-colors duration-150',
-                  r === role ? 'text-foreground font-medium' : 'text-neutral-500',
+                  r === role ? 'text-foreground font-medium' : 'text-neutral-600',
                 )}
               >
                 {r}

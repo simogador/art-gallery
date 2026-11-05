@@ -34,7 +34,7 @@ Place de marché d'art en ligne : les artistes vendent via le site, Errancy pren
 
 ## Running and verifying
 
-- Avant de pousser : `npx eslint .`, `node scripts/verifier-exceptions-prisma.cjs origin/main` puis `npm run build`, comme la CI — Vercel échoue sur la moindre erreur ESLint.
+- Avant de pousser : `npx eslint .`, `node scripts/verifier-exceptions-prisma.cjs origin/main` (et `… origin/main tests/exceptions-interface.cjs`) puis `npm run build`, comme la CI — Vercel échoue sur la moindre erreur ESLint.
 - Sans `DATABASE_URL`, `npm run build` réussit mais affiche des `DatabaseNotReachable` Prisma : ce n'est pas un échec.
 - `next start` en local exige `AUTH_SECRET` et `AUTH_TRUST_HOST=true`.
 - Le Lot 2 est fermé par défaut, donc `/panier` n'a pas de bouton de paiement : pour tester le chemin d'achat actuel en local, mettre `LOT2_OUVERT=oui` dans `.env.local`.
@@ -48,6 +48,7 @@ Place de marché d'art en ligne : les artistes vendent via le site, Errancy pren
 - Textes d'interface et URL en français (`/galerie`, `/artistes`, `/panier`, `/auth/connexion`).
 - Rôles = chaînes `user` | `artist` | `admin` sur `User.role`.
 - Une œuvre est identifiée par son `slug` dans le panier, le checkout et les commandes (`Order.artworkIds` = slugs séparés par des virgules).
+- Interface (story 3.1, `DESIGN.md`) : texte secondaire en `neutral-600` (`neutral-500` au plus clair, jamais sur `neutral-200`) ; sur fond noir, texte blanc ou `neutral-200` (poser `text-neutral-200` dans la même chaîne de classes que `bg-foreground`, la classe `fond-sombre` pour un focus clair, `Button variant="clair"` et `Input surSombre`) ; l'or est décoratif seulement (filets, fonds, bordures), jamais texte, fond de bouton ni focus. Focus : contour noir 2 px, décalage 2 px, posé globalement dans `src/styles/globals.css` (ne pas le redéfinir). Propriétés logiques seulement (`start`/`end`, `ms`/`me`, `ps`/`pe`, `text-start`/`text-end`, `border-s`/`border-e`). Champs en 16 px (`text-input` ou `text-base`), cibles d'au moins 44 × 44 px (`min-h-touch-target`). Mouvement : `fade-in`, `scale-in` (et `slide-up` de la feuille de confirmation) seulement, coupés sous `prefers-reduced-motion` (règle CSS globale et `MouvementReduit` du layout) ; ni parallaxe, ni animation infinie, ni `animate-ping`/`pulse` sans `motion-safe:`. Un seul `<main id="contenu">`, dans `src/app/layout.tsx` (cible du lien « Aller au contenu ») : pas de `<main>` dans les pages. `tests/interface-accessible.test.ts` scanne `src/` ; les fichiers pas encore refaits sont nommés un à un dans `tests/exceptions-interface.cjs` (un fichier qui passe le scan en est retiré), liste qui ne fait que diminuer (contrôlée en CI par `scripts/verifier-exceptions-prisma.cjs origin/main tests/exceptions-interface.cjs`).
 
 ## Known pitfalls
 

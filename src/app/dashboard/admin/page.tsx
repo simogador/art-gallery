@@ -54,7 +54,7 @@ export default async function AdminPage() {
   return (
     <div>
       <div className="mb-10">
-        <p className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3">Administration</p>
+        <p className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-3">Administration</p>
         <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
           Vue d&apos;ensemble
         </h1>
@@ -64,9 +64,9 @@ export default async function AdminPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
         {stats.map(({ label, value, sub }) => (
           <div key={label} className="border border-neutral-200 rounded-sm p-5">
-            <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-400 mb-2">{label}</p>
+            <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-600 mb-2">{label}</p>
             <p className="font-serif text-3xl font-light text-foreground">{value}</p>
-            <p className="font-sans text-[10px] text-neutral-400 mt-1">{sub}</p>
+            <p className="font-sans text-[10px] text-neutral-600 mt-1">{sub}</p>
           </div>
         ))}
       </div>
@@ -76,8 +76,8 @@ export default async function AdminPage() {
         {quickLinks.map(({ href, label, desc }) => (
           <Link key={href} href={href}
             className="group flex flex-col gap-2 p-5 border border-neutral-200 rounded-sm hover:border-foreground transition-colors duration-300">
-            <p className="font-serif text-base font-light text-foreground group-hover:text-gold transition-colors duration-300">{label}</p>
-            <p className="font-sans text-xs text-neutral-400">{desc}</p>
+            <p className="font-serif text-base font-light text-foreground group-hover:text-neutral-600 transition-colors duration-300">{label}</p>
+            <p className="font-sans text-xs text-neutral-600">{desc}</p>
           </Link>
         ))}
       </div>
@@ -85,11 +85,11 @@ export default async function AdminPage() {
       {/* Contacts de la page de maintenance (FR-35) */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-5 mb-12 border border-neutral-200 rounded-sm">
         <div>
-          <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-400 mb-2">
+          <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-600 mb-2">
             Inscrits à l&apos;ouverture
           </p>
           <p className="font-serif text-3xl font-light text-foreground">{inscritsOuverture}</p>
-          <p className="font-sans text-[10px] text-neutral-400 mt-1">laissés sur la page de maintenance</p>
+          <p className="font-sans text-[10px] text-neutral-600 mt-1">laissés sur la page de maintenance</p>
         </div>
         {inscritsOuverture > 0 && (
           <a
@@ -115,7 +115,7 @@ export default async function AdminPage() {
                   <p className="font-sans text-xs text-foreground truncate">
                     {order.customerEmail ?? '—'}
                   </p>
-                  <p className="font-sans text-[10px] text-neutral-400 mt-0.5">
+                  <p className="font-sans text-[10px] text-neutral-600 mt-0.5">
                     {new Date(order.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                     {' · '}#{order.stripeSessionId.slice(-6).toUpperCase()}
                   </p>

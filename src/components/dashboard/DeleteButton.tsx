@@ -32,7 +32,7 @@ export function DeleteButton({ apiUrl, label, confirm, redirectTo }: Props) {
     <button
       onClick={handleDelete}
       disabled={loading}
-      className="font-sans text-[10px] uppercase tracking-widest text-neutral-400 hover:text-red-500 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+      className="min-h-touch-target font-sans text-[10px] uppercase tracking-widest text-neutral-600 hover:text-red-500 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
     >
       {loading ? '…' : label}
     </button>

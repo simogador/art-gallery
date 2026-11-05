@@ -173,7 +173,7 @@ export function BoutonAnnulerDeclaration({
         aria-describedby={erreur ? idErreur : undefined}
         className={
           lien
-            ? 'min-h-11 px-1 font-sans text-sm underline underline-offset-4 text-foreground hover:text-gold disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground'
+            ? 'min-h-11 px-1 font-sans text-sm underline underline-offset-4 text-foreground hover:text-neutral-600 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground'
             : BOUTON
         }
       >

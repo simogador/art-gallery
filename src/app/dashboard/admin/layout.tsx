@@ -12,9 +12,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)]">
 
         {/* Sidebar desktop */}
-        <aside className="w-56 flex-shrink-0 py-10 pr-8 hidden md:flex md:flex-col border-r border-neutral-100">
+        <aside className="w-56 flex-shrink-0 py-10 pe-8 hidden md:flex md:flex-col border-e border-neutral-100">
           <div className="mb-8">
-            <p className="font-sans text-[10px] uppercase tracking-[0.25em] text-gold mb-1">
+            <p className="font-sans text-[10px] uppercase tracking-[0.25em] text-neutral-600 mb-1">
               Administration
             </p>
             <p className="font-sans text-xs text-neutral-500">Errancy</p>
@@ -23,9 +23,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </aside>
 
         {/* Main */}
-        <main className="flex-1 py-10 pb-24 md:pb-12 min-w-0 md:pl-10">
+        <div className="flex-1 py-10 pb-24 md:pb-12 min-w-0 md:ps-10">
           {children}
-        </main>
+        </div>
       </div>
 
       {/* Mobile bottom nav */}

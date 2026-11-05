@@ -11,6 +11,8 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   leftIcon?:    React.ReactNode
   rightIcon?:   React.ReactNode
   variant?:     'default' | 'filled' | 'underline'
+  /** Champ posé sur un fond noir (pied de page) : texte, filets et libellés clairs. */
+  surSombre?:   boolean
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(({
@@ -20,6 +22,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   leftIcon,
   rightIcon,
   variant = 'default',
+  surSombre = false,
   className,
   id: externalId,
   disabled,
@@ -31,21 +34,22 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   const hasError    = !!error
 
   const baseInput = cn(
-    'w-full font-sans text-sm text-foreground bg-transparent',
-    'placeholder:text-neutral-400',
+    // Story 3.1 : 16 px (pas de zoom automatique sur mobile), 44 px de haut au minimum.
+    'w-full min-h-touch-target font-sans text-input bg-transparent',
+    surSombre ? 'text-background placeholder:text-background/70' : 'text-foreground placeholder:text-neutral-500',
     'transition-all duration-300',
     'disabled:opacity-40 disabled:cursor-not-allowed',
-    'outline-none',
-    leftIcon  && 'pl-10',
-    rightIcon && 'pr-10',
+    leftIcon  && 'ps-10',
+    rightIcon && 'pe-10',
   )
 
   const variantWrapperMap = {
     default:   cn(
       'border rounded-sm',
       hasError  ? 'border-red-400'
+      : surSombre ? (focused ? 'border-background shadow-[0_0_0_1px_#FAFAF8]' : 'border-neutral-200 hover:border-background')
       : focused ? 'border-foreground shadow-[0_0_0_1px_#0A0A0A]'
-                : 'border-neutral-200 hover:border-neutral-400',
+                : 'border-neutral-500 hover:border-foreground',
     ),
     filled:    cn(
       'bg-neutral-100 rounded-sm border',
@@ -56,10 +60,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
     underline: cn(
       'border-b rounded-none border-x-0 border-t-0',
       hasError  ? 'border-red-400'
+      : surSombre ? (focused ? 'border-background' : 'border-neutral-200 hover:border-background')
       : focused ? 'border-foreground'
-                : 'border-neutral-300 hover:border-neutral-600',
+                : 'border-neutral-500 hover:border-foreground',
     ),
   }
+
+  const texteSecondaire = surSombre ? 'text-background' : 'text-neutral-600'
 
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
@@ -69,8 +76,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
           className={cn(
             'font-sans text-xs font-medium uppercase tracking-widest',
             hasError  ? 'text-red-500'
+            : surSombre ? 'text-background'
             : focused ? 'text-foreground'
-                      : 'text-neutral-500',
+                      : 'text-neutral-600',
             'transition-colors duration-200',
           )}
         >
@@ -80,7 +88,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
 
       <div className={cn('relative flex items-center', variantWrapperMap[variant])}>
         {leftIcon && (
-          <span className="absolute left-3 text-neutral-400 flex items-center pointer-events-none">
+          <span className={cn('absolute start-3 flex items-center pointer-events-none', texteSecondaire)}>
             {leftIcon}
           </span>
         )}
@@ -101,7 +109,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
         />
 
         {rightIcon && (
-          <span className="absolute right-3 text-neutral-400 flex items-center pointer-events-none">
+          <span className={cn('absolute end-3 flex items-center pointer-events-none', texteSecondaire)}>
             {rightIcon}
           </span>
         )}
@@ -109,7 +117,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
         {/* Gold accent line on focus (default variant) */}
         {variant === 'default' && (
           <motion.span
-            className="absolute bottom-0 left-0 h-px bg-gold"
+            className="absolute bottom-0 start-0 h-px bg-gold"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: focused ? 1 : 0 }}
             transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -139,7 +147,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="font-sans text-xs text-neutral-400"
+            className={cn('font-sans text-xs', texteSecondaire)}
           >
             {hint}
           </motion.p>

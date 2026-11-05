@@ -54,17 +54,23 @@ describe('règle AD-1 : accès à la base', () => {
 describe('liste d’exceptions : ne fait que diminuer', () => {
   const script = path.resolve('scripts/verifier-exceptions-prisma.cjs')
 
-  function depot(entrees: string[]) {
+  function depot(entrees: string[], interface_: string[] = []) {
     const dossier = mkdtempSync(path.join(tmpdir(), 'exceptions-depot-'))
     const git = (...args: string[]) => execFileSync('git', args, { cwd: dossier, stdio: 'ignore' })
     git('init', '-q')
     mkdirSync(path.join(dossier, 'eslint'))
+    mkdirSync(path.join(dossier, 'tests'))
     const ecrire = (contenu: string) => writeFileSync(path.join(dossier, 'eslint/exceptions-prisma.cjs'), contenu)
+    // Story 3.1 : liste d'exceptions d'interface, contrôlée par le même script (2e argument).
+    const ecrireInterface = (contenu: string) => writeFileSync(path.join(dossier, 'tests/exceptions-interface.cjs'), contenu)
     ecrire(`module.exports = ${JSON.stringify(entrees)}\n`)
+    ecrireInterface(`module.exports = ${JSON.stringify(interface_)}\n`)
     git('add', '.')
     git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'base')
     const verifier = () => spawnSync('node', [script, 'HEAD'], { cwd: dossier }).status
-    return { dossier, ecrire, verifier }
+    const verifierInterface = () =>
+      spawnSync('node', [script, 'HEAD', 'tests/exceptions-interface.cjs'], { cwd: dossier }).status
+    return { dossier, ecrire, ecrireInterface, verifier, verifierInterface }
   }
 
   it('accepte une liste raccourcie ou supprimée, refuse tout ajout', () => {
@@ -76,6 +82,23 @@ describe('liste d’exceptions : ne fait que diminuer', () => {
       expect(d.verifier()).toBe(1)
       rmSync(path.join(d.dossier, 'eslint/exceptions-prisma.cjs'))
       expect(d.verifier()).toBe(0)
+    } finally {
+      rmSync(d.dossier, { recursive: true, force: true })
+    }
+  })
+
+  it('liste d’exceptions d’interface : refuse tout ajout, accepte un retrait, ignore la liste Prisma', () => {
+    const d = depot(['src/a.ts'], ['src/x.tsx', 'src/y.tsx'])
+    try {
+      expect(d.verifierInterface()).toBe(0)
+      d.ecrireInterface('module.exports = ["src/x.tsx", "src/y.tsx", "src/z.tsx"]\n')
+      expect(d.verifierInterface()).toBe(1)
+      d.ecrireInterface("module.exports = ['src/x.tsx']\n")
+      expect(d.verifierInterface()).toBe(0)
+      // Un ajout à la seule liste Prisma ne concerne pas le contrôle d'interface.
+      d.ecrire('module.exports = ["src/a.ts", "src/b.ts"]\n')
+      expect(d.verifierInterface()).toBe(0)
+      expect(d.verifier()).toBe(1)
     } finally {
       rmSync(d.dossier, { recursive: true, force: true })
     }

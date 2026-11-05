@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils/cn'
 
 const badgeVariants = {
   default:   'bg-neutral-100 text-neutral-700 border border-neutral-200',
-  gold:      'bg-gold-muted text-gold-dark border border-gold/30',
+  gold:      'bg-gold-muted text-foreground border border-gold/30',
   dark:      'bg-foreground text-background border border-foreground',
   success:   'bg-emerald-50 text-emerald-700 border border-emerald-200',
   warning:   'bg-amber-50 text-amber-700 border border-amber-200',

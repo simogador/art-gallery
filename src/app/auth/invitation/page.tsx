@@ -20,7 +20,7 @@ export default async function InvitationPage() {
   const sessionOuverte = invitation ? (await auth())?.user?.email ?? null : null
 
   return (
-    <main className="min-h-full flex justify-center px-4 py-12 sm:py-20">
+    <div className="min-h-full flex justify-center px-4 py-12 sm:py-20">
       <div className="w-full max-w-xl">
         <Link href="/" className="font-serif text-2xl text-foreground">
           Errancy
@@ -28,7 +28,7 @@ export default async function InvitationPage() {
         <div className="mt-10">
           {invitation ? (
             <>
-              <p className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3">Espace artiste</p>
+              <p className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-3">Espace artiste</p>
               <h1 className="font-serif font-light text-foreground text-3xl mb-2">Créer mon accès</h1>
               <p className="font-sans text-sm text-neutral-600 mb-8">
                 Bienvenue, {invitation.artiste}. Choisissez votre mot de passe et lisez la charte artiste.
@@ -46,6 +46,6 @@ export default async function InvitationPage() {
           )}
         </div>
       </div>
-    </main>
+    </div>
   )
 }

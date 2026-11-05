@@ -117,7 +117,7 @@ function Modal({
                     </h2>
                   )}
                   {subtitle && (
-                    <p className="mt-1 font-sans text-sm text-neutral-500">{subtitle}</p>
+                    <p className="mt-1 font-sans text-sm text-neutral-600">{subtitle}</p>
                   )}
                 </div>
                 {closable && (
@@ -125,11 +125,10 @@ function Modal({
                     onClick={onClose}
                     className={cn(
                       'flex-shrink-0 flex items-center justify-center',
-                      'w-8 h-8 rounded-sm',
-                      'text-neutral-400 hover:text-foreground',
+                      'w-touch-target h-touch-target rounded-sm',
+                      'text-neutral-600 hover:text-foreground',
                       'hover:bg-neutral-100',
                       'transition-all duration-200',
-                      'focus-visible:outline focus-visible:outline-gold',
                     )}
                     aria-label="Fermer"
                   >

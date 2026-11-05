@@ -133,7 +133,7 @@ export function DecisionCuration({ slug, accordSigne }: { slug: string; accordSi
           aria-describedby={['aide-commentaire', 'compte-commentaire', erreurCommentaire ? 'erreur-commentaire' : null]
             .filter(Boolean)
             .join(' ')}
-          className="w-full max-w-prose px-3 py-2 border border-neutral-300 rounded-sm font-sans text-sm"
+          className="w-full max-w-prose px-3 py-2 border border-neutral-500 rounded-sm font-sans text-base"
         />
         <p id="compte-commentaire" className="font-sans text-xs text-neutral-500">
           {longueur(commentaire.trim())} / 1 000 caractères

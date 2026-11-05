@@ -110,3 +110,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
   summary: Le lien « mot de passe oublié » de `/auth/connexion` mène à une page 404 : prévoir la réinitialisation du mot de passe (ou retirer le lien).
   evidence: constaté par le porteur le 2026-11-05 en production ; sans lien avec la story 2.10 (le compte admin du porteur se connecte par Google).
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-1-interface-lisible-accessible.md`
+  summary: Vérifier automatiquement les champs en 16 px et les cibles de 44 × 44 px (scan ou test de rendu).
+  evidence: relecture de la story 3.1 ; ces règles d'AGENTS.md ne sont contrôlées qu'à la main en préversion.

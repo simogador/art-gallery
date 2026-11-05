@@ -18,11 +18,11 @@ export default async function AdminZonesPage() {
     <div>
       <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3">Livraison</p>
+          <p className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-3">Livraison</p>
           <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
             Zones de livraison
           </h1>
-          <p className="font-sans text-sm text-neutral-400 mt-2">
+          <p className="font-sans text-sm text-neutral-600 mt-2">
             {zones.length} zone{zones.length > 1 ? 's' : ''} · les artistes fixent leurs frais et délais pour chacune.
           </p>
         </div>
@@ -44,7 +44,7 @@ export default async function AdminZonesPage() {
             <li key={zone.id} className="p-4 border border-neutral-200 rounded-sm flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <p className="font-serif text-base font-light text-foreground">{zone.nom}</p>
-                <p className="font-sans text-xs text-neutral-400 mt-1">
+                <p className="font-sans text-xs text-neutral-600 mt-1">
                   {zone.pays.length} pays · {zone.offres} offre{zone.offres > 1 ? 's' : ''}
                 </p>
                 <p className="font-sans text-xs text-neutral-500 mt-2 line-clamp-2">

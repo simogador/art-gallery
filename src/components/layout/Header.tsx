@@ -58,7 +58,7 @@ export function Header({ session }: HeaderProps) {
     <>
       <motion.header
         className={cn(
-          'fixed top-0 left-0 right-0 z-40',
+          'fixed top-0 inset-x-0 z-40',
           'transition-all duration-500',
           scrolled
             ? 'bg-background/90 backdrop-blur-md border-b border-neutral-200/70 shadow-premium-sm'
@@ -74,10 +74,10 @@ export function Header({ session }: HeaderProps) {
             {/* Logo */}
             <Link
               href="/"
-              className="group flex flex-col leading-none"
+              className="group flex flex-col justify-center min-h-touch-target leading-none"
               onClick={closeMenu}
             >
-              <span className="font-serif text-xl md:text-2xl font-light tracking-tight text-foreground transition-colors duration-300 group-hover:text-gold">
+              <span className="font-serif text-xl md:text-2xl font-light tracking-tight text-foreground transition-colors duration-300 group-hover:text-neutral-600">
                 Galerie
               </span>
               <span className="font-sans text-[9px] uppercase tracking-[0.3em] text-neutral-500 mt-0.5">
@@ -109,13 +109,13 @@ export function Header({ session }: HeaderProps) {
               )}
               <Link href="/panier" className="relative" aria-label={`Panier${cartCount > 0 ? ` (${cartCount} article${cartCount > 1 ? 's' : ''})` : ''}`}>
                 <span className={cn(
-                  'flex items-center justify-center w-9 h-9 rounded-sm',
-                  'text-neutral-500 hover:text-foreground transition-colors duration-200',
+                  'flex items-center justify-center w-touch-target h-touch-target rounded-sm',
+                  'text-neutral-600 hover:text-foreground transition-colors duration-200',
                 )}>
                   <CartHeaderIcon />
                 </span>
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gold text-background font-sans text-[9px] font-medium flex items-center justify-center leading-none">
+                  <span className="absolute top-0 end-0 w-4 h-4 rounded-full bg-foreground text-background font-sans text-[9px] font-medium flex items-center justify-center leading-none">
                     {cartCount}
                   </span>
                 )}
@@ -130,9 +130,8 @@ export function Header({ session }: HeaderProps) {
               onClick={() => setMenuOpen((v) => !v)}
               className={cn(
                 'md:hidden flex flex-col justify-center items-center gap-1.5',
-                'w-10 h-10 rounded-sm',
+                'w-touch-target h-touch-target rounded-sm',
                 'transition-colors duration-200',
-                'focus-visible:outline focus-visible:outline-gold',
               )}
               aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
               aria-expanded={menuOpen}
@@ -175,8 +174,8 @@ export function Header({ session }: HeaderProps) {
             {/* Drawer */}
             <motion.div
               className={cn(
-                'fixed top-0 right-0 bottom-0 z-40',
-                'w-[280px] bg-background border-l border-neutral-200',
+                'fixed top-0 end-0 bottom-0 z-40',
+                'w-[280px] max-w-full bg-background border-s border-neutral-200',
                 'flex flex-col pt-20 pb-10 px-8',
                 'md:hidden',
               )}
@@ -205,9 +204,9 @@ export function Header({ session }: HeaderProps) {
                       onClick={closeMenu}
                       className={cn(
                         'font-serif text-2xl font-light',
-                        'text-foreground hover:text-gold',
+                        'text-foreground hover:text-neutral-600',
                         'transition-colors duration-300',
-                        'block',
+                        'flex items-center min-h-touch-target',
                       )}
                     >
                       {label}
@@ -220,7 +219,7 @@ export function Header({ session }: HeaderProps) {
                 <Link href="/panier" onClick={closeMenu} className="flex items-center justify-between border border-neutral-200 rounded-sm px-4 py-3 hover:border-neutral-400 transition-colors duration-200">
                   <span className="font-sans text-sm text-foreground">Panier</span>
                   {cartCount > 0 && (
-                    <span className="w-5 h-5 rounded-full bg-gold text-background font-sans text-[10px] font-medium flex items-center justify-center">
+                    <span className="w-5 h-5 rounded-full bg-foreground text-background font-sans text-[10px] font-medium flex items-center justify-center">
                       {cartCount}
                     </span>
                   )}
@@ -279,7 +278,7 @@ function UserMenu({ user }: UserMenuProps) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 focus-visible:outline focus-visible:outline-gold rounded-sm"
+        className="flex items-center justify-center gap-2 min-h-touch-target min-w-touch-target rounded-sm"
         aria-label="Menu utilisateur"
         aria-expanded={open}
       >
@@ -310,19 +309,19 @@ function UserMenu({ user }: UserMenuProps) {
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.18 }}
             className={cn(
-              'absolute right-0 top-full mt-2 w-52 z-50',
+              'absolute end-0 top-full mt-2 w-52 z-50',
               'bg-background border border-neutral-200 rounded-sm shadow-premium-sm',
               'py-2',
             )}
           >
             <div className="px-4 py-2 border-b border-neutral-100 mb-1">
               <p className="font-sans text-xs font-medium text-foreground truncate">{user.name}</p>
-              <p className="font-sans text-[11px] text-neutral-400 truncate mt-0.5">{user.email}</p>
+              <p className="font-sans text-xs text-neutral-600 truncate mt-0.5">{user.email}</p>
             </div>
             <form action={logout}>
               <button
                 type="submit"
-                className="w-full text-left px-4 py-2 font-sans text-xs text-neutral-600 hover:text-foreground hover:bg-neutral-50 transition-colors duration-200"
+                className="w-full text-start min-h-touch-target px-4 py-2 font-sans text-xs text-neutral-600 hover:text-foreground hover:bg-neutral-50 transition-colors duration-200"
               >
                 Se déconnecter
               </button>
@@ -371,15 +370,15 @@ function NavLink({ href, label, active, onClick }: NavLinkProps) {
       href={href}
       onClick={onClick}
       className={cn(
-        'relative group',
+        'relative group inline-flex items-center min-h-touch-target',
         'font-sans text-sm font-medium uppercase tracking-widest',
         'transition-colors duration-300',
-        active ? 'text-foreground' : 'text-neutral-500 hover:text-foreground',
+        active ? 'text-foreground' : 'text-neutral-600 hover:text-foreground',
       )}
     >
       {label}
       <motion.span
-        className="absolute -bottom-0.5 left-0 h-px bg-gold"
+        className="absolute bottom-2.5 start-0 h-px bg-gold"
         initial={false}
         animate={{ scaleX: active ? 1 : 0, opacity: active ? 1 : 0 }}
         whileHover={{ scaleX: 1, opacity: 1 }}

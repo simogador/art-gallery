@@ -50,11 +50,11 @@ export default async function OeuvresPage({ searchParams }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between mb-10 gap-4">
         <div>
-          <p className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3">Collection</p>
+          <p className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-3">Collection</p>
           <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
             Mes œuvres
           </h1>
-          <p className="font-sans text-sm text-neutral-400 mt-2">
+          <p className="font-sans text-sm text-neutral-600 mt-2">
             {artworks.length} œuvre{artworks.length !== 1 ? 's' : ''} · {available} disponible{available !== 1 ? 's' : ''} · {sold} vendue{sold !== 1 ? 's' : ''}
           </p>
         </div>
@@ -88,8 +88,8 @@ export default async function OeuvresPage({ searchParams }: Props) {
 
       {artworks.length === 0 ? (
         <div className="py-32 border border-dashed border-neutral-200 rounded-sm flex flex-col items-center justify-center text-center">
-          <p className="font-serif text-xl font-light text-neutral-400 mb-2">Aucune œuvre</p>
-          <p className="font-sans text-sm text-neutral-400 mb-8 max-w-xs">
+          <p className="font-serif text-xl font-light text-neutral-600 mb-2">Aucune œuvre</p>
+          <p className="font-sans text-sm text-neutral-600 mb-8 max-w-xs">
             Commencez par ajouter votre première œuvre à la collection Errancy.
           </p>
           <Link
@@ -104,7 +104,7 @@ export default async function OeuvresPage({ searchParams }: Props) {
           {/* Column headers */}
           <div className="hidden md:grid grid-cols-[56px_1fr_120px_100px_120px_44px] gap-4 items-center px-4 mb-1">
             {['', 'Titre', 'Technique', 'Prix', 'Statut', ''].map((h) => (
-              <span key={h} className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{h}</span>
+              <span key={h} className="font-sans text-[10px] uppercase tracking-widest text-neutral-600">{h}</span>
             ))}
           </div>
 
@@ -131,10 +131,10 @@ export default async function OeuvresPage({ searchParams }: Props) {
 
               {/* Title + year */}
               <div className="min-w-0">
-                <p className="font-serif text-base font-light text-foreground group-hover:text-gold transition-colors duration-200 truncate">
+                <p className="font-serif text-base font-light text-foreground group-hover:text-neutral-600 transition-colors duration-200 truncate">
                   {artwork.title}
                 </p>
-                <p className="font-sans text-xs text-neutral-400 mt-0.5 truncate">
+                <p className="font-sans text-xs text-neutral-600 mt-0.5 truncate">
                   {[artwork.year, artwork.dimensions].filter(Boolean).join(' · ')}
                 </p>
                 {/* Badge visible aussi sur téléphone. */}
@@ -205,7 +205,7 @@ function EditIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-      className="text-neutral-400 group-hover/edit:text-foreground transition-colors duration-200">
+      className="text-neutral-600 group-hover/edit:text-foreground transition-colors duration-200">
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>

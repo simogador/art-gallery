@@ -7,16 +7,24 @@ import { cn } from '@/lib/utils/cn'
 const variants = {
   primary:   'bg-foreground text-background hover:bg-neutral-700 border border-foreground',
   secondary: 'bg-transparent text-foreground border border-foreground hover:bg-neutral-100',
-  gold:      'bg-gold text-background hover:bg-gold-dark border border-gold',
+  /**
+   * @deprecated Story 3.1 : identique à `primary` (l'or n'est jamais un fond de bouton ni une
+   * couleur de texte, contraste 2,19:1). À retirer quand les pages exemptées seront refaites.
+   */
+  gold:      'bg-foreground text-background hover:bg-neutral-700 border border-foreground',
+  // Bouton principal sur fond noir (section `fond-sombre`) : fond blanc cassé, texte noir.
+  clair:     'bg-background text-foreground hover:bg-neutral-200 border border-background',
   ghost:     'bg-transparent text-foreground border border-neutral-200 hover:border-foreground hover:bg-neutral-50',
-  outline:   'bg-transparent text-gold border border-gold hover:bg-gold-muted',
+  // Filet or décoratif, texte noir.
+  outline:   'bg-transparent text-foreground border border-gold hover:bg-gold-muted',
 } as const
 
+// Cible tactile d'au moins 44 × 44 px pour toutes les tailles (story 3.1).
 const sizes = {
-  sm:   'px-4 py-2 text-xs tracking-widest',
-  md:   'px-6 py-3 text-sm tracking-widest',
-  lg:   'px-8 py-4 text-sm tracking-widest',
-  icon: 'p-3',
+  sm:   'min-h-touch-target px-4 py-2 text-xs tracking-widest',
+  md:   'min-h-touch-target px-6 py-3 text-sm tracking-widest',
+  lg:   'min-h-touch-target px-8 py-4 text-sm tracking-widest',
+  icon: 'min-h-touch-target min-w-touch-target p-3',
 } as const
 
 type ButtonVariant = keyof typeof variants
