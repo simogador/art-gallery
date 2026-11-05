@@ -43,7 +43,7 @@ function LienUnique({ lien, echeance }: { lien: string; echeance: string }) {
           readOnly
           value={lien}
           onFocus={(e) => e.currentTarget.select()}
-          className="min-h-[44px] flex-1 min-w-0 px-3 border border-neutral-300 rounded-sm font-mono text-xs bg-white"
+          className="min-h-[44px] flex-1 min-w-0 px-3 border border-neutral-500 rounded-sm font-mono text-base bg-white"
         />
         <button
           type="button"
@@ -96,7 +96,7 @@ export function InvitationArtiste({ artistId, nom, enAttente }: Props) {
               autoComplete="off"
               defaultValue={enAttente?.email}
               aria-describedby={etat && !etat.ok ? `erreur-${artistId}` : undefined}
-              className="min-h-[44px] px-3 border border-neutral-300 rounded-sm font-sans text-sm"
+              className="min-h-[44px] px-3 border border-neutral-500 rounded-sm font-sans text-base"
             />
           </div>
           <BoutonCreer />
@@ -124,7 +124,7 @@ export function InvitationArtiste({ artistId, nom, enAttente }: Props) {
             <span className="sr-only"> {nom}</span>
           </button>
           {enAttente && (
-            <p className="font-sans text-[11px] text-neutral-400 mt-1">Un nouveau lien remplace le précédent.</p>
+            <p className="font-sans text-[11px] text-neutral-600 mt-1">Un nouveau lien remplace le précédent.</p>
           )}
         </div>
       )}

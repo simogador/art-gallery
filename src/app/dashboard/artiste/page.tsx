@@ -20,8 +20,8 @@ export default async function ArtisteDashboardPage() {
   if (!accueil) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center">
-        <p className="font-serif text-2xl font-light text-neutral-400">Profil non configuré</p>
-        <p className="font-sans text-sm text-neutral-400 mt-3 max-w-sm text-pretty">
+        <p className="font-serif text-2xl font-light text-neutral-600">Profil non configuré</p>
+        <p className="font-sans text-sm text-neutral-600 mt-3 max-w-sm text-pretty">
           Votre compte n&apos;est pas encore lié à un profil artiste. Contactez l&apos;équipe Errancy.
         </p>
       </div>
@@ -34,7 +34,7 @@ export default async function ArtisteDashboardPage() {
     <div>
       {/* Header */}
       <div className="mb-10">
-        <p className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3">
+        <p className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-3">
           Accueil
         </p>
         <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
@@ -50,7 +50,7 @@ export default async function ArtisteDashboardPage() {
           </h2>
           <Link
             href="/dashboard/artiste/oeuvres"
-            className="font-sans text-xs uppercase tracking-widest text-gold hover:text-gold-dark transition-colors duration-200"
+            className="font-sans text-xs uppercase tracking-widest text-neutral-600 hover:text-foreground transition-colors duration-200"
           >
             Tout voir
           </Link>
@@ -61,7 +61,7 @@ export default async function ArtisteDashboardPage() {
 
         {artist.artworks.length === 0 ? (
           <div className="py-16 border border-dashed border-neutral-200 rounded-sm text-center">
-            <p className="font-serif text-xl font-light text-neutral-400 mb-4">Aucune œuvre</p>
+            <p className="font-serif text-xl font-light text-neutral-600 mb-4">Aucune œuvre</p>
             <Link
               href="/dashboard/artiste/oeuvres/nouvelle"
               className="font-sans text-xs uppercase tracking-widest text-foreground border border-neutral-200 rounded-sm px-6 py-3 hover:border-foreground transition-colors duration-300 inline-block"
@@ -87,10 +87,10 @@ export default async function ArtisteDashboardPage() {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-serif text-base font-light text-foreground group-hover:text-gold transition-colors duration-200 truncate">
+                  <p className="font-serif text-base font-light text-foreground group-hover:text-neutral-600 transition-colors duration-200 truncate">
                     {artwork.title}
                   </p>
-                  <p className="font-sans text-xs text-neutral-400 mt-0.5 truncate">
+                  <p className="font-sans text-xs text-neutral-600 mt-0.5 truncate">
                     {[artwork.year, artwork.medium].filter(Boolean).join(' · ')}
                   </p>
                 </div>

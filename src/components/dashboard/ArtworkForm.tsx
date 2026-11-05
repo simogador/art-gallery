@@ -204,7 +204,7 @@ export function ArtworkForm({ artwork, mode, apiBase = '/api/artiste/oeuvres' }:
               Prix (€)
             </label>
             <div className="relative flex items-center border border-neutral-200 rounded-sm hover:border-neutral-400 transition-colors duration-200">
-              <span className="absolute left-3 font-sans text-sm text-neutral-400 pointer-events-none">€</span>
+              <span className="absolute start-3 font-sans text-sm text-neutral-600 pointer-events-none">€</span>
               <input
                 name="price"
                 type="text"
@@ -213,7 +213,7 @@ export function ArtworkForm({ artwork, mode, apiBase = '/api/artiste/oeuvres' }:
                 value={form.price}
                 onChange={handleChange}
                 disabled={loading || success}
-                className="w-full font-sans text-sm text-foreground bg-transparent pl-8 pr-4 py-2.5 outline-none"
+                className="w-full min-h-touch-target font-sans text-base text-foreground bg-transparent ps-8 pe-4 py-2.5"
               />
             </div>
           </div>
@@ -232,11 +232,11 @@ export function ArtworkForm({ artwork, mode, apiBase = '/api/artiste/oeuvres' }:
             onChange={handleChange}
             disabled={loading || success}
             className={cn(
-              'w-full font-sans text-sm text-foreground bg-transparent',
-              'border border-neutral-200 rounded-sm px-4 py-3',
-              'placeholder:text-neutral-400',
-              'hover:border-neutral-400 focus:border-foreground',
-              'outline-none resize-none transition-colors duration-200',
+              'w-full font-sans text-base text-foreground bg-transparent',
+              'border border-neutral-500 rounded-sm px-4 py-3',
+              'placeholder:text-neutral-500',
+              'hover:border-foreground focus:border-foreground',
+              'resize-none transition-colors duration-200',
               'disabled:opacity-40 disabled:cursor-not-allowed',
             )}
           />
@@ -264,7 +264,7 @@ export function ArtworkForm({ artwork, mode, apiBase = '/api/artiste/oeuvres' }:
               type="button"
               onClick={handleDelete}
               disabled={loading || success}
-              className="font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-red-500 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed px-2"
+              className="font-sans text-xs uppercase tracking-widest text-neutral-600 hover:text-red-500 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed min-h-touch-target px-2"
             >
               Supprimer
             </button>
@@ -321,7 +321,7 @@ export function ArtworkForm({ artwork, mode, apiBase = '/api/artiste/oeuvres' }:
                 <p className="font-sans text-xs text-neutral-600">
                   Glissez une image ici
                 </p>
-                <p className="font-sans text-[10px] text-neutral-400 mt-1">
+                <p className="font-sans text-[10px] text-neutral-600 mt-1">
                   ou cliquez pour sélectionner
                 </p>
               </div>
@@ -342,13 +342,13 @@ export function ArtworkForm({ artwork, mode, apiBase = '/api/artiste/oeuvres' }:
           <button
             type="button"
             onClick={() => { setImageFile(null); setImagePreview(null) }}
-            className="font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200"
+            className="min-h-touch-target font-sans text-xs uppercase tracking-widest text-neutral-600 hover:text-foreground transition-colors duration-200"
           >
             Retirer l&apos;image
           </button>
         )}
 
-        <p className="font-sans text-[10px] text-neutral-400 leading-relaxed">
+        <p className="font-sans text-[10px] text-neutral-600 leading-relaxed">
           JPEG, PNG, WebP · Max 10 Mo · Ratio portrait recommandé
         </p>
       </div>

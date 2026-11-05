@@ -50,7 +50,7 @@ export function AccordArtiste({ artistId, nom, accordSigneLe }: { artistId: stri
               defaultValue={dateAccordEnSaisie(accordSigneLe)}
               aria-invalid={erreur ? true : undefined}
               aria-describedby={erreur ? idErreur : undefined}
-              className="min-h-[44px] px-3 border border-neutral-300 rounded-sm font-sans text-sm"
+              className="min-h-[44px] px-3 border border-neutral-500 rounded-sm font-sans text-base"
             />
           </div>
           <Bouton>Enregistrer</Bouton>

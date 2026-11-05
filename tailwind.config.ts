@@ -35,13 +35,21 @@ const config: Config = {
         serif: ['var(--font-cormorant)', 'Cormorant Garamond', 'Georgia', 'serif'],
         sans:  ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
       },
+      // Échelle de DESIGN.md (story 3.1) : titres en Cormorant 600, Inter pour le reste.
       fontSize: {
-        'display-2xl': ['4.5rem',  { lineHeight: '1.1', letterSpacing: '-0.02em' }],
-        'display-xl':  ['3.75rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
-        'display-lg':  ['3rem',    { lineHeight: '1.15', letterSpacing: '-0.01em' }],
-        'display-md':  ['2.25rem', { lineHeight: '1.2',  letterSpacing: '-0.01em' }],
-        'display-sm':  ['1.875rem', { lineHeight: '1.25' }],
-        'display-xs':  ['1.5rem',  { lineHeight: '1.3' }],
+        'display-2xl': ['4.5rem',   { lineHeight: '1.1',  letterSpacing: '-0.02em', fontWeight: '600' }],
+        'display-xl':  ['3.75rem',  { lineHeight: '1.1',  letterSpacing: '-0.02em', fontWeight: '600' }],
+        'display-lg':  ['3rem',     { lineHeight: '1.15', letterSpacing: '-0.01em', fontWeight: '600' }],
+        'display-md':  ['2.25rem',  { lineHeight: '1.2',  letterSpacing: '-0.01em', fontWeight: '600' }],
+        'display-sm':  ['1.875rem', { lineHeight: '1.25', fontWeight: '600' }],
+        'display-xs':  ['1.5rem',   { lineHeight: '1.3',  fontWeight: '600' }],
+        'heading-sm':  ['1.25rem',  { lineHeight: '1.2',  fontWeight: '600' }],
+        'body-strong': ['0.875rem', { lineHeight: '1.3',  fontWeight: '600' }],
+        'price-lg':    ['1.25rem',  { lineHeight: '1.2',  fontWeight: '600' }],
+        'label-caps':  ['0.75rem',  { lineHeight: '1.4',  letterSpacing: '0.06em', fontWeight: '500' }],
+        'caption':     ['0.75rem',  { lineHeight: '1.4',  fontWeight: '400' }],
+        'button':      ['0.875rem', { lineHeight: '1.2',  fontWeight: '500' }],
+        'input':       ['1rem',     { lineHeight: '1.4',  fontWeight: '400' }],
       },
       borderRadius: {
         none: '0',
@@ -55,6 +63,9 @@ const config: Config = {
         '18': '4.5rem',
         '22': '5.5rem',
         '30': '7.5rem',
+        // Story 3.1 : cible tactile minimale (44 px) et marge latérale mobile.
+        'touch-target':  '2.75rem',
+        'gutter-mobile': '1rem',
       },
       transitionDuration: {
         '350': '350ms',
@@ -63,24 +74,17 @@ const config: Config = {
       transitionTimingFunction: {
         'premium': 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       },
+      // Story 3.1 (UX-DR6) : seuls fade-in et scale-in (plus slide-up de la feuille de
+      // confirmation, story 2.8), coupés sous prefers-reduced-motion (globals.css).
       keyframes: {
         'fade-in': {
-          '0%':   { opacity: '0', transform: 'translateY(8px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        'fade-out': {
-          '0%':   { opacity: '1', transform: 'translateY(0)' },
-          '100%': { opacity: '0', transform: 'translateY(8px)' },
-        },
-        'slide-in': {
-          '0%':   { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(0)' },
+          '0%':   { opacity: '0' },
+          '100%': { opacity: '1' },
         },
         'scale-in': {
           '0%':   { opacity: '0', transform: 'scale(0.96)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
-        // Story 2.8 : feuille de confirmation qui monte du bas (confirm-sheet).
         'slide-up': {
           '0%':   { transform: 'translateY(100%)' },
           '100%': { transform: 'translateY(0)' },
@@ -88,7 +92,6 @@ const config: Config = {
       },
       animation: {
         'fade-in':  'fade-in 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
-        'fade-out': 'fade-out 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
         'scale-in': 'scale-in 450ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
         'slide-up': 'slide-up 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both',
       },

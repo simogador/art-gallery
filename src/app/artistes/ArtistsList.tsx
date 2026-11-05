@@ -64,7 +64,7 @@ export function ArtistsList({ artists, exhibitionsCount }: Props) {
             style={{ fontSize: 'clamp(2.75rem, 6vw, 5rem)' }}
           >
             Les{' '}
-            <em className="gold-text not-italic">artistes</em>
+            <em className="not-italic">artistes</em>
           </motion.h1>
           <motion.div variants={fadeUpVariants} className="my-6">
             <div className="divider" />
@@ -157,7 +157,7 @@ export function ArtistsList({ artists, exhibitionsCount }: Props) {
       </section>
 
       {/* ── Dark CTA ── */}
-      <section className="py-24 bg-foreground relative overflow-hidden">
+      <section className="fond-sombre py-24 bg-foreground relative overflow-hidden">
         <BackgroundDecor />
         <div className="container-premium relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
           <div>
@@ -183,7 +183,7 @@ export function ArtistsList({ artists, exhibitionsCount }: Props) {
             >
               <Link href="/">Retour à la galerie</Link>
             </Button>
-            <Button variant="gold" size="lg">
+            <Button variant="clair" size="lg">
               Soumettre son dossier
             </Button>
           </div>

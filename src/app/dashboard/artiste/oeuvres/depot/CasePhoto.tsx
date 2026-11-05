@@ -57,7 +57,7 @@ export function CasePhoto({ type, legende, obligatoire, nature, url, envoyer }: 
         ) : url ? (
           <video src={url} className="absolute inset-0 w-full h-full object-cover" muted playsInline preload="metadata" aria-label={`${legende} : vidéo ajoutée`} />
         ) : (
-          <span aria-hidden="true" className="font-sans text-2xl text-neutral-400">+</span>
+          <span aria-hidden="true" className="font-sans text-2xl text-neutral-600">+</span>
         )}
       </div>
       <p id={`${id}-legende`} className="font-sans text-sm text-foreground mt-2 leading-snug">{legende}</p>

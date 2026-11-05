@@ -6,7 +6,7 @@ import { accueilPublic } from '@/lib/catalogue'
 export default async function HomePage() {
   const { oeuvres, artistes, expositions, miseEnAvant, chiffres } = await accueilPublic()
   return (
-    <main>
+    <>
       <Hero
         oeuvre={miseEnAvant}
         chiffres={chiffres}
@@ -15,6 +15,6 @@ export default async function HomePage() {
       <Gallery artworks={oeuvres} />
       {artistes.length > 0 && <Artists artists={artistes} />}
       {expositions.length > 0 && <Exhibitions exhibitions={expositions} />}
-    </main>
+    </>
   )
 }

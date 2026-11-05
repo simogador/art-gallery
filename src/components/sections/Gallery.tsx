@@ -217,7 +217,7 @@ function ArtworkCard({ artwork, index, hovered, onHover }: ArtworkCardProps) {
 
         {/* Hover overlay */}
         <motion.div
-          className="absolute inset-0 bg-foreground/70 flex flex-col justify-end p-5"
+          className="fond-sombre absolute inset-0 bg-foreground/70 flex flex-col justify-end p-5"
           initial={{ opacity: 0 }}
           animate={{ opacity: hovered ? 1 : 0 }}
           transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -232,7 +232,7 @@ function ArtworkCard({ artwork, index, hovered, onHover }: ArtworkCardProps) {
               {artwork.artist} · {artwork.year}
             </p>
             <div className="flex items-center gap-3 mt-4">
-              <Button variant="gold" size="sm">
+              <Button variant="clair" size="sm">
                 {artwork.sold ? 'Œuvre vendue' : 'Acquérir'}
               </Button>
               <Link href={`/galerie/${artwork.id}`}>

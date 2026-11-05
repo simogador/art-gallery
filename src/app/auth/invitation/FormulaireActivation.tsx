@@ -23,7 +23,7 @@ function BoutonCreer() {
   )
 }
 
-const CHAMP = 'min-h-[44px] px-3 border border-neutral-300 rounded-sm font-sans text-sm'
+const CHAMP = 'min-h-[44px] px-3 border border-neutral-500 rounded-sm font-sans text-base'
 const LIBELLE = 'font-sans text-xs uppercase tracking-widest text-neutral-600'
 
 export function FormulaireActivation({ email, charte }: Props) {
@@ -92,7 +92,7 @@ export function FormulaireActivation({ email, charte }: Props) {
 
       <section aria-labelledby="titre-charte" className="border border-neutral-200 rounded-sm p-4 max-h-80 overflow-y-auto" tabIndex={0}>
         <h2 id="titre-charte" className="font-serif text-xl font-light text-foreground mb-3">Charte artiste</h2>
-        <ol className="flex flex-col gap-3 list-decimal pl-5">
+        <ol className="flex flex-col gap-3 list-decimal ps-5">
           {charte.map((article) => (
             <li key={article.titre} className="font-sans text-sm text-neutral-700">
               <strong className="font-medium">{article.titre}.</strong> {article.texte}

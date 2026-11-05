@@ -64,11 +64,10 @@ export default async function ConfirmationPage({ searchParams }: Props) {
                 <div className="w-20 h-20 rounded-full bg-gold/10 flex items-center justify-center">
                   <CheckIcon />
                 </div>
-                <div className="absolute inset-0 rounded-full border border-gold/30 animate-ping opacity-30" />
               </div>
             </div>
 
-            <p className="font-sans text-xs uppercase tracking-[0.3em] text-gold mb-4">
+            <p className="font-sans text-xs uppercase tracking-[0.3em] text-neutral-600 mb-4">
               Paiement accepté
             </p>
             <h1
@@ -83,7 +82,7 @@ export default async function ConfirmationPage({ searchParams }: Props) {
             </p>
 
             <div className="inline-flex items-center gap-2 mt-6 px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-sm">
-              <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">Référence</span>
+              <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-600">Référence</span>
               <span className="font-sans text-xs font-medium text-foreground tracking-widest">#{reference}</span>
             </div>
           </div>
@@ -92,7 +91,7 @@ export default async function ConfirmationPage({ searchParams }: Props) {
 
           {/* ── Récapitulatif commande ── */}
           <section className="mb-12">
-            <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-400 mb-6">
+            <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-6">
               {artworks.length > 1 ? 'Œuvres acquises' : 'Œuvre acquise'}
             </h2>
 
@@ -120,7 +119,7 @@ export default async function ConfirmationPage({ searchParams }: Props) {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="font-serif text-base font-light text-foreground truncate">{artwork.title}</p>
-                      <p className="font-sans text-xs text-neutral-400 uppercase tracking-widest mt-0.5 truncate">
+                      <p className="font-sans text-xs text-neutral-600 uppercase tracking-widest mt-0.5 truncate">
                         {artwork.artist.name} · {artwork.year}
                       </p>
                     </div>
@@ -161,7 +160,7 @@ export default async function ConfirmationPage({ searchParams }: Props) {
               },
             ].map(({ icon, title, desc }) => (
               <div key={title} className="flex flex-col gap-2 p-4 bg-neutral-50 border border-neutral-100 rounded-sm">
-                <span className="text-gold">{icon}</span>
+                <span className="text-neutral-600">{icon}</span>
                 <p className="font-sans text-xs font-medium text-foreground uppercase tracking-widest">{title}</p>
                 <p className="font-sans text-xs text-neutral-500 leading-relaxed">{desc}</p>
               </div>
@@ -207,7 +206,7 @@ export default async function ConfirmationPage({ searchParams }: Props) {
 function CheckIcon() {
   return (
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
-      strokeLinecap="round" strokeLinejoin="round" className="text-gold" aria-hidden="true">
+      strokeLinecap="round" strokeLinejoin="round" className="text-neutral-600" aria-hidden="true">
       <path d="M20 6 9 17l-5-5" />
     </svg>
   )

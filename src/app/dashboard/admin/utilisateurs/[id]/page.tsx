@@ -42,10 +42,10 @@ export default async function AdminUserDetailPage({ params }: Props) {
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-8">
         <Link href="/dashboard/admin/utilisateurs"
-          className="font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200">
+          className="font-sans text-xs uppercase tracking-widest text-neutral-600 hover:text-foreground transition-colors duration-200">
           Utilisateurs
         </Link>
-        <span className="text-neutral-300">›</span>
+        <span className="text-neutral-600">›</span>
         <span className="font-sans text-xs uppercase tracking-widest text-neutral-600 truncate max-w-xs">
           {user.name ?? user.email}
         </span>
@@ -65,7 +65,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
             </div>
             <div>
               <p className="font-serif text-xl font-light text-foreground">{user.name ?? '—'}</p>
-              <p className="font-sans text-sm text-neutral-400">{user.email}</p>
+              <p className="font-sans text-sm text-neutral-600">{user.email}</p>
             </div>
           </div>
           <RoleSelect userId={user.id} currentRole={user.role as any} />
@@ -78,7 +78,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
           ...(user.artist ? [{ label: 'Profil artiste', value: user.artist.name }] : []),
         ].map(({ label, value }) => (
           <div key={label} className="flex items-center justify-between px-6 py-3.5 border-b border-neutral-100 last:border-0">
-            <span className="font-sans text-xs uppercase tracking-widest text-neutral-400">{label}</span>
+            <span className="font-sans text-xs uppercase tracking-widest text-neutral-600">{label}</span>
             <span className="font-sans text-sm text-foreground">{value}</span>
           </div>
         ))}
@@ -92,7 +92,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
 
         {user.orders.length === 0 ? (
           <div className="py-12 border border-dashed border-neutral-200 rounded-sm text-center">
-            <p className="font-serif text-lg font-light text-neutral-400">Aucune commande</p>
+            <p className="font-serif text-lg font-light text-neutral-600">Aucune commande</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -106,7 +106,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
                       <p className="font-sans text-xs text-foreground font-medium">
                         #{order.stripeSessionId.slice(-8).toUpperCase()}
                       </p>
-                      <p className="font-sans text-[10px] text-neutral-400 mt-0.5">
+                      <p className="font-sans text-[10px] text-neutral-600 mt-0.5">
                         {new Date(order.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </p>
                     </div>
@@ -120,7 +120,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
                   </div>
 
                   <div className="px-5 py-3">
-                    <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-400 mb-2">Œuvres</p>
+                    <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-600 mb-2">Œuvres</p>
                     <div className="flex flex-wrap gap-2">
                       {slugs.map((slug) => (
                         <Link key={slug} href={`/galerie/${slug}`} target="_blank"

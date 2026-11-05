@@ -77,7 +77,7 @@ export function CartContent({ achatOuvert }: { achatOuvert: boolean }) {
         className="border border-neutral-200 rounded-sm sticky top-28"
       >
         <div className="px-6 py-4 border-b border-neutral-100">
-          <p className="font-sans text-xs uppercase tracking-widest text-neutral-400">Récapitulatif</p>
+          <p className="font-sans text-xs uppercase tracking-widest text-neutral-600">Récapitulatif</p>
         </div>
 
         <div className="px-6 py-6 space-y-4">
@@ -114,7 +114,7 @@ export function CartContent({ achatOuvert }: { achatOuvert: boolean }) {
               >
                 {checkoutLoading ? 'Redirection…' : 'Procéder au paiement'}
               </Button>
-              <p className="font-sans text-[10px] text-neutral-400 text-center leading-relaxed">
+              <p className="font-sans text-[10px] text-neutral-600 text-center leading-relaxed">
                 Paiement sécurisé · SSL · Remboursement 14j
               </p>
             </>
@@ -155,11 +155,11 @@ function CartItemRow({ item, onRemove }: { item: CartItem; onRemove: () => void 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <Link href={`/galerie/${item.id}`} className="group">
-          <h3 className="font-serif text-base font-light text-foreground group-hover:text-gold transition-colors duration-300 truncate">
+          <h3 className="font-serif text-base font-light text-foreground group-hover:text-neutral-600 transition-colors duration-300 truncate">
             {item.title}
           </h3>
         </Link>
-        <Link href={`/artistes/${item.artistId}`} className="font-sans text-xs text-neutral-400 uppercase tracking-widest hover:text-foreground transition-colors duration-200 mt-0.5 block truncate">
+        <Link href={`/artistes/${item.artistId}`} className="font-sans text-xs text-neutral-600 uppercase tracking-widest hover:text-foreground transition-colors duration-200 mt-0.5 block truncate">
           {item.artist}
         </Link>
         <p className="font-serif text-lg font-light text-foreground mt-3">
@@ -171,7 +171,7 @@ function CartItemRow({ item, onRemove }: { item: CartItem; onRemove: () => void 
       <button
         onClick={onRemove}
         aria-label={`Retirer ${item.title} du panier`}
-        className="flex-shrink-0 p-1.5 text-neutral-300 hover:text-red-400 transition-colors duration-200 rounded-sm"
+        className="flex-shrink-0 inline-flex items-center justify-center min-h-touch-target min-w-touch-target text-neutral-600 hover:text-red-400 transition-colors duration-200 rounded-sm"
       >
         <TrashIcon />
       </button>
@@ -189,13 +189,13 @@ function EmptyCart() {
       transition={{ duration: 0.5 }}
       className="flex flex-col items-center justify-center py-32 border border-dashed border-neutral-200 rounded-sm text-center"
     >
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-300 mb-6" aria-hidden="true">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-600 mb-6" aria-hidden="true">
         <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
         <line x1="3" y1="6" x2="21" y2="6" />
         <path d="M16 10a4 4 0 0 1-8 0" />
       </svg>
-      <p className="font-serif text-xl font-light text-neutral-400">Votre panier est vide</p>
-      <p className="font-sans text-sm text-neutral-400 mt-2 max-w-xs text-pretty">
+      <p className="font-serif text-xl font-light text-neutral-600">Votre panier est vide</p>
+      <p className="font-sans text-sm text-neutral-600 mt-2 max-w-xs text-pretty">
         Ajoutez des œuvres à votre panier depuis la galerie.
       </p>
       <Link
@@ -215,10 +215,10 @@ function CartSkeleton() {
     <div className="grid md:grid-cols-[1fr_320px] gap-8">
       <div className="flex flex-col gap-4">
         {[0, 1].map((i) => (
-          <div key={i} className="h-28 rounded-sm bg-neutral-100 animate-pulse" />
+          <div key={i} className="h-28 rounded-sm bg-neutral-100 motion-safe:animate-pulse" />
         ))}
       </div>
-      <div className="h-64 rounded-sm bg-neutral-100 animate-pulse" />
+      <div className="h-64 rounded-sm bg-neutral-100 motion-safe:animate-pulse" />
     </div>
   )
 }

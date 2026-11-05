@@ -24,13 +24,13 @@ export default async function ZonePage({ params }: { params: { id: string } }) {
   return (
     <div>
       <div className="mb-10">
-        <Link href="/dashboard/admin/zones" className="font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground">
+        <Link href="/dashboard/admin/zones" className="font-sans text-xs uppercase tracking-widest text-neutral-600 hover:text-foreground">
           Zones de livraison
         </Link>
         <h1 className="font-serif font-light text-foreground mt-4" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
           {zone.nom}
         </h1>
-        <p className="font-sans text-sm text-neutral-400 mt-2">
+        <p className="font-sans text-sm text-neutral-600 mt-2">
           {zone.pays.length} pays · {zone.offres} offre{zone.offres > 1 ? 's' : ''} de livraison
         </p>
       </div>

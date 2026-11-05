@@ -29,7 +29,7 @@ export function AdminNav({ mobile = false }: { mobile?: boolean }) {
               className={cn(
                 'flex flex-col items-center gap-1 px-2 py-2',
                 'font-sans text-[10px] uppercase tracking-widest transition-colors duration-200',
-                active ? 'text-foreground' : 'text-neutral-400 hover:text-foreground',
+                active ? 'text-foreground' : 'text-neutral-600 hover:text-foreground',
               )}>
               <Icon active={active} />
               <span>{label}</span>
@@ -61,7 +61,7 @@ export function AdminNav({ mobile = false }: { mobile?: boolean }) {
 
       <div className="mt-auto pt-8 border-t border-neutral-100">
         <Link href="/dashboard"
-          className="flex items-center gap-3 px-3 py-2.5 text-neutral-400 hover:text-foreground transition-colors duration-200">
+          className="flex items-center gap-3 px-3 py-2.5 text-neutral-600 hover:text-foreground transition-colors duration-200">
           <BackIcon />
           <span className="font-sans text-xs uppercase tracking-widest">Mon compte</span>
         </Link>

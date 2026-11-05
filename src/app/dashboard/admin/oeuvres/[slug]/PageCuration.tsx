@@ -20,14 +20,14 @@ export function PageCuration({ oeuvre }: { oeuvre: OeuvreACurer }) {
           >
             Œuvres
           </Link>
-          <span aria-hidden="true" className="text-neutral-300">›</span>
+          <span aria-hidden="true" className="text-neutral-600">›</span>
           <span className="font-sans text-xs uppercase tracking-widest text-neutral-600 truncate max-w-xs">
             {oeuvre.titre || 'Sans titre'}
           </span>
         </div>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3">Curation</p>
+            <p className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-3">Curation</p>
             <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
               {oeuvre.titre || 'Sans titre'}
             </h1>
@@ -51,7 +51,7 @@ export function PageCuration({ oeuvre }: { oeuvre: OeuvreACurer }) {
             <h2 id="titre-dernier-renvoi" className="font-medium">
               Renvoyée à l&apos;artiste le {dateLisible(oeuvre.dernierRenvoiEquipe.le)} avec ce commentaire :
             </h2>
-            <blockquote className="whitespace-pre-line mt-2 border-l-2 border-neutral-300 pl-3">
+            <blockquote className="whitespace-pre-line mt-2 border-s-2 border-neutral-300 ps-3">
               {oeuvre.dernierRenvoiEquipe.commentaire}
             </blockquote>
           </section>

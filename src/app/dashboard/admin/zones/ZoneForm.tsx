@@ -108,7 +108,7 @@ export function ZoneForm({ zone, listePays, autresZones }: Props) {
             required
             maxLength={LONGUEUR_MAX_NOM}
             defaultValue={zone?.nom}
-            className="min-h-[44px] px-3 border border-neutral-300 rounded-sm font-sans text-sm"
+            className="min-h-[44px] px-3 border border-neutral-500 rounded-sm font-sans text-base"
           />
         </div>
 
@@ -127,7 +127,7 @@ export function ZoneForm({ zone, listePays, autresZones }: Props) {
                 type="search"
                 value={filtre}
                 onChange={(e) => setFiltre(e.target.value)}
-                className="min-h-[44px] px-3 border border-neutral-300 rounded-sm font-sans text-sm w-64"
+                className="min-h-[44px] px-3 border border-neutral-500 rounded-sm font-sans text-base w-64"
               />
             </div>
             <button
@@ -147,7 +147,7 @@ export function ZoneForm({ zone, listePays, autresZones }: Props) {
                 <li key={code} className={visibles.has(code) ? '' : 'hidden'}>
                   <label
                     className={`flex items-center gap-3 min-h-[44px] font-sans text-sm ${
-                      ailleurs ? 'text-neutral-400' : 'text-neutral-700 cursor-pointer'
+                      ailleurs ? 'text-neutral-600' : 'text-neutral-700 cursor-pointer'
                     }`}
                   >
                     <input

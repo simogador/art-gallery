@@ -1,8 +1,7 @@
 'use client'
 
-import { useRef } from 'react'
 import Link from 'next/link'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Button, Badge, ArtworkImage } from '@/components/ui'
 import { cn } from '@/lib/utils/cn'
 import { formatPrice } from '@/lib/utils/artworks'
@@ -63,17 +62,10 @@ interface HeroProps {
 
 export function Hero({ oeuvre, chiffres, expositionEnCours }: HeroProps) {
   const stats = statistiques(chiffres)
-  const sectionRef = useRef<HTMLElement>(null)
-  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end start'] })
-
-  // Parallax effects
-  const imageY    = useTransform(scrollYProgress, [0, 1], ['0%',  '18%'])
-  const contentY  = useTransform(scrollYProgress, [0, 1], ['0%',  '10%'])
-  const opacity   = useTransform(scrollYProgress, [0, 0.6], [1, 0])
+  // Story 3.1 (UX-DR6) : ni parallaxe ni animation liée au défilement.
 
   return (
     <section
-      ref={sectionRef}
       className="relative min-h-dvh flex items-center overflow-hidden bg-background"
       aria-label="Section héro"
     >
@@ -86,7 +78,6 @@ export function Hero({ oeuvre, chiffres, expositionEnCours }: HeroProps) {
 
           {/* ── Left: Content ── */}
           <motion.div
-            style={{ y: contentY, opacity }}
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -106,7 +97,7 @@ export function Hero({ oeuvre, chiffres, expositionEnCours }: HeroProps) {
               style={{ fontSize: 'clamp(2.75rem, 5.5vw, 4.5rem)' }}
             >
               L&apos;Art qui{' '}
-              <em className="gold-text not-italic">transcende</em>
+              <em className="not-italic">transcende</em>
               {' '}le temps
             </motion.h1>
 
@@ -163,7 +154,6 @@ export function Hero({ oeuvre, chiffres, expositionEnCours }: HeroProps) {
             {/* Primary image */}
             <motion.div
               variants={imageVariants}
-              style={{ y: imageY }}
               className="relative z-10"
             >
               <div className={cn(
@@ -250,19 +240,14 @@ export function Hero({ oeuvre, chiffres, expositionEnCours }: HeroProps) {
       </div>
 
       {/* ── Scroll indicator ── */}
-      <motion.div
-        style={{ opacity }}
+      <div
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
       >
         <span className="font-sans text-[10px] uppercase tracking-[0.25em] text-neutral-400">
           Défiler
         </span>
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-px h-10 bg-gradient-to-b from-neutral-400 to-transparent"
-        />
-      </motion.div>
+        <div className="w-px h-10 bg-gradient-to-b from-neutral-400 to-transparent" />
+      </div>
     </section>
   )
 }

@@ -80,6 +80,7 @@
 | 2026-11-04 | Les œuvres et artistes de démonstration déjà en base y restent, masqués du site public par la règle « accord signé requis », sans aucune modification des données ni migration ; leur suppression éventuelle viendra plus tard (story 2.10 ou à part) | Choix du porteur (story 2.9) |
 | 2026-11-04 | Suppression des anciennes colonnes `Artwork.available`, `price`, `dimensions` (story 2.10) : période de vérification jugée suffisante (2.1 en production depuis le 2026-10-29, 2.2 depuis le 2026-10-30) ; dimensions illisibles d'œuvres réelles complétées à la main avant la suppression, perte acceptée pour la démonstration ; contraintes `CHECK` et suppression des données de démonstration dans des stories à part | Choix du porteur (spec de la story 2.10) |
 | 2026-11-04 | Migration A de la story 2.10 : valeur par défaut `''` sur `Artwork.dimensions` (au lieu de la rendre facultative), pour que le code précédent fonctionne encore sur les œuvres créées par le nouveau code jusqu'à la migration B | Choix du porteur (relecture de la story 2.10) |
+| 2026-11-05 | Accessibilité (story 3.1) : socle global, composants partagés et pages non refaites corrigés tout de suite ; accueil, galerie, fiche œuvre et pages artistes corrigés au fil de leur refonte (stories 3.5 à 3.11), via une liste d'exceptions du test qui ne fait que diminuer | Choix du porteur (spec de la story 3.1) |
 
 ## Conséquences à traiter (relevées le 2026-10-23, à valider en PRD et architecture)
 

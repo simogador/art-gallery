@@ -15,7 +15,7 @@ export default async function PaiementsPage() {
   return (
     <div>
       <div className="mb-10">
-        <p className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3">Espace artiste</p>
+        <p className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-3">Espace artiste</p>
         <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
           Paiements
         </h1>

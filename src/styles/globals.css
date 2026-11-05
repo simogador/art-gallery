@@ -3,34 +3,10 @@
 @tailwind utilities;
 
 /* ─── Design Tokens ──────────────────────────────────────────────────────── */
+/* Les couleurs et polices sont définies une seule fois, dans tailwind.config.ts (theme()). */
 :root {
-  --color-background:  #FAFAF8;
-  --color-foreground:  #0A0A0A;
-  --color-gold:        #C9A84C;
-  --color-gold-light:  #D4B96A;
-  --color-gold-dark:   #A8872E;
-  --color-gold-muted:  rgba(201, 168, 76, 0.1);
-
-  --color-neutral-50:  #FAFAF8;
-  --color-neutral-100: #F5F5F2;
-  --color-neutral-200: #E8E8E4;
-  --color-neutral-300: #D4D4CF;
-  --color-neutral-400: #A8A8A2;
-  --color-neutral-500: #6B6B65;
-  --color-neutral-600: #4A4A45;
-  --color-neutral-700: #2D2D2A;
-  --color-neutral-800: #1A1A18;
-  --color-neutral-900: #0A0A0A;
-
-  --font-serif: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-  --font-sans:  var(--font-inter), 'Inter', system-ui, sans-serif;
-
-  --radius:     2px;
+  --radius:       2px;
   --ease-premium: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-
-  --transition-fast:   150ms var(--ease-premium);
-  --transition-base:   300ms var(--ease-premium);
-  --transition-slow:   500ms var(--ease-premium);
 }
 
 /* ─── Base Styles ─────────────────────────────────────────────────────────── */
@@ -42,7 +18,7 @@
   }
 
   html {
-    @apply scroll-smooth antialiased;
+    @apply antialiased;
     font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -59,26 +35,51 @@
   }
 
   ::selection {
-    background-color: var(--color-gold-muted);
-    color: var(--color-foreground);
+    background-color: theme('colors.gold.muted');
+    color: theme('colors.foreground');
   }
 
   /* Scrollbar premium */
   ::-webkit-scrollbar       { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--color-neutral-100); }
+  ::-webkit-scrollbar-track { background: theme('colors.neutral.100'); }
   ::-webkit-scrollbar-thumb {
-    background: var(--color-neutral-300);
+    background: theme('colors.neutral.300');
     border-radius: var(--radius);
-    transition: background var(--transition-base);
+    transition: background 300ms var(--ease-premium);
   }
-  ::-webkit-scrollbar-thumb:hover { background: var(--color-gold); }
+  ::-webkit-scrollbar-thumb:hover { background: theme('colors.neutral.500'); }
 
-  /* Focus visible */
+  /* Focus visible (story 3.1, UX-DR2) : contour noir 2 px, décalage 2 px, jamais or.
+     !important : aucune classe utilitaire (outline-none, outline-…) ne peut le masquer. */
   :focus-visible {
-    outline: 1.5px solid var(--color-gold);
-    outline-offset: 2px;
-    border-radius: var(--radius);
+    outline: 2px solid theme('colors.foreground') !important;
+    outline-offset: 2px !important;
   }
+
+  /* Sur fond noir (.fond-sombre), le contour reste visible : même tracé, en blanc cassé. */
+  .fond-sombre :focus-visible {
+    outline-color: theme('colors.background') !important;
+  }
+
+  /* Défilement doux seulement si le visiteur n'a pas demandé moins d'animations. */
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+  }
+
+  /* Mouvement réduit (story 3.1, UX-DR6) : aucune animation, transition ni défilement doux. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0s !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Cible du lien d'évitement : pas de contour quand elle reçoit le focus par programme. */
+  #contenu:focus { outline: none !important; }
 }
 
 /* ─── Utility Classes ─────────────────────────────────────────────────────── */
@@ -87,14 +88,7 @@
   .text-pretty       { text-wrap: pretty; }
 
   .gold-gradient {
-    background: linear-gradient(135deg, var(--color-gold-dark) 0%, var(--color-gold) 50%, var(--color-gold-light) 100%);
-  }
-
-  .gold-text {
-    background: linear-gradient(135deg, var(--color-gold-dark) 0%, var(--color-gold) 50%, var(--color-gold-light) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    background: linear-gradient(135deg, theme('colors.gold.dark') 0%, theme('colors.gold.DEFAULT') 50%, theme('colors.gold.light') 100%);
   }
 
   .border-gold-subtle { border-color: rgba(201, 168, 76, 0.25); }

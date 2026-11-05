@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
-import { Header, Footer } from '@/components/layout'
+import { Header, Footer, MouvementReduit } from '@/components/layout'
 import { auth } from '@/auth'
 import '@/styles/globals.css'
 
@@ -56,9 +56,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="fr" className={`${cormorant.variable} ${inter.variable}`}>
       <body>
-        <Header session={session} />
-        {children}
-        <Footer />
+        {/* Story 3.1 (UX-DR3) : premier élément focalisable de chaque page, visible au focus. */}
+        <a
+          href="#contenu"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:start-2 focus:z-[100] focus:inline-flex focus:items-center focus:min-h-touch-target focus:px-4 focus:bg-foreground focus:text-background focus:font-sans focus:text-button focus:rounded-sm"
+        >
+          Aller au contenu
+        </a>
+        <MouvementReduit>
+          <Header session={session} />
+          <main id="contenu" tabIndex={-1}>
+            {children}
+          </main>
+          <Footer />
+        </MouvementReduit>
       </body>
     </html>
   )

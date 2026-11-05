@@ -8,7 +8,7 @@ const cardVariants = {
   default:  'bg-background border border-neutral-200',
   elevated: 'bg-background shadow-premium border border-neutral-100',
   filled:   'bg-neutral-100 border border-transparent',
-  dark:     'bg-foreground text-background border border-neutral-700',
+  dark:     'fond-sombre bg-foreground text-background border border-neutral-700',
   gold:     'bg-background border border-gold-subtle shadow-gold',
 } as const
 

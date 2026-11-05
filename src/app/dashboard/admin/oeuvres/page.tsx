@@ -51,11 +51,11 @@ export default async function AdminOeuvresPage({ searchParams }: Props) {
   return (
     <div>
       <div className="mb-10">
-        <p className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3">Gestion</p>
+        <p className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-3">Gestion</p>
         <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
           Œuvres
         </h1>
-        <p className="font-sans text-sm text-neutral-400 mt-2">
+        <p className="font-sans text-sm text-neutral-600 mt-2">
           {artworks.length} œuvre{artworks.length > 1 ? 's' : ''} · {available} disponibles · {sold} vendues · {nonPubliees} non publiées
         </p>
       </div>
@@ -73,7 +73,7 @@ export default async function AdminOeuvresPage({ searchParams }: Props) {
       {/* Column headers */}
       <div className="hidden lg:grid grid-cols-[56px_1fr_140px_90px_110px_90px_80px] gap-4 px-4 mb-2">
         {['', 'Titre', 'Artiste', 'Prix', 'Publication', 'Statut', ''].map((h, i) => (
-          <span key={i} className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{h}</span>
+          <span key={i} className="font-sans text-[10px] uppercase tracking-widest text-neutral-600">{h}</span>
         ))}
       </div>
 
@@ -95,11 +95,11 @@ export default async function AdminOeuvresPage({ searchParams }: Props) {
 
             {/* Title */}
             <div className="min-w-0">
-              <p className="font-serif text-base font-light text-foreground group-hover:text-gold transition-colors duration-200 truncate">
+              <p className="font-serif text-base font-light text-foreground group-hover:text-neutral-600 transition-colors duration-200 truncate">
                 {artwork.title || 'Sans titre'}
               </p>
               {/* Brouillon de dépôt (story 2.5) : année 0 tant qu'elle n'est pas saisie. */}
-              <p className="font-sans text-xs text-neutral-400 mt-0.5">{[artwork.year, artwork.medium].filter(Boolean).join(' · ')}</p>
+              <p className="font-sans text-xs text-neutral-600 mt-0.5">{[artwork.year, artwork.medium].filter(Boolean).join(' · ')}</p>
             </div>
 
             {/* Artist */}
@@ -125,7 +125,7 @@ export default async function AdminOeuvresPage({ searchParams }: Props) {
                 labelOff="Brouillon"
                 colorOn="blue"
               />
-              ) : <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{libelleEtat(artwork)}</span>}
+              ) : <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-600">{libelleEtat(artwork)}</span>}
             </div>
 
             {/* Status toggle (module disponibilite) : seulement entre disponible et vendue ;
@@ -140,14 +140,14 @@ export default async function AdminOeuvresPage({ searchParams }: Props) {
                 labelOff="Vendue"
                 colorOn="green"
               />
-              ) : <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{libelleEtat(artwork)}</span>}
+              ) : <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-600">{libelleEtat(artwork)}</span>}
             </div>
 
             {/* Actions */}
             <div className="flex items-center gap-3">
               <Link
                 href={`/dashboard/admin/oeuvres/${artwork.slug}`}
-                className="font-sans text-[10px] uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200"
+                className="font-sans text-[10px] uppercase tracking-widest text-neutral-600 hover:text-foreground transition-colors duration-200"
               >
                 {estEnCuration(artwork) ? 'Relire' : 'Éditer'}
               </Link>

@@ -26,17 +26,17 @@ export default async function AdminArtistesPage() {
   return (
     <div>
       <div className="mb-10">
-        <p className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3">Gestion</p>
+        <p className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-3">Gestion</p>
         <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
           Artistes
         </h1>
-        <p className="font-sans text-sm text-neutral-400 mt-2">{artists.length} artiste{artists.length > 1 ? 's' : ''}</p>
+        <p className="font-sans text-sm text-neutral-600 mt-2">{artists.length} artiste{artists.length > 1 ? 's' : ''}</p>
       </div>
 
       {/* Header */}
       <div className="hidden lg:grid grid-cols-[1fr_80px_80px_160px_80px_24px] gap-4 px-4 mb-2">
         {['Artiste', 'Œuvres', 'Actif', 'Compte lié', 'Featured', ''].map((h) => (
-          <span key={h} className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{h}</span>
+          <span key={h} className="font-sans text-[10px] uppercase tracking-widest text-neutral-600">{h}</span>
         ))}
       </div>
 
@@ -51,12 +51,12 @@ export default async function AdminArtistesPage() {
               <div className="flex items-center gap-2">
                 <p className="font-serif text-base font-light text-foreground truncate">{artist.name}</p>
                 {!artist.active && (
-                  <span className="font-sans text-[9px] uppercase tracking-widest text-neutral-400 border border-neutral-200 px-1.5 py-0.5 rounded-sm">
+                  <span className="font-sans text-[9px] uppercase tracking-widest text-neutral-600 border border-neutral-200 px-1.5 py-0.5 rounded-sm">
                     désactivé
                   </span>
                 )}
               </div>
-              <p className="font-sans text-xs text-neutral-400 mt-0.5">{artist.nationality} · {artist.slug}</p>
+              <p className="font-sans text-xs text-neutral-600 mt-0.5">{artist.nationality} · {artist.slug}</p>
             </div>
 
             {/* Artworks count */}
@@ -86,7 +86,7 @@ export default async function AdminArtistesPage() {
                   }`}>{artist.user.role}</span>
                 </div>
               ) : (
-                <p className="font-sans text-xs text-neutral-400">Non lié</p>
+                <p className="font-sans text-xs text-neutral-600">Non lié</p>
               )}
             </div>
 
@@ -106,7 +106,7 @@ export default async function AdminArtistesPage() {
             <div className="flex items-center gap-2">
               <Link
                 href={`/artistes/${artist.slug}`}
-                className="font-sans text-[10px] uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200"
+                className="font-sans text-[10px] uppercase tracking-widest text-neutral-600 hover:text-foreground transition-colors duration-200"
                 target="_blank"
               >
                 ↗

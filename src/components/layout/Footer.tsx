@@ -80,7 +80,8 @@ export function Footer() {
   }
 
   return (
-    <footer className="relative bg-foreground overflow-hidden" role="contentinfo">
+    <footer className="fond-sombre relative bg-foreground text-neutral-200 overflow-hidden" role="contentinfo">
+      {/* Fond noir : texte en blanc ou neutral-200 seulement (story 3.1), hérité de footer. */}
       {/* ── Gold separator ── */}
       <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
 
@@ -96,15 +97,15 @@ export function Footer() {
           <motion.div custom={0} variants={columnVariants}>
             {/* Logo */}
             <Link href="/" className="group inline-block mb-6">
-              <span className="font-serif text-2xl font-light text-background group-hover:text-gold transition-colors duration-300 block leading-none">
+              <span className="font-serif text-2xl font-light text-background group-hover:underline underline-offset-[3px] transition-colors duration-300 block leading-none">
                 Galerie
               </span>
-              <span className="font-sans text-[9px] uppercase tracking-[0.3em] text-neutral-600 mt-0.5 block">
+              <span className="font-sans text-[9px] uppercase tracking-[0.3em] mt-0.5 block">
                 D&apos;Art Contemporain
               </span>
             </Link>
 
-            <p className="font-sans text-sm text-neutral-500 leading-relaxed text-pretty mb-8 max-w-xs">
+            <p className="font-sans text-sm leading-relaxed text-pretty mb-8 max-w-xs">
               Une galerie d&apos;exception au cœur de Paris, dédiée à la promotion
               des artistes contemporains les plus singuliers.
             </p>
@@ -117,9 +118,9 @@ export function Footer() {
                   href={href}
                   aria-label={label}
                   className={cn(
-                    'flex items-center justify-center w-9 h-9',
-                    'border border-neutral-800 rounded-sm',
-                    'text-neutral-600 hover:text-background hover:border-neutral-600',
+                    'flex items-center justify-center w-touch-target h-touch-target',
+                    'border border-neutral-700 rounded-sm',
+                    'hover:text-background hover:border-neutral-200',
                     'transition-all duration-300',
                   )}
                 >
@@ -130,14 +131,14 @@ export function Footer() {
 
             {/* Newsletter */}
             <div>
-              <p className="font-sans text-xs uppercase tracking-widest text-gold mb-3">
+              <p className="font-sans text-xs uppercase tracking-widest mb-3">
                 Lettre de la galerie
               </p>
               {submitted ? (
                 <motion.div
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 text-sm font-sans text-neutral-400"
+                  className="flex items-center gap-2 text-sm font-sans"
                 >
                   <CheckIcon />
                   Inscription confirmée — à bientôt.
@@ -150,7 +151,7 @@ export function Footer() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     variant="underline"
-                    className="[&_input]:text-background [&_input]:placeholder:text-neutral-700"
+                    surSombre
                     aria-label="Adresse email pour la newsletter"
                     required
                   />
@@ -160,7 +161,7 @@ export function Footer() {
                     size="sm"
                     loading={loading}
                     fullWidth
-                    className="mt-1"
+                    className="mt-1 text-background"
                   >
                     S&apos;inscrire
                   </Button>
@@ -172,7 +173,7 @@ export function Footer() {
           {/* ── Nav columns ── */}
           {NAV_COLUMNS.map((col, i) => (
             <motion.div key={col.title} custom={i + 1} variants={columnVariants}>
-              <p className="font-sans text-[10px] uppercase tracking-[0.2em] text-neutral-600 mb-5">
+              <p className="font-sans text-[10px] uppercase tracking-[0.2em] mb-5">
                 {col.title}
               </p>
               <ul className="flex flex-col gap-3">
@@ -180,7 +181,7 @@ export function Footer() {
                   <li key={label}>
                     <Link
                       href={href}
-                      className="font-sans text-sm text-neutral-500 hover:text-background transition-colors duration-300 hover:translate-x-1 inline-block transition-transform"
+                      className="font-sans text-sm hover:text-background hover:underline underline-offset-[3px] transition-colors duration-300 inline-block"
                     >
                       {label}
                     </Link>
@@ -207,12 +208,12 @@ export function Footer() {
           </InfoBlock>
           <InfoBlock label="Contact">
             <a href="mailto:contact@galerie-art.fr"
-               className="hover:text-gold transition-colors duration-300">
+               className="hover:text-background hover:underline underline-offset-[3px] transition-colors duration-300">
               contact@galerie-art.fr
             </a>
             {' · '}
             <a href="tel:+33123456789"
-               className="hover:text-gold transition-colors duration-300">
+               className="hover:text-background hover:underline underline-offset-[3px] transition-colors duration-300">
               +33 1 23 45 67 89
             </a>
           </InfoBlock>
@@ -220,7 +221,7 @@ export function Footer() {
 
         {/* ── Bottom bar ── */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-10 pt-6 border-t border-neutral-800">
-          <p className="font-sans text-xs text-neutral-700">
+          <p className="font-sans text-xs">
             © {new Date().getFullYear()} Galerie d&apos;Art Contemporain. Tous droits réservés.
           </p>
           <div className="flex items-center gap-6">
@@ -228,7 +229,7 @@ export function Footer() {
               <Link
                 key={label}
                 href={href}
-                className="font-sans text-[10px] uppercase tracking-widest text-neutral-700 hover:text-neutral-500 transition-colors duration-300"
+                className="font-sans text-[10px] uppercase tracking-widest hover:text-background transition-colors duration-300"
               >
                 {label}
               </Link>
@@ -248,8 +249,8 @@ export function Footer() {
 function InfoBlock({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-600 mb-1.5">{label}</p>
-      <p className="font-sans text-sm text-neutral-400">{children}</p>
+      <p className="font-sans text-[10px] uppercase tracking-widest mb-1.5">{label}</p>
+      <p className="font-sans text-sm">{children}</p>
     </div>
   )
 }
@@ -257,10 +258,10 @@ function InfoBlock({ label, children }: { label: string; children: React.ReactNo
 function FooterDecor() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-      <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full border border-neutral-800 opacity-40" />
-      <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full border border-neutral-800 opacity-30" />
-      <div className="absolute bottom-1/3 right-1/4 w-2 h-2 rounded-full bg-gold opacity-40" />
-      <div className="absolute top-1/4 left-1/3 w-1 h-1 rounded-full bg-gold opacity-25" />
+      <div className="absolute -top-40 -end-40 w-[500px] h-[500px] rounded-full border border-neutral-800 opacity-40" />
+      <div className="absolute -bottom-20 -start-20 w-72 h-72 rounded-full border border-neutral-800 opacity-30" />
+      <div className="absolute bottom-1/3 end-1/4 w-2 h-2 rounded-full bg-gold opacity-40" />
+      <div className="absolute top-1/4 start-1/3 w-1 h-1 rounded-full bg-gold opacity-25" />
     </div>
   )
 }

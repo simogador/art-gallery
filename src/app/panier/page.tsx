@@ -16,12 +16,12 @@ export default async function PanierPage() {
       <div className="container-premium max-w-4xl">
 
         <div className="mb-12">
-          <nav className="flex items-center gap-2 font-sans text-xs text-neutral-400 uppercase tracking-widest mb-8">
+          <nav className="flex items-center gap-2 font-sans text-xs text-neutral-600 uppercase tracking-widest mb-8">
             <Link href="/" className="hover:text-foreground transition-colors">Accueil</Link>
             <span aria-hidden="true">›</span>
             <span className="text-foreground">Panier</span>
           </nav>
-          <span className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-4 block">Acquisition</span>
+          <span className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-4 block">Acquisition</span>
           <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
             Mon panier
           </h1>

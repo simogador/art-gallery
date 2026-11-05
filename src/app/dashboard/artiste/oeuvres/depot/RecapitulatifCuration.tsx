@@ -22,7 +22,7 @@ export function RecapitulatifCuration({ recap, delaiJours }: { recap: Recap; del
           >
             Mes œuvres
           </Link>
-          <span aria-hidden="true" className="text-neutral-300">›</span>
+          <span aria-hidden="true" className="text-neutral-600">›</span>
           <span className="font-sans text-xs uppercase tracking-widest text-neutral-600 truncate max-w-xs">{recap.titre}</span>
         </div>
         <div className="flex flex-wrap items-start justify-between gap-4">

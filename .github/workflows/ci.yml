@@ -38,6 +38,8 @@ jobs:
         run: |
           git fetch --no-tags --depth=1 origin main
           node scripts/verifier-exceptions-prisma.cjs origin/main
+      - name: Exceptions d'interface (ne font que diminuer, story 3.1)
+        run: node scripts/verifier-exceptions-prisma.cjs origin/main tests/exceptions-interface.cjs
       - run: npm run build
 
   migrations:

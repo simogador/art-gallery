@@ -76,11 +76,11 @@ export default async function EditOeuvrePage({ params, searchParams }: Props) {
         <div className="flex items-center gap-2 mb-4">
           <Link
             href="/dashboard/artiste/oeuvres"
-            className="font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200"
+            className="font-sans text-xs uppercase tracking-widest text-neutral-600 hover:text-foreground transition-colors duration-200"
           >
             Mes œuvres
           </Link>
-          <span className="text-neutral-300">›</span>
+          <span className="text-neutral-600">›</span>
           <span className="font-sans text-xs uppercase tracking-widest text-neutral-600 truncate max-w-xs">
             {artwork.title}
           </span>
@@ -90,7 +90,7 @@ export default async function EditOeuvrePage({ params, searchParams }: Props) {
             <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
               {artwork.title}
             </h1>
-            <p className="font-sans text-sm text-neutral-400 mt-2">
+            <p className="font-sans text-sm text-neutral-600 mt-2">
               {artwork.year}{artwork.dimensions ? ` · ${artwork.dimensions}` : ''}
             </p>
             {artwork.masqueeSansAccord && (
@@ -108,7 +108,7 @@ export default async function EditOeuvrePage({ params, searchParams }: Props) {
                 href={`/galerie/${artwork.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200"
+                className="font-sans text-xs uppercase tracking-widest text-neutral-600 hover:text-foreground transition-colors duration-200"
               >
                 Voir ↗
               </Link>

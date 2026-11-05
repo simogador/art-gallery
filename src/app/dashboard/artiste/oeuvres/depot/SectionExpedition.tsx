@@ -93,7 +93,7 @@ export function SectionExpedition({ zones, saisies, erreurs, repriseDisponible, 
                             onBlur={() => onSortie(z.id, c)}
                             aria-invalid={erreur ? true : undefined}
                             aria-describedby={erreur ? `${id}-erreur` : undefined}
-                            className={`w-full min-h-[44px] font-sans text-base text-foreground bg-transparent border rounded-sm px-4 py-2.5 outline-none focus:border-foreground focus:ring-1 focus:ring-foreground ${erreur ? 'border-red-500' : 'border-neutral-300'}`}
+                            className={`w-full min-h-[44px] font-sans text-base text-foreground bg-transparent border rounded-sm px-4 py-2.5 outline-none focus:border-foreground focus:ring-1 focus:ring-foreground ${erreur ? 'border-red-500' : 'border-neutral-500'}`}
                           />
                           {erreur && (
                             <p id={`${id}-erreur`} role="alert" className="font-sans text-xs text-red-600">

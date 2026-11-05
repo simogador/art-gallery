@@ -40,10 +40,10 @@ export default async function AdminEditOeuvrePage({ params }: Props) {
       <div className="mb-10">
         <div className="flex items-center gap-2 mb-4">
           <Link href="/dashboard/admin/oeuvres"
-            className="font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200">
+            className="font-sans text-xs uppercase tracking-widest text-neutral-600 hover:text-foreground transition-colors duration-200">
             Œuvres
           </Link>
-          <span className="text-neutral-300">›</span>
+          <span className="text-neutral-600">›</span>
           <span className="font-sans text-xs uppercase tracking-widest text-neutral-600 truncate max-w-xs">
             {artwork.title}
           </span>
@@ -54,7 +54,7 @@ export default async function AdminEditOeuvrePage({ params }: Props) {
             <h1 className="font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
               {artwork.title}
             </h1>
-            <p className="font-sans text-sm text-neutral-400 mt-1">
+            <p className="font-sans text-sm text-neutral-600 mt-1">
               {artwork.artist.name} · {artwork.year}
             </p>
             {/* Story 2.9 : publiée mais masquée à cause de l'artiste (accord, fiche inactive). */}
@@ -66,7 +66,7 @@ export default async function AdminEditOeuvrePage({ params }: Props) {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">
+            <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-600">
               {libelleEtat(artwork)}
             </span>
             {estRecopiee(artwork) && basculable && (
@@ -92,7 +92,7 @@ export default async function AdminEditOeuvrePage({ params }: Props) {
             )}
             {estVisible(artwork) && (
               <Link href={`/galerie/${artwork.slug}`} target="_blank"
-                className="font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200">
+                className="font-sans text-xs uppercase tracking-widest text-neutral-600 hover:text-foreground transition-colors duration-200">
                 Voir ↗
               </Link>
             )}
