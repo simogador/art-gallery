@@ -412,7 +412,7 @@ describe('base : curation par l’équipe', () => {
       const recap = trouver(rendu, (e) => e.type === RecapitulatifOeuvre)
       expect(recap?.props).toMatchObject({ photosEnGrand: true })
       const html = renderToStaticMarkup(recap!)
-      expect(html).toContain('950 €')
+      expect(html).toContain('950\u202f€')
       expect(html).not.toMatch(/<(input|textarea|select|form)\b/)
 
       const ancienne = await Page(params('deja-publiee'))

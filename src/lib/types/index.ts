@@ -9,7 +9,10 @@ export interface Artwork {
   medium:      Exclude<ArtMedium, 'Tout'>
   technique:   string
   price:       number
-  size:        string
+  /** Dimensions en millimètres (AD-5), affichées par formaterDimensions de i18n dans l'unité choisie. */
+  hauteurMm:   number | null
+  largeurMm:   number | null
+  profondeurMm: number | null
   description: string
   tags:        string[]
   featured:    boolean

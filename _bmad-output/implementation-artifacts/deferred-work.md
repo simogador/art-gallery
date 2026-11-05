@@ -113,3 +113,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-1-interface-lisible-accessible.md`
   summary: Vérifier automatiquement les champs en 16 px et les cibles de 44 × 44 px (scan ou test de rendu).
   evidence: relecture de la story 3.1 ; ces règles d'AGENTS.md ne sont contrôlées qu'à la main en préversion.
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-2-formats-textes-montants.md`
+  summary: Contrôler aussi les textes d'attributs visibles ou annoncés (`aria-label`, `alt`, `placeholder`, `title`) sur les surfaces de l'epic 3.
+  evidence: `react/jsx-no-literals` avec `ignoreProps` ne les voit pas ; `noAttributeStrings` viserait aussi `className`.
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-2-formats-textes-montants.md`
+  summary: Remplacer les coordonnées inventées du pied de page (adresse, téléphone, e-mail, nom « Galerie d'art contemporain », copyright) par celles d'Errancy, à fournir par le porteur avant l'ouverture.
+  evidence: valeurs de démonstration antérieures à la story 3.2, déplacées telles quelles dans `src/lib/i18n/fr.ts` ; contraire à la règle « aucune valeur inventée ».

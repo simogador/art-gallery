@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { formatPrice } from '@/lib/utils/artworks'
-import { ArtworkImage } from '@/components/ui'
+import { ArtworkImage, DimensionsChoisies } from '@/components/ui'
+import { SEPARATEUR } from '@/lib/i18n'
 import { oeuvresDeLArtiste, gradient, accent } from '@/lib/catalogue'
 import { acteurCourant } from '@/lib/acces'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
@@ -135,7 +136,10 @@ export default async function OeuvresPage({ searchParams }: Props) {
                   {artwork.title}
                 </p>
                 <p className="font-sans text-xs text-neutral-600 mt-0.5 truncate">
-                  {[artwork.year, artwork.dimensions].filter(Boolean).join(' · ')}
+                  {/* Story 3.2 : dimensions dans l'unité choisie (cookie unite). */}
+                  {artwork.year}
+                  {artwork.year && artwork.hauteurMm !== null && artwork.largeurMm !== null ? SEPARATEUR : ''}
+                  <DimensionsChoisies mm={artwork} />
                 </p>
                 {/* Badge visible aussi sur téléphone. */}
                 <div className="mt-1.5 md:hidden">

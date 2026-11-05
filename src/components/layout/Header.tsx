@@ -9,12 +9,16 @@ import { cn } from '@/lib/utils/cn'
 import { Button } from '@/components/ui'
 import { logout } from '@/app/auth/actions'
 import { useCartStore } from '@/lib/store/cart'
+import { fr } from '@/lib/i18n'
+
+// Story 3.2 : textes du dictionnaire (fr.entete), aucun texte visible en dur (react/jsx-no-literals).
+const T = fr.entete
 
 const NAV_LINKS = [
-  { href: '/galerie',     label: 'Galerie' },
-  { href: '/artistes',    label: 'Artistes' },
-  { href: '/expositions',  label: 'Expositions' },
-  { href: '/#about',      label: 'À propos' },
+  { href: '/galerie',     label: T.liens.galerie },
+  { href: '/artistes',    label: T.liens.artistes },
+  { href: '/expositions', label: T.liens.expositions },
+  { href: '/#about',      label: T.liens.aPropos },
 ] as const
 
 const menuVariants = {
@@ -78,15 +82,15 @@ export function Header({ session }: HeaderProps) {
               onClick={closeMenu}
             >
               <span className="font-serif text-xl md:text-2xl font-light tracking-tight text-foreground transition-colors duration-300 group-hover:text-neutral-600">
-                Galerie
+                {fr.commun.marque}
               </span>
               <span className="font-sans text-[9px] uppercase tracking-[0.3em] text-neutral-500 mt-0.5">
-                D&apos;Art Contemporain
+                {fr.commun.sousTitreMarque}
               </span>
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-8" aria-label="Navigation principale">
+            <nav className="hidden md:flex items-center gap-8" aria-label={T.navigationPrincipale}>
               {NAV_LINKS.map(({ href, label }) => (
                 <NavLink
                   key={href}
@@ -104,10 +108,10 @@ export function Header({ session }: HeaderProps) {
                 <UserMenu user={session.user} />
               ) : (
                 <Link href="/auth/connexion">
-                  <Button variant="ghost" size="sm">Connexion</Button>
+                  <Button variant="ghost" size="sm">{T.connexion}</Button>
                 </Link>
               )}
-              <Link href="/panier" className="relative" aria-label={`Panier${cartCount > 0 ? ` (${cartCount} article${cartCount > 1 ? 's' : ''})` : ''}`}>
+              <Link href="/panier" className="relative" aria-label={T.panierArticles(cartCount)}>
                 <span className={cn(
                   'flex items-center justify-center w-touch-target h-touch-target rounded-sm',
                   'text-neutral-600 hover:text-foreground transition-colors duration-200',
@@ -121,7 +125,7 @@ export function Header({ session }: HeaderProps) {
                 )}
               </Link>
               <Button variant="gold" size="sm">
-                Contacter
+                {T.contacter}
               </Button>
             </div>
 
@@ -133,7 +137,7 @@ export function Header({ session }: HeaderProps) {
                 'w-touch-target h-touch-target rounded-sm',
                 'transition-colors duration-200',
               )}
-              aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+              aria-label={menuOpen ? T.fermerMenu : T.ouvrirMenu}
               aria-expanded={menuOpen}
             >
               <motion.span
@@ -185,12 +189,12 @@ export function Header({ session }: HeaderProps) {
               exit="closed"
               role="dialog"
               aria-modal="true"
-              aria-label="Menu de navigation"
+              aria-label={T.menuNavigation}
             >
               {/* Gold accent */}
               <div className="divider mb-8" />
 
-              <nav className="flex flex-col gap-6" aria-label="Navigation mobile">
+              <nav className="flex flex-col gap-6" aria-label={T.navigationMobile}>
                 {NAV_LINKS.map(({ href, label }, i) => (
                   <motion.div
                     key={href}
@@ -217,7 +221,7 @@ export function Header({ session }: HeaderProps) {
 
               <div className="mt-auto flex flex-col gap-3">
                 <Link href="/panier" onClick={closeMenu} className="flex items-center justify-between border border-neutral-200 rounded-sm px-4 py-3 hover:border-neutral-400 transition-colors duration-200">
-                  <span className="font-sans text-sm text-foreground">Panier</span>
+                  <span className="font-sans text-sm text-foreground">{T.panier}</span>
                   {cartCount > 0 && (
                     <span className="w-5 h-5 rounded-full bg-foreground text-background font-sans text-[10px] font-medium flex items-center justify-center">
                       {cartCount}
@@ -231,17 +235,17 @@ export function Header({ session }: HeaderProps) {
                     </p>
                     <form action={logout}>
                       <Button type="submit" variant="ghost" size="md" fullWidth onClick={closeMenu}>
-                        Se déconnecter
+                        {T.deconnexion}
                       </Button>
                     </form>
                   </>
                 ) : (
                   <Link href="/auth/connexion" onClick={closeMenu}>
-                    <Button variant="ghost" size="md" fullWidth>Connexion</Button>
+                    <Button variant="ghost" size="md" fullWidth>{T.connexion}</Button>
                   </Link>
                 )}
                 <Button variant="gold" size="md" fullWidth onClick={closeMenu}>
-                  Contacter
+                  {T.contacter}
                 </Button>
               </div>
             </motion.div>
@@ -279,13 +283,13 @@ function UserMenu({ user }: UserMenuProps) {
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex items-center justify-center gap-2 min-h-touch-target min-w-touch-target rounded-sm"
-        aria-label="Menu utilisateur"
+        aria-label={T.menuUtilisateur}
         aria-expanded={open}
       >
         {user.image ? (
           <Image
             src={user.image}
-            alt={user.name ?? 'Avatar'}
+            alt={user.name ?? T.avatar}
             width={32}
             height={32}
             className="w-8 h-8 rounded-full object-cover border border-neutral-200"
@@ -323,7 +327,7 @@ function UserMenu({ user }: UserMenuProps) {
                 type="submit"
                 className="w-full text-start min-h-touch-target px-4 py-2 font-sans text-xs text-neutral-600 hover:text-foreground hover:bg-neutral-50 transition-colors duration-200"
               >
-                Se déconnecter
+                {T.deconnexion}
               </button>
             </form>
           </motion.div>

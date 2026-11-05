@@ -1,10 +1,11 @@
 import Image from 'next/image'
 import type { ReactNode } from 'react'
-import { millimetresEnCentimetres } from '@/lib/catalogue/conversions'
+import { formaterMontant, SEPARATEUR } from '@/lib/i18n'
+import { DimensionsChoisies } from '@/components/ui/UniteToggle'
 import {
   AMBIANCES,
-  apercuDimensions,
-  centimesEnSaisie,
+  LIBELLES_ORIENTATION,
+  orientation,
   COULEURS_DOMINANTES,
   ENGAGEMENTS,
   LIBELLES_CHAMPS,
@@ -19,26 +20,22 @@ import type { RecapitulatifCuration as Recap } from '@/lib/curation'
 const libelle = (liste: readonly { code: string; libelle: string }[], code: string | null) =>
   liste.find((e) => e.code === code)?.libelle ?? '—'
 
-const euros = (centimes: number | null) => (centimes === null ? '—' : `${centimesEnSaisie(centimes) || '0'} €`)
+const euros = (centimes: number | null, devise?: string) => formaterMontant(centimes, devise)
 
 function offreLue(o: OffreDepot | undefined): string {
   if (!o) return 'Non renseignée'
   if (!o.livree) return 'Je ne livre pas cette zone'
   const transport =
     o.transportMinJours === o.transportMaxJours ? `${o.transportMinJours} j` : `${o.transportMinJours} à ${o.transportMaxJours} j`
-  return `${euros(o.fraisCentimes)} · préparation ${o.preparationJours} j · transport ${transport}`
+  return [euros(o.fraisCentimes), `préparation ${o.preparationJours} j`, `transport ${transport}`].join(SEPARATEUR)
 }
 
 export function RecapitulatifOeuvre({ recap, photosEnGrand = false }: { recap: Recap; photosEnGrand?: boolean }) {
-  const dimensions = [recap.hauteurMm, recap.largeurMm, recap.profondeurMm]
-    .filter((v): v is number => v !== null)
-    .map((v) => millimetresEnCentimetres(v))
-    .join(' × ')
-  const pouces = apercuDimensions({
-    hauteur: millimetresEnCentimetres(recap.hauteurMm),
-    largeur: millimetresEnCentimetres(recap.largeurMm),
-    profondeur: millimetresEnCentimetres(recap.profondeurMm),
-  })
+  // Story 3.2 : unité choisie puis l'autre, mises en forme par i18n (« 60 × 80 cm (23,6 × 31,5 in · paysage) »).
+  const sens =
+    recap.hauteurMm !== null && recap.largeurMm !== null
+      ? LIBELLES_ORIENTATION[orientation(recap.hauteurMm, recap.largeurMm)]
+      : undefined
 
   return (
     <div className="flex flex-col gap-10">
@@ -103,9 +100,9 @@ export function RecapitulatifOeuvre({ recap, photosEnGrand = false }: { recap: R
       <Bloc titre="3. Dimensions et prix">
         <Liste
           lignes={[
-            ['Dimensions', dimensions ? `${dimensions} cm${pouces ? ` (${pouces})` : ''}` : '—'],
+            ['Dimensions', <DimensionsChoisies key="dimensions" mm={recap} double complement={sens} vide="—" />],
             [LIBELLES_CHAMPS.couleurDominante, libelle(COULEURS_DOMINANTES, recap.couleurDominante)],
-            ['Prix de l’œuvre seule', euros(recap.prixCentimes)],
+            ['Prix de l’œuvre seule', euros(recap.prixCentimes, recap.devise)],
           ]}
         />
       </Bloc>

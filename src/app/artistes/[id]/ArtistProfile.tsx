@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
-import { Button, Badge, Modal } from '@/components/ui'
+import { Button, Badge, Modal, useUnite } from '@/components/ui'
+import { formaterDimensions, SEPARATEUR } from '@/lib/i18n'
 import { formatPrice } from '@/lib/utils/artworks'
 import type { Artist, Artwork } from '@/lib/types'
 
@@ -324,6 +325,7 @@ export function ArtistProfile({ artist, artworks }: Props) {
 /* ─── Artwork card ────────────────────────────────────────────────────────── */
 
 function ArtworkCard({ artwork, index }: { artwork: Artwork; index: number }) {
+  const taille = formaterDimensions(artwork, useUnite())
   const [hovered, setHovered] = useState(false)
 
   return (
@@ -386,7 +388,7 @@ function ArtworkCard({ artwork, index }: { artwork: Artwork; index: number }) {
               {artwork.title}
             </h3>
             <p className="font-sans text-xs text-neutral-500 uppercase tracking-widest mt-0.5">
-              {artwork.size ? `${artwork.size} · ` : ''}{artwork.year}
+              {taille ? `${taille}${SEPARATEUR}` : ''}{artwork.year}
             </p>
           </div>
           <div className="text-right flex-shrink-0">

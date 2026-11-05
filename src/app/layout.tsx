@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import { Header, Footer, MouvementReduit } from '@/components/layout'
+import { cookies } from 'next/headers'
 import { auth } from '@/auth'
+import { UniteProvider } from '@/components/ui/UniteToggle'
+import { COOKIE_UNITE, lireUnite } from '@/lib/i18n'
 import '@/styles/globals.css'
 
 // Polices hébergées dans le projet (src/app/fonts, licence SIL OFL) : le build ne dépend plus
@@ -53,6 +56,8 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
+  // Story 3.2 : unité des dimensions mémorisée sur l'appareil (cookie absent ou invalide : cm).
+  const unite = lireUnite(cookies().get(COOKIE_UNITE)?.value)
   return (
     <html lang="fr" className={`${cormorant.variable} ${inter.variable}`}>
       <body>
@@ -64,11 +69,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           Aller au contenu
         </a>
         <MouvementReduit>
-          <Header session={session} />
-          <main id="contenu" tabIndex={-1}>
-            {children}
-          </main>
-          <Footer />
+          <UniteProvider initiale={unite}>
+            <Header session={session} />
+            <main id="contenu" tabIndex={-1}>
+              {children}
+            </main>
+            <Footer />
+          </UniteProvider>
         </MouvementReduit>
       </body>
     </html>

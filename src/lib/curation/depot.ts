@@ -59,7 +59,7 @@ export function publicationInitiale(): { publication: Publication } {
 
 const CHAMPS_DEPOT_LUS = {
   slug: true, title: true, medium: true, year: true, description: true, ambiance: true, couleurDominante: true,
-  hauteurMm: true, largeurMm: true, profondeurMm: true, prixCentimes: true, artistId: true,
+  hauteurMm: true, largeurMm: true, profondeurMm: true, prixCentimes: true, devise: true, artistId: true,
   visitesAtelier: true, engagementCertificat: true, engagementEmballage: true, engagementReprise: true,
   envoyeeEnCurationLe: true,
   photos: { select: { type: true, url: true, largeur: true, hauteur: true } },
@@ -85,6 +85,7 @@ function versDepot(
     largeurMm: l.largeurMm,
     profondeurMm: l.profondeurMm,
     prixCentimes: l.prixCentimes,
+    devise: l.devise,
     photos: l.photos.map((p) => p.type),
     photosLues: Object.fromEntries(l.photos.map((p) => [p.type, { url: p.url, largeur: p.largeur, hauteur: p.hauteur }])),
     offres,

@@ -1,4 +1,5 @@
 import { longueur } from './depot-regles'
+import { formaterDate } from '@/lib/i18n/formats'
 
 // Curation par l'équipe (story 2.7, FR-25, FR-16) : règles pures, sans accès à la base.
 // Partagées par les écrans d'administration (composants client) et par le module curation
@@ -123,7 +124,7 @@ export function refusPublicationManuelle(e: EtatPublicationManuelle): 'transitio
 
 /** « 4 novembre 2026 », à l'heure de Paris : seule mise en forme des dates des écrans de curation et de dépôt. */
 export function dateLisible(date: Date | string): string {
-  return new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' })
+  return formaterDate(date)
 }
 
 /* ── Refus ──────────────────────────────────────────────────────────────── */

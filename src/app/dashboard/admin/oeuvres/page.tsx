@@ -2,9 +2,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
-import { formatPrice } from '@/lib/utils/artworks'
+import { formaterMontant } from '@/lib/i18n'
 import { ArtworkImage } from '@/components/ui'
-import { centimesEnEuros } from '@/lib/catalogue/conversions'
 import { gradient, accent } from '@/lib/catalogue/mappers'
 import { ToggleAction } from '@/components/dashboard/ToggleAction'
 import { DeleteButton } from '@/components/dashboard/DeleteButton'
@@ -110,7 +109,7 @@ export default async function AdminOeuvresPage({ searchParams }: Props) {
 
             {/* Price */}
             <p className="font-serif text-sm font-light text-foreground hidden lg:block">
-              {artwork.prixCentimes !== null ? formatPrice(centimesEnEuros(artwork.prixCentimes)!) : '—'}
+              {formaterMontant(artwork.prixCentimes, artwork.devise)}
             </p>
 
             {/* Publication toggle (module curation) ; une œuvre en curation, déposée non validée ou sans

@@ -65,8 +65,10 @@ export type OeuvreArtiste = {
   medium: string
   /** Euros, pour formatPrice ; null sans prix. */
   prix: number | null
-  /** « 120 × 90 cm », vide si les dimensions sont illisibles. */
-  dimensions: string
+  /** Millimètres (story 3.2), affichés dans l'unité choisie par formaterDimensions de i18n. */
+  hauteurMm: number | null
+  largeurMm: number | null
+  profondeurMm: number | null
   featured: boolean
   imageUrl: string
   createdAt: Date
@@ -77,7 +79,7 @@ function versOeuvreArtiste(w: OeuvreLue): OeuvreArtiste {
     id: w.id, slug: w.slug, title: w.title.trim() || 'Sans titre', year: w.year > 0 ? w.year : null,
     medium: w.medium,
     prix: centimesEnEuros(w.prixCentimes),
-    dimensions: formaterDimensions(w),
+    hauteurMm: w.hauteurMm, largeurMm: w.largeurMm, profondeurMm: w.profondeurMm,
     featured: w.featured, imageUrl: w.imageUrl, createdAt: w.createdAt,
     ...etatAffiche(w),
   }
@@ -137,8 +139,12 @@ export type OeuvreAEditer = {
   title: string
   year: number
   medium: string
-  /** Dimensions exactes formatées (« 120 × 90 cm »), vide sans hauteur ni largeur. */
+  /** Préremplissage du formulaire, toujours en cm (« 120 × 90 cm », relu par lireDimensions), vide sans hauteur ni largeur. */
   dimensions: string
+  /** Millimètres, pour l'affichage dans l'unité choisie (story 3.2). */
+  hauteurMm: number | null
+  largeurMm: number | null
+  profondeurMm: number | null
   /** Euros, pour le formulaire ; null sans prix. */
   price: number | null
   description: string
@@ -155,6 +161,7 @@ export function versOeuvreAEditer(w: {
   return {
     slug: w.slug, title: w.title, year: w.year, medium: w.medium,
     dimensions: formaterDimensions(w),
+    hauteurMm: w.hauteurMm, largeurMm: w.largeurMm, profondeurMm: w.profondeurMm,
     price: centimesEnEuros(w.prixCentimes),
     description: w.description, imageUrl: w.imageUrl,
     ...etatAffiche(w),

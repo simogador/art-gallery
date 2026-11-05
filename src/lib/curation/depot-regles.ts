@@ -1,4 +1,5 @@
 import { centimetresEnMillimetres, MESSAGE_PRIX_INVALIDE, prixEnCentimes } from '@/lib/catalogue/conversions'
+import { enPouces, formaterDimensions, formaterMontant, SEPARATEUR } from '@/lib/i18n/formats'
 
 // Dépôt d'une œuvre par l'artiste (stories 2.5 et 2.6, FR-20) : règles pures, sans accès à la base.
 // Partagées par le formulaire (composants client) et par le module curation (serveur), qui
@@ -299,7 +300,7 @@ export function erreurChampOffre(champ: ChampOffre, saisie: Record<ChampOffre, s
   switch (champ) {
     case 'frais':
       return fraisEnCentimes(saisie.frais) === 'invalide'
-        ? `Indiquez les frais en euros, de 0 à ${(L.fraisMaxCentimes / 100).toLocaleString('fr-FR')} € (par exemple « 25 » ou « 12,50 »).`
+        ? `Indiquez les frais en euros, de 0 à ${formaterMontant(L.fraisMaxCentimes)} (par exemple « 25 » ou « 12,50 »).`
         : null
     case 'preparation':
       return jours(saisie.preparation, L.preparationMin, L.preparationMax) === 'invalide'
@@ -393,12 +394,8 @@ export function orientation(hauteurMm: number, largeurMm: number): Orientation {
   return hauteurMm > largeurMm ? 'portrait' : 'paysage'
 }
 
-/** Millimètres → pouces, à une décimale, virgule française (600 → « 23,6 »). */
-export function enPouces(mm: number): string {
-  const dixiemes = Math.round((mm * 10) / 25.4)
-  const reste = dixiemes % 10
-  return reste === 0 ? String(dixiemes / 10) : `${(dixiemes - reste) / 10},${reste}`
-}
+/** Millimètres → pouces, à une décimale, virgule française (600 → « 23,6 ») : enPouces de i18n. */
+export { enPouces }
 
 /** « 23,6 × 31,5 in · paysage » à partir de la saisie en cm ; null tant que hauteur ou largeur manque ou est invalide. */
 export function apercuDimensions(saisie: { hauteur: string; largeur: string; profondeur: string }): string | null {
@@ -406,8 +403,11 @@ export function apercuDimensions(saisie: { hauteur: string; largeur: string; pro
   const l = validerChamp('largeur', saisie.largeur)
   const p = validerChamp('profondeur', saisie.profondeur)
   if (!h.ok || !l.ok || typeof h.valeur !== 'number' || typeof l.valeur !== 'number') return null
-  const valeurs = [h.valeur, l.valeur, ...(p.ok && typeof p.valeur === 'number' ? [p.valeur] : [])]
-  return `${valeurs.map(enPouces).join(' × ')} in · ${LIBELLES_ORIENTATION[orientation(h.valeur, l.valeur)]}`
+  const pouces = formaterDimensions(
+    { hauteurMm: h.valeur, largeurMm: l.valeur, profondeurMm: p.ok && typeof p.valeur === 'number' ? p.valeur : null },
+    'in',
+  )
+  return `${pouces}${SEPARATEUR}${LIBELLES_ORIENTATION[orientation(h.valeur, l.valeur)]}`
 }
 
 /** Centimes → saisie du champ prix (125 050 → « 1250,50 »), vide sans prix. */
@@ -449,6 +449,8 @@ export type PhotoDepot = { url: string; largeur: number | null; hauteur: number 
 /** Dépôt relu par le serveur (curation.lireDepot) et transmis au formulaire. */
 export type DepotLu = DonneesDepot & {
   slug: string
+  /** Devise du prix (`Artwork.devise`, story 3.2), pour formaterMontant. */
+  devise: string
   photosLues: Partial<Record<TypePhoto, PhotoDepot>>
   /** Une autre œuvre de l'artiste a des offres : « Reprendre les zones de ma dernière œuvre » est proposé. */
   repriseDisponible: boolean

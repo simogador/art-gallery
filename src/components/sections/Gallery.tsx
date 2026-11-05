@@ -4,7 +4,9 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
-import { Button, Badge } from '@/components/ui'
+import { Button, Badge, useUnite } from '@/components/ui'
+import { formatPrice } from '@/lib/utils/artworks'
+import { formaterDimensions, SEPARATEUR } from '@/lib/i18n'
 import type { Artwork, ArtMedium } from '@/lib/types'
 
 const FILTERS: ArtMedium[] = ['Tout', 'Peinture', 'Sculpture', 'Photographie', 'Art numérique']
@@ -186,6 +188,7 @@ interface ArtworkCardProps {
 }
 
 function ArtworkCard({ artwork, index, hovered, onHover }: ArtworkCardProps) {
+  const taille = formaterDimensions(artwork, useUnite())
   const isLarge = index === 0 || index === 4
 
   return (
@@ -268,7 +271,7 @@ function ArtworkCard({ artwork, index, hovered, onHover }: ArtworkCardProps) {
             {artwork.title}
           </h3>
           <p className="font-sans text-xs text-neutral-500 mt-0.5 uppercase tracking-widest">
-            {artwork.artist}{artwork.size ? ` · ${artwork.size}` : ''}
+            {artwork.artist}{taille ? `${SEPARATEUR}${taille}` : ''}
           </p>
         </div>
         <div className="text-right flex-shrink-0">
@@ -276,7 +279,7 @@ function ArtworkCard({ artwork, index, hovered, onHover }: ArtworkCardProps) {
             <span className="font-sans text-xs text-neutral-400 uppercase tracking-widest">Vendue</span>
           ) : (
             <span className="font-serif text-lg font-light text-foreground">
-              {artwork.price.toLocaleString('fr-FR')} €
+              {formatPrice(artwork.price)}
             </span>
           )}
         </div>

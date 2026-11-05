@@ -4,8 +4,7 @@ import type { Metadata } from 'next'
 import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { gradient, accent } from '@/lib/catalogue/mappers'
-import { centimesEnEuros } from '@/lib/catalogue/conversions'
-import { formatPrice } from '@/lib/utils/artworks'
+import { formaterMontant } from '@/lib/i18n'
 import { ArtworkImage } from '@/components/ui'
 import { CartClearer } from './CartClearer'
 import { cn } from '@/lib/utils/cn'
@@ -46,7 +45,8 @@ export default async function ConfirmationPage({ searchParams }: Props) {
     .map((id) => dbArtworks.find((a) => a.slug === id))
     .filter(Boolean) as typeof dbArtworks
 
-  const total     = (session.amount_total ?? 0) / 100
+  // Montant absent (null) : « — », jamais « 0 € » ; devise de la session Stripe (« eur »).
+  const totalCentimes = session.amount_total
   const reference = session_id.slice(-8).toUpperCase()
 
   return (
@@ -126,7 +126,7 @@ export default async function ConfirmationPage({ searchParams }: Props) {
 
                     {/* Prix */}
                     <p className="font-serif text-base font-light text-foreground flex-shrink-0">
-                      {artwork.prixCentimes !== null ? formatPrice(centimesEnEuros(artwork.prixCentimes)!) : '—'}
+                      {formaterMontant(artwork.prixCentimes, artwork.devise)}
                     </p>
                   </div>
                 )
@@ -136,7 +136,7 @@ export default async function ConfirmationPage({ searchParams }: Props) {
             {/* Total */}
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-neutral-200">
               <span className="font-sans text-xs uppercase tracking-widest text-neutral-500">Total payé</span>
-              <span className="font-serif text-xl font-light text-foreground">{formatPrice(total)}</span>
+              <span className="font-serif text-xl font-light text-foreground">{formaterMontant(totalCentimes, session.currency ?? undefined)}</span>
             </div>
           </section>
 
