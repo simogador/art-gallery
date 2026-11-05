@@ -94,6 +94,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
   summary: Après la migration B de la 2.10, supprimer dans une PR de suivi les scripts SQL de recopie, d'écarts et de correction des stories 2.1 et 2.2 et leurs sections de `docs/migrations.md`.
   evidence: ces scripts lisent les colonnes supprimées ; ils servent encore aux contrôles juste avant B.
+  resolution: Résolu le 2026-11-05 (PR de suivi de la story 2.10) : scripts supprimés, sections 2.1 et 2.2 de `docs/migrations.md` marquées comme historiques ; `vendues-sans-commande.sql` gardé (nouvelles colonnes seulement).
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
   summary: Décrire précisément dans AGENTS.md et dans `tests/anciennes-colonnes.test.ts` la portée du scan des anciennes colonnes (chaînes, constantes d'autres fichiers, objets des fonctions d'aide non suivis).
   evidence: revue 1 de la story 2.10 ; le scan est une heuristique, TypeScript refuse les clés après B.
@@ -106,3 +107,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
   summary: Rendre `Artwork.publication` et `disponibilite` obligatoires (après vérification qu'aucune ligne n'est vide) et retirer les chemins `estRecopiee` / `non_recopiee`.
   evidence: après B, aucun code ne crée d'œuvre sans les deux axes ; les branches « non recopiée » ne servent plus qu'aux œuvres antérieures à la story 2.2.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-suppression-anciennes-colonnes.md`
+  summary: Le lien « mot de passe oublié » de `/auth/connexion` mène à une page 404 : prévoir la réinitialisation du mot de passe (ou retirer le lien).
+  evidence: constaté par le porteur le 2026-11-05 en production ; sans lien avec la story 2.10 (le compte admin du porteur se connecte par Google).
