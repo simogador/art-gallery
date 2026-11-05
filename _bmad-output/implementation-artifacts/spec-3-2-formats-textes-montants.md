@@ -2,9 +2,10 @@
 title: 'Story 3.2 — Textes, montants et unités au même format partout'
 type: 'feature'
 created: '2026-11-05'
-status: 'draft'
+status: 'in-progress'
 route: 'dispatch'
 review_loop_iteration: 0
+baseline_commit: 'd8740310f2140caf095d80b5e464ace3f00dac31'
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-3-1-interface-lisible-accessible.md']
 ---
 
