@@ -20,6 +20,10 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 - Primitives (`components/ui`, `components/layout`) : champs en 16 px, boutons et icônes à 44 × 44 px minimum, propriétés logiques seulement, plus de focus doré ; parallaxe et rebond infini de l'accueil retirés.
 - Test `tests/interface-accessible.test.ts` (scan de `src/`, sans base) : interdit `text-gold*`, `.gold-text`, `text-neutral-400`/`-300`/`-200` sur fond clair et les classes physiques (`left-`, `right-`, `ml-`, `mr-`, `pl-`, `pr-`, `text-left`, `text-right`, `border-l`, `border-r`) ; vérifie lien d'évitement, focus et `lang`.
 
+**Décision du porteur (2026-11-05) : socle maintenant, pages au fil de leur refonte.**
+- Corrigés dans cette story : socle global, `components/ui`, `components/layout`, panier, liste de souhaits, confirmation, connexion, inscription, invitation, pages des expositions (`app/expositions/**`, refaites par aucune story de l'epic 3), espaces artiste et administration.
+- Exceptions du test, dans une liste qui ne fait que diminuer (fichier dédié, contrôlé comme `eslint/exceptions-prisma.cjs`) : `src/components/sections/**` et `src/app/page.tsx` (accueil, story 3.10), `src/app/galerie/**` (fiche et galerie, stories 3.5 à 3.9), `src/app/artistes/**` (story 3.11). Chaque story qui refait une de ces pages la retire de la liste. Le lien d'évitement, le focus, `MotionConfig` et la règle CSS de mouvement réduit valent aussi pour ces pages (socle global) ; la parallaxe et le rebond de l'accueil sont retirés malgré l'exception.
+
 ## Boundaries & Constraints
 
 **Always:** couleurs de remplacement de `DESIGN.md` (texte secondaire `neutral-600`, plus clair permis `neutral-500` jamais sur `neutral-200` ; sur fond noir, blanc ou `neutral-200`) ; l'or reste permis en décor (filets, fonds, bordures) ; textes en français.
@@ -36,12 +40,6 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 | Régression | une classe interdite ajoutée dans `src/` | le test échoue en nommant le fichier | — |
 
 </frozen-after-approval>
-
-## Open Questions
-
-1. **Étendue du nettoyage des pages.** Les pages publiques contiennent environ 300 couleurs de texte interdites (177 `neutral-400`, 96 or, 28 `neutral-300`) et 100 directions physiques, réparties dans 49 fichiers, dont beaucoup seront refaits par les stories 3.5 (fiche), 3.9 (galerie), 3.10 (accueil) et 3.11 (pages artistes). Options :
-   - *Socle + liste d'exceptions qui ne fait que diminuer* (recommandé) : socle global, primitives, en-tête, pied de page, panier et espaces artiste/admin corrigés maintenant ; les pages refaites plus tard figurent dans une liste d'exceptions du test (comme `eslint/exceptions-prisma.cjs`), retirées au fil des stories 3.5–3.11. Story plus courte, aucun travail jeté ; ces pages restent peu contrastées jusqu'à leur refonte (site en maintenance).
-   - *Tout corriger maintenant* : aucune exception ; story longue, et une partie du travail sera refaite par les stories suivantes.
 
 ## Code Map
 
@@ -61,7 +59,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 - [ ] `tailwind.config.ts`, `src/styles/globals.css` -- jetons, focus, mouvement réduit, animations.
 - [ ] `src/app/layout.tsx` et pages -- lien d'évitement, `#contenu`, `MotionConfig`.
 - [ ] `src/components/ui/*`, `src/components/layout/*`, Hero -- champs, cibles, directions logiques, mouvements.
-- [ ] Pages selon la réponse à la question ouverte.
+- [ ] Pages corrigées et liste d'exceptions selon la décision du porteur.
 - [ ] `tests/interface-accessible.test.ts` -- matrice et scan.
 - [ ] `AGENTS.md` -- règles d'interface (couleurs de texte, focus, directions, mouvement).
 
