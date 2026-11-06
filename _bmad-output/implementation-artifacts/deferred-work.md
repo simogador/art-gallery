@@ -132,3 +132,12 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-3-pays-prix-total.md`
   summary: Le choix du pays dans `PaysLivraison` (envoi, erreur, rafraîchissement, annonce) n'a aucun test d'interaction.
   evidence: aucune bibliothèque DOM (testing-library, jsdom) dans le dépôt ; vérifié à la main en préversion.
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-4-journal-evenements.md`
+  summary: Purge ou rétention des tables `Evenement` et `TraitementEvenement` (aucun nettoyage prévu).
+  evidence: chaque changement de publication ou de disponibilité ajoute des lignes sans limite (relecture story 3.4).
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-4-journal-evenements.md`
+  summary: Vérifier que la liste des œuvres en cache (`unstable_cache`) reste sous la limite de 2 Mo par entrée du cache de données Vercel.
+  evidence: non vérifié (medium) ; à mesurer avec le catalogue réel au lancement.
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-4-journal-evenements.md`
+  summary: Invalider le cache du catalogue lors des modifications sans événement (prix, titre, photos, accord ou activité d'un artiste), aujourd'hui visibles sous 60 s.
+  evidence: accepté par le porteur le 2026-11-06 tant que le Lot 2 est fermé ; à revoir avant l'ouverture de l'achat (le prix affiché peut différer 60 s de celui relu au paiement).

@@ -2,9 +2,10 @@
 title: 'Story 3.4 — Journal d''événements et pages publiques toujours fraîches'
 type: 'feature'
 created: '2026-11-06'
-status: 'ready-for-dev'
+status: 'done'
+baseline_commit: '30f2fc7d31d4253591944c97c71dcd4267fdb1c8'
 route: 'dispatch'
-review_loop_iteration: 0
+review_loop_iteration: 1
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.md', '{project-root}/docs/migrations.md']
 ---
 
@@ -19,7 +20,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
   - catalogue typé unique `catalogue.ts` (noms `NomAuPasseCompose`, version, charge utile = ids seulement) : `PublicationChangee` et `DisponibiliteChangee` `{ artworkId, artistId }` ;
   - `ecrireEvenement(tx, evenement)` dans la transaction du changement d'état ;
   - réclamation atomique (événement, gestionnaire) par insertion conditionnelle avant tout effet ;
-  - `repartirApresReponse(ids)` après validation (`waitUntil` de `@vercel/functions`, version épinglée).
+  - `await repartirApresValidation(ids)` après validation, avant la réponse (en Next 14, un `revalidateTag` appelé après la réponse est perdu ; `after()` avec la story 5.3 — renégocié avec le porteur le 2026-11-06).
 - `src/lib/abonnements.ts` (racine de composition) : les deux événements → gestionnaire `invaliderCatalogue` (étiquettes de l'œuvre, de l'artiste et de la liste du catalogue).
 - Nouvelles tables `Evenement` et `TraitementEvenement` (migration d'ajout seulement, appliquée par le porteur sur `preview` puis en production avant la fusion).
 - `curation` et `disponibilite` écrivent l'événement dans chaque transaction qui change `publication` ou `disponibilite`, puis le répartissent après validation.
@@ -54,24 +55,26 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 - `src/lib/garde-production.ts` -- en préversion sur la base de production, les écritures sont déjà refusées : rien à changer.
 - `tests/disponibilite.test.ts:79-112` -- scan interdisant `publication`/`disponibilite` hors de `curation` et `disponibilite` : `evenements` et `abonnements.ts` ne nomment pas ces colonnes.
 - Tests qui simulent `next/cache` (`curation`, `disponibilite-artiste`, `depot`, `invitations`, `livraison`) -- ajouter `revalidateTag` et `unstable_cache` (passe-plat) aux simulations.
-- `package.json` -- `@vercel/functions` épinglé en `3.10.2` (publiée le 2026-10-20).
+- `package.json` -- aucune dépendance ajoutée (`@vercel/functions` retirée après la relecture, voir Spec Change Log).
 
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `prisma/schema.prisma`, `prisma/migrations/…_journal_evenements/` -- deux tables, ajout seulement.
-- [ ] `src/lib/evenements/{catalogue,index}.ts` -- catalogue, écriture, réclamation, répartition.
-- [ ] `src/lib/abonnements.ts` -- abonnements et gestionnaire `invaliderCatalogue`.
-- [ ] `src/lib/curation/*`, `src/lib/disponibilite/index.ts` -- écrire et répartir.
-- [ ] `src/lib/catalogue/*` -- cache étiqueté, 60 s.
-- [ ] `tests/evenements.test.ts` -- matrice, double traitement en parallèle, transaction annulée, cache invalidé après une déclaration.
-- [ ] `docs/migrations.md`, `AGENTS.md` -- procédure de la migration, règles du module.
+- [x] `prisma/schema.prisma`, `prisma/migrations/…_journal_evenements/` -- deux tables, ajout seulement.
+- [x] `src/lib/evenements/{catalogue,index}.ts` -- catalogue, écriture, réclamation, répartition.
+- [x] `src/lib/abonnements.ts` -- abonnements et gestionnaire `invaliderCatalogue`.
+- [x] `src/lib/curation/*`, `src/lib/disponibilite/index.ts` -- écrire et répartir.
+- [x] `src/lib/catalogue/*` -- cache étiqueté, 60 s.
+- [x] `tests/evenements.test.ts` -- matrice, double traitement en parallèle, transaction annulée, cache invalidé après une déclaration.
+- [x] `docs/migrations.md`, `AGENTS.md` -- procédure de la migration, règles du module.
 
 **Acceptance Criteria:**
 - Given deux répartitions parallèles du même événement, when elles se terminent, then une seule ligne `TraitementEvenement` existe et le gestionnaire n'a agi qu'une fois.
 - Given une lecture publique du catalogue, when elle est mise en cache, then elle porte les étiquettes de l'œuvre et de l'artiste et un `revalidate` d'au plus 60 s.
 
 ## Spec Change Log
+
+- 2026-11-06, relecture n° 1 (constat 1 du Review Triage Log) : la répartition par `waitUntil` après la réponse perdait toute invalidation en Next 14.2 (`revalidateTag` ne fait qu'ajouter l'étiquette à une liste lue à la fin de l'action ou de la route). Intention renégociée avec le porteur : répartition attendue après la validation et avant la réponse (`repartirApresValidation`), `@vercel/functions` retirée. Les autres modifications (prix, titre, photos, accord, activité d'un artiste) restent sans événement, visibles sous 60 s au plus (accepté par le porteur, constat 2). État évité : invalidation sans effet en production, masquée par les tests (`revalidateTag` simulé). KEEP : catalogue, écriture dans la transaction, réclamation atomique, abonnements, cache étiqueté et tous les écrivains tels quels ; la fiche relit son prix livré par `prixLivresPourPays` (constat 3).
 
 ## Verification
 
@@ -85,3 +88,25 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 - Préversion, après la migration sur `preview` : déclarer une œuvre « vendue ailleurs » depuis le compte artiste, puis la fiche publique la montre vendue en moins de 60 s.
 
 ## Implementation Notes
+
+## Review Triage Log
+
+| # | Constat (relecteurs) | Verdict | Preuve | Suite |
+|---|---|---|---|---|
+| 1 | `revalidateTag` appelé dans `waitUntil`, après la réponse : perdu (B, E, V) | high | Next 14.2.35 `revalidate.js` ne fait qu'ajouter l'étiquette à `store.revalidatedTags`, lu une seule fois à la fin de l'action (`action-handler.js:72-76`) ou de la route (`app-route/module.js:258-266`) ; la répartition attend deux requêtes avant d'y arriver | intent_gap (l'intention impose `waitUntil`) : question au porteur |
+| 2 | Écritures sans événement (routes admin et artiste de modification, `enregistrerAccord`, `active`) : jusqu'à 60 s de retard (B, E, V) | medium | ces routes écrivent `Artwork`/`Artist` sans invalidation ; borné par `revalidate` 60 s ; paiement fermé (Lot 2) | intent_gap (hors des deux événements de l'intention) : question au porteur |
+| 3 | Prix livré de la fiche calculé sur la ligne en cache (B, E) | medium | `getArtworkBySlug` passe la ligne en cache à `prixLivre` ; la galerie relit en SQL | patch : `prixLivresPourPays(codePays, [id])` |
+| 4 | Étiquette `catalogue` sur toutes les lectures : étiquettes fines sans effet (B, E) | low | efficacité seulement, aucun effet visible | rejeté (low) |
+| 5 | Requête d'ids hors cache à chaque fiche (B, E) | low | une requête indexée par slug ; nécessaire pour étiqueter par id (charge = ids) | rejeté (low) |
+| 6 | Lignes Prisma brutes passées par JSON, dates en texte, non testé (B, E, V) | low | `mapArtwork` et `prixLivre` ne lisent aucune date | patch : simulation JSON dans le test du cache |
+| 7 | `artisteDeposant(acteur) as string` au lieu de la ligne verrouillée (B) | false | le verrou garantit que l'œuvre est à cet artiste : même valeur | rejeté |
+| 8 | Sept écrivains sur neuf sans test d'événement (B, V) | medium | aucun test ne lit `Evenement` pour eux (`marquerVendues`, `remettreEnVente`…) | patch : tests |
+| 9 | Fixture id = slug masque une confusion id/slug (V) | medium | `oeuvre()` insère `id = slug` | patch : id distinct |
+| 10 | Tables du journal sans purge (B) | low | volume faible (une ligne par changement d'état) | defer |
+| 11 | Statuts spec / sprint incohérents (B) | false | le sprint passe en `review` à l'étape 5 | rejeté |
+| 12 | Journal d'erreur sans code (B) | low | seul `name` journalisé ; code Prisma non personnel | patch |
+| 13 | Commentaire « nulle part ailleurs » contredit AGENTS.md ; `?? []` mort (B) | low | correction directe | patch |
+| 14 | `docs/migrations.md` sans point de restauration ni empreinte (B) | false | fournis au porteur et consignés au journal lors de l'application, comme pour les migrations précédentes | rejeté |
+| 15 | Réclamation conservée après échec du gestionnaire (E) | false | voulu par l'intention (aucun balayage, AQ-2) | rejeté |
+| 16 | Liste en cache > 2 Mo non mise en cache (E) | maybe-false | dépend de la taille du catalogue réel | defer (medium non vérifié) |
+| 17 | Répartition en arrière-plan qui déborde sur le test suivant (E) | low | `beforeEach` peut supprimer pendant une répartition | résolu par le n° 1 si la répartition est attendue |

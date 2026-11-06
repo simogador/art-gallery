@@ -82,6 +82,7 @@
 | 2026-11-04 | Migration A de la story 2.10 : valeur par défaut `''` sur `Artwork.dimensions` (au lieu de la rendre facultative), pour que le code précédent fonctionne encore sur les œuvres créées par le nouveau code jusqu'à la migration B | Choix du porteur (relecture de la story 2.10) |
 | 2026-11-05 | Accessibilité (story 3.1) : socle global, composants partagés et pages non refaites corrigés tout de suite ; accueil, galerie, fiche œuvre et pages artistes corrigés au fil de leur refonte (stories 3.5 à 3.11), via une liste d'exceptions du test qui ne fait que diminuer | Choix du porteur (spec de la story 3.1) |
 | 2026-11-05 | Textes de livraison (story 3.3) : « Pas de livraison vers ce pays (Canada) » et « Prix et délais recalculés : Canada », pour éviter l'article manquant devant le nom du pays | Choix du porteur (relecture de la story 3.3) |
+| 2026-11-06 | Journal d'événements (story 3.4) : le cache des pages publiques est effacé juste avant de répondre à l'artiste ou à l'équipe (et non après la réponse, perdu avec Next.js 14) ; les modifications sans événement (prix, titre, photos, accord ou activité d'un artiste) apparaissent au plus 60 s plus tard | Choix du porteur (relecture de la story 3.4) ; passage après la réponse avec la montée de Next.js (story 5.3) |
 
 ## Conséquences à traiter (relevées le 2026-10-23, à valider en PRD et architecture)
 

@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@/generated/prisma/client'
 import type { Acteur } from '@/lib/acces'
+import { ecrireEvenement, repartirApresValidation } from '@/lib/evenements'
 import { champsPrix } from '@/lib/catalogue/conversions'
 import {
   disponibiliteInitiale,
@@ -343,7 +344,8 @@ export type ResultatEnvoiCuration = { ok: true; slug: string } | RefusDepot
 export async function envoyerEnCuration(acteur: Acteur, slug: unknown): Promise<ResultatEnvoiCuration> {
   if (!artisteDeposant(acteur)) return { ok: false, code: 'acces_refuse' }
   if (typeof slug !== 'string' || !slug) return { ok: false, code: 'introuvable' }
-  return prisma.$transaction(async (tx): Promise<ResultatEnvoiCuration> => {
+  const evenements: string[] = []
+  const resultat = await prisma.$transaction(async (tx): Promise<ResultatEnvoiCuration> => {
     const verrou = await verrouillerDepot(tx, acteur, slug)
     if (!verrou.ok) return verrou
     const depot = await relireDepot(tx, verrou.oeuvre.id)
@@ -353,8 +355,11 @@ export async function envoyerEnCuration(acteur: Acteur, slug: unknown): Promise<
       where: { id: verrou.oeuvre.id },
       data: { publication, envoyeeEnCurationLe: new Date() },
     })
+    evenements.push(await ecrireEvenement(tx, { nom: 'PublicationChangee', charge: { artworkId: verrou.oeuvre.id, artistId: artisteDeposant(acteur) as string } }))
     return { ok: true, slug: verrou.oeuvre.slug }
   })
+  if (resultat.ok) await repartirApresValidation(evenements)
+  return resultat
 }
 
 /** Récapitulatif en lecture seule d'une œuvre en curation. */

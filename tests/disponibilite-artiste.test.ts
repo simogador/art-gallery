@@ -34,7 +34,8 @@ vi.mock('@/lib/acces', async (original) => ({
 vi.mock('@/lib/stripe', () => ({
   getStripe: () => ({ checkout: { sessions: { create: stripe.creerSession } } }),
 }))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+// Story 3.4 : unstable_cache en passe-plat (pas de cache dans les tests), revalidateTag espionné.
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn(), unstable_cache: <T extends (...a: never[]) => unknown>(f: T) => f }))
 // Story 3.3 : la galerie et la fiche lisent le cookie `pays` (absent ici : France).
 vi.mock('next/headers', () => ({ cookies: () => ({ get: () => undefined }), headers: () => new Headers() }))
 vi.mock('next/navigation', () => ({

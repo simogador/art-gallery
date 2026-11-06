@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import type { Acteur } from '@/lib/acces'
 import { cloreDeclarationRetrait, disponibiliteRemiseEnVente, remiseEnVentePossible, type Publication } from '@/lib/disponibilite'
+import { ecrireEvenement, repartirApresValidation } from '@/lib/evenements'
 import { artisteDeposant, verrouillerOeuvre } from './depot'
 
 // « Remettre en vente » (story 2.8, FR-21) : une œuvre publiée puis retirée par son artiste repasse
@@ -29,7 +30,8 @@ function codeRemise(code: string): CodeRefusRemise {
 export async function remettreEnVente(acteur: Acteur, slug: unknown): Promise<ResultatRemiseEnVente> {
   if (!artisteDeposant(acteur)) return { ok: false, code: 'acces_refuse' }
   if (typeof slug !== 'string' || !slug) return { ok: false, code: 'introuvable' }
-  return prisma.$transaction(async (tx): Promise<ResultatRemiseEnVente> => {
+  const evenements: string[] = []
+  const resultat = await prisma.$transaction(async (tx): Promise<ResultatRemiseEnVente> => {
     const verrou = await verrouillerOeuvre(tx, acteur, slug, remiseEnVentePossible)
     if (!verrou.ok) return { ok: false, code: codeRemise(verrou.code) }
     const publication: Publication = 'en_curation'
@@ -40,6 +42,12 @@ export async function remettreEnVente(acteur: Acteur, slug: unknown): Promise<Re
     })
     // La déclaration « retirée » n'est plus en vigueur (écrite par le module disponibilite).
     await cloreDeclarationRetrait(tx, verrou.oeuvre.id, maintenant)
+    // Les deux axes changent : publication (retour en curation) et disponibilité (de nouveau disponible).
+    const charge = { artworkId: verrou.oeuvre.id, artistId: artisteDeposant(acteur) as string }
+    evenements.push(await ecrireEvenement(tx, { nom: 'PublicationChangee', charge }))
+    evenements.push(await ecrireEvenement(tx, { nom: 'DisponibiliteChangee', charge }))
     return { ok: true, slug: verrou.oeuvre.slug }
   })
+  if (resultat.ok) await repartirApresValidation(evenements)
+  return resultat
 }

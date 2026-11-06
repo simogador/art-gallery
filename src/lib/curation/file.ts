@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@/generated/prisma/client'
 import type { Acteur } from '@/lib/acces'
+import { ecrireEvenement, repartirApresValidation } from '@/lib/evenements'
 import {
   EN_CURATION,
   estEnCuration,
@@ -106,7 +107,7 @@ export async function oeuvreACurer(acteur: Acteur, slug: string): Promise<Result
   })
 }
 
-type LigneVerrouillee = EtatOeuvre & { id: string; accordSigneLe: Date | null }
+type LigneVerrouillee = EtatOeuvre & { id: string; artistId: string; accordSigneLe: Date | null }
 
 /**
  * Œuvre en curation, ligne verrouillée avec celle de son artiste jusqu'à la fin de la transaction
@@ -117,7 +118,7 @@ async function verrouillerEnCuration(
   slug: string,
 ): Promise<{ ok: true; ligne: LigneVerrouillee } | RefusCuration> {
   const lignes = await tx.$queryRaw<LigneVerrouillee[]>`
-    SELECT a."id", a."publication"::text AS publication, a."disponibilite"::text AS disponibilite, ar."accordSigneLe"
+    SELECT a."id", a."artistId", a."publication"::text AS publication, a."disponibilite"::text AS disponibilite, ar."accordSigneLe"
     FROM "Artwork" a JOIN "Artist" ar ON ar."id" = a."artistId"
     WHERE a."slug" = ${slug} FOR UPDATE`
   const l = lignes[0]
@@ -139,7 +140,8 @@ export async function validerOeuvre(acteur: Acteur, slug: unknown, controle: unk
   if (typeof slug !== 'string' || !slug) return { ok: false, code: 'introuvable' }
   const coches = controlesCoches(controle)
   if (!controleComplet(coches)) return { ok: false, code: 'controle_incomplet' }
-  return prisma.$transaction(async (tx): Promise<ResultatDecision> => {
+  const evenements: string[] = []
+  const resultat = await prisma.$transaction(async (tx): Promise<ResultatDecision> => {
     const verrou = await verrouillerEnCuration(tx, slug)
     if (!verrou.ok) return verrou
     const { ligne } = verrou
@@ -154,8 +156,11 @@ export async function validerOeuvre(acteur: Acteur, slug: unknown, controle: unk
     await tx.decisionCuration.create({
       data: { artworkId: ligne.id, decision: 'valider', controle: coches, adminId: acteur.userId },
     })
+    evenements.push(await ecrireEvenement(tx, { nom: 'PublicationChangee', charge: { artworkId: ligne.id, artistId: ligne.artistId } }))
     return { ok: true, slug }
   })
+  if (resultat.ok) await repartirApresValidation(evenements)
+  return resultat
 }
 
 /**
@@ -174,7 +179,8 @@ export async function renvoyerOeuvre(
   if (typeof slug !== 'string' || !slug) return { ok: false, code: 'introuvable' }
   const lu = validerCommentaire(commentaire)
   if (!lu.ok) return { ok: false, code: 'commentaire_invalide', erreur: lu.erreur }
-  return prisma.$transaction(async (tx): Promise<ResultatDecision> => {
+  const evenements: string[] = []
+  const resultat = await prisma.$transaction(async (tx): Promise<ResultatDecision> => {
     const verrou = await verrouillerEnCuration(tx, slug)
     if (!verrou.ok) return verrou
     const { ligne } = verrou
@@ -192,8 +198,11 @@ export async function renvoyerOeuvre(
         adminId: acteur.userId,
       },
     })
+    evenements.push(await ecrireEvenement(tx, { nom: 'PublicationChangee', charge: { artworkId: ligne.id, artistId: ligne.artistId } }))
     return { ok: true, slug }
   })
+  if (resultat.ok) await repartirApresValidation(evenements)
+  return resultat
 }
 
 export type ResultatAccord = { ok: true; accordSigneLe: Date | null } | RefusCuration
