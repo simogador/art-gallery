@@ -36,7 +36,8 @@ vi.mock('@/lib/cloudinary', async () => {
   const { v2 } = await import('cloudinary')
   return { cloudinary: { utils: v2.utils, uploader: { destroy: detruire } } }
 })
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+// Story 3.4 : unstable_cache en passe-plat (pas de cache dans les tests), revalidateTag espionné.
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn(), unstable_cache: <T extends (...a: never[]) => unknown>(f: T) => f }))
 vi.mock('next/navigation', () => ({
   redirect: (url: string) => {
     throw new Error(`redirection:${url}`)

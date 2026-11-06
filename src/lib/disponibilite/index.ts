@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@/generated/prisma/client'
 import type { Acteur } from '@/lib/acces'
 import { DELAI_ANNULATION_DECLARATION_MINUTES } from '@/lib/reglages'
+import { ecrireEvenement, repartirApresValidation } from '@/lib/evenements'
 import {
   annulationAdmise,
   basculePossible,
@@ -73,9 +74,10 @@ function estDeclaree(e: EtatOeuvre): boolean {
  */
 export async function marquerVendues(slugs: string[]): Promise<number> {
   if (slugs.length === 0) return 0
-  return prisma.$transaction(async (tx) => {
-    const lignes = await tx.$queryRaw<(EtatOeuvre & { slug: string })[]>`
-      SELECT "slug", "publication"::text AS publication, "disponibilite"::text AS disponibilite
+  const evenements: string[] = []
+  const trouvees = await prisma.$transaction(async (tx) => {
+    const lignes = await tx.$queryRaw<(EtatOeuvre & { slug: string; id: string; artistId: string })[]>`
+      SELECT "id", "artistId", "slug", "publication"::text AS publication, "disponibilite"::text AS disponibilite
       FROM "Artwork" WHERE "slug" = ANY(${slugs}) ORDER BY "slug" FOR UPDATE`
     const declarees = lignes.filter(estDeclaree).map((l) => l.slug)
     if (declarees.length > 0) {
@@ -92,8 +94,14 @@ export async function marquerVendues(slugs: string[]): Promise<number> {
       where: { slug: { in: slugs }, disponibilite: { in: ['disponible', 'reservee'] } },
       data: { disponibilite: 'vendue' },
     })
+    // Un événement par œuvre dont l'axe a réellement changé (lignes verrouillées ci-dessus).
+    for (const l of lignes.filter((l) => l.disponibilite === 'disponible' || l.disponibilite === 'reservee')) {
+      evenements.push(await ecrireEvenement(tx, { nom: 'DisponibiliteChangee', charge: { artworkId: l.id, artistId: l.artistId } }))
+    }
     return lignes.length
   })
+  await repartirApresValidation(evenements)
+  return trouvees
 }
 
 /**
@@ -107,17 +115,22 @@ export async function definirDisponibilite(
 ): Promise<ResultatEcriture> {
   if (acteur.type !== 'admin') return { ok: false, code: 'acces_refuse' }
   const disponibilite: Disponibilite = disponible ? 'disponible' : 'vendue'
-  return prisma.$transaction(async (tx): Promise<ResultatEcriture> => {
+  const evenements: string[] = []
+  const resultat = await prisma.$transaction(async (tx): Promise<ResultatEcriture> => {
     const actuel = await lireEtatVerrouille(tx, slug)
     if (!actuel) return { ok: false, code: 'introuvable' }
     if (!estRecopiee(actuel)) return { ok: false, code: 'non_recopiee' }
     if (!basculePossible(actuel)) return { ok: false, code: 'transition_interdite' }
-    await tx.artwork.update({
+    const oeuvre = await tx.artwork.update({
       where: { slug },
       data: { disponibilite },
+      select: { id: true, artistId: true },
     })
+    evenements.push(await ecrireEvenement(tx, { nom: 'DisponibiliteChangee', charge: { artworkId: oeuvre.id, artistId: oeuvre.artistId } }))
     return { ok: true }
   })
+  if (resultat.ok) await repartirApresValidation(evenements)
+  return resultat
 }
 
 export type ComptesOeuvres = { total: number; disponibles: number; vendues: number; nonPubliees: number }
@@ -189,7 +202,8 @@ async function derniere(tx: Prisma.TransactionClient, artworkId: string) {
 export async function declarerDisponibilite(acteur: Acteur, slug: unknown, type: unknown): Promise<ResultatDeclaration> {
   if (acteur.type !== 'artist' || !acteur.artiste) return { ok: false, code: 'acces_refuse' }
   if (typeof slug !== 'string' || !slug) return { ok: false, code: 'introuvable' }
-  return prisma.$transaction(async (tx): Promise<ResultatDeclaration> => {
+  const evenements: string[] = []
+  const resultat = await prisma.$transaction(async (tx): Promise<ResultatDeclaration> => {
     const verrou = await verrouillerOeuvreDeLArtiste(tx, acteur, slug)
     if (!verrou.ok) return verrou
     const { ligne } = verrou
@@ -212,8 +226,11 @@ export async function declarerDisponibilite(acteur: Acteur, slug: unknown, type:
       },
       select: CHAMPS_DECLARATION,
     })
+    evenements.push(await ecrireEvenement(tx, { nom: 'DisponibiliteChangee', charge: { artworkId: ligne.id, artistId: ligne.artistId } }))
     return { ok: true, declaration: versDeclaration(d) }
   })
+  if (resultat.ok) await repartirApresValidation(evenements)
+  return resultat
 }
 
 export type ResultatAnnulation = { ok: true } | { ok: false; code: CodeRefusDisponibilite }
@@ -231,7 +248,8 @@ export async function annulerDeclaration(
 ): Promise<ResultatAnnulation> {
   if (acteur.type !== 'artist' || !acteur.artiste) return { ok: false, code: 'acces_refuse' }
   if (typeof slug !== 'string' || !slug) return { ok: false, code: 'introuvable' }
-  return prisma.$transaction(async (tx): Promise<ResultatAnnulation> => {
+  const evenements: string[] = []
+  const resultat = await prisma.$transaction(async (tx): Promise<ResultatAnnulation> => {
     const verrou = await verrouillerOeuvreDeLArtiste(tx, acteur, slug)
     if (!verrou.ok) return verrou
     const { ligne } = verrou
@@ -246,8 +264,11 @@ export async function annulerDeclaration(
       data: { disponibilite },
     })
     await tx.declarationDisponibilite.update({ where: { id: d.id }, data: { annuleeLe: maintenant } })
+    evenements.push(await ecrireEvenement(tx, { nom: 'DisponibiliteChangee', charge: { artworkId: ligne.id, artistId: ligne.artistId } }))
     return { ok: true }
   })
+  if (resultat.ok) await repartirApresValidation(evenements)
+  return resultat
 }
 
 export type DeclarationEnCours = DeclarationLue & {

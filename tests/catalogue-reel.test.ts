@@ -12,6 +12,8 @@ import { creerBaseJetable, type BaseJetable } from './utils/base-jetable'
 // que son artiste a un accord signé et est actif ; un artiste n'apparaît qu'avec un accord et une
 // œuvre visible ; une exposition, qu'avec une œuvre visible. Plus aucune lecture de src/data.
 
+// Story 3.4 : unstable_cache en passe-plat (pas de cache dans les tests), revalidateTag espionné.
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn(), unstable_cache: <T extends (...a: never[]) => unknown>(f: T) => f }))
 vi.mock('@/auth', () => ({ auth: vi.fn(async () => ({ user: { id: 'acheteur', email: 'a@exemple.test' } })) }))
 vi.mock('@/lib/acces', () => ({ acteurCourant: async () => ({ type: 'visiteur' }) }))
 const stripe = vi.hoisted(() => ({ creerSession: vi.fn() }))

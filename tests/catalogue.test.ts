@@ -14,6 +14,8 @@ import { creerBaseJetable, type BaseJetable } from './utils/base-jetable'
 // Story 2.1 (AD-5, AD-20) : prix en centimes, dimensions en millimètres.
 
 const UTILISATEUR = 'artiste-utilisateur'
+// Story 3.4 : unstable_cache en passe-plat (pas de cache dans les tests), revalidateTag espionné.
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn(), unstable_cache: <T extends (...a: never[]) => unknown>(f: T) => f }))
 vi.mock('@/auth', () => ({ auth: vi.fn(async () => ({ user: { id: UTILISATEUR, role: 'artist' } })) }))
 const acteur = vi.hoisted(() => ({ courant: { type: 'visiteur' } as Record<string, unknown> }))
 vi.mock('@/lib/acces', () => ({ acteurCourant: async () => acteur.courant }))

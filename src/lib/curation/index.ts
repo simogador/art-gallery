@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import type { Acteur } from '@/lib/acces'
 import { refusPublication } from './file'
+import { ecrireEvenement, repartirApresValidation } from '@/lib/evenements'
 import { estEnCuration, estRecopiee, lireEtatVerrouille, type Publication } from '@/lib/disponibilite'
 
 // Module curation (AD-6, story 2.2) : seul module qui écrit l'axe publication (`publication`).
@@ -70,7 +71,8 @@ export async function definirPublication(
 ): Promise<ResultatPublication> {
   if (acteur.type !== 'admin') return { ok: false, code: 'acces_refuse' }
   const publication: Publication = publiee ? 'publiee' : 'brouillon'
-  return prisma.$transaction(async (tx): Promise<ResultatPublication> => {
+  const evenements: string[] = []
+  const resultat = await prisma.$transaction(async (tx): Promise<ResultatPublication> => {
     const actuel = await lireEtatVerrouille(tx, slug)
     if (!actuel) return { ok: false, code: 'introuvable' }
     if (!estRecopiee(actuel)) return { ok: false, code: 'non_recopiee' }
@@ -79,10 +81,14 @@ export async function definirPublication(
       const refus = await refusPublication(tx, slug)
       if (refus) return { ok: false, code: refus }
     }
-    await tx.artwork.update({
+    const oeuvre = await tx.artwork.update({
       where: { slug },
       data: { publication },
+      select: { id: true, artistId: true },
     })
+    evenements.push(await ecrireEvenement(tx, { nom: 'PublicationChangee', charge: { artworkId: oeuvre.id, artistId: oeuvre.artistId } }))
     return { ok: true }
   })
+  if (resultat.ok) await repartirApresValidation(evenements)
+  return resultat
 }

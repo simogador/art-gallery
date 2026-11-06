@@ -364,3 +364,24 @@ model Invitation {
 
   @@index([artistId])
 }
+
+// Story 3.4 (AD-11, AR-9) : journal d'événements (outbox). Écrit par `evenements` dans la
+// transaction du changement d'état ; charge = ids seulement, jamais de donnée personnelle.
+model Evenement {
+  id          String                @id @default(cuid())
+  nom         String
+  version     Int                   @default(1)
+  charge      Json
+  createdAt   DateTime              @default(now())
+  traitements TraitementEvenement[]
+}
+
+// Réclamation atomique (événement, gestionnaire) : la clé composite garantit un seul traitement.
+model TraitementEvenement {
+  evenement    Evenement @relation(fields: [evenementId], references: [id], onDelete: Cascade)
+  evenementId  String
+  gestionnaire String
+  traiteLe     DateTime  @default(now())
+
+  @@id([evenementId, gestionnaire])
+}

@@ -30,7 +30,8 @@ vi.mock('@/lib/acces', async (original) => ({
   ...(await original<typeof import('@/lib/acces')>()),
   acteurCourant: async () => acteur.courant,
 }))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+// Story 3.4 : unstable_cache en passe-plat (pas de cache dans les tests), revalidateTag espionné.
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn(), unstable_cache: <T extends (...a: never[]) => unknown>(f: T) => f }))
 vi.mock('next/headers', () => ({
   cookies: () => ({
     get: (nom: string) => (jar.valeurs.has(nom) ? { name: nom, value: jar.valeurs.get(nom) } : undefined),

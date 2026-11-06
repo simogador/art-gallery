@@ -23,7 +23,8 @@ vi.mock('@/lib/acces', async (original) => ({
   ...(await original<typeof import('@/lib/acces')>()),
   acteurCourant: async () => acteur.courant,
 }))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+// Story 3.4 : unstable_cache en passe-plat (pas de cache dans les tests), revalidateTag espionné.
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn(), unstable_cache: <T extends (...a: never[]) => unknown>(f: T) => f }))
 vi.mock('next/navigation', () => ({
   redirect: (url: string) => {
     throw new Error(`redirection:${url}`)
@@ -366,6 +367,9 @@ describe('base : curation par l’équipe', () => {
     const encore = await lireDepot(ARTISTE as never, slug)
     expect(encore.ok && encore.depot.renvoi?.commentaire).toBe(COMMENTAIRE)
     expect((await envoyerEnCuration(ARTISTE as never, slug)).ok).toBe(true)
+    // Story 3.4 : envoi, renvoi puis nouvel envoi écrivent chacun PublicationChangee (ids seulement).
+    const evenements = (await db.query(`SELECT nom, charge FROM "Evenement" WHERE charge->>'artworkId' = $1`, [id])).rows
+    expect(evenements).toEqual(Array(3).fill({ nom: 'PublicationChangee', charge: { artworkId: id, artistId: ARTISTE.artiste.id } }))
 
     const file2 = await fileDeCuration(ADMIN as never)
     if (!file2.ok) throw new Error(file2.code)

@@ -17,7 +17,8 @@ import { creerBaseJetable, type BaseJetable } from './utils/base-jetable'
 const acteur = vi.hoisted(() => ({ courant: { type: 'visiteur' } as Record<string, unknown> }))
 vi.mock('@/lib/acces', () => ({ acteurCourant: async () => acteur.courant }))
 vi.mock('@/auth', () => ({ auth: vi.fn(async () => null) }))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+// Story 3.4 : unstable_cache en passe-plat (pas de cache dans les tests), revalidateTag espionné.
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn(), unstable_cache: <T extends (...a: never[]) => unknown>(f: T) => f }))
 // Story 3.3 : cookie `pays` lu par la fiche et la galerie, posé par l'action du choix du pays.
 const jar = vi.hoisted(() => ({ valeurs: new Map<string, string>(), poses: [] as unknown[] }))
 vi.mock('next/headers', () => ({
