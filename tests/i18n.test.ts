@@ -197,7 +197,7 @@ describe('rendu de l’unité choisie', () => {
       gradient: '', accentColor: '#000',
     }
     const html = renderToStaticMarkup(
-      h(UniteProvider, { initiale: 'in', children: h(ArtworkDetail, { artwork: oeuvre, related: [], artist: null }) }),
+      h(UniteProvider, { initiale: 'in', children: h(ArtworkDetail, { artwork: oeuvre, related: [], artist: null, pays: { code: 'FR', nom: 'France' } }) }),
     )
     const pouces = html.indexOf(`24${F}×${F}29,9${F}in`)
     const cm = html.indexOf(`61${F}×${F}76${F}cm`)

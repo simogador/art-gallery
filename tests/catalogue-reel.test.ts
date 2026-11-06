@@ -16,6 +16,8 @@ vi.mock('@/auth', () => ({ auth: vi.fn(async () => ({ user: { id: 'acheteur', em
 vi.mock('@/lib/acces', () => ({ acteurCourant: async () => ({ type: 'visiteur' }) }))
 const stripe = vi.hoisted(() => ({ creerSession: vi.fn() }))
 vi.mock('@/lib/stripe', () => ({ getStripe: () => ({ checkout: { sessions: { create: stripe.creerSession } } }) }))
+// Story 3.3 : la galerie et la fiche lisent le cookie `pays` (absent ici : France).
+vi.mock('next/headers', () => ({ cookies: () => ({ get: () => undefined }), headers: () => new Headers() }))
 vi.mock('next/navigation', () => ({
   redirect: (url: string) => {
     throw new Error(`redirection:${url}`)

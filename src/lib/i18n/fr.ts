@@ -51,6 +51,20 @@ export type Dictionnaire = {
     readonly nomComplet: { readonly cm: string; readonly in: string }
   }
   readonly fiche: { readonly format: string }
+  readonly livraison: {
+    readonly prixLivre: string
+    readonly paysChoisi: (pays: string) => string
+    readonly modifier: string
+    readonly modifierPays: (pays: string) => string
+    readonly libelleListe: string
+    readonly valider: string
+    readonly annuler: string
+    readonly erreur: string
+    readonly delai: (min: number, max: number) => string
+    readonly pasDeLivraison: (pays: string) => string
+    readonly droitsNonInclus: string
+    readonly recalcules: (pays: string) => string
+  }
 }
 
 export const fr = {
@@ -150,5 +164,22 @@ export const fr = {
 
   fiche: {
     format: 'Format',
+  },
+
+  // Story 3.3 : prix livré et délai vers le pays choisi (cookie `pays`, France par défaut).
+  livraison: {
+    prixLivre: 'Prix livré',
+    paysChoisi: (pays: string) => `Livraison\u00a0: ${pays}`,
+    modifier: 'Modifier',
+    modifierPays: (pays: string) => `Modifier le pays de livraison (${pays})`,
+    libelleListe: 'Pays de livraison',
+    valider: 'Valider',
+    annuler: 'Annuler',
+    erreur: 'Ce pays n’a pas pu être enregistré. Réessayez.',
+    delai: (min: number, max: number) =>
+      min === max ? `Livrée sous ${min} jour${min > 1 ? 's' : ''}` : `Livrée sous ${min} à ${max} jours`,
+    pasDeLivraison: (pays: string) => `Pas de livraison vers ce pays (${pays})`,
+    droitsNonInclus: 'Droits et taxes d’import éventuels non inclus',
+    recalcules: (pays: string) => `Prix et délais recalculés\u00a0: ${pays}`,
   },
 } as const satisfies Dictionnaire

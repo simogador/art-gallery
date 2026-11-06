@@ -119,3 +119,16 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-2-formats-textes-montants.md`
   summary: Remplacer les coordonnées inventées du pied de page (adresse, téléphone, e-mail, nom « Galerie d'art contemporain », copyright) par celles d'Errancy, à fournir par le porteur avant l'ouverture.
   evidence: valeurs de démonstration antérieures à la story 3.2, déplacées telles quelles dans `src/lib/i18n/fr.ts` ; contraire à la règle « aucune valeur inventée ».
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-3-pays-prix-total.md`
+  summary: Le panier affiche le prix nu de l'œuvre et « Transport : Offert », en contradiction avec le prix livré de la fiche.
+  evidence: `src/app/panier/CartContent.tsx:86` et `addItem({ price: artwork.price })` de `ArtworkDetail.tsx` ; à aligner quand OQ-3 (qui paie la livraison) sera tranchée et le panier refait (Lot 2).
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-3-pays-prix-total.md`
+  summary: L'accueil et le profil artiste montrent le prix de l'œuvre seule, sans pays ; la fiche a perdu « TVA non applicable ».
+  evidence: `sections/Gallery.tsx`, `Hero.tsx`, `ArtistProfile.tsx` utilisent `formatPrice(price)` ; la mention de TVA est une question pour le porteur (statut fiscal), à reposer en 3.5/3.9.
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-3-pays-prix-total.md`
+  summary: Une œuvre non livrée vers le pays choisi reste ajoutable au panier.
+  evidence: la fiche garde le bouton d'ajout ; sans conséquence tant que le Lot 2 est fermé, à traiter avec le panier (epic 6).
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-3-pays-prix-total.md`
+  summary: Le choix du pays dans `PaysLivraison` (envoi, erreur, rafraîchissement, annonce) n'a aucun test d'interaction.
+  evidence: aucune bibliothèque DOM (testing-library, jsdom) dans le dépôt ; vérifié à la main en préversion.

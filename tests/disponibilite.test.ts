@@ -27,6 +27,8 @@ vi.mock('@/lib/stripe', () => ({
     webhooks: { constructEvent: stripe.evenement },
   }),
 }))
+// Story 3.3 : la galerie et la fiche lisent le cookie `pays` (absent ici : France).
+vi.mock('next/headers', () => ({ cookies: () => ({ get: () => undefined }), headers: () => new Headers() }))
 vi.mock('next/navigation', () => ({
   redirect: (url: string) => {
     throw new Error(`redirection:${url}`)
