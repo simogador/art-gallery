@@ -2,7 +2,8 @@
 title: 'Story 3.6 — Fiche œuvre : les quatre questions et les signes de sérieux'
 type: 'feature'
 created: '2026-11-07'
-status: 'draft'
+status: 'done'
+baseline_commit: '8714a1a721df166614aa3fe98ee56fc638464ab6'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.md']
@@ -61,12 +62,12 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/lib/types/index.ts`, `src/lib/catalogue/mappers.ts` -- `Artwork.certificat`.
-- [ ] `src/lib/i18n/fr.ts` -- titres, phrases des quatre sections, résumé du retour.
-- [ ] `src/app/galerie/[id]/SectionsFiche.tsx` -- quatre `details`, première ouverte, contenu selon la matrice.
-- [ ] `src/app/galerie/[id]/ArtworkDetail.tsx` -- retirer onglets et textes interdits, brancher `SectionsFiche`, lien vers l'artiste.
-- [ ] `tests/fiche.test.ts` -- matrice, ordre, première ouverte seulement, absence des mots interdits.
-- [ ] `AGENTS.md` -- règles des sections.
+- [x] `src/lib/types/index.ts`, `src/lib/catalogue/mappers.ts` -- `Artwork.certificat`.
+- [x] `src/lib/i18n/fr.ts` -- titres, phrases des quatre sections, résumé du retour.
+- [x] `src/app/galerie/[id]/SectionsFiche.tsx` -- quatre `details`, première ouverte, contenu selon la matrice.
+- [x] `src/app/galerie/[id]/ArtworkDetail.tsx` -- retirer onglets et textes interdits, brancher `SectionsFiche`, lien vers l'artiste.
+- [x] `tests/fiche.test.ts` -- matrice, ordre, première ouverte seulement, absence des mots interdits.
+- [x] `AGENTS.md` -- règles des sections.
 
 **Acceptance Criteria:**
 - Given la fiche d'une œuvre disponible, when elle s'ouvre, then les quatre sections apparaissent dans l'ordre, seule la première ouverte.
@@ -78,6 +79,23 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Constat (relecteurs) | Verdict | Preuve | Suite |
+|---|---|---|---|---|
+| 1 | `summary` en `flex` : le marqueur natif disparaît, aucun signe d'ouverture (B, E) | medium | `display:flex` sur `summary` retire le marqueur dans les navigateurs ; trois sections fermées sans indice | patch : chevron qui suit l'état ouvert, sans animation |
+| 2 | Lecture de `certificat` depuis la base non testée (B, V) | medium | toutes les fixtures posent `certificat` à la main | patch : test sur base réelle (vrai / faux) |
+| 3 | Prop `artist` et lecture de l'artiste devenues inutiles (B) | low | l'onglet Artiste est supprimé | patch : retirer la prop et la lecture |
+| 4 | `aria-label` sur un `div` sans rôle (B) | low | étiquette ignorée | patch (`role="group"`) |
+| 5 | Chiffres des sections peuvent diverger de la rangée (E, V) | medium | la branche prix/non-livré est recopiée | patch : test qui compare total, délai et non-livraison des deux composants |
+| 6 | Description faite d'espaces rend un titre vide (E) | low | garde de vérité seulement | patch (`trim`) |
+| 7 | Test « hauteur nulle » manquant, `sans_prix` et `prixLivre` absent non rendus (E, V) | medium | seule la largeur nulle est testée | patch : tests |
+| 8 | `SectionsFiche.tsx` absent de `SURFACES_TEXTES` (B) | low | la règle des textes ne la couvre pas | patch si la règle passe |
+| 9 | Contenu des onglets supprimé (tags, biographie, chiffres de l'artiste) (B, E) | false | décision du porteur du 2026-11-07 : tout remplacer, l'artiste reste sur sa page ; les tags étaient toujours vides | rejeté |
+| 10 | Texte du retour « promesse vague » (B) | false | texte relu et approuvé par le porteur avec la spec | rejeté |
+| 11 | Sections affichées pour une œuvre vendue (E) | low | la fiche vendue est la story 3.7 | rejeté |
+| 12 | Lien `/artistes/${artistId}` (V) | false | `artistId` est le slug de l'artiste, comme l'ancien `artist.id` | rejeté |
+| 13 | Délais nuls, `pas_de_zone`, `devise_differente` ; hiérarchie des titres ; tests de mots interdits fragiles ; style des apostrophes (B, E, V) | low | cas déjà traités à l'identique par la rangée ou sans effet visible | rejeté (low) |
+| 14 | Statuts spec / sprint incohérents (B) | false | le sprint passe en `review` à la présentation | rejeté |
 
 ## Design Notes
 

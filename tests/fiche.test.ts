@@ -15,6 +15,7 @@ import { UniteProvider } from '@/components/ui/UniteToggle'
 import { CarrouselPhotos } from '@/app/galerie/[id]/CarrouselPhotos'
 import { ArtworkDetail } from '@/app/galerie/[id]/ArtworkDetail'
 import { RangeeFiche } from '@/app/galerie/[id]/RangeeFiche'
+import { SectionsFiche } from '@/app/galerie/[id]/SectionsFiche'
 import { fr, formaterMontant } from '@/lib/i18n'
 import type { Artwork, PhotoFiche } from '@/lib/types'
 import { creerBaseJetable, type BaseJetable } from './utils/base-jetable'
@@ -97,7 +98,7 @@ describe('format et orientation (reglages)', () => {
 
 const oeuvre = (surcharge: Partial<Artwork> = {}): Artwork => ({
   id: 'o', title: 'Titre', artist: 'Kara', artistId: 'kara', year: 2024, medium: 'Peinture', technique: 'Huile',
-  price: 1450, hauteurMm: 760, largeurMm: 610, profondeurMm: null, description: '', tags: [], featured: false,
+  price: 1450, hauteurMm: 760, largeurMm: 610, profondeurMm: null, description: '', certificat: false, tags: [], featured: false,
   sold: false, imageUrl: null, gradient: '', accentColor: '#000', ...surcharge,
 })
 const pays = { code: 'FR', nom: 'France' }
@@ -155,7 +156,7 @@ describe('délai et fiche complète', () => {
     livree: true, totalCentimes: 149000, devise: 'EUR', fraisCentimes: 4000, delaiMinJours: 8, delaiMaxJours: 12,
   }
   const fiche = (a: Artwork) =>
-    renderToStaticMarkup(h(UniteProvider, { initiale: 'cm', children: h(ArtworkDetail, { artwork: a, related: [], artist: null, pays }) }))
+    renderToStaticMarkup(h(UniteProvider, { initiale: 'cm', children: h(ArtworkDetail, { artwork: a, related: [], pays }) }))
 
   it('delaiJours : singulier et pluriel', () => {
     expect(fr.fiche.rangee.delaiJours(1, 1)).toBe('1 jour')
@@ -191,6 +192,121 @@ describe('délai et fiche complète', () => {
   it('badge « Coup de cœur » pour une œuvre featured', () => {
     expect(fiche(oeuvre({ featured: true, prixLivre: livree }))).toContain('Coup de cœur')
     expect(fiche(oeuvre({ prixLivre: livree }))).not.toContain('Coup de cœur')
+  })
+})
+
+describe('SectionsFiche (story 3.6)', () => {
+  const livree: Artwork['prixLivre'] = {
+    livree: true, totalCentimes: 149000, devise: 'EUR', fraisCentimes: 4000, delaiMinJours: 8, delaiMaxJours: 12,
+  }
+  const sections = (a: Artwork, unite: 'cm' | 'in' = 'cm') =>
+    renderToStaticMarkup(h(UniteProvider, { initiale: unite, children: h(SectionsFiche, { artwork: a, pays }) }))
+  const fichePleine = (a: Artwork) =>
+    renderToStaticMarkup(h(UniteProvider, { initiale: 'cm', children: h(ArtworkDetail, { artwork: a, related: [], pays }) }))
+  const t = fr.fiche.sections
+
+  it('quatre sections dans l’ordre, seule la première ouverte', () => {
+    const html = sections(oeuvre({ prixLivre: livree }))
+    const titres = [t.chezMoi.titre, t.total.titre, t.quand.titre, t.serieux.titre]
+    const positions = titres.map((x) => html.indexOf(x))
+    positions.forEach((p) => expect(p).toBeGreaterThan(-1))
+    expect([...positions].sort((a, b) => a - b)).toEqual(positions)
+    expect(html.match(/<details/g)).toHaveLength(4)
+    expect(html.match(/<details[^>]*\sopen/g)).toHaveLength(1)
+    expect(html.indexOf('<details open')).toBeLessThan(html.indexOf(t.chezMoi.titre))
+    expect(html).not.toMatch(/localStorage|sessionStorage/)
+  })
+
+  it('pays livré : mêmes chiffres que la rangée, mention des droits', () => {
+    const a = oeuvre({ prixLivre: livree })
+    const html = sections(a)
+    const rangee = rendreRangee(a)
+    for (const x of [formaterMontant(149000), '8 à 12 jours', `76${F}×${F}61${F}cm`, 'Portrait', 'Format moyen']) {
+      expect(html).toContain(x)
+      expect(rangee).toContain(x)
+    }
+    expect(html).toContain('Droits et taxes d’import éventuels non inclus')
+  })
+
+  it('pays non livré : « Pas de livraison vers » dans le total et le délai', () => {
+    const html = sections(oeuvre({ prixLivre: { livree: false, raison: 'non_livree' } }))
+    expect(html.match(/Pas de livraison vers France/g)).toHaveLength(2)
+    expect(html).not.toContain('Droits et taxes')
+  })
+
+  it('dimensions absentes : « — » sans orientation ni format', () => {
+    const html = sections(oeuvre({ largeurMm: null, prixLivre: livree }))
+    const chezMoi = html.slice(html.indexOf(t.chezMoi.titre), html.indexOf(t.total.titre))
+    expect(chezMoi).toContain('—')
+    expect(chezMoi).not.toContain('Portrait')
+    expect(chezMoi).not.toContain('Format')
+  })
+
+  it('« Est-ce sérieux ? » : histoire, sélection, retour sans durée, lien artiste ; certificat seulement si engagé', () => {
+    const avec = sections(oeuvre({ description: 'Une histoire courte.', certificat: true, prixLivre: livree }))
+    const sans = sections(oeuvre({ description: 'Une histoire courte.', certificat: false, prixLivre: livree }))
+    for (const html of [avec, sans]) {
+      expect(html).toContain('Une histoire courte.')
+      expect(html).toContain('Sélectionnée par Errancy')
+      expect(html).toContain(t.serieux.retour)
+      expect(html).toContain('href="/artistes/kara"')
+    }
+    expect(avec).toContain('certificat d’authenticité signé par l’artiste')
+    expect(sans).not.toContain('certificat')
+    expect(t.serieux.retour).not.toMatch(/\d|gratuit/i)
+  })
+
+  it('hauteur seule nulle : « — » sans orientation ni format', () => {
+    const html = sections(oeuvre({ hauteurMm: null, prixLivre: livree }))
+    const chezMoi = html.slice(html.indexOf(t.chezMoi.titre), html.indexOf(t.total.titre))
+    expect(chezMoi).toContain('—')
+    expect(chezMoi).not.toMatch(/Portrait|Paysage|Carré|Format/)
+  })
+
+  it('sans prix (prixLivre absent ou sans_prix) : « — » dans total et délai', () => {
+    for (const prixLivre of [undefined, { livree: false, raison: 'sans_prix' } as const]) {
+      const html = sections(oeuvre({ prixLivre }))
+      const total = html.slice(html.indexOf(t.total.titre), html.indexOf(t.quand.titre))
+      const quand = html.slice(html.indexOf(t.quand.titre), html.indexOf(t.serieux.titre))
+      for (const bloc of [total, quand]) {
+        expect(bloc).toContain('—')
+        expect(bloc).not.toContain('Pas de livraison')
+      }
+    }
+  })
+
+  it('mêmes textes que la rangée : livrée, non livrée, sans prix', () => {
+    const texte = (html: string) => html.replace(/<[^>]+>/g, '|').split('|').map((x) => x.trim()).filter(Boolean)
+    const cas: Artwork['prixLivre'][] = [livree, { livree: false, raison: 'non_livree' }, { livree: false, raison: 'sans_prix' }]
+    for (const prixLivre of cas) {
+      const a = oeuvre({ prixLivre })
+      const r = texte(rendreRangee(a))
+      const s = texte(sections(a))
+      const attendus = prixLivre?.livree
+        ? [formaterMontant(prixLivre.totalCentimes), fr.fiche.rangee.delaiJours(prixLivre.delaiMinJours, prixLivre.delaiMaxJours)]
+        : prixLivre?.raison === 'non_livree'
+          ? [fr.fiche.rangee.pasDeLivraison('France'), fr.fiche.rangee.neLivrePas('Kara', 'France')]
+          : []
+      for (const x of attendus) {
+        expect(r, x).toContain(x)
+        expect(s, x).toContain(x)
+      }
+      if (!prixLivre?.livree && prixLivre?.raison === 'sans_prix') {
+        expect(r).not.toContain(fr.fiche.rangee.pasDeLivraison('France'))
+        expect(s).not.toContain(fr.fiche.rangee.pasDeLivraison('France'))
+      }
+    }
+  })
+
+  it('la fiche n’a plus d’onglets ni de promesses non décidées', () => {
+    const html = fichePleine(oeuvre({ prixLivre: livree, certificat: true }))
+    expect(html).not.toMatch(/role="tab"|Provenance|Garantie|14 jours|100\s?%/)
+    const source = readFileSync(path.join(RACINE, 'src/app/galerie/[id]/ArtworkDetail.tsx'), 'utf8')
+    const sections = readFileSync(path.join(RACINE, 'src/app/galerie/[id]/SectionsFiche.tsx'), 'utf8')
+    for (const code of [source, sections, readFileSync(path.join(RACINE, 'src/lib/i18n/fr.ts'), 'utf8')]) {
+      expect(code).not.toMatch(/Garantie|compte à rebours|Stripe/i)
+    }
+    expect(sections).not.toMatch(/line-through/)
   })
 })
 
@@ -250,6 +366,7 @@ describe('base : photos de la fiche', () => {
         [slug],
       )
     await insere('avec-photos')
+    await db.query(`UPDATE "Artwork" SET "engagementCertificat" = true WHERE slug = 'avec-photos'`)
     await insere('sans-photos')
     for (const [type, n] of [['gros_plan', 1], ['video', 2], ['face_lumiere_du_jour', 3], ['mise_en_situation', 4]] as const) {
       await db.query(
@@ -265,6 +382,12 @@ describe('base : photos de la fiche', () => {
     const { prisma } = await import('@/lib/prisma')
     await prisma.$disconnect()
     await base?.supprimer()
+  })
+
+  it('getArtworkBySlug : certificat selon engagementCertificat', async () => {
+    const { getArtworkBySlug } = await import('@/lib/catalogue')
+    expect((await getArtworkBySlug('avec-photos'))?.certificat).toBe(true)
+    expect((await getArtworkBySlug('sans-photos'))?.certificat).toBe(false)
   })
 
   it('getArtworkBySlug : images seulement, mise en situation en tête ; repli sur imageUrl', async () => {

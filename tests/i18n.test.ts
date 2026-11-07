@@ -193,11 +193,11 @@ describe('rendu de l’unité choisie', () => {
   it('fiche œuvre : les deux unités, pouces d’abord, bascule liée au libellé visible', () => {
     const oeuvre: Artwork = {
       id: 'x', title: 'T', artist: 'A', artistId: 'a', year: 2024, medium: 'Peinture', technique: 'Huile',
-      price: 1450, ...mm, description: 'd', tags: [], featured: false, sold: false, imageUrl: null,
+      price: 1450, ...mm, description: 'd', certificat: false, tags: [], featured: false, sold: false, imageUrl: null,
       gradient: '', accentColor: '#000',
     }
     const html = renderToStaticMarkup(
-      h(UniteProvider, { initiale: 'in', children: h(ArtworkDetail, { artwork: oeuvre, related: [], artist: null, pays: { code: 'FR', nom: 'France' } }) }),
+      h(UniteProvider, { initiale: 'in', children: h(ArtworkDetail, { artwork: oeuvre, related: [], pays: { code: 'FR', nom: 'France' } }) }),
     )
     const pouces = html.indexOf(`24${F}×${F}29,9${F}in`)
     const cm = html.indexOf(`61${F}×${F}76${F}cm`)

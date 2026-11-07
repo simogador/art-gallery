@@ -110,6 +110,7 @@ type DbArtwork = {
   largeurMm: number | null
   profondeurMm: number | null
   featured: boolean
+  engagementCertificat: boolean
   artist: { slug: string; name: string }
   // Story 3.5 : photos de prise de vue, présentes seulement quand la lecture les demande.
   photos?: { type: string; url: string; largeur: number | null; hauteur: number | null }[]
@@ -152,6 +153,7 @@ export function mapArtwork(w: DbArtwork): Artwork {
     largeurMm: w.largeurMm,
     profondeurMm: w.profondeurMm,
     description: w.description,
+    certificat: w.engagementCertificat === true,
     tags: [],
     featured: w.featured,
     // Story 2.2 : « vendue » pour l'UI = non disponible (réservée, vendue ailleurs… comprises).

@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers'
 import { notFound, permanentRedirect } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getArtworkBySlug, getRelatedArtworks, getArtistBySlug, artisteDOeuvreRetiree } from '@/lib/catalogue'
+import { getArtworkBySlug, getRelatedArtworks, artisteDOeuvreRetiree } from '@/lib/catalogue'
 import { COOKIE_PAYS, lirePays, nomPays } from '@/lib/livraison'
 import { ArtworkDetail } from './ArtworkDetail'
 
@@ -38,10 +38,7 @@ export default async function ArtworkPage({ params }: Props) {
     notFound()
   }
 
-  const [related, artist] = await Promise.all([
-    getRelatedArtworks(artwork, 3, pays),
-    getArtistBySlug(artwork.artistId),
-  ])
+  const related = await getRelatedArtworks(artwork, 3, pays)
 
-  return <ArtworkDetail artwork={artwork} related={related} artist={artist} pays={{ code: pays, nom: nomPays(pays) }} />
+  return <ArtworkDetail artwork={artwork} related={related} pays={{ code: pays, nom: nomPays(pays) }} />
 }
