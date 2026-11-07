@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils/cn'
 interface ArtworkImageProps {
   imageUrl?:   string | null
   title:       string
+  /** Texte alternatif ; le titre par défaut (story 3.5 : œuvre, artiste, prise de vue). */
+  alt?:        string
   gradient:    string
   accentColor: string
   className?:  string
@@ -17,6 +19,7 @@ interface ArtworkImageProps {
 export function ArtworkImage({
   imageUrl,
   title,
+  alt,
   gradient,
   accentColor,
   className,
@@ -29,7 +32,7 @@ export function ArtworkImage({
       <>
         <Image
           src={imageUrl}
-          alt={title}
+          alt={alt ?? title}
           fill={fill}
           sizes={sizes}
           priority={priority}

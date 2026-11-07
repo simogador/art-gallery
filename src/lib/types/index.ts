@@ -2,6 +2,16 @@ import type { PrixLivre } from '@/lib/livraison/prix'
 
 export type ArtMedium = 'Tout' | 'Peinture' | 'Sculpture' | 'Photographie' | 'Art numérique'
 
+/** Prise de vue d'une photo de la fiche (story 3.5) ; `principale` : repli sur `Artwork.imageUrl`. */
+export type PriseDeVue = 'mise_en_situation' | 'face_lumiere_du_jour' | 'gros_plan' | 'principale'
+
+export interface PhotoFiche {
+  url:     string
+  type:    PriseDeVue
+  largeur: number | null
+  hauteur: number | null
+}
+
 export interface Artwork {
   id:          string
   title:       string
@@ -25,6 +35,11 @@ export interface Artwork {
   featured:    boolean
   sold:        boolean
   imageUrl:    string | null
+  /**
+   * Photos de la fiche (story 3.5), images seulement, mise en situation d'abord ; absentes des
+   * lectures qui ne les demandent pas (galerie, accueil).
+   */
+  photos?:     PhotoFiche[]
   /** Tailwind gradient classes used as image placeholder */
   gradient:    string
   accentColor: string

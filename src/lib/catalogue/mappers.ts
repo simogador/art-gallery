@@ -1,4 +1,4 @@
-import type { Artist, Artwork, Exhibition, ArtMedium, ExhibitionStatus } from '@/lib/types'
+import type { Artist, Artwork, Exhibition, ArtMedium, ExhibitionStatus, PhotoFiche } from '@/lib/types'
 import { centimesEnEuros } from './conversions'
 import { formaterDate } from '@/lib/i18n/formats'
 // Partie pure du module disponibilite : ce fichier reste importable par un composant client.
@@ -111,7 +111,30 @@ type DbArtwork = {
   profondeurMm: number | null
   featured: boolean
   artist: { slug: string; name: string }
+  // Story 3.5 : photos de prise de vue, présentes seulement quand la lecture les demande.
+  photos?: { type: string; url: string; largeur: number | null; hauteur: number | null }[]
 } & EtatOeuvre
+
+/* ── Photos de la fiche (story 3.5) ─────────────────────────────────────── */
+
+const ORDRE_PRISES: Record<string, number> = { mise_en_situation: 0, face_lumiere_du_jour: 1, gros_plan: 2 }
+
+/**
+ * Photos du carrousel : images seulement (la vidéo en est exclue), mise en situation en tête, puis
+ * face, puis gros plan. Œuvre sans photo de prise de vue (déposée avant la story 2.5) : repli sur
+ * `imageUrl`, une seule photo ; sans rien : liste vide.
+ */
+export function photosDeFiche(
+  photos: { type: string; url: string; largeur: number | null; hauteur: number | null }[] | undefined,
+  imageUrl: string | null,
+): PhotoFiche[] {
+  const images = (photos ?? [])
+    .filter((p) => Object.hasOwn(ORDRE_PRISES, p.type) && p.url)
+    .sort((a, b) => ORDRE_PRISES[a.type] - ORDRE_PRISES[b.type])
+    .map((p): PhotoFiche => ({ url: p.url, type: p.type as PhotoFiche['type'], largeur: p.largeur, hauteur: p.hauteur }))
+  if (images.length > 0) return images
+  return imageUrl ? [{ url: imageUrl, type: 'principale', largeur: null, hauteur: null }] : []
+}
 
 export function mapArtwork(w: DbArtwork): Artwork {
   return {
@@ -134,6 +157,7 @@ export function mapArtwork(w: DbArtwork): Artwork {
     // Story 2.2 : « vendue » pour l'UI = non disponible (réservée, vendue ailleurs… comprises).
     sold: !estDisponible(w),
     imageUrl: w.imageUrl ?? null,
+    ...(w.photos ? { photos: photosDeFiche(w.photos, w.imageUrl ?? null) } : {}),
     gradient: gradient(w.slug),
     accentColor: accent(w.slug),
   }
