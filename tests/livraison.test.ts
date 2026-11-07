@@ -675,10 +675,11 @@ describe('base : zones de livraison', () => {
       expect(html).toContain('Prix livré')
       expect(html).toContain(formaterMontant(149000))
       expect(html).toContain(`1${F}490${F}€`)
-      expect(html).toContain('Livrée sous 8 à 12 jours')
+      // Story 3.5 : case Délai de la rangée (« 8 à 12 jours »).
+      expect(html).toContain('8 à 12 jours')
       // Mention dans le bloc principal, pas seulement sur les œuvres proches.
       const principal = html.slice(0, html.indexOf('Vous pourriez aimer'))
-      expect(principal).toContain('Livrée sous 8 à 12 jours')
+      expect(principal).toContain('8 à 12 jours')
       expect(principal).toContain('Droits et taxes d’import éventuels non inclus')
       expect(html).toContain('Livraison\u00a0: France')
       expect(html).not.toContain(`1${F}450${F}€`)
@@ -690,12 +691,14 @@ describe('base : zones de livraison', () => {
       const html = renderToStaticMarkup(await Fiche({ params: { id: 'livree' } }))
       // Bloc principal (avant les œuvres proches, elles livrées au Canada) : ni prix, ni délai, ni mention.
       const principal = html.slice(0, html.indexOf('Vous pourriez aimer'))
-      expect(principal).toContain('Pas de livraison vers ce pays (Canada)')
+      // Story 3.5 : case Prix livré de la rangée.
+      expect(principal).toContain('Pas de livraison vers Canada')
+      expect(principal).toContain('Artiste Prix ne livre pas encore Canada.')
       expect(principal).not.toContain('Droits et taxes')
-      expect(principal).not.toContain('Livrée sous')
+      expect(principal).not.toContain('8 à 12 jours')
       expect(html).toContain(`590${F}€`)
       jar.valeurs.set('pays', 'ZZ')
-      expect(renderToStaticMarkup(await Fiche({ params: { id: 'livree' } }))).toContain('Livrée sous 8 à 12 jours')
+      expect(renderToStaticMarkup(await Fiche({ params: { id: 'livree' } }))).toContain('8 à 12 jours')
     })
 
     it('galerie : chaque œuvre porte son prix livré vers le pays du cookie', async () => {

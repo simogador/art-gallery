@@ -50,7 +50,39 @@ export type Dictionnaire = {
     readonly in: string
     readonly nomComplet: { readonly cm: string; readonly in: string }
   }
-  readonly fiche: { readonly format: string }
+  readonly fiche: {
+    readonly coupDeCoeur: string
+    readonly etat: { readonly disponible: string; readonly vendue: string }
+    readonly photos: {
+      readonly carrousel: string
+      readonly legendes: {
+        readonly mise_en_situation: string
+        readonly face_lumiere_du_jour: string
+        readonly gros_plan: string
+        readonly principale: string
+      }
+      readonly alt: (titre: string, artiste: string, priseDeVue: string) => string
+      readonly compteur: (position: number, total: number) => string
+      readonly precedente: string
+      readonly suivante: string
+      readonly agrandir: string
+      readonly fermer: string
+      readonly zoomer: string
+      readonly dezoomer: string
+      readonly plein: (titre: string) => string
+    }
+    readonly rangee: {
+      readonly libelle: string
+      readonly taille: string
+      readonly delai: string
+      readonly orientation: { readonly portrait: string; readonly paysage: string; readonly carre: string }
+      readonly format: { readonly petit: string; readonly moyen: string; readonly grand: string }
+      readonly delaiJours: (min: number, max: number) => string
+      readonly livreeChezVous: string
+      readonly pasDeLivraison: (pays: string) => string
+      readonly neLivrePas: (artiste: string, pays: string) => string
+    }
+  }
   readonly livraison: {
     readonly prixLivre: string
     readonly paysChoisi: (pays: string) => string
@@ -162,8 +194,39 @@ export const fr = {
     nomComplet: { cm: 'centimètres', in: 'pouces' },
   },
 
+  // Story 3.5 : haut de la fiche œuvre (carrousel de photos, rangée Taille / Prix livré / Délai).
   fiche: {
-    format: 'Format',
+    coupDeCoeur: 'Coup de cœur',
+    etat: { disponible: 'Disponible', vendue: 'Vendue' },
+    photos: {
+      carrousel: 'Photos de l’œuvre',
+      legendes: {
+        mise_en_situation: 'Mise en situation avec repère d’échelle',
+        face_lumiere_du_jour: 'Œuvre de face, lumière du jour',
+        gros_plan: 'Gros plan de la matière',
+        principale: 'Photo de l’œuvre',
+      },
+      alt: (titre: string, artiste: string, priseDeVue: string) => `${titre}, ${artiste}\u00a0: ${priseDeVue}`,
+      compteur: (position: number, total: number) => `${position}/${total}`,
+      precedente: 'Photo précédente',
+      suivante: 'Photo suivante',
+      agrandir: 'Agrandir la photo',
+      fermer: 'Fermer',
+      zoomer: 'Zoomer',
+      dezoomer: 'Revenir à la taille d’origine',
+      plein: (titre: string) => `Photo en plein écran\u00a0: ${titre}`,
+    },
+    rangee: {
+      libelle: 'Taille, prix livré et délai',
+      taille: 'Taille',
+      delai: 'Délai',
+      orientation: { portrait: 'Portrait', paysage: 'Paysage', carre: 'Carré' },
+      format: { petit: 'Petit format', moyen: 'Format moyen', grand: 'Grand format' },
+      delaiJours: (min: number, max: number) => (min === max ? `${min} jour${min > 1 ? 's' : ''}` : `${min} à ${max} jours`),
+      livreeChezVous: 'Livrée chez vous',
+      pasDeLivraison: (pays: string) => `Pas de livraison vers ${pays}`,
+      neLivrePas: (artiste: string, pays: string) => `${artiste} ne livre pas encore ${pays}.`,
+    },
   },
 
   // Story 3.3 : prix livré et délai vers le pays choisi (cookie `pays`, France par défaut).

@@ -35,7 +35,14 @@ export async function getArtworkBySlug(slug: string, codePays?: string): Promise
     () =>
       prisma.artwork.findFirst({
         where: { slug, ...VISIBLE },
-        include: { artist: { select: { slug: true, name: true } } },
+        // Story 3.5 : photos du carrousel (le type `video` est écarté au mappage).
+        include: {
+          artist: { select: { slug: true, name: true } },
+          photos: {
+            select: { type: true, url: true, largeur: true, hauteur: true },
+            orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          },
+        },
       }),
   )
   if (!row) return null

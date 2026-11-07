@@ -2,7 +2,8 @@
 title: 'Story 3.5 — Fiche œuvre : photos et rangée Taille, Prix livré, Délai'
 type: 'feature'
 created: '2026-11-07'
-status: 'draft'
+status: 'done'
+baseline_commit: '79f504b76794965df9fb123f3452bb6bdd82005e'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.md']
@@ -66,13 +67,13 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/lib/catalogue/*`, `src/lib/types/index.ts` -- lire et mapper les photos (images seulement, mise en situation en tête).
-- [ ] `src/lib/reglages/*` -- seuils, orientation (carré à 5 % près) et format, fonction pure.
-- [ ] `src/lib/i18n/fr.ts` -- légendes, compteur, boutons, libellés des cases.
-- [ ] `src/app/galerie/[id]/CarrouselPhotos.tsx`, `RangeeFiche.tsx` -- composants, plein écran en `<dialog>` natif, zoom au toucher sans bibliothèque.
-- [ ] `src/app/galerie/[id]/ArtworkDetail.tsx` -- brancher le nouveau haut de fiche.
-- [ ] `tests/fiche.test.ts` -- matrice (photos, repli `imageUrl`, non livré, dimensions absentes, seuil).
-- [ ] `AGENTS.md` -- règles de la fiche.
+- [x] `src/lib/catalogue/*`, `src/lib/types/index.ts` -- lire et mapper les photos (images seulement, mise en situation en tête).
+- [x] `src/lib/reglages/*` -- seuils, orientation (carré à 5 % près) et format, fonction pure.
+- [x] `src/lib/i18n/fr.ts` -- légendes, compteur, boutons, libellés des cases.
+- [x] `src/app/galerie/[id]/CarrouselPhotos.tsx`, `RangeeFiche.tsx` -- composants, plein écran en `<dialog>` natif, zoom au toucher sans bibliothèque.
+- [x] `src/app/galerie/[id]/ArtworkDetail.tsx` -- brancher le nouveau haut de fiche.
+- [x] `tests/fiche.test.ts` -- matrice (photos, repli `imageUrl`, non livré, dimensions absentes, seuil).
+- [x] `AGENTS.md` -- règles de la fiche.
 
 **Acceptance Criteria:**
 - Given une œuvre publiée, when la fiche s'ouvre, then photo de mise en situation, titre, disponibilité puis les trois cases s'affichent dans cet ordre.
@@ -84,6 +85,27 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Constat (relecteurs) | Verdict | Preuve | Suite |
+|---|---|---|---|---|
+| 1 | Badge « Coup de cœur » (et badge du médium) supprimés sans décision (B, E) | medium | visibles sur la fiche avant la story (capture du porteur) ; la spec ne les retire pas ; le médium reste dans la grille | patch : rétablir « Coup de cœur » à côté de la disponibilité |
+| 2 | Ordre des photos d'un même type non déterministe (B, E) | low | pas d'`orderBy` ; un seul fichier par type en base (`@@unique [artworkId, type]`) mais ordre de lecture non garanti | patch (une ligne) |
+| 3 | `in` accepte les clés du prototype (B, E, V) | low | `'constructor' in {}` vrai ; l'énumération en base l'interdit aujourd'hui | patch (`Object.hasOwn`) |
+| 4 | Clés React en double si deux photos ont la même adresse (E) | low | `key={p.url}` | patch (clé avec l'index) |
+| 5 | Index hors limites si les photos diminuent après `router.refresh` (E) | low | `liste[index]` indéfini | patch (borner l'index) |
+| 6 | Diapositives hors écran dans l'ordre de tabulation et lues par les lecteurs d'écran (B) | medium | chaque diapositive a un bouton « Agrandir » focalisable : la tabulation atteint une photo invisible et fait sauter la piste | patch (`aria-hidden` et `tabIndex -1` hors diapositive courante) |
+| 7 | `prixLivre` absent affiché comme « Pas de livraison » (B, E) | low | la page passe toujours le pays ; mais l'absence de calcul ne doit pas annoncer un refus | patch : « — » |
+| 8 | Tests manquants : délai min = max, « — » sans prix, ordre titre/rangée avant photos, œuvre vendue (V) | medium | aucun test ne les épingle | patch : tests |
+| 9 | Aucun test d'interaction du carrousel et du plein écran (V) | medium | pas de jsdom ni de test de bout en bout dans le dépôt | defer : contrôle manuel en préversion, harnais à décider à part |
+| 10 | Clé du dictionnaire `fr.fiche.format` probablement morte (B, E) | low | case Format retirée de la grille | patch si inutilisée |
+| 11 | Orientation et format ignorent la profondeur (B) | maybe-false | décision du porteur : « plus grand côté » ; une sculpture profonde pourrait changer de classe | defer (à confirmer avec le porteur) |
+| 12 | Plein écran sans navigation entre photos ni geste de zoom propre (B, E) | low | la spec demande plein écran avec zoom : boutons, appui et zoom du navigateur le fournissent | rejeté |
+| 13 | Flèches gauche/droite et RTL ; focus perdu sur bouton désactivé ; `showModal` qui lève ; ratio de repli 1600×2000 ; `delaiJours` min > max ou 0 (E) | low | site français seulement, valeurs validées au dépôt ; correctifs ajoutent des branches | rejeté (low) |
+| 14 | Fiche d'une œuvre vendue sans rangée (E) | false | l'état vendu est la story 3.7 ; la spec vise une œuvre publiée disponible | rejeté |
+| 15 | Statuts spec / sprint incohérents (B) | false | le sprint passe en `review` à l'étape de présentation | rejeté |
+| 16 | Grille Technique/Médium/Année retouchée (E) | low | changement de classes seulement, onglets et panier intacts | rejeté |
+| 17 | Défilement fluide qui fait clignoter le compteur (B) | low | bref et sans perte d'information | rejeté |
+| 18 | Test de source « aucun seuil dans les composants » fragile (V) | low | garde-fou utile, ne casse que sur un littéral 40 ou 100 | rejeté |
 
 ## Design Notes
 

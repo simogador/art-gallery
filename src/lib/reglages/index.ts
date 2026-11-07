@@ -33,3 +33,38 @@ export const DELAI_REPONSE_CURATION_JOURS = 7
 // (story 2.8, décision du porteur du 2026-11-04) : au-delà, « Remettre en vente » (curation) ou
 // « Écrire à l'équipe ».
 export const DELAI_ANNULATION_DECLARATION_MINUTES = 15
+
+// Format d'une œuvre sur la fiche (story 3.5, décision du porteur du 2026-11-07) : selon le plus
+// grand côté (hauteur ou largeur), petit < 40 cm, grand > 100 cm, moyen entre les deux (bornes
+// incluses). Changer un seuil = une PR (ni écran d'administration, ni migration).
+export const SEUIL_FORMAT_PETIT_CM = 40
+export const SEUIL_FORMAT_GRAND_CM = 100
+
+/** Écart relatif de la hauteur et de la largeur en deçà duquel une œuvre est dite carrée (5 %). */
+export const TOLERANCE_CARRE = 0.05
+
+export type OrientationOeuvre = 'portrait' | 'paysage' | 'carre'
+export type FormatOeuvre = 'petit' | 'moyen' | 'grand'
+
+/** Orientation d'après hauteur et largeur (mm) ; null si l'une manque ou n'est pas positive. */
+export function orientationOeuvre(hauteurMm: number | null, largeurMm: number | null): OrientationOeuvre | null {
+  if (hauteurMm === null || largeurMm === null || hauteurMm <= 0 || largeurMm <= 0) return null
+  if (Math.abs(hauteurMm - largeurMm) <= TOLERANCE_CARRE * Math.max(hauteurMm, largeurMm)) return 'carre'
+  return hauteurMm > largeurMm ? 'portrait' : 'paysage'
+}
+
+/**
+ * Format d'après le plus grand côté (mm) ; null si hauteur ou largeur manque. Les seuils sont ceux
+ * de `reglages` ; le paramètre ne sert qu'aux tests.
+ */
+export function formatOeuvre(
+  hauteurMm: number | null,
+  largeurMm: number | null,
+  seuilsCm: { petit: number; grand: number } = { petit: SEUIL_FORMAT_PETIT_CM, grand: SEUIL_FORMAT_GRAND_CM },
+): FormatOeuvre | null {
+  if (hauteurMm === null || largeurMm === null || hauteurMm <= 0 || largeurMm <= 0) return null
+  const plusGrandMm = Math.max(hauteurMm, largeurMm)
+  if (plusGrandMm < seuilsCm.petit * 10) return 'petit'
+  if (plusGrandMm > seuilsCm.grand * 10) return 'grand'
+  return 'moyen'
+}

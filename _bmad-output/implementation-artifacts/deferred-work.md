@@ -141,3 +141,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-4-journal-evenements.md`
   summary: Invalider le cache du catalogue lors des modifications sans événement (prix, titre, photos, accord ou activité d'un artiste), aujourd'hui visibles sous 60 s.
   evidence: accepté par le porteur le 2026-11-06 tant que le Lot 2 est fermé ; à revoir avant l'ouverture de l'achat (le prix affiché peut différer 60 s de celui relu au paiement).
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-5-fiche-oeuvre-photos-rangee.md`
+  summary: Tests d'interaction du carrousel et du plein écran (aucun harnais DOM dans le dépôt).
+  evidence: `CarrouselPhotos` n'est testé qu'en rendu serveur ; vérification manuelle en préversion pour cette story, harnais (jsdom ou Playwright) à décider à part.
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-5-fiche-oeuvre-photos-rangee.md`
+  summary: Confirmer avec le porteur si le « plus grand côté » du format doit compter la profondeur des sculptures.
+  evidence: `formatOeuvre` n'utilise que hauteur et largeur (non vérifié, medium si la profondeur dépasse les deux autres).

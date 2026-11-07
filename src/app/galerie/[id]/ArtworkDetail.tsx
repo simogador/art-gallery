@@ -5,10 +5,13 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { formatPrice } from '@/lib/utils/artworks'
-import { Button, Badge, Modal, PaysLivraison, UniteToggle, useUnite } from '@/components/ui'
+import { Button, Badge, Modal, UniteToggle, useUnite } from '@/components/ui'
 import { formaterDimensionsDouble, formaterMontant, fr } from '@/lib/i18n'
 import { useCartStore } from '@/lib/store/cart'
 import { ArtworkImage } from '@/components/ui'
+import { photosDeFiche } from '@/lib/catalogue/mappers'
+import { CarrouselPhotos } from './CarrouselPhotos'
+import { RangeeFiche } from './RangeeFiche'
 import type { Artwork, Artist } from '@/lib/types'
 
 type Tab = 'oeuvre' | 'artiste' | 'provenance'
@@ -29,11 +32,6 @@ const fadeUp = {
   }),
 }
 
-const imageVariant = {
-  hidden:  { opacity: 0, scale: 1.03 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94] } },
-}
-
 /* ─── Component ───────────────────────────────────────────────────────────── */
 
 interface Props {
@@ -46,7 +44,6 @@ interface Props {
 
 export function ArtworkDetail({ artwork, related, artist, pays }: Props) {
   const [activeTab,    setActiveTab]    = useState<Tab>('oeuvre')
-  const [lightboxOpen, setLightboxOpen] = useState(false)
   const [contactOpen,  setContactOpen]  = useState(false)
   const [formSent,     setFormSent]     = useState(false)
   const [loading,      setLoading]      = useState(false)
@@ -56,6 +53,8 @@ export function ArtworkDetail({ artwork, related, artist, pays }: Props) {
   const inCart = hasItem(artwork.id)
   // Story 3.2 : les deux unités toujours visibles, celle choisie d'abord (« 24 × 29,9 in » puis « 61 × 76 cm »).
   const tailles = formaterDimensionsDouble(artwork, useUnite())
+  // Story 3.5 : photos de prise de vue ; repli sur l'image principale quand la lecture n'en a pas.
+  const photos = artwork.photos ?? photosDeFiche(undefined, artwork.imageUrl)
 
   const handleContact = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -102,105 +101,32 @@ export function ArtworkDetail({ artwork, related, artist, pays }: Props) {
 
         {/* ── Main split layout ── */}
         <div className="container-premium py-12 md:py-16">
+          {/* Story 3.5 : titre et rangée sont dans le HTML avant les photos (ils s'affichent d'abord) ;
+              à l'écran les photos passent en tête (mobile) ou à gauche (md et plus). */}
           <div className="grid md:grid-cols-[1.1fr_1fr] lg:grid-cols-[1.2fr_1fr] gap-10 lg:gap-16 items-start">
 
-            {/* ── LEFT — Image ── */}
-            <div className="md:sticky md:top-28">
-              <motion.div
-                variants={imageVariant}
-                initial="hidden"
-                animate="visible"
-                className="relative group cursor-zoom-in"
-                onClick={() => setLightboxOpen(true)}
-                role="button"
-                aria-label="Agrandir l'image"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && setLightboxOpen(true)}
-              >
-                {/* Main visual */}
-                <div className={cn(
-                  'relative overflow-hidden rounded-sm aspect-[4/5]',
-                )}>
-                  <ArtworkImage
-                    imageUrl={artwork.imageUrl}
-                    title={artwork.title}
-                    gradient={artwork.gradient}
-                    accentColor={artwork.accentColor}
-                    priority
-                    sizes="(max-width: 768px) 100vw, 55vw"
-                  />
-
-                  {/* Hover zoom hint */}
-                  <motion.div
-                    className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/5 transition-colors duration-400 flex items-center justify-center"
-                  >
-                    <motion.div
-                      className="bg-background/90 backdrop-blur-sm rounded-sm px-3 py-2 flex items-center gap-2"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      whileHover={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <ZoomIcon />
-                      <span className="font-sans text-xs uppercase tracking-widest">Agrandir</span>
-                    </motion.div>
-                  </motion.div>
-
-                  {/* Sold overlay */}
-                  {artwork.sold && (
-                    <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center">
-                      <span className="font-serif text-2xl font-light text-background border border-background/40 px-6 py-3 rounded-sm">
-                        Vendue
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Thumbnail strip */}
-                <div className="flex gap-2 mt-3">
-                  {[0, 1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        'relative flex-1 aspect-square overflow-hidden rounded-sm cursor-pointer',
-                        i === 0 ? 'ring-1 ring-foreground ring-offset-1' : 'opacity-50 hover:opacity-80 transition-opacity duration-200',
-                      )}
-                    >
-                      <ArtworkImage
-                        imageUrl={i === 0 ? artwork.imageUrl : null}
-                        title={artwork.title}
-                        gradient={artwork.gradient}
-                        accentColor={artwork.accentColor}
-                        sizes="10vw"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-
-            {/* ── RIGHT — Info panel ── */}
+            {/* ── Info panel ── */}
             <motion.div
+              className="md:col-start-2 md:row-start-1"
               variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
               initial="hidden"
               animate="visible"
             >
-              {/* Status badge */}
-              <motion.div custom={0} variants={fadeUp} className="flex items-center gap-3 mb-5">
+              {/* Libellé de disponibilité (point + libellé) */}
+              <motion.div custom={0} variants={fadeUp} className="flex items-center gap-3 mb-3">
                 {artwork.featured && !artwork.sold && (
-                  <Badge variant="gold" dot label="Coup de cœur" />
+                  <Badge variant="gold" dot label={fr.fiche.coupDeCoeur} />
                 )}
-                {artwork.sold
-                  ? <Badge variant="dark" label="Vendue" />
-                  : <Badge variant="default" dot label="Disponible" />
-                }
-                <Badge variant="default" label={artwork.medium} />
+                <p className="flex items-center gap-2 font-sans text-sm text-neutral-600">
+                  <span aria-hidden="true" className={cn('block h-2 w-2 rounded-full', artwork.sold ? 'border border-foreground' : 'bg-foreground')} />
+                  {artwork.sold ? fr.fiche.etat.vendue : fr.fiche.etat.disponible}
+                </p>
               </motion.div>
 
               {/* Title */}
               <motion.h1
                 custom={1} variants={fadeUp}
-                className="font-serif font-light text-foreground leading-tight"
-                style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)' }}
+                className="font-serif text-display-sm text-foreground"
               >
                 {artwork.title}
               </motion.h1>
@@ -209,66 +135,43 @@ export function ArtworkDetail({ artwork, related, artist, pays }: Props) {
               <motion.div custom={2} variants={fadeUp} className="mt-2 flex items-center gap-3">
                 <Link
                   href={`/artistes/${artwork.artistId}`}
-                  className="font-sans text-sm text-neutral-500 hover:text-gold transition-colors duration-300 uppercase tracking-widest"
+                  className="font-sans text-sm text-neutral-600 hover:text-foreground transition-colors duration-300 uppercase tracking-widest"
                 >
                   {artwork.artist}
                 </Link>
-                <span className="text-neutral-300">·</span>
-                <span className="font-sans text-sm text-neutral-400">{artwork.year}</span>
+                <span className="text-neutral-500">·</span>
+                <span className="font-sans text-sm text-neutral-600">{artwork.year}</span>
               </motion.div>
 
               <motion.div custom={3} variants={fadeUp} className="my-6">
                 <div className="divider" />
               </motion.div>
 
-              {/* Price */}
-              <motion.div custom={4} variants={fadeUp} className="mb-8">
+              {/* Story 3.5 : rangée Taille / Prix livré / Délai (prix livré calculé par le module livraison). */}
+              <motion.div custom={4} variants={fadeUp} className="mb-4">
                 {artwork.sold ? (
                   <div>
-                    <p className="font-sans text-xs uppercase tracking-widest text-neutral-400 mb-1">Prix de vente</p>
-                    <p className="font-serif text-3xl font-light text-neutral-400 line-through decoration-1">
+                    <p className="font-sans text-xs uppercase tracking-widest text-neutral-600 mb-1">Prix de vente</p>
+                    <p className="font-serif text-3xl font-light text-neutral-600 line-through decoration-1">
                       {formatPrice(artwork.price)}
                     </p>
+                    {tailles && <p className="font-sans text-sm text-foreground mt-2">{tailles[0]}</p>}
                   </div>
                 ) : (
-                  // Story 3.3 : prix livré vers le pays choisi et délai, calculés par le module
-                  // livraison (aucun calcul ici) ; « Modifier » change le pays et recalcule côté serveur.
-                  <div>
-                    <p className="font-sans text-xs uppercase tracking-widest text-neutral-600 mb-1">{fr.livraison.prixLivre}</p>
-                    {artwork.prixLivre?.livree ? (
-                      <>
-                        <p className="font-serif text-3xl font-light text-foreground">
-                          {formaterMontant(artwork.prixLivre.totalCentimes, artwork.prixLivre.devise)}
-                        </p>
-                        <p className="font-sans text-sm text-foreground mt-1">
-                          {fr.livraison.delai(artwork.prixLivre.delaiMinJours, artwork.prixLivre.delaiMaxJours)}
-                        </p>
-                        <p className="font-sans text-xs text-neutral-600 mt-1">{fr.livraison.droitsNonInclus}</p>
-                      </>
-                    ) : (
-                      <p className="font-serif text-xl font-light text-foreground">
-                        {artwork.prixLivre?.livree === false && artwork.prixLivre.raison === 'sans_prix'
-                          ? formaterMontant(null)
-                          : fr.livraison.pasDeLivraison(pays.nom)}
-                      </p>
-                    )}
-                    <PaysLivraison code={pays.code} nom={pays.nom} className="mt-2" />
-                  </div>
+                  <RangeeFiche artwork={artwork} pays={pays} />
                 )}
               </motion.div>
 
-              {/* Quick specs */}
+              {/* Technique, médium, année ; bascule cm / in */}
               <motion.div custom={5} variants={fadeUp} className="grid grid-cols-2 gap-3 mb-8">
                 {[
                   { label: 'Technique',  value: artwork.technique },
-                  { label: fr.fiche.format, value: tailles?.[0] ?? '', autre: tailles?.[1] },
                   { label: 'Médium',     value: artwork.medium },
                   { label: 'Année',      value: String(artwork.year) },
-                ].filter(({ value }) => value).map(({ label, value, autre }) => (
+                ].filter(({ value }) => value).map(({ label, value }) => (
                   <div key={label} className="bg-neutral-50 border border-neutral-100 rounded-sm px-4 py-3">
-                    <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{label}</p>
+                    <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-600">{label}</p>
                     <p className="font-sans text-sm text-foreground mt-0.5 leading-snug">{value}</p>
-                    {autre && <p className="font-sans text-xs text-neutral-600 mt-0.5 leading-snug">{autre}</p>}
                   </div>
                 ))}
                 {tailles && (
@@ -371,6 +274,18 @@ export function ArtworkDetail({ artwork, related, artist, pays }: Props) {
                 </AnimatePresence>
               </motion.div>
             </motion.div>
+
+            {/* ── Photos : en tête sur mobile, à gauche et collantes dès md ── */}
+            <div className="order-first md:order-none md:col-start-1 md:row-start-1 md:sticky md:top-28">
+              <CarrouselPhotos
+                photos={photos}
+                titre={artwork.title}
+                artiste={artwork.artist}
+                gradient={artwork.gradient}
+                accentColor={artwork.accentColor}
+                vendue={artwork.sold}
+              />
+            </div>
           </div>
         </div>
 
@@ -379,25 +294,6 @@ export function ArtworkDetail({ artwork, related, artist, pays }: Props) {
           <RelatedSection artworks={related} paysNom={pays.nom} />
         )}
       </div>
-
-      {/* ── Lightbox ── */}
-      <Modal
-        open={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
-        size="xl"
-        title={artwork.title}
-        subtitle={`${artwork.artist} · ${artwork.year}`}
-      >
-        <div className="aspect-[4/3] w-full overflow-hidden rounded-sm relative">
-          <ArtworkImage
-            imageUrl={artwork.imageUrl}
-            title={artwork.title}
-            gradient={artwork.gradient}
-            accentColor={artwork.accentColor}
-            sizes="90vw"
-          />
-        </div>
-      </Modal>
 
       {/* ── Contact Modal ── */}
       <Modal
