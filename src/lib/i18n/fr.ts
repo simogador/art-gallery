@@ -82,6 +82,22 @@ export type Dictionnaire = {
       readonly pasDeLivraison: (pays: string) => string
       readonly neLivrePas: (artiste: string, pays: string) => string
     }
+    // Story 3.6 : les quatre questions (FR-5, UX-DR16).
+    readonly sections: {
+      readonly libelle: string
+      readonly chezMoi: { readonly titre: string; readonly orientationFormat: (orientation: string, format: string) => string }
+      readonly total: { readonly titre: string; readonly phrase: (pays: string) => string }
+      readonly quand: { readonly titre: string; readonly phrase: (pays: string) => string }
+      readonly serieux: {
+        readonly titre: string
+        readonly histoire: string
+        readonly selectionnee: string
+        readonly certificat: string
+        readonly retour: string
+        readonly retourTitre: string
+        readonly lienArtiste: (artiste: string) => string
+      }
+    }
   }
   readonly livraison: {
     readonly prixLivre: string
@@ -226,6 +242,24 @@ export const fr = {
       livreeChezVous: 'Livrée chez vous',
       pasDeLivraison: (pays: string) => `Pas de livraison vers ${pays}`,
       neLivrePas: (artiste: string, pays: string) => `${artiste} ne livre pas encore ${pays}.`,
+    },
+    sections: {
+      libelle: 'Les quatre questions',
+      chezMoi: {
+        titre: 'Ira-t-elle chez moi ?',
+        orientationFormat: (orientation: string, format: string) => `${orientation}\u00a0· ${format}`,
+      },
+      total: { titre: 'Combien au total ?', phrase: (pays: string) => `Prix total livré vers ${pays}`  },
+      quand: { titre: 'Quand la recevrai-je ?', phrase: (pays: string) => `Délai de livraison vers ${pays}` },
+      serieux: {
+        titre: 'Est-ce sérieux ?',
+        histoire: 'L’histoire de l’œuvre',
+        selectionnee: 'Sélectionnée par Errancy',
+        certificat: 'Un certificat d’authenticité signé par l’artiste accompagne l’œuvre.',
+        retourTitre: 'Retour',
+        retour: 'Les conditions de retour vous sont communiquées avant toute commande.',
+        lienArtiste: (artiste: string) => `Découvrir ${artiste}`,
+      },
     },
   },
 

@@ -31,6 +31,8 @@ export interface Artwork {
   largeurMm:   number | null
   profondeurMm: number | null
   description: string
+  /** L'artiste s'est engagé à fournir un certificat d'authenticité signé (`engagementCertificat`, story 3.6). */
+  certificat:  boolean
   tags:        string[]
   featured:    boolean
   sold:        boolean

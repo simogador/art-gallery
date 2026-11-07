@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { formatPrice } from '@/lib/utils/artworks'
 import { Button, Badge, Modal, UniteToggle, useUnite } from '@/components/ui'
@@ -12,15 +12,8 @@ import { ArtworkImage } from '@/components/ui'
 import { photosDeFiche } from '@/lib/catalogue/mappers'
 import { CarrouselPhotos } from './CarrouselPhotos'
 import { RangeeFiche } from './RangeeFiche'
-import type { Artwork, Artist } from '@/lib/types'
-
-type Tab = 'oeuvre' | 'artiste' | 'provenance'
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'oeuvre',     label: 'L\'œuvre' },
-  { id: 'artiste',    label: 'L\'artiste' },
-  { id: 'provenance', label: 'Provenance' },
-]
+import { SectionsFiche } from './SectionsFiche'
+import type { Artwork } from '@/lib/types'
 
 /* ─── Variants ────────────────────────────────────────────────────────────── */
 
@@ -37,13 +30,11 @@ const fadeUp = {
 interface Props {
   artwork: Artwork
   related: Artwork[]
-  artist:  Artist | null
   /** Pays de livraison du visiteur (cookie `pays`, France par défaut), nom français compris (story 3.3). */
   pays:    { code: string; nom: string }
 }
 
-export function ArtworkDetail({ artwork, related, artist, pays }: Props) {
-  const [activeTab,    setActiveTab]    = useState<Tab>('oeuvre')
+export function ArtworkDetail({ artwork, related, pays }: Props) {
   const [contactOpen,  setContactOpen]  = useState(false)
   const [formSent,     setFormSent]     = useState(false)
   const [loading,      setLoading]      = useState(false)
@@ -233,45 +224,9 @@ export function ArtworkDetail({ artwork, related, artist, pays }: Props) {
                 </div>
               </motion.div>
 
-              {/* Tabs */}
+              {/* Story 3.6 : les quatre questions (sections natives, seule la première ouverte). */}
               <motion.div custom={7} variants={fadeUp}>
-                <div className="flex border-b border-neutral-200 mb-6">
-                  {TABS.map(({ id, label }) => (
-                    <button
-                      key={id}
-                      onClick={() => setActiveTab(id)}
-                      className={cn(
-                        'relative px-4 py-3',
-                        'font-sans text-xs uppercase tracking-widest',
-                        'transition-colors duration-300',
-                        activeTab === id ? 'text-foreground' : 'text-neutral-400 hover:text-neutral-600',
-                      )}
-                    >
-                      {label}
-                      {activeTab === id && (
-                        <motion.div
-                          layoutId="artwork-tab"
-                          className="absolute bottom-0 left-0 right-0 h-px bg-foreground"
-                          transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                        />
-                      )}
-                    </button>
-                  ))}
-                </div>
-
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {activeTab === 'oeuvre'     && <TabOeuvre artwork={artwork} />}
-                    {activeTab === 'artiste'    && <TabArtiste artist={artist} artworkArtist={artwork.artist} />}
-                    {activeTab === 'provenance' && <TabProvenance artwork={artwork} />}
-                  </motion.div>
-                </AnimatePresence>
+                <SectionsFiche key={artwork.id} artwork={artwork} pays={pays} />
               </motion.div>
             </motion.div>
 
@@ -364,115 +319,6 @@ export function ArtworkDetail({ artwork, related, artist, pays }: Props) {
         )}
       </Modal>
     </>
-  )
-}
-
-/* ─── Tabs ────────────────────────────────────────────────────────────────── */
-
-function TabOeuvre({ artwork }: { artwork: Artwork }) {
-  return (
-    <div className="space-y-5">
-      <div className="font-sans text-sm text-neutral-600 leading-relaxed text-pretty whitespace-pre-line">
-        {artwork.description}
-      </div>
-      <div className="flex flex-wrap gap-2 pt-2">
-        {artwork.tags.map((tag) => (
-          <span key={tag} className="font-sans text-[10px] uppercase tracking-widest border border-neutral-200 text-neutral-500 px-3 py-1 rounded-sm">
-            {tag}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function TabArtiste({ artist, artworkArtist }: { artist: Artist | null | undefined; artworkArtist: string }) {
-  if (!artist) {
-    return <p className="font-sans text-sm text-neutral-500">{artworkArtist}</p>
-  }
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        {/* Monogram avatar */}
-        <div className={cn(
-          'w-14 h-14 rounded-sm flex-shrink-0 overflow-hidden flex items-center justify-center',
-          'bg-gradient-to-br', artist.gradient,
-        )}>
-          <span className="font-serif text-xl font-light text-background/70">
-            {artist.name.split(' ').map((n: string) => n[0]).join('')}
-          </span>
-        </div>
-        <div>
-          <p className="font-serif text-lg font-light text-foreground">{artist.name}</p>
-          <p className="font-sans text-xs text-neutral-400 uppercase tracking-widest mt-0.5">
-            {artist.discipline} · {artist.country}
-          </p>
-        </div>
-      </div>
-      <p className="font-sans text-sm text-neutral-600 leading-relaxed text-pretty">
-        {artist.bio}
-      </p>
-      <div className="grid grid-cols-3 gap-3 pt-2">
-        {[
-          { label: 'Œuvres',        value: artist.worksCount },
-          { label: 'Expositions',   value: artist.exhibitions },
-          { label: 'Actif depuis',  value: artist.yearsActive.split('—')[0].trim() },
-        ].map(({ label, value }) => (
-          <div key={label} className="bg-neutral-50 border border-neutral-100 rounded-sm px-3 py-2 text-center">
-            <p className="font-serif text-lg font-light text-foreground">{value}</p>
-            <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-400">{label}</p>
-          </div>
-        ))}
-      </div>
-      <div className="pt-4">
-        <Link
-          href={`/artistes/${artist.id}`}
-          className="inline-flex items-center gap-1.5 font-sans text-xs uppercase tracking-widest text-gold hover:underline underline-offset-4"
-        >
-          Voir le profil complet
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Link>
-      </div>
-    </div>
-  )
-}
-
-function TabProvenance({ artwork }: { artwork: Artwork }) {
-  return (
-    <div className="space-y-4">
-      {[
-        {
-          icon: <CertificateIcon />,
-          title: 'Certificat d\'authenticité',
-          desc: 'Chaque œuvre est livrée avec un certificat numéroté, signé par l\'artiste, attestant de son authenticité et de sa provenance directe.',
-        },
-        {
-          icon: <ShieldIcon />,
-          title: 'Garantie galerie',
-          desc: `Acquise directement auprès de ${artwork.artist} par la galerie en ${artwork.year}. Aucun intermédiaire. Provenance certifiée.`,
-        },
-        {
-          icon: <TruckIcon />,
-          title: 'Transport & assurance',
-          desc: 'Livraison assurée à 100 % de la valeur d\'achat. Emballage spécialisé par des transporteurs d\'art agréés, partout en Europe.',
-        },
-        {
-          icon: <RotateIcon />,
-          title: 'Droit de retour',
-          desc: 'Vous disposez de 14 jours pour retourner l\'œuvre si elle ne correspond pas à vos attentes, sans justification requise.',
-        },
-      ].map(({ icon, title, desc }) => (
-        <div key={title} className="flex gap-4 p-4 bg-neutral-50 border border-neutral-100 rounded-sm">
-          <div className="flex-shrink-0 text-gold mt-0.5">{icon}</div>
-          <div>
-            <p className="font-sans text-sm font-medium text-foreground">{title}</p>
-            <p className="font-sans text-xs text-neutral-500 mt-1 leading-relaxed">{desc}</p>
-          </div>
-        </div>
-      ))}
-    </div>
   )
 }
 
@@ -636,10 +482,6 @@ const ZoomIcon           = () => icon('M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 
 const HeartIcon          = () => icon('M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z')
 const ShareIcon          = () => icon('M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13')
 const CheckCircleIcon    = () => icon('M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3', { size: 28 })
-const CertificateIcon    = () => icon('M12 15l-2 5-3-3-5 2 2-5-3-3 5-2 2-5 3 3 5-2-2 5zM15 7a3 3 0 1 0 6 0 3 3 0 0 0-6 0z')
-const ShieldIcon         = () => icon('M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z')
-const TruckIcon          = () => icon('M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm11 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z')
-const RotateIcon         = () => icon('M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15')
 const CartIcon           = () => icon('M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0')
 const CheckIcon          = () => icon('M20 6 9 17l-5-5')
 const TrashIcon          = () => icon('M3 6h18M19 6l-1 14H6L5 6M9 6V4h6v2')

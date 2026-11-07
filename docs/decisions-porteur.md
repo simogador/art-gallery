@@ -84,6 +84,7 @@
 | 2026-11-05 | Textes de livraison (story 3.3) : « Pas de livraison vers ce pays (Canada) » et « Prix et délais recalculés : Canada », pour éviter l'article manquant devant le nom du pays | Choix du porteur (relecture de la story 3.3) |
 | 2026-11-06 | Journal d'événements (story 3.4) : le cache des pages publiques est effacé juste avant de répondre à l'artiste ou à l'équipe (et non après la réponse, perdu avec Next.js 14) ; les modifications sans événement (prix, titre, photos, accord ou activité d'un artiste) apparaissent au plus 60 s plus tard | Choix du porteur (relecture de la story 3.4) ; passage après la réponse avec la montée de Next.js (story 5.3) |
 | 2026-11-07 | Format des œuvres (story 3.5, UXQ-7) : selon le plus grand côté, petit < 40 cm, moyen de 40 à 100 cm, grand > 100 cm ; seuils en constantes de `src/lib/reglages`, modifiables par une PR (pas d'écran d'administration : écart assumé avec « sans changement de code » du critère de l'epic) | Choix du porteur (spec de la story 3.5) |
+| 2026-11-07 | Fiche œuvre (story 3.6) : les onglets Œuvre / Artiste / Provenance sont remplacés par les quatre sections dépliables ; « Sélectionnée par Errancy » s'affiche pour toute œuvre visible ; la mention du certificat signé seulement si l'artiste s'y est engagé à son dépôt ; aucune durée ni gratuité de retour (OQ-2, OQ-4) | Choix du porteur (spec de la story 3.6) |
 
 ## Conséquences à traiter (relevées le 2026-10-23, à valider en PRD et architecture)
 
