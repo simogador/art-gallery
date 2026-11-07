@@ -2,7 +2,8 @@
 title: 'Story 3.7 — Fiche d''une œuvre vendue ou retirée'
 type: 'feature'
 created: '2026-11-07'
-status: 'draft'
+status: 'done'
+baseline_commit: '1bf3fc4ab43038c5a8d87f328d9721e65fda7765'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.md']
@@ -58,12 +59,12 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/app/galerie/[id]/ArtworkDetail.tsx` -- retirer le prix barré ; pour `sold`, afficher la case Taille seule, masquer prix livré et délai, boutons et sections d'achat.
-- [ ] `src/app/galerie/[id]/SectionsFiche.tsx`, `RangeeFiche.tsx` -- mode œuvre vendue (Taille seule ; deux sections d'achat absentes).
-- [ ] `src/app/galerie/[id]/ArtworkDetail.tsx` (`RelatedSection`) -- pour une œuvre vendue, titre dédié et lien « Découvrir [artiste] ».
-- [ ] `src/lib/i18n/fr.ts` -- textes.
-- [ ] `tests/fiche.test.ts` -- matrice : vendue, vendue ailleurs, aucun prix dans le HTML, disponible inchangée, retirée (redirection), inconnue (404).
-- [ ] `AGENTS.md` -- règles de la fiche vendue.
+- [x] `src/app/galerie/[id]/ArtworkDetail.tsx` -- retirer le prix barré ; pour `sold`, afficher la case Taille seule, masquer prix livré et délai, boutons et sections d'achat.
+- [x] `src/app/galerie/[id]/SectionsFiche.tsx`, `RangeeFiche.tsx` -- mode œuvre vendue (Taille seule ; deux sections d'achat absentes).
+- [x] `src/app/galerie/[id]/ArtworkDetail.tsx` (`RelatedSection`) -- pour une œuvre vendue, titre dédié et lien « Découvrir [artiste] ».
+- [x] `src/lib/i18n/fr.ts` -- textes.
+- [x] `tests/fiche.test.ts` -- matrice : vendue, vendue ailleurs, aucun prix dans le HTML, disponible inchangée, retirée (redirection), inconnue (404).
+- [x] `AGENTS.md` -- règles de la fiche vendue.
 
 **Acceptance Criteria:**
 - Given une œuvre `vendue` ou `vendue_ailleurs`, when la fiche s'ouvre, then « Vendue » est affiché, sans aucun montant ni délai d'achat, avec des œuvres proches et un lien vers l'artiste.
@@ -75,6 +76,20 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Constat (relecteurs) | Verdict | Preuve | Suite |
+|---|---|---|---|---|
+| 1 | Fiche vendue sans dimensions : case Taille seule avec « — » (E) | low | hauteur ou largeur nulle : une case vide sans intérêt | patch : ne rien afficher |
+| 2 | Tests : bouton « Être notifié » retiré non épinglé, euro sans chiffre accolé non détecté, « vendue ailleurs » non rendu en HTML (B, E, V) | medium | aucune assertion ne tomberait si le bouton ou un montant revenait | patch : tests |
+| 3 | Cartes des œuvres proches affichent leur propre prix livré (E) | false | ce sont d'autres œuvres, à vendre ; l'exigence « aucun prix » vise l'œuvre vendue | rejeté |
+| 4 | Lien vers l'artiste mène à un 404 si sa page n'est pas publique (B, V, E) | false | l'œuvre vendue est visible (non retirée), donc l'artiste a au moins une œuvre visible et sa page est publique ; `artistId` est le slug (mapper) | rejeté |
+| 5 | Code mort : branche « M'alerter » de la fenêtre de contact et état associé (B, V, E) | low | rattaché à la barre d'actions de l'Epic 4, qui le refera | rejeté |
+| 6 | « Sauvegarder » et « Partager » encore visibles sur une œuvre vendue (B) | low | hors du périmètre de la spec (actions : Epic 4) | rejeté |
+| 7 | Prix livré calculé pour rien sur une œuvre vendue ; drapeau `vendue` répété dans trois composants (B) | low | surcoût négligeable ; refactor plus large que le correctif | rejeté |
+| 8 | Chaînes en dur de la section proches ; clé `pourriezAimer` mal rangée ; apostrophes mêlées (B) | low | fichier déjà listé dans les exceptions de textes (3.8) | rejeté |
+| 9 | Pas de `noindex` ni de données structurées pour l'œuvre vendue (B) | low | référencement : story 3.8 | rejeté |
+| 10 | Redirection 308 et 404 de `page.tsx` non testées au niveau de la page (B, E) | false | `page.tsx` inchangé ; comportements déjà couverts (`tests/disponibilite.test.ts`, `catalogue-reel.test.ts`, `disponibilite-artiste.test.ts`) | rejeté |
+| 11 | Statuts spec / sprint, horodatage, renvoi vers `decisions-porteur.md`, `aria-label` redondant (B) | false | sprint passe en `review` à la présentation ; décision déjà consignée dans `docs/decisions-porteur.md` | rejeté |
 
 ## Design Notes
 

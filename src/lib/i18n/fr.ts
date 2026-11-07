@@ -53,6 +53,11 @@ export type Dictionnaire = {
   readonly fiche: {
     readonly coupDeCoeur: string
     readonly etat: { readonly disponible: string; readonly vendue: string }
+    readonly vendue: {
+      readonly proches: string
+      readonly pourriezAimer: string
+      readonly lienArtiste: (artiste: string) => string
+    }
     readonly photos: {
       readonly carrousel: string
       readonly legendes: {
@@ -214,6 +219,12 @@ export const fr = {
   fiche: {
     coupDeCoeur: 'Coup de cœur',
     etat: { disponible: 'Disponible', vendue: 'Vendue' },
+    // Story 3.7 : section d'œuvres proches ; titre propre à une œuvre vendue et lien vers l'artiste.
+    vendue: {
+      proches: 'D’autres œuvres à découvrir',
+      pourriezAimer: 'Vous pourriez aimer',
+      lienArtiste: (artiste: string) => `Découvrir ${artiste}`,
+    },
     photos: {
       carrousel: 'Photos de l’œuvre',
       legendes: {
