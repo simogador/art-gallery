@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
-import { formatPrice } from '@/lib/utils/artworks'
 import { Button, Badge, Modal, UniteToggle, useUnite } from '@/components/ui'
 import { formaterDimensionsDouble, formaterMontant, fr } from '@/lib/i18n'
 import { useCartStore } from '@/lib/store/cart'
@@ -140,17 +139,8 @@ export function ArtworkDetail({ artwork, related, pays }: Props) {
 
               {/* Story 3.5 : rangée Taille / Prix livré / Délai (prix livré calculé par le module livraison). */}
               <motion.div custom={4} variants={fadeUp} className="mb-4">
-                {artwork.sold ? (
-                  <div>
-                    <p className="font-sans text-xs uppercase tracking-widest text-neutral-600 mb-1">Prix de vente</p>
-                    <p className="font-serif text-3xl font-light text-neutral-600 line-through decoration-1">
-                      {formatPrice(artwork.price)}
-                    </p>
-                    {tailles && <p className="font-sans text-sm text-foreground mt-2">{tailles[0]}</p>}
-                  </div>
-                ) : (
-                  <RangeeFiche artwork={artwork} pays={pays} />
-                )}
+                {/* Œuvre vendue (story 3.7) : la case Taille seule, aucun prix ni délai. */}
+                <RangeeFiche artwork={artwork} pays={pays} vendue={artwork.sold} />
               </motion.div>
 
               {/* Technique, médium, année ; bascule cm / in */}
@@ -208,11 +198,7 @@ export function ArtworkDetail({ artwork, related, pays }: Props) {
                       Prendre rendez-vous
                     </Button>
                   </>
-                ) : (
-                  <Button variant="ghost" size="lg" fullWidth onClick={() => setContactOpen(true)}>
-                    Être notifié d&apos;une œuvre similaire
-                  </Button>
-                )}
+                ) : null}
                 <div className="flex items-center gap-3 pt-1">
                   <button className="flex items-center gap-2 font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200">
                     <HeartIcon /> Sauvegarder
@@ -226,7 +212,7 @@ export function ArtworkDetail({ artwork, related, pays }: Props) {
 
               {/* Story 3.6 : les quatre questions (sections natives, seule la première ouverte). */}
               <motion.div custom={7} variants={fadeUp}>
-                <SectionsFiche key={artwork.id} artwork={artwork} pays={pays} />
+                <SectionsFiche key={artwork.id} artwork={artwork} pays={pays} vendue={artwork.sold} />
               </motion.div>
             </motion.div>
 
@@ -246,7 +232,7 @@ export function ArtworkDetail({ artwork, related, pays }: Props) {
 
         {/* ── Related artworks ── */}
         {related.length > 0 && (
-          <RelatedSection artworks={related} paysNom={pays.nom} />
+          <RelatedSection artworks={related} paysNom={pays.nom} vendue={artwork.sold} artiste={{ slug: artwork.artistId, nom: artwork.artist }} />
         )}
       </div>
 
@@ -324,7 +310,9 @@ export function ArtworkDetail({ artwork, related, pays }: Props) {
 
 /* ─── Related section ─────────────────────────────────────────────────────── */
 
-function RelatedSection({ artworks, paysNom }: { artworks: Artwork[]; paysNom: string }) {
+function RelatedSection({ artworks, paysNom, vendue, artiste }: {
+  artworks: Artwork[]; paysNom: string; vendue: boolean; artiste: { slug: string; nom: string }
+}) {
   return (
     <section className="border-t border-neutral-200 py-16 md:py-20 bg-neutral-50">
       <div className="container-premium">
@@ -336,7 +324,9 @@ function RelatedSection({ artworks, paysNom }: { artworks: Artwork[]; paysNom: s
           className="mb-10"
         >
           <p className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-2">Sélection</p>
-          <h2 className="font-serif text-2xl font-light text-foreground">Vous pourriez aimer</h2>
+          <h2 className="font-serif text-2xl font-light text-foreground">
+            {vendue ? fr.fiche.vendue.proches : fr.fiche.vendue.pourriezAimer}
+          </h2>
           <div className="divider mt-3" />
         </motion.div>
 
@@ -398,9 +388,18 @@ function RelatedSection({ artworks, paysNom }: { artworks: Artwork[]; paysNom: s
         </div>
 
         <div className="flex justify-center mt-12">
-          <Button variant="ghost" size="lg" rightIcon={<ArrowIcon />}>
-            <Link href="/#galerie">Toute la collection</Link>
-          </Button>
+          {vendue ? (
+            <Link
+              href={`/artistes/${artiste.slug}`}
+              className="inline-flex min-h-touch-target items-center font-sans text-sm text-foreground underline underline-offset-4"
+            >
+              {fr.fiche.vendue.lienArtiste(artiste.nom)}
+            </Link>
+          ) : (
+            <Button variant="ghost" size="lg" rightIcon={<ArrowIcon />}>
+              <Link href="/#galerie">Toute la collection</Link>
+            </Button>
+          )}
         </div>
       </div>
     </section>

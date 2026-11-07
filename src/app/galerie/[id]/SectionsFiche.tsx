@@ -18,9 +18,11 @@ type Props = {
     'artist' | 'artistId' | 'description' | 'certificat' | 'hauteurMm' | 'largeurMm' | 'profondeurMm' | 'prixLivre'
   >
   pays: { code: string; nom: string }
+  /** Œuvre vendue (story 3.7) : sans « Combien au total ? » ni « Quand la recevrai-je ? ». */
+  vendue?: boolean
 }
 
-export function SectionsFiche({ artwork, pays }: Props) {
+export function SectionsFiche({ artwork, pays, vendue = false }: Props) {
   const t = fr.fiche.sections
   const textes = fr.fiche.rangee
   const unite = useUnite()
@@ -47,6 +49,7 @@ export function SectionsFiche({ artwork, pays }: Props) {
         )}
       </Section>
 
+      {!vendue && (
       <Section titre={t.total.titre}>
         {prix?.livree ? (
           <>
@@ -60,7 +63,9 @@ export function SectionsFiche({ artwork, pays }: Props) {
           <NonLivree artiste={artwork.artist} pays={pays.nom} />
         )}
       </Section>
+      )}
 
+      {!vendue && (
       <Section titre={t.quand.titre}>
         {prix?.livree ? (
           <>
@@ -74,6 +79,7 @@ export function SectionsFiche({ artwork, pays }: Props) {
           <NonLivree artiste={artwork.artist} pays={pays.nom} />
         )}
       </Section>
+      )}
 
       <Section titre={t.serieux.titre}>
         {histoire && (

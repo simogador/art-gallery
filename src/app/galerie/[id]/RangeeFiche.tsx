@@ -14,9 +14,11 @@ import type { Artwork } from '@/lib/types'
 type Props = {
   artwork: Pick<Artwork, 'artist' | 'hauteurMm' | 'largeurMm' | 'profondeurMm' | 'prixLivre'>
   pays: { code: string; nom: string }
+  /** Œuvre vendue (story 3.7) : la case Taille seule, ni prix livré, ni délai, ni choix du pays. */
+  vendue?: boolean
 }
 
-export function RangeeFiche({ artwork, pays }: Props) {
+export function RangeeFiche({ artwork, pays, vendue = false }: Props) {
   const textes = fr.fiche.rangee
   const unite = useUnite()
   const tailles = formaterDimensionsDouble(artwork, unite)
@@ -24,11 +26,15 @@ export function RangeeFiche({ artwork, pays }: Props) {
   const format = formatOeuvre(artwork.hauteurMm, artwork.largeurMm)
   const prix = artwork.prixLivre
   const livree = prix?.livree === true
+  const sansTaille = vendue && !tailles
   const sansPrix = !prix || (prix.livree === false && prix.raison === 'sans_prix')
+
+  // Œuvre vendue sans dimensions : rien à afficher (pas de case Taille vide).
+  if (sansTaille) return null
 
   return (
     <div>
-      <dl aria-label={textes.libelle} className="grid grid-cols-3 gap-[6px]">
+      <dl aria-label={vendue ? textes.taille : textes.libelle} className={vendue ? 'grid grid-cols-1 gap-[6px]' : 'grid grid-cols-3 gap-[6px]'}>
         <Case libelle={textes.taille}>
           <dd className="font-sans text-body-strong text-foreground">{tailles?.[0] ?? MONTANT_ABSENT}</dd>
           {tailles && (
@@ -43,6 +49,7 @@ export function RangeeFiche({ artwork, pays }: Props) {
           )}
         </Case>
 
+        {!vendue && (
         <Case libelle={fr.livraison.prixLivre}>
           {prix?.livree ? (
             <dd className="font-sans text-body-strong text-foreground">{formaterMontant(prix.totalCentimes, prix.devise)}</dd>
@@ -55,7 +62,9 @@ export function RangeeFiche({ artwork, pays }: Props) {
             </>
           )}
         </Case>
+        )}
 
+        {!vendue && (
         <Case libelle={textes.delai}>
           {prix?.livree ? (
             <>
@@ -66,11 +75,12 @@ export function RangeeFiche({ artwork, pays }: Props) {
             <dd className="font-sans text-body-strong text-foreground">{MONTANT_ABSENT}</dd>
           )}
         </Case>
+        )}
       </dl>
 
       {/* Pays choisi et « Modifier » (change le pays, recalcule côté serveur) puis mention des droits. */}
-      <PaysLivraison code={pays.code} nom={pays.nom} className="mt-2" />
-      {livree && <p className="mt-1 font-sans text-caption text-neutral-600">{fr.livraison.droitsNonInclus}</p>}
+      {!vendue && <PaysLivraison code={pays.code} nom={pays.nom} className="mt-2" />}
+      {!vendue && livree && <p className="mt-1 font-sans text-caption text-neutral-600">{fr.livraison.droitsNonInclus}</p>}
     </div>
   )
 }

@@ -182,11 +182,49 @@ describe('délai et fiche complète', () => {
     }
   })
 
-  it('œuvre vendue : taille affichée, pas de rangée', () => {
-    const html = fiche(oeuvre({ sold: true }))
+  it('œuvre vendue ou vendue ailleurs : « Vendue », taille seule, aucun prix ni délai ni section d’achat (story 3.7)', () => {
+    // Même un prix livré résiduel ne doit rien montrer.
+    const html = fiche(oeuvre({ sold: true, prixLivre: livree, description: 'Une histoire.' }))
+    expect(html).toContain('Vendue')
     expect(html).toContain(`76${F}×${F}61${F}cm`)
+    expect(html).toContain('Une histoire.')
     expect(html).not.toContain('Taille, prix livré et délai')
-    expect(html).not.toContain('Délai')
+    for (const interdit of ['Délai', 'Prix livré', 'Combien au total', 'Quand la recevrai-je', 'Prix de vente', 'line-through', 'Droits et taxes', 'Acheter', 'panier']) {
+      expect(html, interdit).not.toContain(interdit)
+    }
+    expect(html).not.toMatch(/\d[\s\u202f]?€/)
+    expect(html).not.toContain(formaterMontant(149000, 'EUR'))
+    expect(html).not.toContain('notifié')
+    expect(html).toContain(fr.fiche.sections.serieux.titre)
+  })
+
+  it('œuvre vendue : œuvres proches avec lien vers l’artiste ; sans œuvre proche, lien conservé dans « Est-ce sérieux ? »', () => {
+    const proche = oeuvre({ id: 'p', title: 'Proche', prixLivre: livree })
+    const avec = renderToStaticMarkup(
+      h(UniteProvider, { initiale: 'cm', children: h(ArtworkDetail, { artwork: oeuvre({ sold: true }), related: [proche], pays }) }),
+    )
+    expect(avec).toContain(fr.fiche.vendue.proches)
+    expect(avec).toContain('href="/artistes/kara"')
+    expect(avec).toContain(fr.fiche.vendue.lienArtiste('Kara'))
+    const sans = fiche(oeuvre({ sold: true }))
+    expect(sans).not.toContain('€')
+    expect(sans).not.toContain(fr.fiche.vendue.proches)
+    expect(sans).toContain('href="/artistes/kara"')
+  })
+
+  it('œuvre vendue sans dimensions : pas de case Taille', () => {
+    const html = fiche(oeuvre({ sold: true, hauteurMm: null, largeurMm: null, profondeurMm: null }))
+    expect(html).not.toContain('<dt')
+    expect(html).not.toContain('Taille, prix livré et délai')
+    expect(html).toContain('Vendue')
+  })
+
+  it('œuvre disponible : rangée à trois cases et quatre sections inchangées', () => {
+    const html = fiche(oeuvre({ prixLivre: livree }))
+    for (const x of ['Taille, prix livré et délai', 'Prix livré', 'Délai', 'Combien au total', 'Quand la recevrai-je', 'Disponible']) {
+      expect(html, x).toContain(x)
+    }
+    expect(html).not.toContain(fr.fiche.vendue.proches)
   })
 
   it('badge « Coup de cœur » pour une œuvre featured', () => {
@@ -368,6 +406,17 @@ describe('base : photos de la fiche', () => {
     await insere('avec-photos')
     await db.query(`UPDATE "Artwork" SET "engagementCertificat" = true WHERE slug = 'avec-photos'`)
     await insere('sans-photos')
+    await insere('vendue-f')
+    await db.query(`UPDATE "Artwork" SET disponibilite = 'vendue_ailleurs' WHERE slug = 'vendue-f'`)
+    await insere('retiree-f')
+    await db.query(`UPDATE "Artwork" SET disponibilite = 'retiree' WHERE slug = 'retiree-f'`)
+    // Artiste avec accord mais sans autre œuvre visible : sa page est introuvable.
+    await db.query(
+      `INSERT INTO "Artist" (id, slug, name, nationality, "birthYear", bio, "imageUrl", "accordSigneLe", "updatedAt")
+       VALUES ('art-g', 'art-g', 'Artiste G', 'MA', 1980, 'Bio', '', now(), now())`,
+    )
+    await insere('retiree-g')
+    await db.query(`UPDATE "Artwork" SET disponibilite = 'retiree', "artistId" = 'art-g' WHERE slug = 'retiree-g'`)
     for (const [type, n] of [['gros_plan', 1], ['video', 2], ['face_lumiere_du_jour', 3], ['mise_en_situation', 4]] as const) {
       await db.query(
         `INSERT INTO "PhotoOeuvre" (id, "artworkId", type, url, "publicId", largeur, hauteur, "updatedAt")
@@ -398,5 +447,23 @@ describe('base : photos de la fiche', () => {
     expect(b?.photos).toEqual([
       { url: 'https://res.cloudinary.com/x/principale.jpg', type: 'principale', largeur: null, hauteur: null },
     ])
+  })
+
+  it('états publics (story 3.7) : vendue lisible, retirée redirigée vers un artiste public, sinon introuvable', async () => {
+    const { getArtworkBySlug, artisteDOeuvreRetiree } = await import('@/lib/catalogue')
+    const vendue = await getArtworkBySlug('vendue-f', 'FR')
+    expect(vendue?.sold).toBe(true)
+    const html = renderToStaticMarkup(
+      h(UniteProvider, { initiale: 'cm', children: h(ArtworkDetail, { artwork: vendue!, related: [], pays }) }),
+    )
+    expect(html).toContain('Vendue')
+    expect(html).not.toContain('€')
+    expect(html).not.toContain('Délai')
+    expect(html).not.toContain('Prix livré')
+    expect(await getArtworkBySlug('retiree-f', 'FR')).toBeNull()
+    expect(await artisteDOeuvreRetiree('retiree-f')).toBe('art-f')
+    expect(await artisteDOeuvreRetiree('retiree-g')).toBeNull()
+    expect(await getArtworkBySlug('inconnue', 'FR')).toBeNull()
+    expect(await artisteDOeuvreRetiree('inconnue')).toBeNull()
   })
 })
