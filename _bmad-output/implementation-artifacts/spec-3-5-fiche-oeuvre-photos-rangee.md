@@ -28,7 +28,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 - Taille : unité choisie d'abord, l'autre dessous, orientation et format.
 - Pays non livré : « Pas de livraison vers [pays] » et « [Artiste] ne livre pas encore [pays]. »
 - Mention « Droits et taxes d'import éventuels non inclus » sous la rangée.
-- Seuils du format : réglage de l'équipe, jamais codés en dur dans un composant.
+- Seuils du format (décision du porteur du 2026-11-07) : plus grand côté, petit < 40 cm, grand > 100 cm, moyen entre les deux ; deux constantes de `src/lib/reglages`, jamais codées en dur dans un composant ; les changer = une PR (pas d'écran d'administration, pas de migration).
 - Règles de `AGENTS.md` : textes dans `fr`, propriétés logiques, cibles 44 px, mouvement coupé sous `prefers-reduced-motion`, pas de `<main>`.
 
 **Never:**
@@ -45,15 +45,11 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 | Pays livré | offre de la zone | prix total, « Modifier », délai « 8 à 12 jours » | — |
 | Pays non livré | `prixLivre` non livrée | case Prix : « Pas de livraison vers [pays] », phrase de l'artiste | — |
 | Dimensions absentes | hauteur ou largeur nulle | case Taille : « — », ni orientation ni format | — |
-| Seuil modifié | l'équipe change un seuil | le format affiché suit, sans changement de code | — |
+| Seuil modifié | une constante de `reglages` change | le format affiché suit, sans toucher à un composant | — |
+| Cas limites | plus grand côté de 40 cm ou de 100 cm exactement | « moyen » (bornes incluses) | — |
 | Photo d'une vidéo | `PhotoOeuvre` de type `video` | exclue du carrousel | — |
 
 </frozen-after-approval>
-
-## Open Questions
-
-- Valeurs des seuils petit / moyen / grand (UXQ-7, jamais fixées par le porteur) — options : A) selon le plus grand côté, petit < 40 cm, moyen de 40 à 100 cm, grand > 100 cm (ordre de grandeur courant en galerie, à corriger ensuite) / B) le porteur donne ses valeurs maintenant.
-- Où l'équipe change ces seuils « sans changement de code » (critère d'acceptation de l'epic) — options : A) deux constantes dans `src/lib/reglages` : une ligne à modifier, mais c'est un changement de code déployé par une PR (comme les délais des stories 2.6 et 2.8) / B) une table et un écran d'administration comme pour les zones : respecte le critère à la lettre, mais ajoute une migration (appliquée par le porteur) et une page d'administration à cette story.
 
 ## Code Map
 
@@ -64,14 +60,14 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 - `src/lib/curation/depot-regles.ts:56-70` -- types et légendes de dépôt ; les légendes visiteur vont dans `fr`.
 - `src/components/ui/{ArtworkImage,PaysLivraison,UniteToggle}.tsx`, `DimensionsChoisies` -- à réutiliser ; `src/lib/livraison/{prix,messages}.ts` -- `PrixLivre`, textes de non-livraison.
 - `src/lib/i18n/fr.ts:53,165` -- clés `fiche`, `livraison` à étendre ; règle `jsx-no-literals` sur la fiche.
-- `src/lib/reglages/index.ts` -- seuils (selon la réponse) ; `eslint/exceptions-textes.cjs`, `tests/exceptions-interface.cjs` -- `ArtworkDetail.tsx` y reste (3.8) ; les nouveaux fichiers doivent passer les deux contrôles.
+- `src/lib/reglages/index.ts` -- seuils de format ; `eslint/exceptions-textes.cjs`, `tests/exceptions-interface.cjs` -- `ArtworkDetail.tsx` y reste (3.8) ; les nouveaux fichiers doivent passer les deux contrôles.
 - `DESIGN.md` `tile-row` (l. 79 et 190) -- trois cases blanches, filet `neutral-300`, liseré or 2 px.
 
 ## Tasks & Acceptance
 
 **Execution:**
 - [ ] `src/lib/catalogue/*`, `src/lib/types/index.ts` -- lire et mapper les photos (images seulement, mise en situation en tête).
-- [ ] `src/lib/reglages/*` (+ migration si option B) -- seuils, orientation (carré à 5 % près) et format, fonction pure.
+- [ ] `src/lib/reglages/*` -- seuils, orientation (carré à 5 % près) et format, fonction pure.
 - [ ] `src/lib/i18n/fr.ts` -- légendes, compteur, boutons, libellés des cases.
 - [ ] `src/app/galerie/[id]/CarrouselPhotos.tsx`, `RangeeFiche.tsx` -- composants, plein écran en `<dialog>` natif, zoom au toucher sans bibliothèque.
 - [ ] `src/app/galerie/[id]/ArtworkDetail.tsx` -- brancher le nouveau haut de fiche.
@@ -81,7 +77,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 **Acceptance Criteria:**
 - Given une œuvre publiée, when la fiche s'ouvre, then photo de mise en situation, titre, disponibilité puis les trois cases s'affichent dans cet ordre.
 - Given le carrousel, when le visiteur balaie ou appuie sur un bouton, then les photos défilent sans automatisme ; un appui ouvre le plein écran avec zoom.
-- Given un seuil modifié, when la fiche se recharge, then le format affiché suit.
+- Given une constante de seuil modifiée, when la fiche se recharge, then le format affiché suit sans changement dans un composant.
 
 ## Implementation Notes
 
