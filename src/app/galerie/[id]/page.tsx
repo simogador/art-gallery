@@ -1,8 +1,10 @@
 import { cookies } from 'next/headers'
 import { notFound, permanentRedirect } from 'next/navigation'
 import type { Metadata } from 'next'
+import { descriptionFiche } from '@/lib/catalogue/mappers'
 import { getArtworkBySlug, getRelatedArtworks, artisteDOeuvreRetiree } from '@/lib/catalogue'
 import { COOKIE_PAYS, lirePays, nomPays } from '@/lib/livraison'
+import { urlAbsolue } from '@/lib/reglages'
 import { ArtworkDetail } from './ArtworkDetail'
 
 // Story 3.3 : la fiche affiche le prix livré vers le pays du visiteur (cookie `pays`, France par
@@ -16,14 +18,18 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const artwork = await getArtworkBySlug(params.id)
   if (!artwork) return { title: 'Œuvre introuvable' }
+  const titre = `${artwork.title} — ${artwork.artist}`
+  const url = urlAbsolue(`/galerie/${artwork.id}`)
+  const description = descriptionFiche(artwork)
+  // Image de partage : la mise en situation (première photo de la fiche), sinon `imageUrl`.
+  const image = (artwork.photos ?? [])[0]?.url ?? artwork.imageUrl ?? undefined
+  const images = image ? [image] : undefined
   return {
-    title: `${artwork.title} — ${artwork.artist}`,
-    description: artwork.description.slice(0, 155),
-    openGraph: {
-      title: `${artwork.title} — ${artwork.artist}`,
-      description: artwork.description.slice(0, 155),
-      type: 'article',
-    },
+    title: titre,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title: titre, description, type: 'article', url, images },
+    twitter: { card: images ? 'summary_large_image' : 'summary', title: titre, description, images },
   }
 }
 

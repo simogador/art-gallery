@@ -66,6 +66,7 @@ type DbArtist = {
   deathYear: number | null
   bio: string
   featured: boolean
+  imageUrl?: string | null
   _count?: { artworks: number }
   artworks?: { medium: string; exhibitions: { exhibitionId: string }[] }[]
 }
@@ -93,6 +94,7 @@ export function mapArtist(a: DbArtist): Artist {
     exhibitions: exhibitionIds.size,
     gradient: gradient(a.slug),
     featured: a.featured,
+    imageUrl: a.imageUrl || null,
   }
 }
 
@@ -115,6 +117,15 @@ type DbArtwork = {
   // Story 3.5 : photos de prise de vue, présentes seulement quand la lecture les demande.
   photos?: { type: string; url: string; largeur: number | null; hauteur: number | null }[]
 } & EtatOeuvre
+
+/* ── Description de la fiche (story 3.8) ────────────────────────────────── */
+
+/** Description : l'histoire (155 caractères) ; sans histoire, artiste, technique et année. */
+export function descriptionFiche(a: { description: string; artist: string; technique: string; year: number }): string {
+  const histoire = a.description.trim().replace(/\s+/g, ' ')
+  if (histoire) return histoire.slice(0, 155)
+  return [a.artist, a.technique, a.year > 0 ? String(a.year) : ''].filter(Boolean).join(', ')
+}
 
 /* ── Photos de la fiche (story 3.5) ─────────────────────────────────────── */
 

@@ -1,3 +1,4 @@
+import { URL_SITE } from '@/lib/reglages'
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import { Header, Footer, MouvementReduit } from '@/components/layout'
@@ -41,6 +42,8 @@ const inter = localFont({
 })
 
 export const metadata: Metadata = {
+  // Story 3.8 : base des adresses relatives (canoniques, images de partage), jamais la requête.
+  metadataBase: new URL(URL_SITE),
   title: {
     default: "Galerie d'Art Premium",
     template: "%s | Galerie d'Art",

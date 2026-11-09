@@ -334,6 +334,21 @@ describe('base : dépôt de l’artiste', () => {
     expect(await enregistrerChamp(ARTISTE as never, 'nouvelle-lune-2', 'titre', 'Nouvelle')).toMatchObject({ depot: { slug: 'nouvelle-2' } })
   })
 
+  it('story 3.8 : le slug d’une œuvre déjà validée ne suit plus le titre', async () => {
+    const { enregistrerChamp } = await import('@/lib/curation')
+    const r = await enregistrerChamp(ARTISTE as never, null, 'titre', 'Avant validation')
+    if (!r.ok) throw new Error(r.code)
+    // Avant validation : le slug suit le titre.
+    expect(await enregistrerChamp(ARTISTE as never, r.depot.slug, 'titre', 'Autre titre')).toMatchObject({ depot: { slug: 'autre-titre' } })
+    await db.query(
+      `INSERT INTO "DecisionCuration" (id, "artworkId", decision) SELECT 'd-1', id, 'valider' FROM "Artwork" WHERE slug = 'autre-titre'`,
+    )
+    expect(await enregistrerChamp(ARTISTE as never, 'autre-titre', 'titre', 'Titre final')).toMatchObject({
+      ok: true,
+      depot: { slug: 'autre-titre', titre: 'Titre final' },
+    })
+  })
+
   it('un slug suffixé n’est gardé que si sa base reste prise par une autre œuvre', async () => {
     const { enregistrerChamp } = await import('@/lib/curation')
     const r = await enregistrerChamp(ARTISTE as never, null, 'titre', 'Nuit 2024')

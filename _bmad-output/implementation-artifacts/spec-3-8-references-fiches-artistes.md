@@ -2,7 +2,8 @@
 title: 'Story 3.8 — Fiches et pages artistes bien référencées'
 type: 'feature'
 created: '2026-11-09'
-status: 'draft'
+status: 'done'
+baseline_commit: '6a1647114f56ed7a33ee076f9fd5e0f276395f40'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.md']
@@ -61,12 +62,12 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/lib/reglages/index.ts`, `src/middleware.ts` -- `URL_SITE` et règle « maintenance active » partagée.
-- [ ] `src/lib/catalogue/` -- `adressesPubliques()`.
-- [ ] `src/app/sitemap.ts` -- sitemap, vide en maintenance.
-- [ ] `src/app/layout.tsx`, `galerie/[id]/page.tsx`, `artistes/[id]/page.tsx` -- métadonnées, canonique, partage.
-- [ ] `src/lib/curation/depot.ts` -- slug figé après validation.
-- [ ] `tests/*` -- matrice ; `AGENTS.md`, `docs/` -- règles et rappel des actes du porteur au lancement.
+- [x] `src/lib/reglages/index.ts`, `src/middleware.ts` -- `URL_SITE` et règle « maintenance active » partagée.
+- [x] `src/lib/catalogue/` -- `adressesPubliques()`.
+- [x] `src/app/sitemap.ts` -- sitemap, vide en maintenance.
+- [x] `src/app/layout.tsx`, `galerie/[id]/page.tsx`, `artistes/[id]/page.tsx` -- métadonnées, canonique, partage.
+- [x] `src/lib/curation/depot.ts` -- slug figé après validation.
+- [x] `tests/*` -- matrice ; `AGENTS.md`, `docs/` -- règles et rappel des actes du porteur au lancement.
 
 **Acceptance Criteria:**
 - Given une fiche ou une page artiste publique, when on lit son HTML, then titre, description, URL canonique en français et balises de partage avec l'image de mise en situation sont présents.
@@ -78,6 +79,21 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Constat (relecteurs) | Verdict | Preuve | Suite |
+|---|---|---|---|---|
+| 1 | Le middleware n'est gardé que par un test de texte source (V, B) | medium | seule une regex vérifie l'absence de l'ancienne fonction ; un appel supprimé laisserait la maintenance sans effet | patch : test de l'appel et des cas d'environnement |
+| 2 | Image de partage : priorité de la mise en situation non testée (V, E) | medium | le test n'exerce que le repli `imageUrl` | patch : test avec `PhotoOeuvre` |
+| 3 | Balises de partage de la page artiste (image, carte Twitter) non testées (V, B) | medium | seuls la canonique et la description sont vérifiées | patch : tests |
+| 4 | Canonique construite sur le paramètre d'adresse (E) | low | `params.id` plutôt que le slug lu | patch (`artwork.id`) |
+| 5 | Titre artiste « Nom — » et description « Nom, » si discipline vide (E) | low | chaînes assemblées sans filtre | patch |
+| 6 | Œuvres publiées par l'ancienne bascule non figées (E, B) | false | une œuvre passée par le dépôt exige une décision « valider » pour publier ; les autres sont des œuvres de démonstration masquées | rejeté |
+| 7 | `URL_SITE` fixe aussi sur les préversions (B) | low | décision de la spec (constante) ; les préversions ne sont pas indexées | rejeté |
+| 8 | Décision du porteur non consignée (B) | false | présente dans `docs/decisions-porteur.md` (commit de la spec) | rejeté |
+| 9 | Statuts spec / sprint (B) | false | le sprint passe en `review` à la présentation | rejeté |
+| 10 | JSON-LD, `noindex` des pages introuvables, titre racine, `og:locale` (B, E) | low | JSON-LD exclu par la spec ; `locale` et `siteName` déjà dans le layout | rejeté |
+| 11 | Coupe à 155 caractères au milieu d'un mot ; aide dupliquée (B, E) | low | cosmétique ; Google réécrit la description | rejeté |
+| 12 | Sitemap en erreur 500 si la base est injoignable ; `MAINTENANCE_MODE` non normalisé ; cache dans le test ; `lastModified` non asserté (E, V) | low | comportement identique à l'existant ou sans effet visible | rejeté |
 
 ## Design Notes
 

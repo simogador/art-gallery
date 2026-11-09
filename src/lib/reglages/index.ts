@@ -7,6 +7,25 @@ export function lot2Ouvert(env: Record<string, string | undefined> = process.env
   return env.LOT2_OUVERT?.trim().toLowerCase() === 'oui'
 }
 
+// Adresse publique du site (story 3.8, NFR-2) : base des adresses canoniques et du sitemap, jamais
+// la requête. Changer de domaine = une PR.
+export const URL_SITE = 'https://www.errancy.art'
+
+/** Adresse absolue d'une page du site (`chemin` commence par « / »). */
+export function urlAbsolue(chemin: string): string {
+  return `${URL_SITE}${chemin}`
+}
+
+// Maintenance active (story 3.8) : règle partagée par le middleware et le sitemap. Active en
+// production Vercel sauf MAINTENANCE_MODE=off ; MAINTENANCE_MODE=on la force ; aperçus et dev : site réel.
+export function maintenanceActive(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  if (env.MAINTENANCE_MODE === 'off') return false
+  if (env.MAINTENANCE_MODE === 'on') return true
+  return env.VERCEL_ENV === 'production'
+}
+
 // Limitation des envois du formulaire « Me notifier » de la page de maintenance (FR-35) :
 // au plus `parIp` envois par adresse IP et `parEmail` par e-mail sur `fenetreMinutes`.
 export const LIMITES_INSCRIPTION_OUVERTURE = { fenetreMinutes: 60, parIp: 10, parEmail: 3 } as const
