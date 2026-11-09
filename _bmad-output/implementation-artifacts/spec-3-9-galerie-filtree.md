@@ -2,7 +2,8 @@
 title: 'Story 3.9 — Galerie filtrée pour un mur et un budget'
 type: 'feature'
 created: '2026-11-09'
-status: 'draft'
+status: 'done'
+baseline_commit: 'b0d1af2d1275800c038a51d29fa009472d310988'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.md']
@@ -61,11 +62,11 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/lib/catalogue/filtres.ts`, `galerie.ts`, `mappers.ts`, `types` -- filtres, tri, pagination, champs exposés.
-- [ ] `src/app/galerie/page.tsx` et composants -- formulaire « Modifier les filtres », puces, ligne de résultats, grille, vignette, « Afficher plus d'œuvres ».
-- [ ] `src/app/galerie/loading.tsx`, `error.tsx` -- squelettes et erreur avec « Réessayer ».
-- [ ] `src/lib/i18n/fr.ts` -- textes ; retirer l'ancien `GalleryPage.tsx` et ses entrées d'exceptions.
-- [ ] `tests/galerie.test.ts` -- matrice, équivalence prix galerie / fiche, adresses ; `AGENTS.md`.
+- [x] `src/lib/catalogue/filtres.ts`, `galerie.ts`, `mappers.ts`, `types` -- filtres, tri, pagination, champs exposés.
+- [x] `src/app/galerie/page.tsx` et composants -- formulaire « Modifier les filtres », puces, ligne de résultats, grille, vignette, « Afficher plus d'œuvres ».
+- [x] `src/app/galerie/loading.tsx`, `error.tsx` -- squelettes et erreur avec « Réessayer ».
+- [x] `src/lib/i18n/fr.ts` -- textes ; retirer l'ancien `GalleryPage.tsx` et ses entrées d'exceptions.
+- [x] `tests/galerie.test.ts` -- matrice, équivalence prix galerie / fiche, adresses ; `AGENTS.md`.
 
 **Acceptance Criteria:**
 - Given `/galerie` avec des filtres, when la page s'affiche, then chaque filtre actif est une puce qui le retire et la ligne « N œuvres · prix livré [pays] » est juste.
@@ -77,6 +78,23 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Constat (relecteurs) | Verdict | Preuve | Suite |
+|---|---|---|---|---|
+| 1 | `loading.tsx` et `error.tsx` de `/galerie` s'appliquent aussi à la fiche `/galerie/[id]` : squelette et message de galerie sur une fiche (B, E) | high | convention Next : ces fichiers couvrent les segments enfants ; la fiche affichait « La galerie ne s'est pas chargée » | patch : `loading` vide et `error` neutre propres à la fiche |
+| 2 | « Réessayer » ne relance pas la lecture d'une page serveur (B) | medium | en Next 14, `reset()` seul ne refait pas le rendu serveur ; il faut aussi `router.refresh()` en transition | patch |
+| 3 | Nationalité avec espace ou casse différente : option jamais retrouvée (B, E) | low | l'adresse est rognée, les options gardent la chaîne brute | patch : rogner des deux côtés |
+| 4 | Test de la canonique de `/galerie` manquant (V) | medium | aucune assertion ne lit `metadata` | patch |
+| 5 | Filtre format ou orientation sur une œuvre sans dimensions non testé (E) | low | comportement délégué aux fonctions pures | patch : test |
+| 6 | Œuvre réservée comptée comme disponible (B, E) | false | `Artwork.sold` = non disponible (réservée comprise, `mapArtwork`) ; le commentaire est exact | rejeté |
+| 7 | Plafond `MAX_AFFICHAGE` : lien « Afficher plus » qui boucle au-delà de 936 œuvres (E) | low | catalogue très en deçà | rejeté |
+| 8 | Prix maximum énorme ignoré en silence (E) | low | sans conséquence : tout reste affiché | rejeté |
+| 9 | Annonce `aria-live` et focus après « Afficher plus » (B) | low | la navigation met le nœud à jour ; amélioration d'accessibilité hors critère | rejeté |
+| 10 | Devise ignorée par le filtre de prix (B) | low | seule l'offre en euros existe (`devise_differente` écarte le reste) | rejeté |
+| 11 | Filtrage en mémoire, sans cache ni seuil (B) | low | décision de la spec (volume d'une galerie) | rejeté |
+| 12 | Canonique unique pour les variantes filtrées, pas de `noindex` ; titre « Collection » en dur (B, E) | low | comportement voulu pour éviter les doublons ; sans risque | rejeté |
+| 13 | Nettoyage des lignes de test hors `finally`, test de classes fragile, import en double, retrait de tous les filtres, lien non encodé, `prixLivre` absent (B, E) | low | sans effet visible ou déjà traité (lint vert) | rejeté |
+| 14 | Comportements de l'ancienne page perdus ; clé de cache ; statuts spec / sprint (E, B) | false | suppression voulue par la spec ; seul `getAllArtworks` lit cette clé ; le sprint passe en `review` à la présentation | rejeté |
 
 ## Design Notes
 

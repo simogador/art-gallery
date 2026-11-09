@@ -20,6 +20,11 @@ export interface Artwork {
   year:        number
   medium:      Exclude<ArtMedium, 'Tout'>
   technique:   string
+  /** Ambiance et couleur dominante saisies au dépôt (codes de `curation/depot-regles`) ; galerie, story 3.9. */
+  ambiance?:         string | null
+  couleurDominante?: string | null
+  /** Nationalité saisie de l'artiste (« pays de l'artiste » de la galerie, story 3.9). */
+  paysArtiste?:      string
   price:       number
   /**
    * Prix livré vers le pays du visiteur (story 3.3), calculé par le module livraison ; absent quand

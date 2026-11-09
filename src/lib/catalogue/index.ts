@@ -8,6 +8,7 @@
 export { accueilPublic, type AccueilPublic, type ChiffresAccueil } from './accueil'
 export { getAllArtworks, getArtworkBySlug, getRelatedArtworks, artisteDOeuvreRetiree } from './artworks'
 export { getAllArtists, getArtistBySlug, getArtistArtworksBySlug } from './artists'
+export { lireGalerie, type GalerieLue } from './galerie'
 export { adressesPubliques, type AdressesPubliques } from './adresses'
 export {
   getAllExhibitions,

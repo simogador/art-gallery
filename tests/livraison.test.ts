@@ -703,22 +703,20 @@ describe('base : zones de livraison', () => {
 
     it('galerie : chaque œuvre porte son prix livré vers le pays du cookie', async () => {
       const { default: Galerie } = await import('@/app/galerie/page')
-      const { GalleryPage } = await import('@/app/galerie/GalleryPage')
+      const { lireGalerie } = await import('@/lib/catalogue')
       jar.valeurs.set('pays', 'US')
-      const element = trouverElement(await Galerie(), GalleryPage)
-      if (!element) throw new Error('galerie absente')
-      const props = element.props as Parameters<typeof GalleryPage>[0]
-      expect(props.pays).toEqual({ code: 'US', nom: 'États-Unis' })
-      const par = Object.fromEntries(props.artworks.map((a) => [a.id, a.prixLivre]))
+      const lue = await lireGalerie('US', {})
+      const par = Object.fromEntries(lue.oeuvres.map((a) => [a.id, a.prixLivre]))
       expect(par['moins-chere']).toMatchObject({ livree: true, totalCentimes: 59000, delaiMinJours: 9, delaiMaxJours: 16 })
       expect(par['livree']).toEqual({ livree: false, raison: 'non_livree' })
       expect(par['brouillon']).toBeUndefined()
-      const html = renderToStaticMarkup(await Galerie())
+      const html = renderToStaticMarkup(await Galerie({ searchParams: {} }))
+      expect(html).toContain('prix livré États-Unis')
       expect(html).toContain(`590${F}€`)
       expect(html).toContain('Livrée sous 9 à 16 jours')
       expect(html).toContain('Pas de livraison vers ce pays (États-Unis)')
       const carte = (slug: string) => {
-        const debut = html.indexOf(`>${slug}</h3>`)
+        const debut = html.indexOf(`>${slug}</h2>`)
         return html.slice(debut, html.indexOf('</article>', debut))
       }
       expect(carte('moins-chere')).toContain('Droits et taxes d’import éventuels non inclus')

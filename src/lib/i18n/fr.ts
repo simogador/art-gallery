@@ -118,6 +118,48 @@ export type Dictionnaire = {
     readonly droitsNonInclus: string
     readonly recalcules: (pays: string) => string
   }
+  readonly galerie: {
+    readonly titre: string
+    readonly description: string
+    readonly resultats: (n: number, pays: string) => string
+    readonly modifierFiltres: string
+    readonly filtresActifs: string
+    readonly retirer: (filtre: string) => string
+    readonly croix: string
+    readonly champs: {
+      readonly prixMax: string
+      readonly format: string
+      readonly orientation: string
+      readonly couleur: string
+      readonly ambiance: string
+      readonly technique: string
+      readonly artiste: string
+      readonly paysArtiste: string
+      readonly disponibles: string
+      readonly tri: string
+    }
+    readonly tous: string
+    readonly toutes: string
+    readonly techniques: { readonly peinture: string; readonly sculpture: string; readonly photographie: string; readonly 'art-numerique': string }
+    readonly tris: { readonly defaut: string; readonly 'prix-croissant': string; readonly 'prix-decroissant': string }
+    readonly puces: {
+      readonly prixMax: (montant: string) => string
+      readonly artiste: (nom: string) => string
+      readonly paysArtiste: (pays: string) => string
+      readonly disponibles: string
+    }
+    readonly appliquer: string
+    readonly liste: string
+    readonly vendue: string
+    readonly vide: string
+    readonly retirerDernier: string
+    readonly collectionVide: string
+    readonly afficherPlus: string
+    readonly erreur: string
+    readonly erreurPage: string
+    readonly reessayer: string
+    readonly chargement: string
+  }
 }
 
 export const fr = {
@@ -289,5 +331,49 @@ export const fr = {
     pasDeLivraison: (pays: string) => `Pas de livraison vers ce pays (${pays})`,
     droitsNonInclus: 'Droits et taxes d’import éventuels non inclus',
     recalcules: (pays: string) => `Prix et délais recalculés\u00a0: ${pays}`,
+  },
+  // Story 3.9 : galerie filtrée pour un mur et un budget (décision du porteur du 2026-11-09 : le
+  // texte d'introduction ne promet ni certificat, ni assurance, ni installation).
+  galerie: {
+    titre: 'La collection',
+    description: 'La collection des œuvres choisies par Errancy : peintures, sculptures, photographies et art numérique, avec leur prix livré chez vous.',
+    resultats: (n: number, pays: string) => `${n} ${n > 1 ? 'œuvres' : 'œuvre'}${SEPARATEUR}prix livré ${pays}`,
+    modifierFiltres: 'Modifier les filtres',
+    filtresActifs: 'Filtres actifs',
+    retirer: (filtre: string) => `Retirer le filtre\u00a0: ${filtre}`,
+    croix: '×',
+    champs: {
+      prixMax: 'Prix livré maximum (en euros)',
+      format: 'Format',
+      orientation: 'Orientation',
+      couleur: 'Couleur dominante',
+      ambiance: 'Ambiance',
+      technique: 'Technique',
+      artiste: 'Artiste',
+      paysArtiste: 'Pays de l’artiste',
+      disponibles: 'Disponibles seulement',
+      tri: 'Trier par',
+    },
+    tous: 'Tous',
+    toutes: 'Toutes',
+    techniques: { peinture: 'Peinture', sculpture: 'Sculpture', photographie: 'Photographie', 'art-numerique': 'Art numérique' },
+    tris: { defaut: 'Ordre de la galerie', 'prix-croissant': 'Prix livré croissant', 'prix-decroissant': 'Prix livré décroissant' },
+    puces: {
+      prixMax: (montant: string) => `Jusqu’à ${montant}`,
+      artiste: (nom: string) => nom,
+      paysArtiste: (pays: string) => `Artiste\u00a0: ${pays}`,
+      disponibles: 'Disponibles seulement',
+    },
+    appliquer: 'Afficher les œuvres',
+    liste: 'Œuvres de la collection',
+    vendue: 'Vendue',
+    vide: 'Aucune œuvre ne correspond à ces filtres.',
+    retirerDernier: 'Retirer le dernier filtre',
+    collectionVide: 'Les premières œuvres sont en cours de sélection. Revenez nous voir très vite.',
+    afficherPlus: 'Afficher plus d’œuvres',
+    erreur: 'La galerie ne s’est pas chargée.',
+    erreurPage: 'Cette page ne s’est pas chargée.',
+    reessayer: 'Réessayer',
+    chargement: 'Chargement de la galerie',
   },
 } as const satisfies Dictionnaire

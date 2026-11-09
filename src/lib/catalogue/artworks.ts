@@ -12,11 +12,12 @@ export async function getAllArtworks(codePays?: string): Promise<Artwork[]> {
   // Pages publiques (stories 2.2, 2.9) : œuvres visibles seulement (publiées, non retirées, d'un
   // artiste avec accord signé et actif).
   // Story 3.4 : lignes en cache (étiquette de la liste) ; le prix livré, lui, est calculé à chaque requête.
-  const rows = await enCache(['oeuvres'], [ETIQUETTE_CATALOGUE], () =>
+  // Story 3.9 : la nationalité de l'artiste sert au filtre « pays de l'artiste » de la galerie.
+  const rows = await enCache(['oeuvres', 'nationalite'], [ETIQUETTE_CATALOGUE], () =>
     prisma.artwork.findMany({
       where: VISIBLE,
       orderBy: [{ featured: 'desc' }, { year: 'desc' }],
-      include: { artist: { select: { slug: true, name: true } } },
+      include: { artist: { select: { slug: true, name: true, nationality: true } } },
     }),
   )
   if (codePays === undefined) return rows.map(mapArtwork)
