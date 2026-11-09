@@ -233,6 +233,57 @@ describe('base : règle de visibilité « accord signé requis »', () => {
     expect((profil.artworks as { id: string }[]).map((w) => w.id)).toEqual(['aube'])
   })
 
+  it('story 3.8 : sitemap des fiches publiées non retirées (vendues comprises) et des pages artistes ; vide en maintenance', async () => {
+    await catalogueMixte()
+    await oeuvre('vendue', 'mustapha-timija', 'publiee', 'vendue')
+    const { default: sitemap } = await import('@/app/sitemap')
+    vi.stubEnv('MAINTENANCE_MODE', 'off')
+    try {
+      const urls = (await sitemap()).map((e) => e.url)
+      expect(urls).toEqual([
+        'https://www.errancy.art/',
+        'https://www.errancy.art/galerie',
+        'https://www.errancy.art/artistes',
+        'https://www.errancy.art/galerie/aube',
+        'https://www.errancy.art/galerie/vendue',
+        'https://www.errancy.art/artistes/mustapha-timija',
+      ])
+      vi.stubEnv('MAINTENANCE_MODE', 'on')
+      expect(await sitemap()).toEqual([])
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
+  it('story 3.8 : métadonnées de la fiche et de la page artiste (canonique absolue, partage, repli)', async () => {
+    await catalogueMixte()
+    await db.query(`UPDATE "Artwork" SET description = '', "imageUrl" = 'https://res.cloudinary.com/x/p.jpg' WHERE slug = 'aube'`)
+    const { generateMetadata: fiche } = await import('@/app/galerie/[id]/page')
+    const m = await fiche({ params: { id: 'aube' } })
+    expect(m.title).toBe('Titre aube — Nom mustapha-timija')
+    expect(m.description).toBe('Nom mustapha-timija, Huile sur toile, 2024')
+    expect(m.alternates?.canonical).toBe('https://www.errancy.art/galerie/aube')
+    expect((m.openGraph as { images: string[] }).images).toEqual(['https://res.cloudinary.com/x/p.jpg'])
+    expect((m.twitter as { card: string }).card).toBe('summary_large_image')
+    // (1) Une photo de mise en situation l'emporte sur imageUrl.
+    await db.query(
+      `INSERT INTO "PhotoOeuvre" (id, "artworkId", type, url, "publicId", "updatedAt")
+       VALUES ('ph-1', 'aube', 'mise_en_situation', 'https://res.cloudinary.com/x/situation.jpg', 'errancy/oeuvres/aube/s', now())`,
+    )
+    const m2 = await fiche({ params: { id: 'aube' } })
+    expect((m2.openGraph as { images: string[] }).images[0]).toBe('https://res.cloudinary.com/x/situation.jpg')
+    const { generateMetadata: artiste } = await import('@/app/artistes/[id]/page')
+    const a = await artiste({ params: { id: 'mustapha-timija' } })
+    expect(a.alternates?.canonical).toBe('https://www.errancy.art/artistes/mustapha-timija')
+    expect(a.description).toBe('Bio')
+    expect((a.twitter as { card: string }).card).toBe('summary')
+    await db.query(`UPDATE "Artist" SET "imageUrl" = 'https://res.cloudinary.com/x/portrait.jpg' WHERE slug = 'mustapha-timija'`)
+    const a2 = await artiste({ params: { id: 'mustapha-timija' } })
+    expect((a2.openGraph as { images: string[] }).images).toEqual(['https://res.cloudinary.com/x/portrait.jpg'])
+    expect((a2.twitter as { images: string[] }).images).toEqual(['https://res.cloudinary.com/x/portrait.jpg'])
+    expect((a2.twitter as { card: string }).card).toBe('summary_large_image')
+  })
+
   it('accord effacé ou artiste inactif : ses œuvres et sa page disparaissent du site public', async () => {
     await catalogueMixte()
     const c = await catalogue()

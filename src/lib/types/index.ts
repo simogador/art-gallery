@@ -77,4 +77,6 @@ export interface Artist {
   /** Tailwind gradient classes used as portrait placeholder */
   gradient:    string
   featured:    boolean
+  /** Portrait (story 3.8, image de partage) ; absent ou vide : pas d'image. */
+  imageUrl?:   string | null
 }

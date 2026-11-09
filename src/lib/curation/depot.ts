@@ -179,8 +179,13 @@ export function slugifier(texte: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
-/** Slug recalculé depuis le titre tant que l'œuvre est en brouillon ; inchangé sans titre exploitable. */
+/** Slug recalculé depuis le titre tant que l'œuvre est en brouillon et jamais validée ; inchangé sans titre exploitable. */
 async function slugDepuisTitre(tx: Prisma.TransactionClient, oeuvre: OeuvreVerrouillee, titre: string): Promise<string> {
+  // Story 3.8 (décision du porteur du 2026-11-09, NFR-2) : l'adresse d'une œuvre déjà validée par
+  // l'équipe ne change plus, même si son titre change.
+  if (await tx.decisionCuration.findFirst({ where: { artworkId: oeuvre.id, decision: 'valider' }, select: { id: true } })) {
+    return oeuvre.slug
+  }
   const base = slugifier(titre)
   if (!base) return oeuvre.slug
   if (oeuvre.slug === base) return oeuvre.slug

@@ -467,3 +467,20 @@ describe('base : photos de la fiche', () => {
     expect(await artisteDOeuvreRetiree('inconnue')).toBeNull()
   })
 })
+
+describe('story 3.8 : maintenance active et adresse du site (reglages)', () => {
+  it('même règle qu’avant dans le middleware : off, on, sinon production Vercel seulement', async () => {
+    const { maintenanceActive, urlAbsolue, URL_SITE } = await import('@/lib/reglages')
+    expect(maintenanceActive({ MAINTENANCE_MODE: 'off', VERCEL_ENV: 'production' })).toBe(false)
+    expect(maintenanceActive({ MAINTENANCE_MODE: 'on' })).toBe(true)
+    expect(maintenanceActive({ VERCEL_ENV: 'production' })).toBe(true)
+    expect(maintenanceActive({ VERCEL_ENV: 'preview', MAINTENANCE_MODE: 'on' })).toBe(true)
+    expect(maintenanceActive({ VERCEL_ENV: 'preview' })).toBe(false)
+    expect(maintenanceActive({})).toBe(false)
+    expect(URL_SITE).toBe('https://www.errancy.art')
+    expect(urlAbsolue('/galerie/x')).toBe('https://www.errancy.art/galerie/x')
+    const middleware = readFileSync(path.join(RACINE, 'src/middleware.ts'), 'utf8')
+    expect(middleware).toMatch(/import \{[^}]*\bmaintenanceActive\b[^}]*\} from '@\/lib\/reglages'/)
+    expect(middleware).toContain('maintenanceActive(')
+  })
+})
