@@ -401,6 +401,7 @@ model OffreLivraison {
 
 enum UsageJeton {
   invitation
+  desinscription
 }
 
 model Jeton {

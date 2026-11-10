@@ -9,6 +9,7 @@ const NAV = [
   { href: '/dashboard/admin/artistes',     label: 'Artistes',        icon: UserIcon,   exact: false },
   { href: '/dashboard/admin/oeuvres',      label: 'Œuvres',          icon: GridIcon,   exact: false },
   { href: '/dashboard/admin/demandes',     label: 'Demandes',        icon: InboxIcon,  exact: false },
+  { href: '/dashboard/admin/ouverture',    label: 'Ouverture',       icon: MegaphoneIcon, exact: false },
   { href: '/dashboard/admin/zones',        label: 'Zones',           icon: GlobeIcon,  exact: false },
   { href: '/dashboard/admin/utilisateurs', label: 'Utilisateurs',    icon: UsersIcon,  exact: false },
 ] as const
@@ -88,6 +89,9 @@ function UsersIcon({ active }: { active: boolean }) {
 }
 function InboxIcon({ active }: { active: boolean }) {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 1.8 : 1.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12" /><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" /></svg>
+}
+function MegaphoneIcon({ active }: { active: boolean }) {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 1.8 : 1.5} strokeLinecap="round" strokeLinejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l7 4V6L7 10H4a1 1 0 0 0-1 1z" /><path d="M18 9a4 4 0 0 1 0 6" /></svg>
 }
 function BackIcon() {
   return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>

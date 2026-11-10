@@ -32,6 +32,8 @@ type Gabarit = {
   suite: string[]
   /** Afficher l'adresse du lien en clair sous le bouton (invitation). */
   lienEnClair?: string
+  /** Lien discret après la suite (désinscription) : phrase d'introduction et adresse, en clair. */
+  lienSecondaire?: { intro: string; lien: string }
   /** Alerte interne à l'équipe : pas de ligne Conseil WhatsApp (destinataire = l'équipe). */
   sansConseil?: boolean
 }
@@ -45,6 +47,7 @@ function assembler(g: Gabarit): Contenu {
     ...(g.citation ? [`${g.citation.titre}\n${g.citation.texte}`] : []),
     ...(g.bouton ? [`${g.bouton.libelle} : ${g.bouton.lien}`] : []),
     ...g.suite,
+    ...(g.lienSecondaire ? [`${g.lienSecondaire.intro}\n${g.lienSecondaire.lien}`] : []),
     t.signature,
     ...(conseil ? [`${t.conseilWhatsApp} : ${conseil}`] : []),
     t.pied(CONTACT_EQUIPE),
@@ -66,6 +69,9 @@ function assembler(g: Gabarit): Contenu {
       ? `<p style="margin:0 0 16px;font-size:14px">${echapperHtml(t.invitation.lienAlternatif)}<br><a href="${echapperHtml(g.lienEnClair)}">${echapperHtml(g.lienEnClair)}</a></p>`
       : '',
     ...g.suite.map(p),
+    g.lienSecondaire
+      ? `<p style="margin:0 0 16px;font-size:14px">${echapperHtml(g.lienSecondaire.intro)}<br><a href="${echapperHtml(g.lienSecondaire.lien)}">${echapperHtml(g.lienSecondaire.lien)}</a></p>`
+      : '',
     p(t.signature),
     conseil
       ? `<p style="margin:24px 0 0;font-size:14px"><a href="${echapperHtml(conseil)}">${echapperHtml(t.conseilWhatsApp)}</a></p>`
@@ -163,5 +169,20 @@ export function contenuAlerteVisite(p: { numero: string; lien: string }): Conten
     bouton: { libelle: t.bouton, lien: p.lien },
     suite: [t.suite],
     sansConseil: true,
+  })
+}
+
+/**
+ * Annonce de l'ouverture aux contacts de la maintenance (FR-35, story 4.9) : annonce courte, lien vers
+ * l'accueil et lien de désinscription. Rien d'inventé : ni date, ni prix, ni nombre d'œuvres.
+ */
+export function contenuOuverture(p: { lien: string; lienDesinscription: string }): Contenu {
+  const t = fr.courriels.ouverture
+  return assembler({
+    sujet: t.sujet,
+    intro: [t.intro],
+    bouton: { libelle: t.bouton, lien: p.lien },
+    suite: [t.suite],
+    lienSecondaire: { intro: t.desinscription, lien: p.lienDesinscription },
   })
 }

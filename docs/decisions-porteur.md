@@ -98,6 +98,7 @@
 | 2026-11-10 | File des demandes (story 4.6) : le changement d'état ne garde que le dernier (qui et quand) ; les inscriptions « Me prévenir » viendront avec la story 4.5 ; e-mail et téléphone du visiteur visibles directement dans la liste, à l'administrateur seulement | Choix du porteur (spec de la story 4.6) |
 | 2026-11-10 | Barre d'actions de la fiche (story 4.7) : le bouton d'ajout au panier ne reste que Lot 2 ouvert ; une œuvre réservée n'a que le Conseil WhatsApp jusqu'à la story 4.5 ; les boutons inactifs « Sauvegarder » et « Partager » sont retirés | Choix du porteur (spec de la story 4.7) |
 | 2026-11-10 | Mesure du tunnel (story 4.8) : choix de consentement proposé à tous les visiteurs ; modifiable par un lien « Gérer la mesure » du pied de page en attendant la page Cookies (Epic 7) ; identifiant aléatoire en cookie, posé seulement après consentement ; PostHog hébergé dans l'UE (décision du 2026-10-27) | Choix du porteur (spec de la story 4.8) |
+| 2026-11-10 | Annonce de l'ouverture (story 4.9) : l'adresse d'un contact est supprimée dès que son e-mail d'annonce est accepté (une seule annonce, rien d'autre n'est fait de la liste) ; un envoi d'essai à l'adresse de l'administrateur connecté est proposé avant l'envoi réel | Choix du porteur (spec de la story 4.9) |
 
 ## Conséquences à traiter (relevées le 2026-10-23, à valider en PRD et architecture)
 

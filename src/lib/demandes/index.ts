@@ -68,6 +68,19 @@ export {
   type TypeDemande,
 } from './file-regles'
 
+// Annonce de l'ouverture (story 4.9) : contacts de la maintenance, retrait et désinscription.
+export {
+  abandonnerDesinscription,
+  contactsAPrevenir,
+  desinscrire,
+  nombreContactsAPrevenir,
+  preparerDesinscription,
+  retirerContactPrevenu,
+  type ContactAPrevenir,
+  type ResultatContacts,
+  type ResultatNombre,
+} from './ouverture'
+
 function empreinte(type: 'ip' | 'email', valeur: string): string {
   // AUTH_SECRET sert de sel : une empreinte d'IP ne se retrouve pas par simple liste.
   const sel = process.env.AUTH_SECRET ?? ''

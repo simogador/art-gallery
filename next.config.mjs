@@ -13,6 +13,8 @@ const nextConfig = {
     return [
       // `:path*` couvre aussi /auth/invitation (zéro segment).
       { source: '/auth/invitation/:path*', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
+      // Story 4.9 : le lien de désinscription ne se retrouve pas non plus dans un référent.
+      { source: '/auth/desinscription/:path*', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
     ]
   },
   experimental: {

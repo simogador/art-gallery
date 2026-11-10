@@ -203,3 +203,10 @@
   summary: Limiter le débit de `POST /api/mesure` (consentement et événements) pour que les compteurs et les événements ne soient pas gonflables.
   evidence: la route vérifie l'origine mais n'a pas de limite par adresse (les formulaires de demande en ont) ; sans effet sur l'achat, mais fausse les taux.
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-9-annonce-ouverture.md`
+  summary: Rendre stable l'e-mail d'annonce pour qu'une réponse perdue du prestataire n'entraîne pas un second envoi à la relance.
+  evidence: la clé d'idempotence (`ouverture:<contact>:<empreinte du lien>`) change avec chaque lien émis, et l'émission révoque l'ancien ; un lien stable demande un autre schéma de jeton (AD-14). Rare (délai de 8 s du prestataire) ; limite connue dans AGENTS.md.
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-9-annonce-ouverture.md`
+  summary: Ajouter l'en-tête `List-Unsubscribe` aux e-mails d'annonce (désinscription en un clic des messageries).
+  evidence: le port `Courriel` de la story 4.1 n'a pas de champ d'en-têtes ; à ajouter au port et à l'adaptateur.
+
