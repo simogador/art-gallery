@@ -64,7 +64,8 @@ export function lireBudgetEuros(saisie: string): number | null {
   return euros > 0 ? euros : null
 }
 
-function lireTelephone(saisie: string): string | null | 'invalide' {
+/** Téléphone facultatif (partagé avec la demande de visite) : null si vide, « invalide » s'il ne se lit pas. */
+export function lireTelephone(saisie: string): string | null | 'invalide' {
   const propre = saisie.trim()
   if (propre === '') return null
   if (propre.length > LIMITES_SELECTION.telephoneLongueurMax || !/^[\d\s+().-]+$/.test(propre)) return 'invalide'

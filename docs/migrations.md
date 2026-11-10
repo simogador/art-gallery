@@ -237,6 +237,51 @@ Retour arrière :
 - 2026-11-10 (story 3.11) : migration `20261110090000_pages_artistes` (avec son empreinte SHA-256) appliquée depuis l'éditeur SQL de Neon sur `preview`, puis sur `production` avant la fusion de la PR #48. Point de restauration production : branche `sauvegarde-avant-3-11-2026-11-10`. Préversion vérifiée avec un artiste de test renseigné par SQL.
 - Retour arrière : l'ancien code ignore les colonnes ajoutées (les pages artistes reprennent leur ancien aspect). Pour retirer la migration (dernier recours, les textes et la photo d'atelier sont perdus) : `ALTER TABLE "Artist" DROP COLUMN "formation", DROP COLUMN "expositions", DROP COLUMN "atelierUrl";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261110090000_pages_artistes';`. Un portrait remplacé depuis l'administration reste dans `imageUrl`.
 
+### Story 4.3 : demande de visite à distance ou en atelier
+
+- Migration : `20261110210000_demandes_visite` (empreinte SHA-256 : `c195799eee8447a0887f1f964f8942d7dca1f1419c208bbb91503aeccd52d47b`). Ajoute le type `TypeVisite` et la table `DemandeVisite` (trois index, clé étrangère facultative vers `Artwork` en `ON DELETE SET NULL` : une œuvre supprimée laisse la demande, sans lien, décision du porteur du 2026-11-10). Ajout seulement, aucune table existante modifiée (la relation `Artwork.demandesVisite` n'existe que dans Prisma). Réutilise le type `EtatDemande` de la story 4.2.
+- Le nouveau code écrit dans cette table à chaque demande de visite et échouerait sans elle : même procédure que les précédentes, branche de sauvegarde datée, `preview` puis production **avant la fusion**, avec la ligne `_prisma_migrations` et l'empreinte SHA-256.
+  ```sql
+  BEGIN;
+  -- CreateEnum
+  CREATE TYPE "TypeVisite" AS ENUM ('distance', 'atelier');
+
+  -- CreateTable
+  CREATE TABLE "DemandeVisite" (
+      "id" TEXT NOT NULL,
+      "artworkId" TEXT,
+      "type" "TypeVisite" NOT NULL,
+      "creneaux" TIMESTAMPTZ(3)[],
+      "fuseau" TEXT NOT NULL,
+      "email" TEXT NOT NULL,
+      "telephone" TEXT,
+      "etat" "EtatDemande" NOT NULL DEFAULT 'nouvelle',
+      "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMPTZ(3) NOT NULL,
+
+      CONSTRAINT "DemandeVisite_pkey" PRIMARY KEY ("id")
+  );
+
+  -- CreateIndex
+  CREATE INDEX "DemandeVisite_etat_createdAt_idx" ON "DemandeVisite"("etat", "createdAt");
+
+  -- CreateIndex
+  CREATE INDEX "DemandeVisite_email_createdAt_idx" ON "DemandeVisite"("email", "createdAt");
+
+  -- CreateIndex
+  CREATE INDEX "DemandeVisite_artworkId_idx" ON "DemandeVisite"("artworkId");
+
+  -- AddForeignKey
+  ALTER TABLE "DemandeVisite" ADD CONSTRAINT "DemandeVisite_artworkId_fkey" FOREIGN KEY ("artworkId") REFERENCES "Artwork"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  INSERT INTO "_prisma_migrations" (id, checksum, migration_name, started_at, finished_at, applied_steps_count)
+  VALUES (gen_random_uuid()::text, 'c195799eee8447a0887f1f964f8942d7dca1f1419c208bbb91503aeccd52d47b',
+          '20261110210000_demandes_visite', now(), now(), 1);
+  COMMIT;
+  ```
+  Vérifiez l'empreinte avec `sha256sum` avant de l'enregistrer.
+- Contrôle (lecture seule) après un essai sur la préversion : `SELECT id, "artworkId", type, etat, fuseau, "createdAt" FROM "DemandeVisite" ORDER BY "createdAt" DESC LIMIT 5;` (les coordonnées s'y trouvent : ne les copiez nulle part).
+- Retour arrière : le code précédent ignore cette table. Pour la retirer (dernier recours, les demandes de visite sont perdues) : `DROP TABLE "DemandeVisite"; DROP TYPE "TypeVisite";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261110210000_demandes_visite';`.
+
 ### Story 4.2 : demande de sélection personnalisée
 
 - Migration : `20261110180000_demandes_selection` (empreinte SHA-256 : `d3f37d261386e95195564a31cc1087827de688375df86a5b5742a6cd737e6cb8`). Ajoute le type `EtatDemande` et la table `DemandeSelection` (deux index). Ajout seulement, aucune table existante modifiée.

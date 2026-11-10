@@ -18,6 +18,10 @@ export {
   formaterDimensionsDouble,
   formaterHeure,
   formaterMontant,
+  fuseauAppareil,
+  fuseauValide,
+  heureMurale,
+  heureMuraleEnUtc,
   type MillimetresAffiches,
   type OptionsDate,
 } from './formats'

@@ -256,6 +256,46 @@ export type Dictionnaire = {
     readonly confidentialite: string
     readonly nouvelleDemande: string
   }
+  /** Page `/galerie/[id]/visite` : demande de visite à distance ou en atelier (story 4.3, FR-8). */
+  readonly visite: {
+    readonly titre: string
+    readonly titrePage: (titre: string) => string
+    readonly introduction: (titre: string, artiste: string) => string
+    readonly retour: string
+    readonly champs: {
+      readonly type: { readonly libelle: string; readonly distance: string; readonly atelier: string }
+      readonly creneaux: {
+        readonly libelle: string
+        readonly aide: (jours: number) => string
+        readonly fuseau: (fuseau: string) => string
+        readonly creneau: (n: number, facultatif: boolean) => string
+      }
+      readonly email: { readonly libelle: string }
+      readonly telephone: { readonly libelle: string }
+    }
+    readonly erreurs: {
+      readonly typeVide: string
+      readonly atelierIndisponible: string
+      readonly creneauxPeu: (min: number) => string
+      readonly creneauxTrop: (max: number) => string
+      readonly creneauIllisible: string
+      readonly creneauPasse: string
+      readonly creneauLointain: (jours: number) => string
+      readonly creneauxIdentiques: string
+      readonly fuseauInconnu: string
+      readonly emailInvalide: string
+      readonly telephoneInvalide: string
+    }
+    readonly resume: (n: number) => string
+    readonly envoyer: string
+    readonly envoiEnCours: string
+    readonly refus: string
+    readonly indisponible: string
+    readonly oeuvreIndisponible: string
+    readonly confirmation: (heures: number) => string
+    readonly rappelCreneaux: (fuseau: string) => string
+    readonly confidentialite: string
+  }
   /** Textes des e-mails transactionnels (story 4.1) : vouvoiement, sans jargon, jamais de donnée inventée. */
   readonly courriels: {
     readonly salutation: (nom: string) => string
@@ -284,6 +324,21 @@ export type Dictionnaire = {
       readonly suite: string
     }
     readonly alerteDemande: {
+      readonly sujet: string
+      readonly intro: (numero: string) => string
+      readonly bouton: string
+      readonly suite: string
+    }
+    readonly accuseVisite: {
+      readonly sujet: string
+      readonly intro: (titre: string) => string
+      readonly type: { readonly distance: string; readonly atelier: string }
+      readonly creneaux: (fuseau: string) => string
+      readonly creneau: (date: string) => string
+      readonly delai: (heures: number) => string
+      readonly suite: string
+    }
+    readonly alerteVisite: {
       readonly sujet: string
       readonly intro: (numero: string) => string
       readonly bouton: string
@@ -629,6 +684,46 @@ export const fr = {
     confidentialite: 'Vos coordonnées ne servent qu’à vous répondre.',
     nouvelleDemande: 'Faire une autre demande',
   },
+  visite: {
+    titre: 'Demander une visite',
+    titrePage: (titre: string) => `Demander une visite — ${titre}`,
+    introduction: (titre: string, artiste: string) =>
+      `Vous souhaitez voir « ${titre} » de ${artiste} avant de vous décider ? Proposez-nous deux ou trois créneaux : l’équipe Errancy organise la visite et vous confirme le créneau retenu.`,
+    retour: 'Revenir à l’œuvre',
+    champs: {
+      type: { libelle: 'Type de visite', distance: 'À distance', atelier: 'En atelier' },
+      creneaux: {
+        libelle: 'Vos créneaux',
+        aide: (jours: number) => `Proposez deux ou trois dates et heures qui vous conviennent, dans les ${jours} prochains jours.`,
+        fuseau: (fuseau: string) => `Heures de votre appareil (fuseau ${fuseau}).`,
+        creneau: (n: number, facultatif: boolean) => (facultatif ? `Créneau ${n} (facultatif)` : `Créneau ${n}`),
+      },
+      email: { libelle: 'Votre e-mail' },
+      telephone: { libelle: 'Votre téléphone (facultatif)' },
+    },
+    erreurs: {
+      typeVide: 'Choisissez un type de visite.',
+      atelierIndisponible: 'La visite en atelier n’est pas proposée pour cette œuvre.',
+      creneauxPeu: (min: number) => `Proposez au moins ${min} créneaux.`,
+      creneauxTrop: (max: number) => `Proposez ${max} créneaux au plus.`,
+      creneauIllisible: 'Indiquez chaque créneau avec une date et une heure.',
+      creneauPasse: 'Proposez des créneaux à venir.',
+      creneauLointain: (jours: number) => `Proposez des créneaux dans les ${jours} prochains jours.`,
+      creneauxIdentiques: 'Proposez des créneaux différents.',
+      fuseauInconnu: 'Le fuseau horaire de votre appareil n’est pas reconnu. Réessayez depuis un autre navigateur.',
+      emailInvalide: 'Indiquez une adresse e-mail valide.',
+      telephoneInvalide: 'Ce numéro de téléphone ne semble pas valide.',
+    },
+    resume: (n: number) => (n > 1 ? `${n} champs sont à corriger.` : '1 champ est à corriger.'),
+    envoyer: 'Envoyer ma demande',
+    envoiEnCours: 'Envoi…',
+    refus: 'Nous ne pouvons pas enregistrer votre demande pour le moment. Réessayez un peu plus tard.',
+    indisponible: 'Envoi momentanément impossible. Réessayez dans un instant.',
+    oeuvreIndisponible: 'Cette œuvre n’est plus disponible pour une visite.',
+    confirmation: (heures: number) => `Demande reçue. Nous vous répondons sous ${heures} heures.`,
+    rappelCreneaux: (fuseau: string) => `Les créneaux proposés (fuseau ${fuseau}) :`,
+    confidentialite: 'Vos coordonnées ne servent qu’à organiser la visite.',
+  },
   courriels: {
     salutation: (nom: string) => `Bonjour ${nom},`,
     salutationSansNom: 'Bonjour,',
@@ -657,6 +752,21 @@ export const fr = {
     alerteDemande: {
       sujet: 'Nouvelle demande de sélection',
       intro: (numero: string) => `Une demande de sélection personnalisée vient d’arriver (numéro ${numero}).`,
+      bouton: 'Ouvrir l’administration',
+      suite: 'Les coordonnées du visiteur ne figurent pas dans ce message.',
+    },
+    accuseVisite: {
+      sujet: 'Nous avons bien reçu votre demande de visite',
+      intro: (titre: string) => `Merci : nous avons bien reçu votre demande de visite de l’œuvre « ${titre} ».`,
+      type: { distance: 'Visite à distance', atelier: 'Visite en atelier' },
+      creneaux: (fuseau: string) => `Les créneaux que vous proposez (fuseau ${fuseau}) :`,
+      creneau: (date: string) => `– ${date}`,
+      delai: (heures: number) => `Nous vous répondons sous ${heures} heures.`,
+      suite: 'L’équipe Errancy organise la visite et vous écrit pour confirmer le créneau retenu.',
+    },
+    alerteVisite: {
+      sujet: 'Nouvelle demande de visite',
+      intro: (numero: string) => `Une demande de visite d’œuvre vient d’arriver (numéro ${numero}).`,
       bouton: 'Ouvrir l’administration',
       suite: 'Les coordonnées du visiteur ne figurent pas dans ce message.',
     },

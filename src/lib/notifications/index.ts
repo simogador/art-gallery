@@ -2,6 +2,13 @@
 // en production, « journal » ailleurs), contenus et gestionnaires d'événements. Les gestionnaires
 // sont reliés aux événements dans `src/lib/abonnements.ts`.
 
-export { alerterEquipeDemande, envoyerAccuseDemande, envoyerInvitation, envoyerResultatCuration } from './gestionnaires'
+export {
+  alerterEquipeDemande,
+  alerterEquipeVisite,
+  envoyerAccuseDemande,
+  envoyerAccuseVisite,
+  envoyerInvitation,
+  envoyerResultatCuration,
+} from './gestionnaires'
 export { choisirEnvoi } from './choix'
 export type { Courriel, EnvoiCourriel, ResultatEnvoi } from './port'

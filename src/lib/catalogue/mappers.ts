@@ -119,6 +119,8 @@ type DbArtwork = {
   profondeurMm: number | null
   featured: boolean
   engagementCertificat: boolean
+  // Story 4.3 : l'artiste accepte les visites en atelier (null : non renseigné, donc non).
+  visitesAtelier?: boolean | null
   // Story 3.10 : date de dépôt (Date, ou texte après l'aller-retour JSON du cache).
   createdAt?: Date | string
   artist: { slug: string; name: string; nationality?: string }
@@ -186,6 +188,7 @@ export function mapArtwork(w: DbArtwork): Artwork {
     profondeurMm: w.profondeurMm,
     description: w.description,
     certificat: w.engagementCertificat === true,
+    visitesAtelier: w.visitesAtelier === true,
     tags: [],
     featured: w.featured,
     // Story 2.2 : « vendue » pour l'UI = non disponible (réservée, vendue ailleurs… comprises).

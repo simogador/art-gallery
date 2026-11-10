@@ -110,6 +110,8 @@ export type OptionsDate = {
   mois?: 'long' | 'court'
   /** Année affichée (par défaut oui). */
   annee?: boolean
+  /** Jour de la semaine en tête (« mardi 17 novembre 2026 ») ; par défaut non. */
+  jourSemaine?: boolean
 }
 
 /** Date lisible, ou null (date invalide, texte illisible) : jamais d'exception d'Intl. */
@@ -130,9 +132,10 @@ function intl(d: Date, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat
 
 /** « 4 novembre 2026 » (ou « 4 nov. 2026 »), dans le fuseau demandé (Europe/Paris par défaut) ; « — » si illisible. */
 export function formaterDate(date: Date | string | null | undefined, options: OptionsDate = {}): string {
-  const { fuseau = FUSEAU_PAR_DEFAUT, mois = 'long', annee = true } = options
+  const { fuseau = FUSEAU_PAR_DEFAUT, mois = 'long', annee = true, jourSemaine = false } = options
   const d = dateValide(date)
   const lu = d && intl(d, {
+    ...(jourSemaine ? { weekday: 'long' as const } : {}),
     day: 'numeric',
     month: mois === 'court' ? 'short' : 'long',
     ...(annee ? { year: 'numeric' as const } : {}),
@@ -155,4 +158,78 @@ export function formaterDateHeure(date: Date | string | null | undefined, option
   const jour = formaterDate(date, options)
   const heure = formaterHeure(date, options.fuseau)
   return jour === DATE_ABSENTE || heure === DATE_ABSENTE ? DATE_ABSENTE : `${jour} à ${heure}`
+}
+
+/* ── Fuseaux et heures « murales » (story 4.3) ──────────────────────────── */
+
+// Une heure « murale » est ce qu'affiche une horloge dans un fuseau : « 2026-11-17T15:00 », la valeur
+// d'un champ `datetime-local`. Le visiteur saisit ses créneaux dans le fuseau de son appareil ; le
+// serveur les convertit en UTC avec ce fuseau (jamais celui de Paris imposé, UXQ-10).
+
+const FORME_FUSEAU = /^[A-Za-z][A-Za-z0-9_+-]*(\/[A-Za-z0-9_+-]+){0,2}$/
+
+/** Fuseau IANA reconnu (« Europe/Paris », « America/Montreal », « UTC ») ; jamais d'exception. */
+export function fuseauValide(fuseau: unknown): fuseau is string {
+  if (typeof fuseau !== 'string' || fuseau.length > 64 || !FORME_FUSEAU.test(fuseau)) return false
+  try {
+    new Intl.DateTimeFormat('fr-FR', { timeZone: fuseau })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Fuseau IANA de l'appareil (navigateur ou serveur) ; « UTC » s'il est illisible. */
+export function fuseauAppareil(): string {
+  try {
+    const f = new Intl.DateTimeFormat().resolvedOptions().timeZone
+    return fuseauValide(f) ? f : 'UTC'
+  } catch {
+    return 'UTC'
+  }
+}
+
+const HEURE_MURALE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::00(?:\.000)?)?$/
+
+function partiesMurales(ms: number, fuseau: string): number[] | null {
+  const lu = intl(new Date(ms), {
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: fuseau,
+  })
+  if (!lu) return null
+  const partie = (type: Intl.DateTimeFormatPartTypes) => Number(lu.find((p) => p.type === type)?.value)
+  const valeurs = [partie('year'), partie('month'), partie('day'), partie('hour'), partie('minute')]
+  return valeurs.every(Number.isFinite) ? valeurs : null
+}
+
+/** Instant → heure murale « AAAA-MM-JJTHH:MM » dans le fuseau ; null si le fuseau est inconnu. */
+export function heureMurale(date: Date, fuseau: string): string | null {
+  const p = Number.isNaN(date.getTime()) ? null : partiesMurales(date.getTime(), fuseau)
+  if (!p) return null
+  const deux = (n: number) => String(n).padStart(2, '0')
+  return `${String(p[0]).padStart(4, '0')}-${deux(p[1])}-${deux(p[2])}T${deux(p[3])}:${deux(p[4])}`
+}
+
+/**
+ * Heure murale saisie dans un fuseau → instant UTC. null si la saisie est illisible, le fuseau
+ * inconnu, ou l'heure inexistante dans ce fuseau (passage à l'heure d'été).
+ */
+export function heureMuraleEnUtc(saisie: string, fuseau: string): Date | null {
+  const m = HEURE_MURALE.exec(saisie.trim())
+  if (!m || !fuseauValide(fuseau)) return null
+  const [an, mois, jour, heure, minute] = m.slice(1, 6).map(Number)
+  const naif = Date.UTC(an, mois - 1, jour, heure, minute)
+  const decalage = (ms: number) => {
+    const p = partiesMurales(ms, fuseau)
+    return p ? Date.UTC(p[0], p[1] - 1, p[2], p[3], p[4]) - ms : null
+  }
+  const d1 = decalage(naif)
+  if (d1 === null) return null
+  let instant = naif - d1
+  const d2 = decalage(instant)
+  if (d2 === null) return null
+  if (d2 !== d1) instant = naif - d2
+  const resultat = new Date(instant)
+  // Aller-retour : une date impossible (31 février) ou une heure sautée ne revient pas à l'identique.
+  const normalisee = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}`
+  return heureMurale(resultat, fuseau) === normalisee ? resultat : null
 }

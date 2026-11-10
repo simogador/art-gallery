@@ -37,6 +37,10 @@ export const DELAI_REPONSE_DEMANDE_HEURES = 48
 export const LIMITES_DEMANDE_SELECTION = { fenetreMinutes: 60, parIp: 5, parEmail: 3 } as const
 export const DOUBLON_DEMANDE_MINUTES = 10
 
+// Demande de visite (story 4.3, FR-8) : même délai annoncé (48 heures, décision du porteur du
+// 2026-11-10), mêmes limites d'envoi que la sélection (compteurs distincts) et même fenêtre de doublon.
+export const LIMITES_DEMANDE_VISITE = { fenetreMinutes: 60, parIp: 5, parEmail: 3 } as const
+
 // Invitation des artistes (story 2.4, UXQ-8, décision du porteur du 2026-11-02) : durée de
 // validité du lien, et adresse de « Écrire à l'équipe ».
 export const DUREE_INVITATION_JOURS = 7
