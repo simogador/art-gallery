@@ -157,9 +157,11 @@ export function Header({ session, lot2Ouvert = false }: HeaderProps) {
                 )}
               </Link>
               )}
-              <Button variant="gold" size="sm">
-                {T.contacter}
-              </Button>
+              <Link href="/conseil">
+                <Button variant="gold" size="sm">
+                  {T.contacter}
+                </Button>
+              </Link>
             </div>
 
             {/* Mobile Hamburger */}
@@ -282,9 +284,11 @@ export function Header({ session, lot2Ouvert = false }: HeaderProps) {
                     <Button variant="ghost" size="md" fullWidth>{T.connexion}</Button>
                   </Link>
                 )}
-                <Button variant="gold" size="md" fullWidth onClick={closeMenu}>
-                  {T.contacter}
-                </Button>
+                <Link href="/conseil" onClick={closeMenu}>
+                  <Button variant="gold" size="md" fullWidth>
+                    {T.contacter}
+                  </Button>
+                </Link>
               </div>
             </motion.div>
           </>

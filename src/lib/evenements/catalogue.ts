@@ -12,6 +12,9 @@ export type ChargeInvitation = { invitationId: string }
 /** Décision de curation (story 4.1) : le commentaire de l'équipe est lu en base à l'envoi. */
 export type ChargeDecision = { decisionId: string; artworkId: string; artistId: string }
 
+/** Demande de sélection (story 4.2) : coordonnées et texte saisis lus en base à l'envoi, jamais portés ici. */
+export type ChargeDemande = { demandeId: string }
+
 /** Nom → version courante. La clé fait foi à l'exécution comme au typage. */
 export const VERSIONS_EVENEMENTS = {
   PublicationChangee: 1,
@@ -19,6 +22,7 @@ export const VERSIONS_EVENEMENTS = {
   InvitationEmise: 1,
   OeuvreValidee: 1,
   OeuvreRenvoyee: 1,
+  DemandeSelectionRecue: 1,
 } as const
 
 export type NomEvenement = keyof typeof VERSIONS_EVENEMENTS
@@ -30,6 +34,7 @@ export type ChargesEvenements = {
   InvitationEmise: ChargeInvitation
   OeuvreValidee: ChargeDecision
   OeuvreRenvoyee: ChargeDecision
+  DemandeSelectionRecue: ChargeDemande
 }
 
 export type EvenementA<N extends NomEvenement> = { nom: N; charge: ChargesEvenements[N] }
@@ -54,6 +59,7 @@ const CLES_CHARGES: { [N in NomEvenement]: readonly (keyof ChargesEvenements[N])
   InvitationEmise: ['invitationId'],
   OeuvreValidee: ['decisionId', 'artworkId', 'artistId'],
   OeuvreRenvoyee: ['decisionId', 'artworkId', 'artistId'],
+  DemandeSelectionRecue: ['demandeId'],
 }
 
 function chargeConforme(nom: NomEvenement, charge: unknown): boolean {

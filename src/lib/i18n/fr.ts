@@ -224,9 +224,42 @@ export type Dictionnaire = {
     readonly reessayer: string
     readonly chargement: string
   }
+  /** Page `/conseil` : demande de sélection personnalisée (story 4.2, FR-8). */
+  readonly conseil: {
+    readonly titre: string
+    readonly introduction: string
+    readonly champs: {
+      readonly espace: { readonly libelle: string; readonly aide: string }
+      readonly ambiances: { readonly libelle: string; readonly aide: string }
+      readonly precision: { readonly libelle: string }
+      readonly budget: { readonly libelle: string; readonly aide: string }
+      readonly email: { readonly libelle: string }
+      readonly telephone: { readonly libelle: string }
+    }
+    readonly erreurs: {
+      readonly espaceVide: string
+      readonly espaceLong: string
+      readonly ambiancesVides: string
+      readonly ambianceInconnue: string
+      readonly precisionLongue: string
+      readonly budgetInvalide: string
+      readonly budgetTropGrand: string
+      readonly emailInvalide: string
+      readonly telephoneInvalide: string
+    }
+    readonly resume: (n: number) => string
+    readonly envoyer: string
+    readonly envoiEnCours: string
+    readonly refus: string
+    readonly indisponible: string
+    readonly confirmation: (heures: number) => string
+    readonly confidentialite: string
+    readonly nouvelleDemande: string
+  }
   /** Textes des e-mails transactionnels (story 4.1) : vouvoiement, sans jargon, jamais de donnée inventée. */
   readonly courriels: {
     readonly salutation: (nom: string) => string
+    readonly salutationSansNom: string
     readonly signature: string
     /** Pied de chaque e-mail ; le lien Conseil WhatsApp s'y ajoutera avec la story 4.4. */
     readonly pied: (contact: string) => string
@@ -243,6 +276,18 @@ export type Dictionnaire = {
       readonly intro: (titre: string) => string
       readonly suite: string
       readonly bouton: string
+    }
+    readonly accuse: {
+      readonly sujet: string
+      readonly intro: string
+      readonly delai: (heures: number) => string
+      readonly suite: string
+    }
+    readonly alerteDemande: {
+      readonly sujet: string
+      readonly intro: (numero: string) => string
+      readonly bouton: string
+      readonly suite: string
     }
     readonly renvoyee: {
       readonly sujet: (titre: string) => string
@@ -367,7 +412,7 @@ export const fr = {
       services: {
         titre: 'Services',
         liens: [
-          { libelle: 'Conseil en acquisition', ancre: '#contact' },
+          { libelle: 'Demander une sélection', ancre: '/conseil' },
           { libelle: 'Art sur commande', ancre: '#contact' },
           { libelle: 'Prêt & location', ancre: '#contact' },
           { libelle: 'Estimation d\u2019œuvres', ancre: '#contact' },
@@ -553,8 +598,40 @@ export const fr = {
     reessayer: 'Réessayer',
     chargement: 'Chargement de la galerie',
   },
+  conseil: {
+    titre: 'Une sélection faite pour vous',
+    introduction: 'Décrivez-nous votre espace, vos goûts et votre budget. L’équipe vous répond avec une sélection d’œuvres choisies pour vous.',
+    champs: {
+      espace: { libelle: 'Votre espace', aide: 'La pièce, la taille du mur, la lumière…' },
+      ambiances: { libelle: 'Vos goûts', aide: 'Choisissez une ou plusieurs ambiances.' },
+      precision: { libelle: 'Autre chose à nous dire ? (facultatif)' },
+      budget: { libelle: 'Votre budget maximum, en euros', aide: 'Un montant, par exemple 1500.' },
+      email: { libelle: 'Votre e-mail' },
+      telephone: { libelle: 'Votre téléphone (facultatif)' },
+    },
+    erreurs: {
+      espaceVide: 'Décrivez votre espace en quelques mots.',
+      espaceLong: 'Votre description de l’espace est trop longue (1 000 caractères au plus).',
+      ambiancesVides: 'Choisissez au moins une ambiance.',
+      ambianceInconnue: 'Choisissez les ambiances dans la liste.',
+      precisionLongue: 'Votre message est trop long (1 000 caractères au plus).',
+      budgetInvalide: 'Indiquez votre budget en euros, par exemple 1500.',
+      budgetTropGrand: 'Ce budget est trop élevé : écrivez-nous à l’adresse du pied de page.',
+      emailInvalide: 'Indiquez une adresse e-mail valide.',
+      telephoneInvalide: 'Ce numéro de téléphone ne semble pas valide.',
+    },
+    resume: (n: number) => (n > 1 ? `${n} champs sont à corriger.` : '1 champ est à corriger.'),
+    envoyer: 'Envoyer ma demande',
+    envoiEnCours: 'Envoi…',
+    refus: 'Nous ne pouvons pas enregistrer votre demande pour le moment. Réessayez un peu plus tard.',
+    indisponible: 'Envoi momentanément impossible. Réessayez dans un instant.',
+    confirmation: (heures: number) => `Demande reçue. Nous vous répondons sous ${heures} heures.`,
+    confidentialite: 'Vos coordonnées ne servent qu’à vous répondre.',
+    nouvelleDemande: 'Faire une autre demande',
+  },
   courriels: {
     salutation: (nom: string) => `Bonjour ${nom},`,
+    salutationSansNom: 'Bonjour,',
     signature: 'L’équipe Errancy',
     pied: (contact: string) => `Une question ? Écrivez-nous à ${contact}`,
     invitation: {
@@ -570,6 +647,18 @@ export const fr = {
       intro: (titre: string) => `Bonne nouvelle : l’équipe a sélectionné votre œuvre « ${titre} ». Elle est maintenant publiée sur Errancy.`,
       suite: 'Vous pouvez la consulter sur le site à tout moment.',
       bouton: 'Voir l’œuvre',
+    },
+    accuse: {
+      sujet: 'Nous avons bien reçu votre demande',
+      intro: 'Merci : nous avons bien reçu votre demande de sélection. Nous préparons une proposition d’œuvres choisies pour votre espace.',
+      delai: (heures: number) => `Nous vous répondons sous ${heures} heures.`,
+      suite: 'Vous pouvez répondre à ce message pour nous envoyer des photos de votre espace.',
+    },
+    alerteDemande: {
+      sujet: 'Nouvelle demande de sélection',
+      intro: (numero: string) => `Une demande de sélection personnalisée vient d’arriver (numéro ${numero}).`,
+      bouton: 'Ouvrir l’administration',
+      suite: 'Les coordonnées du visiteur ne figurent pas dans ce message.',
     },
     renvoyee: {
       sujet: (titre: string) => `Votre œuvre « ${titre} » : nos remarques`,

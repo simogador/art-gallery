@@ -11,6 +11,21 @@ export type ResultatInscription = { ok: true } | { ok: false; code: RefusInscrip
 
 export { normaliserEmail } from './email'
 
+// Demande de sélection personnalisée (story 4.2).
+export { enregistrerDemandeSelection, type ResultatDemandeSelection } from './selection'
+export {
+  CHAMPS_SELECTION,
+  LIMITES_SELECTION,
+  erreurChamp,
+  lireBudgetEuros,
+  lireEntreeSelection,
+  validerSelection,
+  type ChampSelection,
+  type EntreeSelection,
+  type ErreursSelection,
+  type ValeurSelection,
+} from './selection-regles'
+
 function empreinte(type: 'ip' | 'email', valeur: string): string {
   // AUTH_SECRET sert de sel : une empreinte d'IP ne se retrouve pas par simple liste.
   const sel = process.env.AUTH_SECRET ?? ''
