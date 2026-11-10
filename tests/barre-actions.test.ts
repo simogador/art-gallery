@@ -35,7 +35,7 @@ describe('barre d’actions de la fiche', () => {
     for (const interdit of ['Ajouter au panier', 'Acheter', 'Prendre rendez-vous', 'Sauvegarder', 'Partager', 'Acquérir']) {
       expect(html, interdit).not.toContain(interdit)
     }
-    expect(html).toContain('bottom-0')
+    expect(html).toContain('bottom-[var(--hauteur-banniere,0px)]')
     expect(html).toContain('lg:sticky')
   })
 

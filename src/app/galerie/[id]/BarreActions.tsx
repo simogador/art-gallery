@@ -54,14 +54,20 @@ export function BarreActions({
     if (!el) return
     const ajuster = () => {
       const fixe = getComputedStyle(el).position === 'fixed'
-      document.body.style.paddingBottom = fixe ? `${el.getBoundingClientRect().height}px` : ''
+      // Story 4.8 : la bannière de mesure, quand elle est ouverte, publie sa hauteur ; la barre se pose au-dessus.
+      const banniere = parseFloat(document.documentElement.style.getPropertyValue('--hauteur-banniere')) || 0
+      document.body.style.paddingBottom = fixe ? `${el.getBoundingClientRect().height + banniere}px` : ''
     }
     ajuster()
     const obs = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(ajuster) : null
     obs?.observe(el)
     window.addEventListener('resize', ajuster)
+    // La variable de la bannière change (ouverture, fermeture, redimensionnement) : attribut `style` de la racine.
+    const veille = new MutationObserver(ajuster)
+    veille.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] })
     return () => {
       obs?.disconnect()
+      veille.disconnect()
       window.removeEventListener('resize', ajuster)
       document.body.style.paddingBottom = ''
     }
@@ -76,7 +82,7 @@ export function BarreActions({
       aria-label={fr.fiche.barre.nom}
       data-saisie={saisie ? 'oui' : 'non'}
       className={cn(
-        'fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200 bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+        'fixed inset-x-0 bottom-[var(--hauteur-banniere,0px)] z-30 border-t border-neutral-200 bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]',
         'lg:inset-x-auto lg:bottom-auto lg:sticky lg:top-24 lg:z-10 lg:mb-8 lg:border lg:rounded-sm lg:p-4',
         saisie && 'max-lg:hidden',
       )}

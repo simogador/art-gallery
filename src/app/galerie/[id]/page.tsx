@@ -6,6 +6,7 @@ import { getArtworkBySlug, getRelatedArtworks, artisteDOeuvreRetiree } from '@/l
 import { COOKIE_PAYS, lirePays, nomPays } from '@/lib/livraison'
 import { lot2Ouvert, urlAbsolue } from '@/lib/reglages'
 import { BoutonConseil } from '@/components/ui/BoutonConseil'
+import { mesurer } from '@/lib/mesure'
 import { ArtworkDetail } from './ArtworkDetail'
 
 // Story 3.3 : la fiche affiche le prix livré vers le pays du visiteur (cookie `pays`, France par
@@ -14,6 +15,7 @@ import { ArtworkDetail } from './ArtworkDetail'
 
 interface Props {
   params: { id: string }
+  searchParams?: { utm_source?: string | string[] }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -34,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ArtworkPage({ params }: Props) {
+export default async function ArtworkPage({ params, searchParams }: Props) {
   // Story 2.2 : fiche des seules œuvres visibles. Retirée : redirection permanente vers son
   // artiste ; non publiée (brouillon, en curation) ou inconnue : 404.
   const pays = lirePays(cookies().get(COOKIE_PAYS)?.value)
@@ -45,7 +47,14 @@ export default async function ArtworkPage({ params }: Props) {
     notFound()
   }
 
-  const related = await getRelatedArtworks(artwork, 3, pays)
+  // Story 4.8 : vue de fiche, seulement avec le consentement du visiteur (relu dans le cookie), jamais
+  // pour un administrateur ; une erreur de mesure ne casse pas la fiche. La source d'arrivée vient de
+  // `utm_source` ou du référent.
+  const utm = searchParams?.utm_source
+  const [related] = await Promise.all([
+    getRelatedArtworks(artwork, 3, pays),
+    mesurer({ nom: 'VueFiche', slug: artwork.id }, { chemin: `/galerie/${artwork.id}`, utm: Array.isArray(utm) ? utm[0] : utm }),
+  ])
 
   // Story 4.4 : bouton Conseil WhatsApp rendu côté serveur (heure et numéro lus à chaque requête).
   const conseil = <BoutonConseil contexte={{ type: 'oeuvre', slug: artwork.id, titre: artwork.title }} />

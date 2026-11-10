@@ -2,6 +2,7 @@
 
 import { headers } from 'next/headers'
 import { enregistrerDemandeVisite, type ErreursVisite } from '@/lib/demandes'
+import { mesurerDepuisAction } from '@/lib/mesure'
 
 // Demande de visite (story 4.3, FR-8) : action serveur du formulaire `/galerie/[id]/visite`. Le module
 // demandes revérifie l'œuvre et toute la saisie, limite les envois et écrit la demande ; ici seulement
@@ -19,7 +20,10 @@ function adresseIp(): string | null {
 
 export async function envoyerDemandeVisite(slug: string, saisie: unknown): Promise<ReponseVisite> {
   try {
-    return await enregistrerDemandeVisite(slug, saisie, adresseIp())
+    const reponse = await enregistrerDemandeVisite(slug, saisie, adresseIp())
+    // Story 4.8 : demande envoyée, mesurée avec le seul slug de l'œuvre (ni créneaux, ni coordonnées).
+    if (reponse.ok) await mesurerDepuisAction({ nom: 'DemandeEnvoyee', slug })
+    return reponse
   } catch (erreur) {
     // Jamais la saisie, l'e-mail, les créneaux ni l'IP dans les journaux : le type et le code seulement.
     const code = (erreur as { code?: unknown } | null)?.code

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { BarreActions } from '@/app/galerie/[id]/BarreActions'
 import { fr } from '@/lib/i18n'
+import { ChoixMesure } from '@/components/ui/ChoixMesure'
 
 // Barre d'actions de la fiche (story 4.7) : masquée pendant la saisie dans un champ, réaffichée à la sortie.
 // Le CSS Tailwind n'est pas chargé : on lit l'attribut `data-saisie` et la présence de `max-lg:hidden`.
@@ -67,6 +68,19 @@ describe('BarreActions (navigateur)', () => {
     await expect.poll(() => document.body.style.paddingBottom).toBe('80px')
     await ecran.unmount()
     expect(document.body.style.paddingBottom).toBe('')
+    style.remove()
+  })
+
+  it('la bannière de mesure ouverte soulève la barre (bottom: var(--hauteur-banniere)) et s’ajoute au dégagement du corps', async () => {
+    const style = document.createElement('style')
+    style.textContent = `[aria-label="${fr.fiche.barre.nom}"] { position: fixed; bottom: var(--hauteur-banniere, 0px); height: 80px; box-sizing: border-box; }`
+    document.head.append(style)
+    const ecran = await render(<><Page /><ChoixMesure choix={null} /></>)
+    const hauteur = () => parseFloat(document.documentElement.style.getPropertyValue('--hauteur-banniere'))
+    await expect.poll(hauteur).toBeGreaterThan(0)
+    await expect.poll(() => document.body.style.paddingBottom).toBe(`${80 + hauteur()}px`)
+    expect(parseFloat(getComputedStyle(barre()).bottom)).toBeCloseTo(hauteur(), 0)
+    await ecran.unmount()
     style.remove()
   })
 })

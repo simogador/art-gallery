@@ -199,3 +199,7 @@
   summary: Afficher « Réservée » (et non « Vendue ») pour une œuvre réservée, avec les réservations.
   evidence: `fr.fiche.etat` n'a que « disponible » et « vendue » ; la barre distingue déjà `reservee`, mais aucune œuvre ne peut être réservée avant l'Epic 6.
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-8-mesure-du-tunnel.md`
+  summary: Limiter le débit de `POST /api/mesure` (consentement et événements) pour que les compteurs et les événements ne soient pas gonflables.
+  evidence: la route vérifie l'origine mais n'a pas de limite par adresse (les formulaires de demande en ont) ; sans effet sur l'achat, mais fausse les taux.
+

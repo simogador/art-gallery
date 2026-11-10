@@ -2,6 +2,7 @@
 
 import { headers } from 'next/headers'
 import { enregistrerDemandeSelection, type ErreursSelection } from '@/lib/demandes'
+import { mesurerDepuisAction } from '@/lib/mesure'
 
 // Demande de sélection personnalisée (story 4.2, FR-8) : action serveur du formulaire `/conseil`.
 // Le module demandes revérifie toute la saisie, limite les envois et écrit la demande ; ici seulement
@@ -19,7 +20,10 @@ function adresseIp(): string | null {
 
 export async function envoyerDemandeSelection(saisie: unknown): Promise<ReponseDemande> {
   try {
-    return await enregistrerDemandeSelection(saisie, adresseIp())
+    const reponse = await enregistrerDemandeSelection(saisie, adresseIp())
+    // Story 4.8 : demande envoyée, mesurée sans aucune de ses données (ni e-mail, ni texte saisi).
+    if (reponse.ok) await mesurerDepuisAction({ nom: 'DemandeEnvoyee', slug: null })
+    return reponse
   } catch (erreur) {
     // Jamais la saisie, l'e-mail ni l'IP dans les journaux : seulement le type et le code de l'erreur.
     const code = (erreur as { code?: unknown } | null)?.code

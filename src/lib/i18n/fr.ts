@@ -276,6 +276,17 @@ export type Dictionnaire = {
       readonly artiste: (nom: string) => string
     }
   }
+  /** Choix de mesure de la fréquentation, bannière non bloquante et lien du pied de page (story 4.8, NFR-6). */
+  readonly mesure: {
+    readonly titre: string
+    readonly texte: string
+    readonly accepter: string
+    readonly refuser: string
+    readonly gerer: string
+    readonly enregistreAccepte: string
+    readonly enregistreRefuse: string
+    readonly echec: string
+  }
   /** Page `/galerie/[id]/visite` : demande de visite à distance ou en atelier (story 4.3, FR-8). */
   readonly visite: {
     readonly titre: string
@@ -764,6 +775,17 @@ export const fr = {
         `Bonjour, je souhaiterais un conseil sur l’œuvre « ${titre} » (référence ${reference}) : ${lien}`,
       artiste: (nom: string) => `Bonjour, je souhaiterais un conseil au sujet de l’artiste ${nom}.`,
     },
+  },
+  mesure: {
+    titre: 'Votre choix sur la mesure de la fréquentation',
+    texte:
+      'Avec votre accord, nous comptons quelques gestes (fiche consultée, pays choisi, clic sur Conseil WhatsApp, demande envoyée). Un identifiant aléatoire est gardé un an sur votre appareil pour relier les gestes d’une même visite ; rien qui vous identifie (e-mail, nom, saisie) n’est transmis. Données hébergées dans l’UE. Vous pouvez changer d’avis avec « Gérer la mesure », en bas de page.',
+    accepter: 'Accepter',
+    refuser: 'Refuser',
+    gerer: 'Gérer la mesure',
+    enregistreAccepte: 'Mesure acceptée. Vous pouvez changer d’avis avec « Gérer la mesure » en bas de page.',
+    enregistreRefuse: 'Mesure refusée. Vous pouvez changer d’avis avec « Gérer la mesure » en bas de page.',
+    echec: 'Votre choix n’a pas pu être enregistré. Réessayez dans un instant.',
   },
   visite: {
     titre: 'Demander une visite',

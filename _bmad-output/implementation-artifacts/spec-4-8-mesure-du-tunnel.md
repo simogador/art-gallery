@@ -2,7 +2,8 @@
 title: 'Story 4.8 — Mesure du tunnel avec consentement'
 type: 'feature'
 created: '2026-11-10'
-status: 'draft'
+status: 'done'
+baseline_commit: '21a6a8fe504f24d72e768ca3c5bc31161240dbed'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-4-4-conseil-whatsapp.md']
@@ -82,3 +83,25 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 
 **Manual checks:**
 - Préversion : bannière, choix conservé, lien du pied de page ; événements dans les journaux (adaptateur « journal »). En production, après ajout par le porteur de la clé PostHog (variable Vercel) : événements visibles dans PostHog UE.
+
+## Review Triage Log
+
+| # | Source | Constat | Verdict | Route | Preuve / suite |
+|---|--------|---------|---------|-------|----------------|
+| 1 | Blind | Le texte de la bannière dit « Aucune donnée personnelle n'est transmise » alors qu'un identifiant aléatoire d'un an est posé et envoyé après accord | high | patch | vérifié (`fr.ts` lignes 782-783) ; texte réécrit fidèlement et court |
+| 2 | Edge | Échec du POST `/api/mesure` : la bannière se ferme et annonce « enregistré » sans cookie posé | medium | patch | état d'erreur, bannière gardée ouverte ; test navigateur |
+| 3 | Blind, Edge | La bannière fixe (z-40, jusqu'à 45 vh) cache la barre d'actions de la fiche tant qu'aucun choix n'est fait | medium | patch | hauteur plafonnée, publiée en variable CSS, barre décalée ; test navigateur |
+| 4 | Edge | Sans numéro WhatsApp, le lien mène à `/conseil` mais ses clics sont comptés comme `ClicConseil` | medium | patch | mesure du clic seulement en mode WhatsApp ; test navigateur |
+| 5 | Blind, Edge | `/api/mesure` accepte un POST sans `Origin` et fait confiance au slug envoyé par le client | medium | patch | `Origin` exigé, slug tiré du chemin, taille bornée ; tests |
+| 6 | Edge | `poserArrivee` qui échoue empêche le compteur et fait répondre 500 | medium | patch | `try/catch` autour de `poserArrivee` |
+| 7 | Blind, Edge | Compteur : deux premières écritures du jour concurrentes perdent un décompte (P2002) | medium | patch | `INSERT … ON CONFLICT` atomique ; test concurrent |
+| 8 | Blind, Edge | `await mesurer` retarde la fiche jusqu'à 2 s | medium | patch | délai de 1 s ; mesure en parallèle des œuvres liées |
+| 9 | Verification Gap | Les quatre émetteurs, `LienConseil` et le montage de la bannière et du lien du pied de page ne sont vérifiés par aucun test | medium | patch | tests d'émission, test navigateur, test de montage |
+| 10 | Blind | Clé `fr.mesure.region` jamais utilisée | low | patch | suppression |
+| 11 | Blind, Edge | Première vue de fiche d'un visiteur (avant son choix) non mesurée ; rejeu par `router.refresh()` ; événements d'actions liés au `Referer` ; double envoi absorbé compté ; compteur de choix et non de visiteurs | low | patch | limites inévitables de la conception, consignées dans « Limites connues » d'`AGENTS.md` |
+| 12 | Blind | `mesure` absent de `MODULES_METIER` : le lint échouerait | false | rejet | vérifié : `'mesure'` figure dans `.eslintrc.js` ligne 20 ; le lint passe |
+| 13 | Blind | Pas de limite de débit sur `/api/mesure` ; compteurs gonflables | low | defer | impact limité aux taux ; limite à poser avec les autres protections ; deferred-work.md |
+| 14 | Blind | `utm_source` peut contenir un nom saisi par une campagne | low | rejet | valeur posée par le porteur dans ses propres liens, filtrée et bornée |
+| 15 | Edge | Cookie `mesure_id` absent avec consentement : un identifiant par événement ; source recalculée si référent interne | low | rejet | les deux cookies sont posés ensemble à l'accord ; cas rare |
+| 16 | Blind | Statuts de la spec et du suivi différents ; journal de la migration incomplet | false | rejet | l'étape de présentation passe le suivi à `review` ; le journal s'écrit après application, dans la PR de suivi |
+
