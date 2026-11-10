@@ -27,6 +27,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 - Une visite affiche le titre de l'œuvre et son lien ; si l'œuvre a été supprimée (lien nul, décision du 2026-11-10), « Œuvre supprimée ». Les créneaux de visite s'affichent dans le fuseau du visiteur (`formaterDateHeure`, `jourSemaine`) ; la date de la demande par `formaterDate` de `i18n`.
 - Textes dans `fr` (nouvelle clé), aucun texte en dur ; coordonnées jamais dans les journaux ni dans les alertes ; en-tête `no-store`, pas de cache.
 - Les alertes (`alerterEquipeDemande`, `alerterEquipeVisite`) pointent vers `/dashboard/admin/demandes`, sans donnée personnelle.
+- Décisions du porteur du 2026-11-10 : le changement d'état ne garde que le dernier changement, qui et quand, sur la demande elle-même (colonnes facultatives `etatChangePar`, identifiant de l'utilisateur, et `etatChangeLe` sur `DemandeSelection` et `DemandeVisite`, migration additive) ; les inscriptions « Me prévenir » restent hors de cette story (leur table viendra avec la story 4.5, qui ajoutera sa section à la file) ; l'e-mail et le téléphone du visiteur s'affichent directement dans la liste, à l'administrateur seulement.
 
 **Never:**
 - E-mail au visiteur à un changement d'état ; calendrier, réponse par e-mail depuis la page, export ; suppression d'une demande ; durée de conservation ; mesure (4.8) ; barre d'actions (4.7).
@@ -46,15 +47,9 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 
 </frozen-after-approval>
 
-## Open Questions
-
-1. **Que garder du changement d'état ?** — options : A) seulement le dernier : qui et quand, sur la demande (deux colonnes ajoutées à chaque table, simple, recommandé) / B) tout l'historique : une table qui garde chaque changement (comme les décisions de curation), plus lourde.
-2. **Que faire des inscriptions « Me prévenir » ?** — le texte de la story les demande, mais leur table n'existe pas (story 4.5 non faite, aucune œuvre ne peut être réservée avant l'Epic 6). Options : A) les laisser de côté : la section s'ajoutera avec la 4.5 (recommandé) / B) faire la 4.5 avant la 4.6 / C) créer ici la table et une section vide.
-3. **Où afficher l'e-mail et le téléphone du visiteur ?** — options : A) directement dans la liste, l'équipe répond sans clic (recommandé) / B) seulement dans une demande ouverte, un clic de plus, moins de données à l'écran.
-
 ## Code Map
 
-- `prisma/schema.prisma` + migration -- colonnes de suivi d'état sur `DemandeSelection` et `DemandeVisite` (selon la réponse 1), aucune autre modification.
+- `prisma/schema.prisma` + migration -- `etatChangePar` et `etatChangeLe` facultatifs sur `DemandeSelection` et `DemandeVisite`, aucune autre modification.
 - `src/lib/demandes/file.ts` (à créer) -- `fileDesDemandes(acteur, options)`, `changerEtatDemande(acteur, type, id, etat)` ; admin seulement ; règles pures dans `file-regles.ts` ; réexport dans `index.ts`.
 - `src/app/dashboard/admin/demandes/` (`page.tsx`, `loading.tsx`, `error.tsx`, `actions.ts`, commande d'état en composant client sur le modèle de `BasculeSelection`) ; `src/components/dashboard/AdminNav.tsx` (entrée « Demandes »).
 - `src/lib/notifications/gestionnaires.ts` -- lien des deux alertes ; `src/lib/i18n/fr.ts` -- textes.
