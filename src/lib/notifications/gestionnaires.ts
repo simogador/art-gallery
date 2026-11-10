@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { abandonnerConfirmationPrevenir, preparerConfirmationPrevenir, retirerInscriptionsPrevenirSiSortie } from '@/lib/demandes'
 import { emettreLienInvitation, noterEnvoiInvitation } from '@/lib/acces/lien-invitation'
 import type { EvenementLuA } from '@/lib/evenements/catalogue'
 import { CONTACT_EQUIPE, urlAbsolue } from '@/lib/reglages'
@@ -8,6 +9,7 @@ import {
   contenuAccuseVisite,
   contenuAlerteDemande,
   contenuAlerteVisite,
+  contenuConfirmationPrevenir,
   contenuInvitation,
   contenuOeuvreRenvoyee,
   contenuOeuvreValidee,
@@ -179,5 +181,49 @@ export async function alerterEquipeVisite(evenement: EvenementLuA<'DemandeVisite
   const resultat = await envoyer({ a: CONTACT_EQUIPE, ...contenu, cle: `${evenement.id}:alerterEquipeVisite` })
   if (!resultat.ok) {
     console.error('[notifications] alerte de visite non envoyée', { evenement: evenement.id, demande: demandeId, code: resultat.code })
+  }
+}
+
+/**
+ * Confirmation d'une inscription « Me prévenir » (story 4.5) : adresse et titre lus en base à l'envoi,
+ * lien de désinscription émis à ce moment. Rien sur l'heure de fin d'une réservation, rien de plus.
+ * Échec d'envoi : l'inscription reste, le lien émis est révoqué, journal d'ids (jamais d'adresse).
+ */
+export async function envoyerConfirmationPrevenir(evenement: EvenementLuA<'InscriptionPrevenirRecue'>): Promise<void> {
+  const { inscriptionId } = evenement.charge
+  const confirmation = await preparerConfirmationPrevenir(inscriptionId)
+  if (!confirmation) {
+    console.info('[notifications] inscription introuvable, aucune confirmation', { evenement: evenement.id, inscription: inscriptionId })
+    return
+  }
+  let resultat: ResultatEnvoi = { ok: false, code: 'indisponible' }
+  try {
+    const contenu = contenuConfirmationPrevenir({
+      titre: confirmation.titre,
+      lienDesinscription: urlAbsolue(`/auth/desinscription-alerte/${confirmation.jeton}`),
+    })
+    resultat = await envoyer({ a: confirmation.email, ...contenu, cle: `${evenement.id}:envoyerConfirmationPrevenir` })
+  } finally {
+    // Même si la préparation ou l'envoi a échoué : le lien émis ne reste pas valable sans e-mail.
+    if (!resultat.ok) {
+      try {
+        await abandonnerConfirmationPrevenir(inscriptionId)
+      } catch {
+        console.error('[notifications] lien de désinscription non révoqué', { evenement: evenement.id, inscription: inscriptionId })
+      }
+    }
+  }
+  if (!resultat.ok) {
+    // Pas de nouvel essai (AQ-2 ouverte) : l'inscription reste enregistrée et confirmée à l'écran.
+    console.error('[notifications] confirmation « Me prévenir » non envoyée', { evenement: evenement.id, inscription: inscriptionId, code: resultat.code })
+  }
+}
+
+/** Œuvre vendue, vendue ailleurs ou retirée : ses inscriptions « Me prévenir » sont supprimées, sans e-mail (état relu en base). */
+export async function retirerInscriptionsPrevenir(evenement: EvenementLuA<'DisponibiliteChangee'>): Promise<void> {
+  const { artworkId } = evenement.charge
+  const supprimees = await retirerInscriptionsPrevenirSiSortie(artworkId)
+  if (supprimees > 0) {
+    console.info('[notifications] inscriptions « Me prévenir » supprimées', { evenement: evenement.id, artwork: artworkId, nombre: supprimees })
   }
 }

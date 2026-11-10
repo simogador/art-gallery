@@ -186,3 +186,17 @@ export function contenuOuverture(p: { lien: string; lienDesinscription: string }
     lienSecondaire: { intro: t.desinscription, lien: p.lienDesinscription },
   })
 }
+
+/**
+ * Confirmation d'une inscription « Me prévenir » (story 4.5, FR-9) : titre de l'œuvre, promesse unique
+ * et lien de désinscription. Jamais d'heure de fin de réservation, rien sur l'artiste.
+ */
+export function contenuConfirmationPrevenir(p: { titre: string; lienDesinscription: string }): Contenu {
+  const t = fr.courriels.confirmationPrevenir
+  return assembler({
+    sujet: t.sujet(p.titre),
+    intro: [t.intro(p.titre)],
+    suite: [t.suite],
+    lienSecondaire: { intro: t.desinscription, lien: p.lienDesinscription },
+  })
+}

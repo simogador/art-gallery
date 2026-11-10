@@ -32,6 +32,7 @@ describe('barre d’actions de la fiche', () => {
     expect(nb(html, 'MARQUEUR-CONSEIL')).toBe(1)
     expect(html).toContain('href="/galerie/nuit/visite"')
     expect(html).toContain(fr.fiche.barre.visite)
+    expect(html).not.toContain('/prevenir')
     for (const interdit of ['Ajouter au panier', 'Acheter', 'Prendre rendez-vous', 'Sauvegarder', 'Partager', 'Acquérir']) {
       expect(html, interdit).not.toContain(interdit)
     }
@@ -54,12 +55,16 @@ describe('barre d’actions de la fiche', () => {
     expect(nb(html, 'MARQUEUR-CONSEIL')).toBe(1)
     expect(html).toContain(fr.fiche.vendue.lienArtiste('Kara'))
     expect(html).not.toContain('/visite')
+    expect(html).not.toContain('/prevenir')
     expect(html).not.toContain('Ajouter au panier')
   })
 
-  it('réservée : Conseil seul, sans visite, lien artiste ni heure de fin', () => {
+  it('réservée : Conseil (principal) et « Me prévenir », sans visite, lien artiste ni heure de fin', () => {
     const html = rendre(oeuvre({ sold: true, reservee: true }), true)
     expect(nb(html, 'MARQUEUR-CONSEIL')).toBe(1)
+    expect(html).toContain('href="/galerie/nuit/prevenir"')
+    expect(html).toContain(fr.fiche.barre.prevenir)
+    expect(html.indexOf('MARQUEUR-CONSEIL')).toBeLessThan(html.indexOf(fr.fiche.barre.prevenir))
     expect(html).not.toContain('/visite')
     expect(html).not.toContain('Ajouter au panier')
     expect(html).not.toContain(fr.fiche.barre.visite)
@@ -71,6 +76,14 @@ describe('barre d’actions de la fiche', () => {
 })
 
 describe('état réservée dans le type d’affichage', () => {
+  it('réservée, Lot 2 ouvert et pays non livré : Conseil et « Me prévenir », jamais « Acheter »', () => {
+    const html = rendre(oeuvre({ sold: true, reservee: true, prixLivre: { livree: false, raison: 'non_livree' } }), true)
+    expect(nb(html, 'MARQUEUR-CONSEIL')).toBe(1)
+    expect(html).toContain('href="/galerie/nuit/prevenir"')
+    expect(html).not.toContain('Acheter')
+    expect(html).not.toContain('Ajouter au panier')
+  })
+
   it('estReservee ne vaut que pour reservee ; le mapper garde sold vrai', () => {
     expect(estReservee({ publication: 'publiee', disponibilite: 'reservee' })).toBe(true)
     expect(estReservee({ publication: 'publiee', disponibilite: 'vendue' })).toBe(false)

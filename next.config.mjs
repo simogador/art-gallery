@@ -15,6 +15,8 @@ const nextConfig = {
       { source: '/auth/invitation/:path*', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
       // Story 4.9 : le lien de désinscription ne se retrouve pas non plus dans un référent.
       { source: '/auth/desinscription/:path*', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
+      // Story 4.5 : de même pour le lien de désinscription de l'alerte « Me prévenir ».
+      { source: '/auth/desinscription-alerte/:path*', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
     ]
   },
   experimental: {

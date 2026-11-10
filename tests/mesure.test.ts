@@ -97,6 +97,9 @@ describe('règles pures', () => {
       '/panier',
       '/galerie/a/b/c',
       '/galerie/Nuit Blanche',
+      // Story 4.5 : « Me prévenir » et ses suites ne sont pas mesurées.
+      '/galerie/x/prevenir',
+      '/auth/desinscription-alerte/abc',
       '/maintenance.html',
       null,
       undefined,

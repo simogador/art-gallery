@@ -123,7 +123,20 @@ describe('base : journal et cache', () => {
     ])
     expect(cache.revalidateTag).toHaveBeenCalledTimes(3)
     expect(cache.revalidateTag.mock.calls.map((c) => c[0]).sort()).toEqual(['artiste:artiste-1', 'catalogue', 'oeuvre:id-nuit'])
-    expect(await compter('TraitementEvenement')).toBe(1)
+    // Deux gestionnaires de DisponibiliteChangee : cache (invaliderCatalogue) et inscriptions « Me prévenir » (story 4.5).
+    expect(await compter('TraitementEvenement')).toBe(2)
+  })
+
+  it('InscriptionPrevenirRecue (story 4.5) : au catalogue avec l’id de l’inscription seulement ; toute autre charge refusée', async () => {
+    const { prisma } = await import('@/lib/prisma')
+    const { ecrireEvenement, evenementValide } = await import('@/lib/evenements')
+    expect(evenementValide({ nom: 'InscriptionPrevenirRecue', charge: { inscriptionId: 'i1' } })).toBe(true)
+    expect(evenementValide({ nom: 'InscriptionPrevenirRecue', charge: { inscriptionId: 'i1', email: 'a@exemple.test' } })).toBe(false)
+    expect(evenementValide({ nom: 'InscriptionPrevenirRecue', charge: { email: 'a@exemple.test' } })).toBe(false)
+    await prisma.$transaction((tx) => ecrireEvenement(tx, { nom: 'InscriptionPrevenirRecue', charge: { inscriptionId: 'i1' } }))
+    expect((await db.query('SELECT nom, version, charge FROM "Evenement"')).rows).toEqual([
+      { nom: 'InscriptionPrevenirRecue', version: 1, charge: { inscriptionId: 'i1' } },
+    ])
   })
 
   it('refus métier avant l’écriture : aucun événement', async () => {

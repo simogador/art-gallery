@@ -7,8 +7,10 @@ export {
   alerterEquipeVisite,
   envoyerAccuseDemande,
   envoyerAccuseVisite,
+  envoyerConfirmationPrevenir,
   envoyerInvitation,
   envoyerResultatCuration,
+  retirerInscriptionsPrevenir,
 } from './gestionnaires'
 export { annoncerOuverture, envoyerEssaiOuverture, type BilanAnnonce, type ResultatAnnonce, type ResultatEssai } from './annonce'
 export { choisirEnvoi, envoiReel } from './choix'

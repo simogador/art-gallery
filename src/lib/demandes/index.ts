@@ -44,6 +44,33 @@ export {
   type ValeurVisite,
 } from './visite-regles'
 
+// Inscription « Me prévenir » sur une œuvre réservée (story 4.5).
+export {
+  abandonnerConfirmationPrevenir,
+  desinscrirePrevenir,
+  enregistrerInscriptionPrevenir,
+  inscriptionsParOeuvre,
+  preparerConfirmationPrevenir,
+  rangInscriptionPrevenir,
+  retirerInscriptionsPrevenirSiSortie,
+  type ConfirmationAEnvoyer,
+  type OeuvreAvecInscriptions,
+  type ResultatInscriptionPrevenir,
+  type ResultatInscriptionsParOeuvre,
+} from './prevenir'
+export {
+  CHAMPS_PREVENIR,
+  comparerArrivee,
+  erreurChampPrevenir,
+  lireEntreePrevenir,
+  rangParmi,
+  validerPrevenir,
+  type ChampPrevenir,
+  type EntreePrevenir,
+  type ErreursPrevenir,
+  type ValeurPrevenir,
+} from './prevenir-regles'
+
 // File des demandes de l'équipe (story 4.6) : admin seulement.
 export {
   changerEtatDemande,

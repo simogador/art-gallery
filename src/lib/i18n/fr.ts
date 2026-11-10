@@ -96,7 +96,7 @@ export type Dictionnaire = {
   readonly fiche: {
     readonly coupDeCoeur: string
     readonly etat: { readonly disponible: string; readonly vendue: string }
-    readonly barre: { readonly nom: string; readonly visite: string }
+    readonly barre: { readonly nom: string; readonly visite: string; readonly prevenir: string }
     readonly vendue: {
       readonly proches: string
       readonly pourriezAimer: string
@@ -360,6 +360,16 @@ export type Dictionnaire = {
     readonly nomDemande: (type: string, date: string) => string
     readonly enCours: string
     readonly refus: { readonly acces_refuse: string; readonly introuvable: string; readonly invalide: string; readonly indisponible: string }
+    /** Section « Me prévenir » de la file (story 4.5). */
+    readonly prevenir: {
+      readonly titre: string
+      readonly introduction: string
+      readonly vide: string
+      readonly nombre: (n: number) => string
+      readonly rang: (rang: number) => string
+      readonly arrivee: (date: string) => string
+      readonly indisponible: string
+    }
   }
   /** Annonce de l'ouverture, `/dashboard/admin/ouverture` (story 4.9, FR-35). */
   readonly ouverture: {
@@ -405,6 +415,32 @@ export type Dictionnaire = {
     readonly chargement: string
     readonly erreur: string
     readonly reessayer: string
+  }
+  /** Page `/galerie/[id]/prevenir` : « Me prévenir » sur une œuvre réservée (story 4.5, FR-9). */
+  readonly prevenir: {
+    readonly titre: string
+    readonly titrePage: (titre: string) => string
+    readonly introduction: (titre: string, artiste: string) => string
+    readonly retour: string
+    readonly champs: { readonly email: { readonly libelle: string } }
+    readonly erreurs: { readonly emailInvalide: string }
+    readonly resume: (n: number) => string
+    readonly envoyer: string
+    readonly envoiEnCours: string
+    readonly refus: string
+    readonly indisponible: string
+    readonly oeuvreIndisponible: string
+    readonly confirmation: string
+    readonly confidentialite: (contact: string) => string
+  }
+  /** Page publique de désinscription d'une alerte, `/auth/desinscription-alerte/[jeton]` (story 4.5). */
+  readonly desinscriptionAlerte: {
+    readonly titrePage: string
+    readonly titre: string
+    readonly confirmee: string
+    readonly indisponible: string
+    readonly invalide: (contact: string) => string
+    readonly accueil: string
   }
   /** Page publique de désinscription, `/auth/desinscription/[jeton]` (story 4.9). */
   readonly desinscription: {
@@ -468,6 +504,12 @@ export type Dictionnaire = {
       readonly sujet: string
       readonly intro: string
       readonly bouton: string
+      readonly suite: string
+      readonly desinscription: string
+    }
+    readonly confirmationPrevenir: {
+      readonly sujet: (titre: string) => string
+      readonly intro: (titre: string) => string
       readonly suite: string
       readonly desinscription: string
     }
@@ -639,7 +681,7 @@ export const fr = {
     coupDeCoeur: 'Coup de cœur',
     etat: { disponible: 'Disponible', vendue: 'Vendue' },
     // Story 4.7 : barre d'actions de la fiche.
-    barre: { nom: 'Actions sur cette œuvre', visite: 'Réserver une visite' },
+    barre: { nom: 'Actions sur cette œuvre', visite: 'Réserver une visite', prevenir: 'Me prévenir' },
     // Story 3.7 : section d'œuvres proches ; titre propre à une œuvre vendue et lien vers l'artiste.
     vendue: {
       proches: 'D’autres œuvres à découvrir',
@@ -888,6 +930,34 @@ export const fr = {
     rappelCreneaux: (fuseau: string) => `Les créneaux proposés (fuseau ${fuseau}) :`,
     confidentialite: 'Vos coordonnées ne servent qu’à organiser la visite.',
   },
+  // Story 4.5 : « Me prévenir » sur une œuvre réservée (FR-9). Jamais d'heure de fin de réservation.
+  prevenir: {
+    titre: 'Me prévenir',
+    titrePage: (titre: string) => `Me prévenir — ${titre}`,
+    introduction: (titre: string, artiste: string) =>
+      `« ${titre} » de ${artiste} est actuellement réservée. Laissez-nous votre e-mail : nous vous écrirons si elle redevient disponible.`,
+    retour: 'Revenir à l’œuvre',
+    champs: { email: { libelle: 'Votre e-mail' } },
+    erreurs: { emailInvalide: 'Indiquez une adresse e-mail valide.' },
+    resume: (n: number) => (n > 1 ? `${n} champs sont à corriger.` : '1 champ est à corriger.'),
+    envoyer: 'Me prévenir',
+    envoiEnCours: 'Envoi…',
+    refus: 'Nous ne pouvons pas enregistrer votre demande pour le moment. Réessayez un peu plus tard.',
+    indisponible: 'Envoi momentanément impossible. Réessayez dans un instant.',
+    oeuvreIndisponible: 'Cette œuvre n’est plus réservée : l’alerte n’est plus possible.',
+    confirmation: 'Nous vous écrirons si elle redevient disponible.',
+    confidentialite: (contact: string) =>
+      `Vous pouvez vous désinscrire à tout moment avec le lien de l’e-mail de confirmation, ou en écrivant à ${contact}.`,
+  },
+  desinscriptionAlerte: {
+    titrePage: 'Désinscription — Errancy',
+    titre: 'Désinscription',
+    indisponible: 'Nous n’avons pas pu traiter votre demande. Réessayez dans quelques minutes.',
+    confirmee: 'C’est fait : nous ne vous écrirons plus au sujet de cette œuvre et nous ne conservons plus votre adresse pour elle.',
+    invalide: (contact: string) =>
+      `Ce lien a déjà été utilisé ou n’est plus valable. Une question ? Écrivez-nous à ${contact}.`,
+    accueil: 'Retour à l’accueil',
+  },
   demandes: {
     titre: 'Demandes',
     titrePage: 'Demandes — Admin Errancy',
@@ -924,6 +994,15 @@ export const fr = {
       introuvable: 'Cette demande n’existe plus.',
       invalide: 'Cet état n’est pas reconnu.',
       indisponible: 'Le changement n’a pas pu être enregistré. Réessayez.',
+    },
+    prevenir: {
+      titre: 'Me prévenir',
+      introduction: 'Les personnes qui attendent qu’une œuvre réservée redevienne disponible, par œuvre, de la plus ancienne inscription à la plus récente.',
+      vide: 'Aucune inscription « Me prévenir ».',
+      nombre: (n: number) => (n === 1 ? '1 inscrit' : `${n} inscrits`),
+      rang: (rang: number) => `N° ${rang}`,
+      arrivee: (date: string) => `inscrit le ${date}`,
+      indisponible: 'Les inscriptions « Me prévenir » ne se sont pas chargées. Rechargez la page dans un instant.',
     },
   },
   ouverture: {
@@ -1037,6 +1116,12 @@ export const fr = {
       bouton: 'Découvrir Errancy',
       suite: 'Nous supprimons votre adresse de notre liste : vous ne recevrez pas d’autre message de ce type.',
       desinscription: 'Pour confirmer que votre adresse n’est plus conservée, ouvrez ce lien :',
+    },
+    confirmationPrevenir: {
+      sujet: (titre: string) => `Nous vous prévenons pour « ${titre} »`,
+      intro: (titre: string) => `Merci : votre adresse est bien enregistrée pour l’œuvre « ${titre} », actuellement réservée.`,
+      suite: 'Nous vous écrirons si elle redevient disponible.',
+      desinscription: 'Pour ne plus être prévenu et supprimer votre adresse, ouvrez ce lien :',
     },
     renvoyee: {
       sujet: (titre: string) => `Votre œuvre « ${titre} » : nos remarques`,
