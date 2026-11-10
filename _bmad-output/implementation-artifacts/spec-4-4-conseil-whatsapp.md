@@ -21,8 +21,8 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 ## Boundaries & Constraints
 
 **Always:**
-- Valeurs du porteur du 2026-11-10 (OQ-7) : réponse du lundi au vendredi, de 9 h à 18 h ; délai annoncé « moins de 2 heures pendant les horaires » ; numéro WhatsApp Business saisi par le porteur lui-même, jamais écrit dans la conversation, ni dans une PR, ni dans un journal. Horaires et délai vivent dans `src/lib/reglages` ; un changement = une PR.
-- Calcul pur dans un module sans Prisma (`src/lib/conseil/`) : message prérempli, lien `wa.me`, état « dans les horaires / hors horaires » à partir d'un instant et d'un fuseau (par `heureMurale` de `i18n`, aucun `Intl` ailleurs). Sous-ligne : « Réponse en moins de 2 heures · lundi au vendredi, 9 h–18 h [fuseau] » ; hors horaires, « Réponse demain à partir de 9 h » (« lundi » le vendredi soir et le week-end). Textes dans `fr`, composant serveur, calculé à chaque requête.
+- Décisions du porteur du 2026-11-10 (OQ-7) : réponse du lundi au vendredi, de 9 h à 18 h, heure de Londres (`Europe/London`, UTC+1 l'été, jamais « GMT » affiché seul) ; délai annoncé « moins de 2 heures pendant les horaires » ; horaires et délai vivent dans `src/lib/reglages` (un changement = une PR). Numéro WhatsApp Business : variable Vercel `WHATSAPP_NUMERO`, lue seulement par `src/lib/reglages` (comme `LOT2_OUVERT`), saisie par le porteur lui-même, jamais écrite dans la conversation, une PR, un test ni un journal.
+- Calcul pur dans un module sans Prisma (`src/lib/conseil/`) : message prérempli, lien `wa.me`, état « dans les horaires / hors horaires » à partir d'un instant et d'un fuseau (par `heureMurale` de `i18n`, aucun `Intl` ailleurs ; fuseau `Europe/London` géré, heure d'été comprise). Sous-ligne : « Réponse en moins de 2 heures · lundi au vendredi, 9 h–18 h [fuseau] » ; hors horaires, « Réponse demain à partir de 9 h » (« lundi » le vendredi soir et le week-end). Textes dans `fr`, composant serveur, calculé à chaque requête.
 - Message prérempli : fiche = référence (slug) et lien absolu de l'œuvre (`urlAbsolue`) ; page artiste = nom de l'artiste ; ailleurs = message général. Bouton nommé par son action (« Conseil WhatsApp sur [titre] »), ni vert ni logo en couleur, une seule action principale par écran.
 - Repli (numéro absent) : le bouton garde sa place et mène à `/conseil`, avec le délai réellement tenu (`DELAI_REPONSE_DEMANDE_HEURES`, 48 heures), jamais celui de WhatsApp.
 - Le pied des e-mails (`fr.courriels.pied`) ajoute le lien Conseil WhatsApp quand le numéro est réglé, sinon reste inchangé (promesse de la story 4.1).
@@ -30,7 +30,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 
 **Never:**
 - Barre d'actions de la fiche (story 4.7), panier et suivi (Epic 6), mesure du clic (4.8), jours fériés, WhatsApp Business API ou envoi de messages par le site.
-- Écrire le numéro dans le code, les tests, la spec ou les journaux ; toucher à `public/robots.txt`, `MAINTENANCE_MODE`, `src/generated/prisma/`.
+- QR code et nouvelle bibliothèque : sur ordinateur, le lien `wa.me` ouvre WhatsApp Web ou propose lui-même le téléphone (décision du porteur) ; écrire le numéro dans le code, les tests, la spec ou les journaux ; toucher à `public/robots.txt`, `MAINTENANCE_MODE`, `src/generated/prisma/`.
 
 ## I/O & Edge-Case Matrix
 
@@ -45,15 +45,9 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 
 </frozen-after-approval>
 
-## Open Questions
-
-1. **Où saisir le numéro WhatsApp ?** — options : A) variable Vercel `WHATSAPP_NUMERO`, lue seulement par `src/lib/reglages` (le porteur la change sans PR, comme `LOT2_OUVERT`, recommandé) / B) constante dans `reglages` (le numéro entre dans le dépôt, un changement = une PR) / C) écran d'administration et table en base (changement en ligne, mais nouvelle table et migration).
-2. **Que veut dire « GMT » pour les horaires ?** — options : A) GMT strict, UTC+0 toute l'année, y compris l'été (fuseau `Etc/GMT`) / B) heure de Londres, UTC+1 l'été (`Europe/London`) / C) un autre fuseau à préciser. Affiché au visiteur après les horaires.
-3. **Faut-il un QR code sur ordinateur ?** — options : A) non : le lien `wa.me` ouvre WhatsApp Web ou propose lui-même le téléphone (aucune dépendance, recommandé) / B) oui : lien secondaire « Afficher le QR code » sur ordinateur, avec une nouvelle bibliothèque de QR code (le site ne peut pas savoir si l'ouverture a échoué).
-
 ## Code Map
 
-- `src/lib/reglages/index.ts` -- ajouter horaires, délai, fuseau et lecture du numéro (selon la réponse 1) ; ne rien inventer.
+- `src/lib/reglages/index.ts` -- ajouter horaires, délai, fuseau et lecture du numéro (lecture de `WHATSAPP_NUMERO`, jamais de valeur par défaut) ; ne rien inventer.
 - `src/lib/conseil/` (à créer, pur) -- `messageConseil`, `lienWhatsApp`, `etatConseil(maintenant)`, validation du numéro ; réutilise `heureMurale` et `urlAbsolue`.
 - `src/components/ui/BoutonConseil.tsx` (serveur) -- bouton, sous-ligne, repli ; `fr.conseil` ou `fr.whatsapp` pour les textes.
 - `src/app/galerie/[id]/ArtworkDetail.tsx`, `src/app/artistes/[id]/ArtistProfile.tsx`, `src/app/page.tsx`, `src/app/galerie/page.tsx`, `src/components/layout/Footer.tsx` -- emplacements ; le pied est un composant client : état reçu en props du layout.
