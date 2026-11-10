@@ -78,9 +78,15 @@ export interface Artist {
   discipline:  string
   country:     string
   bio:         string
+  /** Œuvres visibles de l'artiste (comptage réel). */
   worksCount:  number
-  yearsActive: string
-  exhibitions: number
+  /** Démarche de l'artiste (story 3.11) ; absente : section non affichée. */
+  statement?:   string | null
+  /** Formation et expositions : textes libres de l'équipe (story 3.11) ; absents : sections non affichées. */
+  formation?:   string | null
+  expositions?: string | null
+  /** Photo d'atelier (story 3.11). Jamais de coordonnées (site, e-mail, compte) : FR-8. */
+  atelierUrl?:  string | null
   /** Tailwind gradient classes used as portrait placeholder */
   gradient:    string
   featured:    boolean

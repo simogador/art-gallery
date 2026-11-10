@@ -10,9 +10,9 @@ import { estTypePhoto, FORMATS_AUTORISES, photo, type TypePhoto } from './depot-
 // le secret ne quitte jamais le serveur. Le public_id est imposé sous errancy/oeuvres/<id de l'œuvre>/,
 // puis la réponse de Cloudinary est vérifiée (signature et public_id) avant tout enregistrement.
 
-type Configuration = { cloudName: string; apiKey: string; secret: string }
+export type Configuration = { cloudName: string; apiKey: string; secret: string }
 
-function configuration(): Configuration | null {
+export function configuration(): Configuration | null {
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
   const apiKey = process.env.CLOUDINARY_API_KEY
   const secret = process.env.CLOUDINARY_API_SECRET
@@ -80,13 +80,13 @@ export function signatureReponse(publicId: string, version: string, secret: stri
   return createHash('sha1').update(`public_id=${publicId}&version=${version}${secret}`).digest('hex')
 }
 
-function memeSignature(attendue: string, recue: string): boolean {
+export function memeSignature(attendue: string, recue: string): boolean {
   const a = Buffer.from(attendue, 'utf8')
   const b = Buffer.from(recue, 'utf8')
   return a.length === b.length && timingSafeEqual(a, b)
 }
 
-const echapper = (texte: string) => texte.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+export const echapper = (texte: string) => texte.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 function dimension(valeur: unknown): number | null {
   return typeof valeur === 'number' && Number.isSafeInteger(valeur) && valeur > 0 && valeur <= 1_000_000 ? valeur : null

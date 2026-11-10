@@ -13,6 +13,7 @@ import { estEnCuration, estRecopiee, lireEtatVerrouille, type Publication } from
 // Story 2.7 : curation par l'équipe (./file) — file, valider (exige l'accord signé), renvoyer avec
 // commentaire, décisions conservées, accord signé de l'artiste ; règles pures dans ./curation-regles.
 // La bascule definirPublication refuse désormais une œuvre en curation : la file est le seul chemin.
+// Story 3.11 : pages artistes gérées par l'équipe — textes et photos (./artistes), règles pures (./fiche-artiste-regles).
 // Story 2.8 : « Remettre en vente » une œuvre retirée par l'artiste la renvoie en curation (./remise-en-vente).
 
 export {
@@ -50,6 +51,20 @@ export {
   type ResultatOeuvreACurer,
 } from './file'
 export * from './curation-regles'
+export {
+  dossierArtiste,
+  enregistrerFichePublique,
+  enregistrerPhotoArtiste,
+  messageRefusFicheArtiste,
+  preparerEnvoiPhotoArtiste,
+  MESSAGES_REFUS_FICHE_ARTISTE,
+  type CodeRefusFicheArtiste,
+  type RefusFicheArtiste,
+  type ResultatEnvoiArtiste,
+  type ResultatFicheArtiste,
+  type ResultatPhotoArtiste,
+} from './artistes'
+export * from './fiche-artiste-regles'
 export { definirSelection, MESSAGES_REFUS_SELECTION, type CodeRefusSelection, type ResultatSelection } from './selection'
 export { remettreEnVente, type ResultatRemiseEnVente } from './remise-en-vente'
 
