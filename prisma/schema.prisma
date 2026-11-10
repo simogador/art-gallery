@@ -290,6 +290,32 @@ model TentativeInscription {
   @@index([createdAt])
 }
 
+// ── Demandes de sélection (FR-8, story 4.2) ─────────────────────────────────
+// Écrites seulement par le module demandes, seul propriétaire des coordonnées des visiteurs.
+// Jamais d'adresse ni de téléphone dans les journaux ni dans les événements (ids seulement).
+enum EtatDemande {
+  nouvelle
+  planifiee
+  faite
+  sans_suite
+}
+
+model DemandeSelection {
+  id             String      @id @default(cuid())
+  espace         String      @db.Text
+  ambiances      String[]    @default([])
+  precision      String?     @db.Text
+  budgetCentimes Int
+  email          String
+  telephone      String?
+  etat           EtatDemande @default(nouvelle)
+  createdAt      DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime    @updatedAt @db.Timestamptz(3)
+
+  @@index([etat, createdAt])
+  @@index([email, createdAt])
+}
+
 // ── Livraison (AD-12, story 2.3) ─────────────────────────────────────────────
 // Zones gérées par l'équipe (module livraison), jamais codées en dur. Le code pays (ISO 3166-1
 // alpha-2) est la clé de ZonePays : un pays appartient au plus à une zone.

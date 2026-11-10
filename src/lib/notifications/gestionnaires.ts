@@ -1,9 +1,9 @@
 import { prisma } from '@/lib/prisma'
 import { emettreLienInvitation, noterEnvoiInvitation } from '@/lib/acces/lien-invitation'
 import type { EvenementLuA } from '@/lib/evenements/catalogue'
-import { urlAbsolue } from '@/lib/reglages'
+import { CONTACT_EQUIPE, urlAbsolue } from '@/lib/reglages'
 import { envoiActif } from './choix'
-import { contenuInvitation, contenuOeuvreRenvoyee, contenuOeuvreValidee } from './contenus'
+import { contenuAccuseDemande, contenuAlerteDemande, contenuInvitation, contenuOeuvreRenvoyee, contenuOeuvreValidee } from './contenus'
 import type { Courriel, ResultatEnvoi } from './port'
 
 // Gestionnaires d'e-mails (story 4.1), reliés aux événements dans `src/lib/abonnements.ts`. Chacun
@@ -104,5 +104,31 @@ export async function envoyerResultatCuration(
   if (!resultat.ok) {
     // Pas de nouvel essai (AQ-2 ouverte) : l'équipe voit l'échec dans les journaux, l'artiste lit le renvoi sur sa fiche.
     console.error('[notifications] résultat de curation non envoyé', { evenement: evenement.id, decision: decisionId, code: resultat.code })
+  }
+}
+
+/** Accusé de réception d'une demande de sélection, à l'adresse saisie par le visiteur (lue en base). */
+export async function envoyerAccuseDemande(evenement: EvenementLuA<'DemandeSelectionRecue'>): Promise<void> {
+  const { demandeId } = evenement.charge
+  const demande = await prisma.demandeSelection.findUnique({ where: { id: demandeId }, select: { email: true } })
+  if (!demande) {
+    console.info('[notifications] demande introuvable, aucun accusé', { evenement: evenement.id, demande: demandeId })
+    return
+  }
+  const resultat = await envoyer({ a: demande.email, ...contenuAccuseDemande(), cle: `${evenement.id}:envoyerAccuseDemande` })
+  if (!resultat.ok) {
+    // Pas de nouvel essai (AQ-2 ouverte) : la demande reste enregistrée et confirmée à l'écran.
+    console.error('[notifications] accusé de demande non envoyé', { evenement: evenement.id, demande: demandeId, code: resultat.code })
+  }
+}
+
+/** Alerte à l'équipe : numéro de la demande et lien vers l'administration, sans donnée personnelle. */
+export async function alerterEquipeDemande(evenement: EvenementLuA<'DemandeSelectionRecue'>): Promise<void> {
+  const { demandeId } = evenement.charge
+  // La file des demandes (story 4.6) aura sa page ; d'ici là, le lien mène à l'administration.
+  const contenu = contenuAlerteDemande({ numero: demandeId, lien: urlAbsolue('/dashboard/admin') })
+  const resultat = await envoyer({ a: CONTACT_EQUIPE, ...contenu, cle: `${evenement.id}:alerterEquipeDemande` })
+  if (!resultat.ok) {
+    console.error('[notifications] alerte de demande non envoyée', { evenement: evenement.id, demande: demandeId, code: resultat.code })
   }
 }

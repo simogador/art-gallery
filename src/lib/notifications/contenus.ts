@@ -1,5 +1,5 @@
 import { fr, formaterDateHeure } from '@/lib/i18n'
-import { CONTACT_EQUIPE, DUREE_INVITATION_JOURS } from '@/lib/reglages'
+import { CONTACT_EQUIPE, DELAI_REPONSE_DEMANDE_HEURES, DUREE_INVITATION_JOURS } from '@/lib/reglages'
 
 // Contenus des e-mails transactionnels (story 4.1) : textes du dictionnaire `fr`, vouvoiement. Pur
 // (aucun accès à la base). Chaque e-mail se termine par l'adresse de l'équipe ; le lien Conseil
@@ -18,12 +18,13 @@ export function echapperHtml(valeur: string): string {
 
 type Gabarit = {
   sujet: string
-  nom: string
+  /** Absent : « Bonjour, » (visiteur ou équipe, sans nom). */
+  nom?: string
   /** Paragraphes d'introduction. */
   intro: string[]
   /** Bloc cité (commentaire de l'équipe) : titre et texte. */
   citation?: { titre: string; texte: string }
-  bouton: { libelle: string; lien: string }
+  bouton?: { libelle: string; lien: string }
   /** Paragraphes après le bouton. */
   suite: string[]
   /** Afficher l'adresse du lien en clair sous le bouton (invitation). */
@@ -33,10 +34,10 @@ type Gabarit = {
 function assembler(g: Gabarit): Contenu {
   const t = fr.courriels
   const texte = [
-    t.salutation(g.nom),
+    g.nom ? t.salutation(g.nom) : t.salutationSansNom,
     ...g.intro,
     ...(g.citation ? [`${g.citation.titre}\n${g.citation.texte}`] : []),
-    `${g.bouton.libelle} : ${g.bouton.lien}`,
+    ...(g.bouton ? [`${g.bouton.libelle} : ${g.bouton.lien}`] : []),
     ...g.suite,
     t.signature,
     t.pied(CONTACT_EQUIPE),
@@ -46,12 +47,14 @@ function assembler(g: Gabarit): Contenu {
   const html = [
     '<!doctype html><html lang="fr"><body style="margin:0;padding:24px;background:#ffffff;color:#111111;font-family:Georgia,serif;font-size:16px;line-height:1.5">',
     '<div style="max-width:560px;margin:0 auto">',
-    p(t.salutation(g.nom)),
+    p(g.nom ? t.salutation(g.nom) : t.salutationSansNom),
     ...g.intro.map(p),
     g.citation
       ? `<p style="margin:0 0 4px"><strong>${echapperHtml(g.citation.titre)}</strong></p><blockquote style="margin:0 0 16px;padding:0 0 0 12px;border-left:2px solid #999999;white-space:pre-wrap">${echapperHtml(g.citation.texte)}</blockquote>`
       : '',
-    `<p style="margin:24px 0"><a href="${echapperHtml(g.bouton.lien)}" style="display:inline-block;padding:12px 20px;background:#111111;color:#ffffff;text-decoration:none">${echapperHtml(g.bouton.libelle)}</a></p>`,
+    g.bouton
+      ? `<p style="margin:24px 0"><a href="${echapperHtml(g.bouton.lien)}" style="display:inline-block;padding:12px 20px;background:#111111;color:#ffffff;text-decoration:none">${echapperHtml(g.bouton.libelle)}</a></p>`
+      : '',
     g.lienEnClair
       ? `<p style="margin:0 0 16px;font-size:14px">${echapperHtml(t.invitation.lienAlternatif)}<br><a href="${echapperHtml(g.lienEnClair)}">${echapperHtml(g.lienEnClair)}</a></p>`
       : '',
@@ -95,6 +98,27 @@ export function contenuOeuvreRenvoyee(p: { artiste: string; titre: string; comme
     nom: p.artiste,
     intro: [t.intro(p.titre)],
     citation: { titre: t.messageEquipe, texte: p.commentaire },
+    bouton: { libelle: t.bouton, lien: p.lien },
+    suite: [t.suite],
+  })
+}
+
+/** Accusé de réception au visiteur (story 4.2) : le délai annoncé est celui de l'écran de confirmation. */
+export function contenuAccuseDemande(): Contenu {
+  const t = fr.courriels.accuse
+  return assembler({
+    sujet: t.sujet,
+    intro: [t.intro, t.delai(DELAI_REPONSE_DEMANDE_HEURES)],
+    suite: [t.suite],
+  })
+}
+
+/** Alerte à l'équipe : le numéro de la demande et un lien, aucune donnée personnelle. */
+export function contenuAlerteDemande(p: { numero: string; lien: string }): Contenu {
+  const t = fr.courriels.alerteDemande
+  return assembler({
+    sujet: t.sujet,
+    intro: [t.intro(p.numero)],
     bouton: { libelle: t.bouton, lien: p.lien },
     suite: [t.suite],
   })

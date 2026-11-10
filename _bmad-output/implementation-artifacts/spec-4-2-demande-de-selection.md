@@ -2,7 +2,8 @@
 title: 'Story 4.2 — Demande de sélection personnalisée'
 type: 'feature'
 created: '2026-11-10'
-status: 'draft'
+status: 'done'
+baseline_commit: 'dfae530843f33488ca49de828b6fa46e3b36a07f'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.md']
@@ -60,11 +61,11 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `prisma/` -- table `DemandeSelection` et migration additive
-- [ ] `src/lib/demandes/` -- règles de validation, enregistrement, limitation d'envois, événement
-- [ ] `src/lib/notifications/`, `src/lib/evenements/`, `src/lib/abonnements.ts` -- accusé de demande
-- [ ] `src/app/conseil/`, en-tête et pied de page, `reglages`, `fr` -- page, formulaire, liens, textes
-- [ ] tests (base réelle et navigateur), `AGENTS.md`, `docs/migrations.md`
+- [x] `prisma/` -- table `DemandeSelection` et migration additive
+- [x] `src/lib/demandes/` -- règles de validation, enregistrement, limitation d'envois, événement
+- [x] `src/lib/notifications/`, `src/lib/evenements/`, `src/lib/abonnements.ts` -- accusé de demande
+- [x] `src/app/conseil/`, en-tête et pied de page, `reglages`, `fr` -- page, formulaire, liens, textes
+- [x] tests (base réelle et navigateur), `AGENTS.md`, `docs/migrations.md`
 
 **Acceptance Criteria:**
 - Given `/conseil` ouvert depuis n'importe quelle page, when le visiteur envoie un formulaire valide, then la demande est enregistrée à l'état `nouvelle`, l'écran affiche « Demande reçue. Nous vous répondons sous [délai]. » et un seul e-mail d'accusé part avec le délai.
@@ -79,3 +80,28 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 
 **Manual checks:**
 - Préversion : le formulaire s'affiche et enregistre une demande (vérification par SQL) ; l'adaptateur « journal » est actif, aucun e-mail réel.
+
+## Review Triage Log
+
+| # | Source | Constat | Verdict | Route | Preuve / suite |
+|---|--------|---------|---------|-------|----------------|
+| 1 | Edge, Blind | Un envoi corrigé (autres ambiances, précision, téléphone) dans les 10 minutes est absorbé comme doublon et confirmé sans être enregistré | medium | patch | le contrôle de doublon compare tous les champs enregistrés ; test « demande corrigée » |
+| 2 | Edge | Un caractère nul dans un texte fait échouer l'écriture PostgreSQL à chaque essai (« indisponible ») | medium | patch | caractère retiré à la lecture ; test « caractère nul… » |
+| 3 | Edge, Blind | Téléphone et tableau d'ambiances sans borne | low | patch | téléphone 40 caractères au plus, 50 ambiances lues au plus ; test |
+| 4 | Edge, Blind | La purge des traces efface aussi celles du formulaire de maintenance | low | patch | purge limitée aux clés `conseil-` ; test |
+| 5 | Edge, Blind | Ambiances jamais validées à la sortie du champ (spec : à la sortie et à l'envoi) | medium | patch | validation à la sortie du groupe ; test navigateur |
+| 6 | Edge, Blind | Le résumé reçoit le focus avant d'être affiché ; focus perdu après la confirmation | medium | patch | focus après rendu (effets), confirmation focalisée ; test navigateur |
+| 7 | Verification Gap | Liens d'accès (en-tête, menu mobile) sans test | medium | patch | test navigateur de `Header` ; le lien du pied de page vient du dictionnaire (`Footer` rend `href={ancre}`) |
+| 8 | Edge, Blind | Accusé envoyé à une adresse non vérifiée (détournement possible, 3 par heure) | medium | defer | seuils de la spec ; confirmation d'adresse ou anti-robot à décider ; deferred-work.md |
+| 9 | Edge, Blind | Échec de l'alerte à l'équipe invisible (journal seulement), aucune file avant la 4.6 | medium | defer | AQ-2 ouverte et story 4.6 ; deferred-work.md |
+| 10 | Blind | Aucune durée de conservation ni lien vers une politique de confidentialité | medium | defer | décision du porteur, pages de confiance (Epic 7) ; deferred-work.md |
+| 11 | Edge, Blind, Verification Gap | `<button>` dans `<a>` pour « Contacter » | low | defer | même motif que « Connexion » déjà en place ; deferred-work.md |
+| 12 | Edge, Blind | Adresse IP lue en tête de `x-forwarded-for` (falsifiable) | low | false | Vercel remplace cet en-tête par l'adresse du client ; même lecture que la maintenance |
+| 13 | Edge | Envois comptés avant la création (double appui, échec) | low | reject | « chaque envoi compte » comme la maintenance ; la correction ajouterait une transaction |
+| 14 | Edge | Nouvel essai absorbé si la répartition a été perdue | low | reject | AQ-2 ouverte, pas de balayage |
+| 15 | Blind | `/conseil` absent du sitemap, pas d'Open Graph | low | reject | page de service, pas de contenu à référencer ; hors intention |
+| 16 | Blind | Libellé « Contacter » et route générale | low | reject | choix du porteur, la spec fixe « Contacter » vers `/conseil` |
+| 17 | Blind | Budget « 1 500,00 », « 1.500 », « euros » refusés | low | reject | message et exemple clairs (« par exemple 1500 ») |
+| 18 | Blind | Pas de `maxLength` ni de compteur sur les zones de texte | low | reject | message d'erreur à l'envoi, correction plus de code que d'effet |
+| 19 | Blind | Test de la page et de ses métadonnées ; ordre et copie du SQL dans `docs/migrations.md` ; longueur de l'entrée `AGENTS.md` | low | reject | page sans logique ; le fichier de migration fait foi ; style de l'existant |
+| 20 | Verification Gap | `vi.spyOn` sur un module ES pourrait ne pas fonctionner | low | false | le test passe : l'espion est bien appliqué (rejet simulé observé) |

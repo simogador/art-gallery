@@ -237,6 +237,45 @@ Retour arrière :
 - 2026-11-10 (story 3.11) : migration `20261110090000_pages_artistes` (avec son empreinte SHA-256) appliquée depuis l'éditeur SQL de Neon sur `preview`, puis sur `production` avant la fusion de la PR #48. Point de restauration production : branche `sauvegarde-avant-3-11-2026-11-10`. Préversion vérifiée avec un artiste de test renseigné par SQL.
 - Retour arrière : l'ancien code ignore les colonnes ajoutées (les pages artistes reprennent leur ancien aspect). Pour retirer la migration (dernier recours, les textes et la photo d'atelier sont perdus) : `ALTER TABLE "Artist" DROP COLUMN "formation", DROP COLUMN "expositions", DROP COLUMN "atelierUrl";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261110090000_pages_artistes';`. Un portrait remplacé depuis l'administration reste dans `imageUrl`.
 
+### Story 4.2 : demande de sélection personnalisée
+
+- Migration : `20261110180000_demandes_selection` (empreinte SHA-256 : `d3f37d261386e95195564a31cc1087827de688375df86a5b5742a6cd737e6cb8`). Ajoute le type `EtatDemande` et la table `DemandeSelection` (deux index). Ajout seulement, aucune table existante modifiée.
+- Le nouveau code écrit dans cette table à chaque demande et échouerait sans elle : même procédure que les précédentes, branche de sauvegarde datée, `preview` puis production **avant la fusion**, avec la ligne `_prisma_migrations` et l'empreinte SHA-256.
+  ```sql
+  BEGIN;
+  -- CreateEnum
+  CREATE TYPE "EtatDemande" AS ENUM ('nouvelle', 'planifiee', 'faite', 'sans_suite');
+
+  -- CreateTable
+  CREATE TABLE "DemandeSelection" (
+      "id" TEXT NOT NULL,
+      "espace" TEXT NOT NULL,
+      "ambiances" TEXT[] DEFAULT ARRAY[]::TEXT[],
+      "precision" TEXT,
+      "budgetCentimes" INTEGER NOT NULL,
+      "email" TEXT NOT NULL,
+      "telephone" TEXT,
+      "etat" "EtatDemande" NOT NULL DEFAULT 'nouvelle',
+      "createdAt" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMPTZ(3) NOT NULL,
+
+      CONSTRAINT "DemandeSelection_pkey" PRIMARY KEY ("id")
+  );
+
+  -- CreateIndex
+  CREATE INDEX "DemandeSelection_etat_createdAt_idx" ON "DemandeSelection"("etat", "createdAt");
+
+  -- CreateIndex
+  CREATE INDEX "DemandeSelection_email_createdAt_idx" ON "DemandeSelection"("email", "createdAt");
+  INSERT INTO "_prisma_migrations" (id, checksum, migration_name, started_at, finished_at, applied_steps_count)
+  VALUES (gen_random_uuid()::text, 'd3f37d261386e95195564a31cc1087827de688375df86a5b5742a6cd737e6cb8',
+          '20261110180000_demandes_selection', now(), now(), 1);
+  COMMIT;
+  ```
+  Vérifiez l'empreinte avec `sha256sum` avant de l'enregistrer.
+- Contrôle (lecture seule) après un essai sur la préversion : `SELECT id, etat, "createdAt" FROM "DemandeSelection" ORDER BY "createdAt" DESC LIMIT 5;` (les coordonnées s'y trouvent : ne les copiez nulle part).
+- Retour arrière : le code précédent ignore cette table. Pour la retirer (dernier recours, les demandes sont perdues) : `DROP TABLE "DemandeSelection"; DROP TYPE "EtatDemande";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261110180000_demandes_selection';`.
+
 ### Story 4.1 : e-mails transactionnels
 
 - Migration : `20261110120000_envoi_invitations` (empreinte SHA-256 : `23ff62d47282e14a709e68935db23f126934734ba65fa1283119ef8711b1f9bd`). Ajoute à `Invitation` deux colonnes facultatives : `envoyeeLe` et `echecEnvoiLe` (`TIMESTAMP(3)`). Ajout seulement, aucune recopie.

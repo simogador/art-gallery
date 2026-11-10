@@ -30,6 +30,13 @@ export function maintenanceActive(
 // au plus `parIp` envois par adresse IP et `parEmail` par e-mail sur `fenetreMinutes`.
 export const LIMITES_INSCRIPTION_OUVERTURE = { fenetreMinutes: 60, parIp: 10, parEmail: 3 } as const
 
+// Demande de sélection personnalisée (story 4.2, FR-8, décision du porteur du 2026-11-10) : délai de
+// réponse annoncé (48 heures), limites d'envoi par IP et par e-mail (fenêtre glissante), et fenêtre
+// où un même envoi répété (double appui) ne crée pas de seconde demande. Changer une valeur = une PR.
+export const DELAI_REPONSE_DEMANDE_HEURES = 48
+export const LIMITES_DEMANDE_SELECTION = { fenetreMinutes: 60, parIp: 5, parEmail: 3 } as const
+export const DOUBLON_DEMANDE_MINUTES = 10
+
 // Invitation des artistes (story 2.4, UXQ-8, décision du porteur du 2026-11-02) : durée de
 // validité du lien, et adresse de « Écrire à l'équipe ».
 export const DUREE_INVITATION_JOURS = 7

@@ -163,3 +163,16 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-1-emails-transactionnels.md`
   summary: Avant la mise en production des e-mails : enregistrement DMARC du domaine, accord de sous-traitance du prestataire et mise à jour de la politique de confidentialité.
   evidence: relevé en relecture ; hors code, à décider avec le porteur (pages de confiance, Epic 7).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-2-demande-de-selection.md`
+  summary: L'accusé de demande part à une adresse non vérifiée : un tiers peut recevoir des e-mails du site (3 par heure par adresse).
+  evidence: relevé en relecture (abus possible comme relais de courrier, réputation du domaine d'envoi) ; à traiter par une confirmation d'adresse, un anti-robot ou un plafond quotidien, avec le porteur.
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-2-demande-de-selection.md`
+  summary: Si l'alerte à l'équipe échoue (prestataire, adresse de l'équipe), seul le journal le montre ; aucune file des demandes avant la story 4.6.
+  evidence: pas de nouvel essai (AQ-2 ouverte) ; avant le lancement, la file des demandes (4.6) ou une alerte relançable est nécessaire pour tenir la promesse « sous 48 heures ».
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-2-demande-de-selection.md`
+  summary: Durée de conservation des demandes (e-mail, téléphone, texte libre) et lien vers une politique de confidentialité sur `/conseil` non décidés.
+  evidence: décision du porteur et pages de confiance (Epic 7) ; aucun parcours de suppression ou d'export d'une demande n'existe.
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-2-demande-de-selection.md`
+  summary: Le bouton « Contacter » de l'en-tête est un `<button>` dans un lien (`<a>`), comme « Connexion ».
+  evidence: HTML invalide (deux arrêts de tabulation) ; à corriger avec la refonte de l'en-tête, sans lien avec cette story.

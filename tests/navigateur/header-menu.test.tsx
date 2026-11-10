@@ -11,6 +11,17 @@ vi.mock('@/app/auth/actions', () => ({ logout: () => {} }))
 const t = fr.entete
 const panneau = () => document.querySelector('[role="dialog"][aria-modal="true"]') as HTMLElement | null
 
+describe('Header, accès à la demande de sélection (navigateur)', () => {
+  it('« Contacter » mène à /conseil, en-tête et menu mobile', async () => {
+    const ecran = await render(<Header session={null} lot2Ouvert={false} />)
+    const liens = () => Array.from(document.querySelectorAll('a[href="/conseil"]'))
+    expect(liens().filter((a) => a.textContent === t.contacter)).toHaveLength(1)
+    await ecran.getByRole('button', { name: t.ouvrirMenu }).click()
+    await vi.waitFor(() => expect(panneau()).not.toBeNull())
+    expect(panneau()!.querySelector('a[href="/conseil"]')?.textContent).toBe(t.contacter)
+  })
+})
+
 describe('Header, menu mobile (navigateur)', () => {
   it('Lot 2 fermé : le panneau ouvert n’a ni lien /panier ni « Panier »', async () => {
     const ecran = await render(<Header session={null} lot2Ouvert={false} />)

@@ -48,6 +48,7 @@ const SURFACES_TEXTES = [
   'src/components/layout/**/*.tsx',
   'src/components/ui/UniteToggle.tsx',
   'src/components/ui/PaysLivraison.tsx',
+  'src/app/conseil/**/*.tsx',
 ]
 
 module.exports = {
