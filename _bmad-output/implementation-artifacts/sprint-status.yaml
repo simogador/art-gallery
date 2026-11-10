@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-27-2026 09:35
-last_updated: 11-10-2026 14:00
+last_updated: 11-10-2026 14:30
 project: art-gallery
 project_key: NOKEY
 tracking_system: file-system
@@ -72,7 +72,7 @@ development_status:
   3-9-galerie-filtrée-pour-un-mur-et-un-budget: done
   3-10-accueil-curatorial: done
   3-11-pages-artistes: done
-  epic-3-retrospective: optional
+  epic-3-retrospective: done
 
   epic-4: backlog
   4-1-e-mails-transactionnels-fiables: backlog
@@ -124,3 +124,61 @@ development_status:
   8-7-clôture-des-commandes: backlog
   8-8-somme-due-à-l-artiste: backlog
   epic-8-retrospective: optional
+action_items:
+  - id: "epic-3-retro-item-1-rendre-artworkdetail-tsx-conforme-textes"
+    epic: 3
+    action: "Rendre ArtworkDetail.tsx conforme (textes dans fr, scan d'interface),
+      le retirer des deux listes d'exceptions avec la barre d'actions de l'Epic 4,
+      retirer le code mort M'alerter"
+    owner: "Claude (développement)"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-11-10.md"
+  - id: "epic-3-retro-item-2-décider-d-un-harnais-de-test-d-interacti"
+    epic: 3
+    action: "Décider d'un harnais de test d'interactions (Playwright) et couvrir PaysLivraison,
+      CarrouselPhotos, FicheArtiste et la bascule de sélection"
+    owner: "porteur (décision) puis Claude"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-11-10.md"
+  - id: "epic-3-retro-item-3-mesurer-le-lcp-mobile-des-pages-galerie"
+    epic: 3
+    action: "Mesurer le LCP mobile des pages galerie, fiche et accueil avec les vraies
+      données avant le lancement"
+    owner: "Claude (mesure) et porteur (validation)"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-11-10.md"
+  - id: "epic-3-retro-item-4-au-premier-artiste-réel-signer-son-accor"
+    epic: 3
+    action: "Au premier artiste réel : signer son accord, renseigner sa fiche, essayer
+      Sélection de l'accueil et vérifier en production la page complète"
+    owner: "porteur"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-11-10.md"
+  - id: "epic-3-retro-item-5-fournir-les-coordonnées-réelles-du-pied"
+    epic: 3
+    action: "Fournir les coordonnées réelles du pied de page, créer la page À propos
+      ou retirer le lien, remplacer les portraits de démonstration Wikimedia"
+    owner: "porteur"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-11-10.md"
+  - id: "epic-3-retro-item-6-réconcilier-sprint-status-epic-3-done-et"
+    epic: 3
+    action: "Réconcilier sprint-status (epic-3: done) et consigner les écarts décidés
+      dans epic-3-context.md si régénéré"
+    owner: "Claude, sur accord du porteur"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-11-10.md"
+  - id: "epic-3-retro-item-7-avant-le-lancement-prévoir-la-purge-des"
+    epic: 3
+    action: "Avant le lancement : prévoir la purge des tables d'événements et mesurer
+      la taille du cache du catalogue"
+    owner: "Claude"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-11-10.md"
+  - id: "epic-3-retro-item-8-actes-du-lancement-ajouter-sitemap-à-pub"
+    epic: 3
+    action: "Actes du lancement : ajouter Sitemap à public/robots.txt et lever MAINTENANCE_MODE
+      dans Vercel"
+    owner: "porteur"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-3-retro-2026-11-10.md"
