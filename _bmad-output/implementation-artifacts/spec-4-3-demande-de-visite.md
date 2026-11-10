@@ -21,6 +21,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 ## Boundaries & Constraints
 
 **Always:**
+- Décisions du porteur du 2026-11-10 : délai de réponse annoncé pour une visite = 48 heures, la valeur unique `DELAI_REPONSE_DEMANDE_HEURES` déjà utilisée pour la sélection ; aucun lien vers la page sur la fiche avant la story 4.7 (la page n'est joignable que par son adresse).
 - Mêmes règles, limites et mécanismes que la story 4.2 (formulaire, validation, anti-abus par IP et e-mail avec empreintes salées, doublon, e-mails par gestionnaires, journaux et charges en identifiants seulement) ; alerte à l'équipe à `CONTACT_EQUIPE` avec le numéro et un lien vers l'administration, sans donnée personnelle (décision du porteur du 2026-11-10 pour les demandes, reprise ici).
 - « En atelier » n'est proposé que si `Artwork.visitesAtelier` vaut vrai (story 2.6), lu par `catalogue` et exposé dans le type d'affichage ; refus côté serveur si la demande en atelier vise une œuvre dont l'artiste ne l'accepte pas.
 - Page réservée à une œuvre visible et disponible (`estVisible`/`estDisponible`) ; œuvre inconnue, non visible, vendue, réservée ou retirée : 404. Le pays de livraison n'entre pas en compte (visite conservée pour un pays non livré).
@@ -48,11 +49,6 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 | Journaux et charges | lecture après envoi | ni adresse, ni téléphone, ni créneaux, ids seulement | — |
 
 </frozen-after-approval>
-
-## Open Questions
-
-1. **Délai de réponse annoncé pour une visite** : la maquette affiche « sous 24 h », non décidé (OQ-8). Options : 48 heures, comme la sélection (une seule valeur, `DELAI_REPONSE_DEMANDE_HEURES`) / une durée propre à la visite, par exemple 24 heures (nouvelle valeur dans `reglages`, à votre choix).
-2. **Accès à la page avant la story 4.7** : la barre d'actions de la fiche, qui portera « Réserver une visite », vient à la 4.7. Options : aucun lien sur la fiche en attendant (la page n'est joignable que par son adresse, rien de visible n'est ajouté) / un lien simple « Réserver une visite » sur la fiche d'une œuvre disponible, que la 4.7 remplacera par la barre d'actions.
 
 ## Code Map
 
