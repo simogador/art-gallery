@@ -8,8 +8,4 @@ module.exports = [
   'src/app/artistes/ArtistsList.tsx', // story 3.11
   'src/app/artistes/[id]/ArtistProfile.tsx', // story 3.11
   'src/app/galerie/[id]/ArtworkDetail.tsx', // fiche, stories 3.5 à 3.8
-  'src/components/sections/Artists.tsx', // accueil, story 3.10
-  'src/components/sections/Exhibitions.tsx', // accueil, story 3.10
-  'src/components/sections/Gallery.tsx', // accueil, story 3.10
-  'src/components/sections/Hero.tsx', // accueil, story 3.10
 ]

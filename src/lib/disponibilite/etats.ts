@@ -91,6 +91,11 @@ export function estVendue(e: EtatOeuvre): boolean {
   return e.disponibilite === 'vendue'
 }
 
+/** Retirée de la vente (axe disponibilité), publiée ou non. */
+export function estRetiree(e: EtatOeuvre): boolean {
+  return e.disponibilite === 'retiree'
+}
+
 /** Axe publication seul (bascule « Publiée / Brouillon » de l'administration). */
 export function estPubliee(e: EtatOeuvre): boolean {
   return e.publication === 'publiee'

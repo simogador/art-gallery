@@ -147,3 +147,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-5-fiche-oeuvre-photos-rangee.md`
   summary: Confirmer avec le porteur si le « plus grand côté » du format doit compter la profondeur des sculptures.
   evidence: `formatOeuvre` n'utilise que hauteur et largeur (non vérifié, medium si la profondeur dépasse les deux autres).
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-10-accueil-curatorial.md`
+  summary: Le lien « À propos » de l'en-tête (`/#about`) ne mène à aucune section de l'accueil.
+  evidence: l'ancre n'existait déjà plus avant la story 3.10 ; à traiter avec la page « À propos » (Epic 7 ou story dédiée).
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-10-accueil-curatorial.md`
+  summary: Tests de rendu de `Artists`, `Exhibitions` (ordre, plafond de 4) et de la bascule « Sélection de l'accueil » de l'administration (seuls les types et le module sont vérifiés).
+  evidence: logique de présentation sans risque pour l'instant (relecture story 3.10).
