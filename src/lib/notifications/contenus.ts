@@ -1,4 +1,5 @@
 import { fr, formaterDateHeure } from '@/lib/i18n'
+import type { TypeVisite } from '@/lib/demandes/visite-regles'
 import { CONTACT_EQUIPE, DELAI_REPONSE_DEMANDE_HEURES, DUREE_INVITATION_JOURS } from '@/lib/reglages'
 
 // Contenus des e-mails transactionnels (story 4.1) : textes du dictionnaire `fr`, vouvoiement. Pur
@@ -116,6 +117,36 @@ export function contenuAccuseDemande(): Contenu {
 /** Alerte à l'équipe : le numéro de la demande et un lien, aucune donnée personnelle. */
 export function contenuAlerteDemande(p: { numero: string; lien: string }): Contenu {
   const t = fr.courriels.alerteDemande
+  return assembler({
+    sujet: t.sujet,
+    intro: [t.intro(p.numero)],
+    bouton: { libelle: t.bouton, lien: p.lien },
+    suite: [t.suite],
+  })
+}
+
+/**
+ * Accusé d'une demande de visite (story 4.3) : titre de l'œuvre, type, créneaux dans le fuseau du
+ * visiteur et délai annoncé. Rien sur l'artiste (ni coordonnées), le canal, la durée ni la gratuité.
+ */
+export function contenuAccuseVisite(p: { titre: string; type: TypeVisite; creneaux: Date[]; fuseau: string }): Contenu {
+  const t = fr.courriels.accuseVisite
+  return assembler({
+    sujet: t.sujet,
+    intro: [
+      t.intro(p.titre),
+      t.type[p.type],
+      t.creneaux(p.fuseau),
+      ...p.creneaux.map((c) => t.creneau(formaterDateHeure(c, { fuseau: p.fuseau, jourSemaine: true }))),
+      t.delai(DELAI_REPONSE_DEMANDE_HEURES),
+    ],
+    suite: [t.suite],
+  })
+}
+
+/** Alerte à l'équipe pour une demande de visite : le numéro et un lien, aucune donnée personnelle. */
+export function contenuAlerteVisite(p: { numero: string; lien: string }): Contenu {
+  const t = fr.courriels.alerteVisite
   return assembler({
     sujet: t.sujet,
     intro: [t.intro(p.numero)],

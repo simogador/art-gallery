@@ -1,6 +1,13 @@
 import { revalidateTag } from 'next/cache'
 import type { EvenementLuA, NomEvenement } from '@/lib/evenements/catalogue'
-import { alerterEquipeDemande, envoyerAccuseDemande, envoyerInvitation, envoyerResultatCuration } from '@/lib/notifications'
+import {
+  alerterEquipeDemande,
+  alerterEquipeVisite,
+  envoyerAccuseDemande,
+  envoyerAccuseVisite,
+  envoyerInvitation,
+  envoyerResultatCuration,
+} from '@/lib/notifications'
 
 // Racine de composition des événements (story 3.4) : qui réagit à quoi. Seul fichier qui relie un
 // événement à ses gestionnaires ; il n'accède pas à la base (AD-1). Un gestionnaire ne reçoit jamais
@@ -34,5 +41,10 @@ export const ABONNEMENTS: { [N in NomEvenement]: Abonnement<N>[] } = {
   DemandeSelectionRecue: [
     { nom: 'envoyerAccuseDemande', gestionnaire: envoyerAccuseDemande },
     { nom: 'alerterEquipeDemande', gestionnaire: alerterEquipeDemande },
+  ],
+  // Story 4.3 : même paire pour une demande de visite.
+  DemandeVisiteRecue: [
+    { nom: 'envoyerAccuseVisite', gestionnaire: envoyerAccuseVisite },
+    { nom: 'alerterEquipeVisite', gestionnaire: alerterEquipeVisite },
   ],
 }

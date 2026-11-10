@@ -38,6 +38,8 @@ export interface Artwork {
   description: string
   /** L'artiste s'est engagé à fournir un certificat d'authenticité signé (`engagementCertificat`, story 3.6). */
   certificat:  boolean
+  /** L'artiste accepte les visites en atelier (story 2.6) ; seule « En atelier » de la demande de visite en dépend (story 4.3). */
+  visitesAtelier?: boolean
   tags:        string[]
   featured:    boolean
   sold:        boolean

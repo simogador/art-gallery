@@ -3,7 +3,15 @@ import { emettreLienInvitation, noterEnvoiInvitation } from '@/lib/acces/lien-in
 import type { EvenementLuA } from '@/lib/evenements/catalogue'
 import { CONTACT_EQUIPE, urlAbsolue } from '@/lib/reglages'
 import { envoiActif } from './choix'
-import { contenuAccuseDemande, contenuAlerteDemande, contenuInvitation, contenuOeuvreRenvoyee, contenuOeuvreValidee } from './contenus'
+import {
+  contenuAccuseDemande,
+  contenuAccuseVisite,
+  contenuAlerteDemande,
+  contenuAlerteVisite,
+  contenuInvitation,
+  contenuOeuvreRenvoyee,
+  contenuOeuvreValidee,
+} from './contenus'
 import type { Courriel, ResultatEnvoi } from './port'
 
 // Gestionnaires d'e-mails (story 4.1), reliés aux événements dans `src/lib/abonnements.ts`. Chacun
@@ -130,5 +138,46 @@ export async function alerterEquipeDemande(evenement: EvenementLuA<'DemandeSelec
   const resultat = await envoyer({ a: CONTACT_EQUIPE, ...contenu, cle: `${evenement.id}:alerterEquipeDemande` })
   if (!resultat.ok) {
     console.error('[notifications] alerte de demande non envoyée', { evenement: evenement.id, demande: demandeId, code: resultat.code })
+  }
+}
+
+/** Accusé d'une demande de visite (story 4.3) : adresse, œuvre et créneaux lus en base à l'envoi. */
+export async function envoyerAccuseVisite(evenement: EvenementLuA<'DemandeVisiteRecue'>): Promise<void> {
+  const { demandeId } = evenement.charge
+  const demande = await prisma.demandeVisite.findUnique({
+    where: { id: demandeId },
+    // Seulement le titre de l'œuvre : jamais rien de l'artiste (la visite est organisée par l'équipe).
+    select: { email: true, type: true, creneaux: true, fuseau: true, artwork: { select: { title: true } } },
+  })
+  if (!demande) {
+    console.info('[notifications] demande de visite introuvable, aucun accusé', { evenement: evenement.id, demande: demandeId })
+    return
+  }
+  if (!demande.artwork) {
+    // Œuvre supprimée entre-temps : la demande reste (sans lien), aucun accusé sans titre.
+    console.info('[notifications] œuvre de la demande de visite supprimée, aucun accusé', { evenement: evenement.id, demande: demandeId })
+    return
+  }
+  const contenu = contenuAccuseVisite({
+    titre: demande.artwork.title,
+    type: demande.type,
+    creneaux: demande.creneaux,
+    fuseau: demande.fuseau,
+  })
+  const resultat = await envoyer({ a: demande.email, ...contenu, cle: `${evenement.id}:envoyerAccuseVisite` })
+  if (!resultat.ok) {
+    // Pas de nouvel essai (AQ-2 ouverte) : la demande reste enregistrée et confirmée à l'écran.
+    console.error('[notifications] accusé de visite non envoyé', { evenement: evenement.id, demande: demandeId, code: resultat.code })
+  }
+}
+
+/** Alerte à l'équipe pour une demande de visite : numéro et lien vers l'administration seulement. */
+export async function alerterEquipeVisite(evenement: EvenementLuA<'DemandeVisiteRecue'>): Promise<void> {
+  const { demandeId } = evenement.charge
+  // La file des demandes (story 4.6) aura sa page ; d'ici là, le lien mène à l'administration.
+  const contenu = contenuAlerteVisite({ numero: demandeId, lien: urlAbsolue('/dashboard/admin') })
+  const resultat = await envoyer({ a: CONTACT_EQUIPE, ...contenu, cle: `${evenement.id}:alerterEquipeVisite` })
+  if (!resultat.ok) {
+    console.error('[notifications] alerte de visite non envoyée', { evenement: evenement.id, demande: demandeId, code: resultat.code })
   }
 }

@@ -26,6 +26,24 @@ export {
   type ValeurSelection,
 } from './selection-regles'
 
+// Demande de visite à distance ou en atelier (story 4.3).
+export { enregistrerDemandeVisite, type ResultatDemandeVisite } from './visite'
+export {
+  CHAMPS_VISITE,
+  LIMITES_VISITE,
+  TYPES_VISITE,
+  creneauxSaisis,
+  erreurChampVisite,
+  lireEntreeVisite,
+  validerVisite,
+  type ChampVisite,
+  type ContexteVisite,
+  type EntreeVisite,
+  type ErreursVisite,
+  type TypeVisite,
+  type ValeurVisite,
+} from './visite-regles'
+
 function empreinte(type: 'ip' | 'email', valeur: string): string {
   // AUTH_SECRET sert de sel : une empreinte d'IP ne se retrouve pas par simple liste.
   const sel = process.env.AUTH_SECRET ?? ''

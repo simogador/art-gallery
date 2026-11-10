@@ -72,6 +72,7 @@ model Artwork {
   photos           PhotoOeuvre[]
   decisionsCuration DecisionCuration[]
   declarationsDisponibilite DeclarationDisponibilite[]
+  demandesVisite    DemandeVisite[]
   // Story 2.6 (FR-20) : visites en atelier (null : pas encore renseignée), trois engagements de
   // l'artiste et date d'envoi en curation (ordre de la file, story 2.7). Écrits seulement par curation.
   visitesAtelier       Boolean?
@@ -314,6 +315,33 @@ model DemandeSelection {
 
   @@index([etat, createdAt])
   @@index([email, createdAt])
+}
+
+// ── Demandes de visite (FR-8, UJ-4, story 4.3) ─────────────────────────────
+// Rattachées à une œuvre ; écrites seulement par le module demandes. Créneaux proposés par le
+// visiteur, enregistrés en UTC, avec le fuseau IANA de son appareil (pour les lui réafficher).
+enum TypeVisite {
+  distance
+  atelier
+}
+
+model DemandeVisite {
+  id        String      @id @default(cuid())
+  // Œuvre supprimée : la demande reste, sans lien (décision du porteur du 2026-11-10).
+  artwork   Artwork?    @relation(fields: [artworkId], references: [id], onDelete: SetNull)
+  artworkId String?
+  type      TypeVisite
+  creneaux  DateTime[]  @db.Timestamptz(3)
+  fuseau    String
+  email     String
+  telephone String?
+  etat      EtatDemande @default(nouvelle)
+  createdAt DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime    @updatedAt @db.Timestamptz(3)
+
+  @@index([etat, createdAt])
+  @@index([email, createdAt])
+  @@index([artworkId])
 }
 
 // ── Livraison (AD-12, story 2.3) ─────────────────────────────────────────────

@@ -134,6 +134,10 @@ describe('dates et heures', () => {
     expect(formaterDate(le, { annee: false })).toBe('5 novembre')
     expect(formaterDateHeure(le)).toBe('5 novembre 2026 à 15 h 42')
     expect(formaterDateHeure(le.toISOString(), { annee: false })).toBe('5 novembre à 15 h 42')
+    // Jour de la semaine (story 4.3, créneaux de visite).
+    const mardi = new Date('2026-11-17T14:00:00Z')
+    expect(formaterDate(mardi, { jourSemaine: true })).toBe('mardi 17 novembre 2026')
+    expect(formaterDateHeure(mardi, { jourSemaine: true })).toBe('mardi 17 novembre 2026 à 15 h 00')
   })
 })
 

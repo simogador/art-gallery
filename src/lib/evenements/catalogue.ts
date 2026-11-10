@@ -23,6 +23,7 @@ export const VERSIONS_EVENEMENTS = {
   OeuvreValidee: 1,
   OeuvreRenvoyee: 1,
   DemandeSelectionRecue: 1,
+  DemandeVisiteRecue: 1,
 } as const
 
 export type NomEvenement = keyof typeof VERSIONS_EVENEMENTS
@@ -35,6 +36,8 @@ export type ChargesEvenements = {
   OeuvreValidee: ChargeDecision
   OeuvreRenvoyee: ChargeDecision
   DemandeSelectionRecue: ChargeDemande
+  /** Demande de visite (story 4.3) : œuvre, créneaux et coordonnées lus en base à l'envoi. */
+  DemandeVisiteRecue: ChargeDemande
 }
 
 export type EvenementA<N extends NomEvenement> = { nom: N; charge: ChargesEvenements[N] }
@@ -60,6 +63,7 @@ const CLES_CHARGES: { [N in NomEvenement]: readonly (keyof ChargesEvenements[N])
   OeuvreValidee: ['decisionId', 'artworkId', 'artistId'],
   OeuvreRenvoyee: ['decisionId', 'artworkId', 'artistId'],
   DemandeSelectionRecue: ['demandeId'],
+  DemandeVisiteRecue: ['demandeId'],
 }
 
 function chargeConforme(nom: NomEvenement, charge: unknown): boolean {
