@@ -234,6 +234,7 @@ Retour arrière :
   ```
   Vérifiez l'empreinte avec `sha256sum` avant de l'enregistrer.
 - Cloudinary : les photos d'artiste utilisent les mêmes variables que le dépôt d'œuvre (story 2.5), dossier `errancy/artistes/<id>/`.
+- 2026-11-10 (story 3.11) : migration `20261110090000_pages_artistes` (avec son empreinte SHA-256) appliquée depuis l'éditeur SQL de Neon sur `preview`, puis sur `production` avant la fusion de la PR #48. Point de restauration production : branche `sauvegarde-avant-3-11-2026-11-10`. Préversion vérifiée avec un artiste de test renseigné par SQL.
 - Retour arrière : l'ancien code ignore les colonnes ajoutées (les pages artistes reprennent leur ancien aspect). Pour retirer la migration (dernier recours, les textes et la photo d'atelier sont perdus) : `ALTER TABLE "Artist" DROP COLUMN "formation", DROP COLUMN "expositions", DROP COLUMN "atelierUrl";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261110090000_pages_artistes';`. Un portrait remplacé depuis l'administration reste dans `imageUrl`.
 
 ### Story 3.4 : journal d'événements
