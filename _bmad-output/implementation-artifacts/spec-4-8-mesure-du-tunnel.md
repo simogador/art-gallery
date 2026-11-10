@@ -28,6 +28,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 - Source d'arrivée : `utm_source` ou domaine du référent, lue à l'arrivée et gardée pour la session (seulement après consentement) ; jamais l'adresse complète.
 - Aucune URL portant un jeton n'est mesurée (liste blanche de chemins : fiches, galerie, artistes, conseil, visite ; jamais `/auth/invitation`, `/dashboard`, `/api`) ; aucun événement des administrateurs ni des pages du tableau de bord.
 - Une erreur de mesure ne fait jamais échouer l'action du visiteur ; aucune donnée personnelle dans les journaux ; textes dans `fr.mesure` (vouvoiement).
+- Décisions du porteur du 2026-11-10 : le choix de consentement est proposé à tous les visiteurs, partout ; il se modifie par un lien « Gérer la mesure » du pied de page qui rouvre la bannière (la page Cookies de l'Epic 7 le reprendra) ; les événements d'un même visiteur sont reliés par un identifiant aléatoire dans un cookie, posé seulement après consentement et supprimé en cas de refus ou de retrait.
 - Test navigateur de la bannière (choix, conservation, retrait) ; tests de base réelle du compteur et du refus.
 
 **Never:**
@@ -48,12 +49,6 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 | Clic Conseil WhatsApp | consentement donné | `ClicConseil` envoyé sans retarder l'ouverture de WhatsApp | échec : WhatsApp s'ouvre quand même |
 
 </frozen-after-approval>
-
-## Open Questions
-
-1. **À qui montrer le choix de consentement ?** — options : A) à tous les visiteurs, partout (simple et prudent, recommandé) / B) seulement à ceux dont le pays l'exige (UE, Royaume-Uni), les autres étant mesurés sans choix : plus de données, mais le pays est déduit par l'hébergeur et la règle est à tenir à jour.
-2. **Où modifier le choix, alors que la page « Cookies » n'existe pas (Epic 7) ?** — options : A) un lien « Gérer la mesure » dans le pied de page qui rouvre la bannière, la page Cookies le reprendra avec l'Epic 7 (recommandé) / B) créer dès maintenant une page `/cookies` minimale avec le choix.
-3. **Comment relier les événements d'un même visiteur ?** — options : A) un identifiant aléatoire dans un cookie, posé seulement après consentement : permet de suivre le parcours d'un visiteur, recommandé / B) aucun identifiant : chaque événement est isolé, on ne compte que des totaux, sans parcours.
 
 ## Code Map
 
