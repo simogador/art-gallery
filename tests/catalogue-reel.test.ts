@@ -317,17 +317,16 @@ describe('base : règle de visibilité « accord signé requis »', () => {
   it('base vide : accueil, galerie, artistes et expositions rendent leur état vide sans erreur', async () => {
     const c = await catalogue()
     expect(await c.accueilPublic()).toEqual({
-      oeuvres: [], artistes: [], expositions: [], miseEnAvant: null,
+      oeuvres: [], artistes: [], expositions: [], miseEnAvant: null, selection: [], nouveautes: [],
       chiffres: { oeuvres: 0, artistes: 0, expositions: 0 },
     })
 
     const { default: Accueil } = await import('@/app/page')
-    const { Hero, Gallery } = await import('@/components/sections')
+    const { Hero, CollectionVide, ParcourirGalerie } = await import('@/components/sections')
     const enfants = (element(await Accueil()).props.children as unknown[]).filter(Boolean).map(element)
     // Sections artistes et expositions masquées ; la collection affiche son état vide.
-    expect(enfants.map((e) => e.type)).toEqual([Hero, Gallery])
+    expect(enfants.map((e) => e.type)).toEqual([Hero, CollectionVide, ParcourirGalerie])
     expect(enfants[0].props).toEqual({ oeuvre: null, chiffres: { oeuvres: 0, artistes: 0, expositions: 0 }, expositionEnCours: false })
-    expect(enfants[1].props).toEqual({ artworks: [] })
 
     const { default: Galerie } = await import('@/app/galerie/page')
     const vide = renderToStaticMarkup(await Galerie({ searchParams: {} }))
@@ -342,9 +341,10 @@ describe('base : règle de visibilité « accord signé requis »', () => {
   it('accueil avec catalogue réel : sections remplies, œuvre mise en avant et chiffres réels', async () => {
     await catalogueMixte()
     const { default: Accueil } = await import('@/app/page')
-    const { Hero, Gallery, Artists, Exhibitions } = await import('@/components/sections')
+    const { Hero, SectionOeuvres, ParcourirGalerie, Artists, Exhibitions } = await import('@/components/sections')
     const enfants = (element(await Accueil()).props.children as unknown[]).filter(Boolean).map(element)
-    expect(enfants.map((e) => e.type)).toEqual([Hero, Gallery, Artists, Exhibitions])
+    // Aucune œuvre marquée : pas de sélection, les dernières œuvres publiées seules (story 3.10).
+    expect(enfants.map((e) => e.type)).toEqual([Hero, SectionOeuvres, ParcourirGalerie, Artists, Exhibitions])
     expect((enfants[0].props.oeuvre as { id: string }).id).toBe('aube')
     expect(enfants[0].props.chiffres).toEqual({ oeuvres: 1, artistes: 1, expositions: 1 })
     expect(enfants[0].props.expositionEnCours).toBe(true)

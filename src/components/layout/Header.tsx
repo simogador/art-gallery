@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import type { Session } from 'next-auth'
@@ -21,6 +22,19 @@ const NAV_LINKS = [
   { href: '/#about',      label: T.liens.aPropos },
 ] as const
 
+// Story 3.10 : sur un écran profond (fiche, page d'un artiste ou d'une exposition), « ‹ [écran
+// précédent] » mène à la liste parente, jamais à l'historique du navigateur.
+const LISTES_PARENTES = [
+  { prefixe: '/galerie', href: '/galerie', label: T.liens.galerie },
+  { prefixe: '/artistes', href: '/artistes', label: T.liens.artistes },
+  { prefixe: '/expositions', href: '/expositions', label: T.liens.expositions },
+] as const
+
+function listeParente(chemin: string | null) {
+  if (!chemin) return null
+  return LISTES_PARENTES.find(({ prefixe }) => chemin.startsWith(`${prefixe}/`) && chemin.length > prefixe.length + 1) ?? null
+}
+
 const menuVariants = {
   closed: { opacity: 0, x: '100%', transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] } },
   open:   { opacity: 1, x: '0%',   transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] } },
@@ -37,9 +51,12 @@ const navItemVariants = {
 
 interface HeaderProps {
   session?: Session | null
+  /** `lot2Ouvert()`, lu côté serveur par le layout : fermé, ni « Panier » ni favoris dans l'en-tête. */
+  lot2Ouvert?: boolean
 }
 
-export function Header({ session }: HeaderProps) {
+export function Header({ session, lot2Ouvert = false }: HeaderProps) {
+  const retour = listeParente(usePathname())
   const [menuOpen,   setMenuOpen]   = useState(false)
   const [scrolled,   setScrolled]   = useState(false)
   const [activeLink, setActiveLink] = useState('')
@@ -75,6 +92,19 @@ export function Header({ session }: HeaderProps) {
         <div className="container-premium">
           <div className="flex items-center justify-between h-16 md:h-20">
 
+            <div className="flex min-w-0 items-center gap-3 md:gap-5">
+            {/* Retour vers la liste parente (écrans profonds seulement) */}
+            {retour && (
+              <Link
+                href={retour.href}
+                aria-label={T.retourVers(retour.label)}
+                onClick={closeMenu}
+                className="inline-flex min-h-touch-target items-center font-sans text-sm text-neutral-600 hover:text-foreground"
+              >
+                {T.retour(retour.label)}
+              </Link>
+            )}
+
             {/* Logo */}
             <Link
               href="/"
@@ -84,10 +114,11 @@ export function Header({ session }: HeaderProps) {
               <span className="font-serif text-xl md:text-2xl font-light tracking-tight text-foreground transition-colors duration-300 group-hover:text-neutral-600">
                 {fr.commun.marque}
               </span>
-              <span className="font-sans text-[9px] uppercase tracking-[0.3em] text-neutral-500 mt-0.5">
+              <span className={cn('font-sans text-[9px] uppercase tracking-[0.3em] text-neutral-500 mt-0.5', retour && 'hidden sm:block')}>
                 {fr.commun.sousTitreMarque}
               </span>
             </Link>
+            </div>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-8" aria-label={T.navigationPrincipale}>
@@ -111,6 +142,7 @@ export function Header({ session }: HeaderProps) {
                   <Button variant="ghost" size="sm">{T.connexion}</Button>
                 </Link>
               )}
+              {lot2Ouvert && (
               <Link href="/panier" className="relative" aria-label={T.panierArticles(cartCount)}>
                 <span className={cn(
                   'flex items-center justify-center w-touch-target h-touch-target rounded-sm',
@@ -124,6 +156,7 @@ export function Header({ session }: HeaderProps) {
                   </span>
                 )}
               </Link>
+              )}
               <Button variant="gold" size="sm">
                 {T.contacter}
               </Button>
@@ -133,13 +166,15 @@ export function Header({ session }: HeaderProps) {
             <button
               onClick={() => setMenuOpen((v) => !v)}
               className={cn(
-                'md:hidden flex flex-col justify-center items-center gap-1.5',
-                'w-touch-target h-touch-target rounded-sm',
+                'md:hidden flex items-center gap-3',
+                'min-w-touch-target min-h-touch-target rounded-sm',
                 'transition-colors duration-200',
               )}
               aria-label={menuOpen ? T.fermerMenu : T.ouvrirMenu}
               aria-expanded={menuOpen}
             >
+              <span className="font-sans text-sm font-medium uppercase tracking-widest text-foreground">{T.menu}</span>
+              <span className="flex flex-col justify-center items-center gap-1.5" aria-hidden="true">
               <motion.span
                 className="block w-5 h-px bg-foreground origin-center"
                 animate={menuOpen ? { rotate: 45, y: 4 } : { rotate: 0, y: 0 }}
@@ -155,6 +190,7 @@ export function Header({ session }: HeaderProps) {
                 animate={menuOpen ? { rotate: -45, y: -4 } : { rotate: 0, y: 0 }}
                 transition={{ duration: 0.3 }}
               />
+              </span>
             </button>
           </div>
         </div>
@@ -220,6 +256,7 @@ export function Header({ session }: HeaderProps) {
               </nav>
 
               <div className="mt-auto flex flex-col gap-3">
+{lot2Ouvert && (
                 <Link href="/panier" onClick={closeMenu} className="flex items-center justify-between border border-neutral-200 rounded-sm px-4 py-3 hover:border-neutral-400 transition-colors duration-200">
                   <span className="font-sans text-sm text-foreground">{T.panier}</span>
                   {cartCount > 0 && (
@@ -228,6 +265,7 @@ export function Header({ session }: HeaderProps) {
                     </span>
                   )}
                 </Link>
+                )}
                 {session?.user ? (
                   <>
                     <p className="font-sans text-xs text-neutral-500 text-center truncate px-2">

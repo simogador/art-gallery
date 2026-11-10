@@ -50,6 +50,7 @@ export {
   type ResultatOeuvreACurer,
 } from './file'
 export * from './curation-regles'
+export { definirSelection, MESSAGES_REFUS_SELECTION, type CodeRefusSelection, type ResultatSelection } from './selection'
 export { remettreEnVente, type ResultatRemiseEnVente } from './remise-en-vente'
 
 export type ResultatPublication =

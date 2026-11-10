@@ -113,6 +113,8 @@ type DbArtwork = {
   profondeurMm: number | null
   featured: boolean
   engagementCertificat: boolean
+  // Story 3.10 : date de dépôt (Date, ou texte après l'aller-retour JSON du cache).
+  createdAt?: Date | string
   artist: { slug: string; name: string; nationality?: string }
   // Story 3.9 : lus seulement par la galerie.
   ambiance?: string | null
@@ -151,6 +153,13 @@ export function photosDeFiche(
   return imageUrl ? [{ url: imageUrl, type: 'principale', largeur: null, hauteur: null }] : []
 }
 
+/** Date de dépôt en ISO ; absente ou illisible : undefined (jamais d'exception). */
+function dateDepot(d: Date | string | undefined): string | undefined {
+  if (d === undefined) return undefined
+  const t = new Date(d).getTime()
+  return Number.isNaN(t) ? undefined : new Date(t).toISOString()
+}
+
 export function mapArtwork(w: DbArtwork): Artwork {
   return {
     id: w.slug,
@@ -175,6 +184,7 @@ export function mapArtwork(w: DbArtwork): Artwork {
     featured: w.featured,
     // Story 2.2 : « vendue » pour l'UI = non disponible (réservée, vendue ailleurs… comprises).
     sold: !estDisponible(w),
+    ...(dateDepot(w.createdAt) ? { deposeLe: dateDepot(w.createdAt) } : {}),
     imageUrl: w.imageUrl ?? null,
     ...(w.photos ? { photos: photosDeFiche(w.photos, w.imageUrl ?? null) } : {}),
     gradient: gradient(w.slug),
@@ -220,4 +230,26 @@ export function mapExhibition(e: DbExhibition): Exhibition {
 /** Œuvre mise en avant : coup de cœur encore disponible, sinon la première disponible, sinon la première visible. */
 export function oeuvreMiseEnAvant(oeuvres: Artwork[]): Artwork | null {
   return oeuvres.find((o) => o.featured && !o.sold) ?? oeuvres.find((o) => !o.sold) ?? oeuvres[0] ?? null
+}
+
+/** Sélection de l'équipe : œuvres marquées (`featured`) et encore disponibles, dans l'ordre reçu. */
+export function selectionAccueil(oeuvres: Artwork[]): Artwork[] {
+  return oeuvres.filter((o) => o.featured && !o.sold)
+}
+
+/** Nombre de dernières œuvres publiées montrées sur l'accueil. */
+export const NOMBRE_NOUVEAUTES = 6
+
+/**
+ * Dernières œuvres : les plus récentes par date de dépôt (pas de date de publication en base), hors
+ * sélection de l'équipe et hors œuvres vendues ; sans date, en dernier, dans l'ordre reçu.
+ */
+export function nouveautesAccueil(oeuvres: Artwork[], selection: Artwork[], nombre = NOMBRE_NOUVEAUTES): Artwork[] {
+  const choisies = new Set(selection.map((o) => o.id))
+  return oeuvres
+    .filter((o) => !o.sold && !choisies.has(o.id))
+    .map((o, i) => ({ o, i, t: Number.isNaN(Date.parse(o.deposeLe ?? '')) ? Number.NEGATIVE_INFINITY : Date.parse(o.deposeLe ?? '') }))
+    .sort((a, b) => (b.t === a.t ? a.i - b.i : b.t > a.t ? 1 : -1))
+    .slice(0, nombre)
+    .map(({ o }) => o)
 }

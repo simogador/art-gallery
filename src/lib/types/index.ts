@@ -41,6 +41,8 @@ export interface Artwork {
   tags:        string[]
   featured:    boolean
   sold:        boolean
+  /** Date de dépôt (ISO), pour classer les dernières œuvres de l'accueil (story 3.10) ; absente hors catalogue. */
+  deposeLe?:   string
   imageUrl:    string | null
   /**
    * Photos de la fiche (story 3.5), images seulement, mise en situation d'abord ; absentes des

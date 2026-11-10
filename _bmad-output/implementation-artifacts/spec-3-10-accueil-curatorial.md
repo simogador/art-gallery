@@ -2,7 +2,8 @@
 title: 'Story 3.10 — Accueil curatorial'
 type: 'feature'
 created: '2026-11-10'
-status: 'draft'
+status: 'done'
+baseline_commit: '4f2581c2035562dbb33e15d3fe58c2fff9fe14df'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.md']
@@ -61,12 +62,12 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/lib/curation/` -- `definirSelection` ; `src/app/dashboard/admin/oeuvres/` -- bascule.
-- [ ] `src/lib/catalogue/accueil.ts` -- sélection et nouveautés.
-- [ ] `src/components/sections/*`, `src/app/page.tsx` -- accueil refait, quatre fichiers conformes.
-- [ ] `src/components/layout/Header.tsx`, `src/app/layout.tsx` -- « Menu », marque, retour, Lot 2.
-- [ ] `src/lib/i18n/fr.ts`, listes d'exceptions -- textes, sorties de liste.
-- [ ] `tests/accueil.test.ts` -- matrice ; `AGENTS.md`.
+- [x] `src/lib/curation/` -- `definirSelection` ; `src/app/dashboard/admin/oeuvres/` -- bascule.
+- [x] `src/lib/catalogue/accueil.ts` -- sélection et nouveautés.
+- [x] `src/components/sections/*`, `src/app/page.tsx` -- accueil refait, quatre fichiers conformes.
+- [x] `src/components/layout/Header.tsx`, `src/app/layout.tsx` -- « Menu », marque, retour, Lot 2.
+- [x] `src/lib/i18n/fr.ts`, listes d'exceptions -- textes, sorties de liste.
+- [x] `tests/accueil.test.ts` -- matrice ; `AGENTS.md`.
 
 **Acceptance Criteria:**
 - Given des œuvres marquées par l'équipe, when l'accueil s'affiche, then la sélection et les dernières œuvres publiées sont des vignettes menant chacune à une fiche, avec « Parcourir la galerie ».
@@ -78,6 +79,22 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Constat (relecteurs) | Verdict | Preuve | Suite |
+|---|---|---|---|---|
+| 1 | La date de dépôt, relue du cache, est une chaîne : l'ordre des nouveautés n'est testé qu'avec le simulacre passe-plat (V, E) | medium | `unstable_cache` renvoie les dates en texte ; aucune assertion ne l'exerce ; une date illisible ferait échouer la lecture | patch : test avec aller-retour JSON, date illisible ignorée |
+| 2 | Pays de livraison de l'accueil (cookie) non testé (V) | medium | le cookie est simulé vide ; aucun prix livré vérifié | patch : test |
+| 3 | « Panier » du menu mobile et passage de `lot2Ouvert()` par le layout non gardés (V, B) | medium | le panneau mobile est fermé au rendu statique ; supprimer la condition laisserait le test vert | patch : tests sur le texte source des deux conditions |
+| 4 | Le bandeau d'administration promet l'apparition sur l'accueil pour une œuvre qui peut rester masquée (accord non signé, vendue) (B, E) | medium | `VISIBLE` et « non vendue » restent appliqués à l'affichage | patch : texte sans promesse |
+| 5 | Séparateur « · » écrit avec une espace simple dans `Exhibitions` (B) | low | l'usage du projet impose `SEPARATEUR` | patch |
+| 6 | Légende du bandeau d'ouverture avec virgule en tête si la technique est vide (E) | low | assemblage sans filtre | patch |
+| 7 | Sélection sans plafond, section Artistes sans plafond (E, B) | low | l'équipe choisit ; comportement d'avant pour les artistes | rejeté |
+| 8 | « Dernières publiées » classées par date de dépôt (B) | false | choix de la spec, noté dans les Design Notes | rejeté |
+| 9 | Œuvre marquée vendue ou accord non signé non refusée par `definirSelection` ; accueil vide si tout est vendu ; bouton sur œuvre vendue (B, E) | low | ces œuvres restent masquées à l'affichage ; cas rare | rejeté |
+| 10 | Ancienne route `PUT /api/admin/oeuvres/[slug]` écrit encore `featured` (E) | false | prévu par la spec | rejeté |
+| 11 | Rendus de `Artists`, `Exhibitions` et de la page d'administration seulement vérifiés par type (V) | low | logique de présentation sans risque ; règles du module testées | defer |
+| 12 | Lien « À propos » de l'en-tête vers une ancre absente de l'accueil (E) | low | déjà sans cible avant la story | defer |
+| 13 | Clés de dictionnaire inutilisées, couches (`VignetteOeuvre` dans `app/`), classes de lien dupliquées, indentation, cases en dur, lecture du catalogue à chaque visite, états spec / sprint (B) | low | sans effet visible ; lecture identique à la galerie ; le sprint passe en `review` à la présentation | rejeté |
 
 ## Design Notes
 

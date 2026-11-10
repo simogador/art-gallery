@@ -1,4 +1,4 @@
-import { URL_SITE } from '@/lib/reglages'
+import { URL_SITE, lot2Ouvert } from '@/lib/reglages'
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import { Header, Footer, MouvementReduit } from '@/components/layout'
@@ -73,7 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </a>
         <MouvementReduit>
           <UniteProvider initiale={unite}>
-            <Header session={session} />
+            <Header session={session} lot2Ouvert={lot2Ouvert()} />
             <main id="contenu" tabIndex={-1}>
               {children}
             </main>

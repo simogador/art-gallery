@@ -26,6 +26,49 @@ export type Dictionnaire = {
     readonly fermerMenu: string
     readonly menuUtilisateur: string
     readonly avatar: string
+    /** Bouton « Menu » (petit écran) et retour « ‹ [écran précédent] » des écrans profonds (story 3.10). */
+    readonly menu: string
+    readonly retour: (ecran: string) => string
+    readonly retourVers: (ecran: string) => string
+  }
+  readonly accueil: {
+    readonly hero: {
+      readonly titre: string
+      readonly introduction: string
+      readonly parcourir: string
+      readonly artistes: string
+      readonly expositionEnCours: string
+      readonly descendre: string
+      readonly statistiques: {
+        readonly oeuvres: (n: number) => string
+        readonly artistes: (n: number) => string
+        readonly expositions: (n: number) => string
+      }
+      readonly legende: (titre: string, artiste: string, annee: number) => string
+    }
+    readonly selection: { readonly surtitre: string; readonly titre: string; readonly introduction: string }
+    readonly nouveautes: { readonly surtitre: string; readonly titre: string; readonly introduction: string }
+    readonly parcourirGalerie: string
+    readonly vide: { readonly titre: string; readonly message: string }
+    readonly artistes: {
+      readonly surtitre: string
+      readonly titre: string
+      readonly introduction: string
+      readonly voirTous: string
+      readonly profil: (nom: string) => string
+      readonly oeuvres: (n: number) => string
+    }
+    readonly expositions: {
+      readonly surtitre: string
+      readonly titre: string
+      readonly voirToutes: string
+      readonly decouvrir: string
+      readonly alaUne: string
+      readonly statut: { readonly 'en-cours': string; readonly 'a-venir': string; readonly passee: string }
+      readonly oeuvres: (n: number) => string
+      readonly lieu: (lieu: string) => string
+      readonly periode: (debut: string, fin: string) => string
+    }
   }
   readonly piedDePage: {
     readonly presentation: string
@@ -188,6 +231,64 @@ export const fr = {
     fermerMenu: 'Fermer le menu',
     menuUtilisateur: 'Menu utilisateur',
     avatar: 'Avatar',
+    menu: 'Menu',
+    retour: (ecran: string) => `‹ ${ecran}`,
+    retourVers: (ecran: string) => `Retour vers ${ecran}`,
+  },
+
+  // Story 3.10 : accueil curatorial (FR-18) ; la sélection de l'équipe puis les dernières œuvres
+  // publiées. Aucun texte ne promet certificat, assurance ni installation.
+  accueil: {
+    hero: {
+      titre: 'L’art qui transcende le temps',
+      introduction:
+        'Des œuvres choisies par notre équipe, auprès d’artistes contemporains, avec leur prix livré chez vous.',
+      parcourir: 'Parcourir la galerie',
+      artistes: 'Rencontrer les artistes',
+      expositionEnCours: 'Exposition en cours',
+      descendre: 'Voir la sélection',
+      statistiques: {
+        oeuvres: (n: number) => (n > 1 ? 'Œuvres' : 'Œuvre'),
+        artistes: (n: number) => (n > 1 ? 'Artistes' : 'Artiste'),
+        expositions: (n: number) => (n > 1 ? 'Expositions' : 'Exposition'),
+      },
+      legende: (titre: string, artiste: string, annee: number) =>
+        [titre, artiste, annee > 0 ? String(annee) : null].filter(Boolean).join(', '),
+    },
+    selection: {
+      surtitre: 'Choisies par Errancy',
+      titre: 'Sélection de l’équipe',
+      introduction: 'Les œuvres que nous avons envie de vous montrer en premier.',
+    },
+    nouveautes: {
+      surtitre: 'À découvrir',
+      titre: 'Dernières œuvres publiées',
+      introduction: 'Les œuvres les plus récemment déposées par les artistes.',
+    },
+    parcourirGalerie: 'Parcourir la galerie',
+    vide: {
+      titre: 'La collection arrive bientôt',
+      message: 'Les premières œuvres sont en cours de sélection. Revenez nous voir très vite.',
+    },
+    artistes: {
+      surtitre: 'Nos artistes',
+      titre: 'Les artistes',
+      introduction: 'Les artistes dont vous retrouvez les œuvres dans la galerie.',
+      voirTous: 'Voir tous les artistes',
+      profil: (nom: string) => `Voir le profil de ${nom}`,
+      oeuvres: (n: number) => `${n} ${n > 1 ? 'œuvres' : 'œuvre'}`,
+    },
+    expositions: {
+      surtitre: 'Programme',
+      titre: 'Expositions',
+      voirToutes: 'Voir toutes les expositions',
+      decouvrir: 'Découvrir',
+      alaUne: 'À la une',
+      statut: { 'en-cours': 'En cours', 'a-venir': 'À venir', passee: 'Passée' },
+      oeuvres: (n: number) => `${n} ${n > 1 ? 'œuvres' : 'œuvre'}`,
+      lieu: (lieu: string) => `Lieu\u00a0: ${lieu}`,
+      periode: (debut: string, fin: string) => `${debut} — ${fin}`,
+    },
   },
 
   piedDePage: {

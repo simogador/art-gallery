@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { acteurCourant } from '@/lib/acces'
-import { messageRefusCuration, renvoyerOeuvre, validerOeuvre, type CodeRefusCuration } from '@/lib/curation'
+import { definirSelection, renvoyerOeuvre, validerOeuvre, messageRefusCuration, type CodeRefusCuration } from '@/lib/curation'
 
 // Décisions de curation (story 2.7). Les droits (admin seulement) et les transitions sont vérifiés
 // par le module curation à partir de l'acteur relu en base (AD-15). En cas de succès, retour à la
@@ -39,4 +39,13 @@ export async function actionRenvoyer(slug: string, _etat: EtatDecision, formData
   }
   rafraichir()
   redirect('/dashboard/admin/oeuvres?decision=renvoyee')
+}
+
+// Sélection de l'accueil (story 3.10, FR-18) : bascule du marqueur « coup de cœur » par l'équipe. Les
+// droits et l'état de l'œuvre sont vérifiés par le module curation ; un refus revient à la liste.
+export async function actionSelection(slug: string, marquee: boolean): Promise<void> {
+  const resultat = await definirSelection(await acteurCourant(), slug, marquee)
+  if (!resultat.ok) redirect(`/dashboard/admin/oeuvres?selection=${resultat.code}`)
+  rafraichir()
+  redirect(`/dashboard/admin/oeuvres?selection=${marquee ? 'marquee' : 'retiree_selection'}`)
 }
