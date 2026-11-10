@@ -2,7 +2,8 @@
 title: 'Story 4.6 — File des demandes de l''équipe'
 type: 'feature'
 created: '2026-11-10'
-status: 'draft'
+status: 'done'
+baseline_commit: 'e1bbe1b7233eca66b2edb8eb45ef1eef40d9ce21'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-4-3-demande-de-visite.md']
@@ -58,11 +59,11 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `prisma/` -- suivi d'état et migration additive
-- [ ] `src/lib/demandes/` -- lecture de la file et changement d'état, admin seulement
-- [ ] `src/app/dashboard/admin/demandes/`, `AdminNav`, `fr` -- page, états vide, chargement, erreur
-- [ ] `src/lib/notifications/` -- lien des alertes
-- [ ] tests (base réelle, navigateur), `AGENTS.md`, `docs/migrations.md`
+- [x] `prisma/` -- suivi d'état et migration additive
+- [x] `src/lib/demandes/` -- lecture de la file et changement d'état, admin seulement
+- [x] `src/app/dashboard/admin/demandes/`, `AdminNav`, `fr` -- page, états vide, chargement, erreur
+- [x] `src/lib/notifications/` -- lien des alertes
+- [x] tests (base réelle, navigateur), `AGENTS.md`, `docs/migrations.md`
 
 **Acceptance Criteria:**
 - Given `/dashboard/admin/demandes`, when un admin l'ouvre, then il voit les demandes à traiter de la plus ancienne à la plus récente, avec type, œuvre, date et état.
@@ -77,3 +78,28 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 
 **Manual checks:**
 - Préversion : les comptes admin ne s'y connectent pas : vérifier par SQL (état, auteur, date) ; en production, après fusion, ouvrir la page avec un compte admin.
+
+## Review Triage Log
+
+| # | Source | Constat | Verdict | Route | Preuve / suite |
+|---|--------|---------|---------|-------|----------------|
+| 1 | Blind | Ambiances affichées avec leur code (« melancolique ») au lieu de leur libellé | medium | patch | `AMBIANCES` porte `code` et `libelle` (vérifié) ; libellés français affichés ; test |
+| 2 | Verification Gap, Blind | La ligne « Dernier changement » n'est vérifiée dans aucun test de page (ni le repli « compte supprimé ») | medium | patch | deux cas de rendu à ajouter |
+| 3 | Edge, Blind | Appel de l'action sans `try/catch` : une exception laisse l'administrateur sans retour | medium | patch | `CommandeEtat.tsx` ; test navigateur du cas d'exception |
+| 4 | Blind | Boutons d'état identiques sur chaque ligne (« Marquer « Faite » »), sans nom de la demande | medium | patch | `aria-label` avec type et date de la demande |
+| 5 | Edge, Blind | Texte « Enregistrement… » défini et jamais affiché | low | patch | affiché en `role="status"` pendant l'envoi |
+| 6 | Edge | Auteur sans nom (chaîne vide) : « Dernier changement par , le … » | low | patch | `name?.trim() \|\| email` |
+| 7 | Edge, Blind | `searchParams` typé en promesse (Next 14 : objet) ; séparateur « · » en dur au lieu de `SEPARATEUR` | low | patch | correction directe |
+| 8 | Edge, Blind | Lectures sans limite (`traitees=1` charge toutes les demandes) | low | defer | volume faible aujourd'hui ; pagination à prévoir si la file grossit ; deferred-work.md |
+| 9 | Edge, Blind | Changement vers l'état déjà en place ou deux administrateurs : le dernier l'emporte, l'auteur est écrasé | low | rejet | prévu par la spec (« le dernier enregistré l'emporte ») |
+| 10 | Edge, Blind | Message « Aucune demande en attente. » dans la vue des demandes traitées | low | rejet | texte exact demandé par la spec |
+| 11 | Edge | La ligne obsolète reste après « Cette demande n'existe plus » | low | rejet | un rechargement la retire ; correction = un appel de plus |
+| 12 | Edge, Blind | Pas d'en-tête `no-store` explicite | false | rejet | `force-dynamic` : Next 14 envoie `no-store` pour une page dynamique |
+| 13 | Verification Gap | Bouton « Réessayer » de `error.tsx` sans test | low | rejet | mince enveloppe, même pratique que les autres `error.tsx` du dépôt |
+| 14 | Blind | Pas d'index sur `etat` et `createdAt` | false | rejet | `@@index([etat, createdAt])` existe sur les deux tables |
+| 15 | Blind | Budget sans devise (`formaterMontant`) | false | rejet | euros par défaut ; le budget de sélection n'a pas de devise en base |
+| 16 | Blind | Durée de conservation des données personnelles non décidée | medium | rejet | déjà ouverte (AGENTS.md, pages de confiance, Epic 7) |
+| 17 | Blind | E-mail et téléphone sans lien `mailto:`/`tel:` ; étiquettes en 10 px | low | rejet | ajout hors spec ; même style que les écrans d'administration existants |
+| 18 | Blind | Test d'alerte faible ; entrée `AdminNav`, `loading.tsx` non testées | low | rejet | les liens sont vérifiés dans les tests des stories 4.2 et 4.3 ; éléments minces |
+| 19 | Blind | Statuts de la spec et du suivi, date de la migration (11 novembre) | false | rejet | l'étape de présentation passe le suivi à `review` ; la date ne sert qu'à l'ordre |
+

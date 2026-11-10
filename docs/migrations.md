@@ -339,6 +339,27 @@ Retour arrière :
 - Resend (avant la mise en production, actes du porteur, hors code) : créer le compte, ajouter le domaine `errancy.art` en région UE (Irlande), publier chez l'hébergeur du domaine les enregistrements SPF et DKIM que Resend indique, puis créer la variable Vercel `RESEND_API_KEY` (Production seulement : en préversion, l'adaptateur « journal » n'envoie rien). Sans clé en production, l'invitation dit « L'e-mail n'est pas parti ».
 - Retour arrière : l'ancien code ignore les colonnes ajoutées. Pour les retirer (dernier recours) : `ALTER TABLE "Invitation" DROP COLUMN "envoyeeLe", DROP COLUMN "echecEnvoiLe";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261110120000_envoi_invitations';`. L'ancien code montrait le lien d'invitation à l'écran : après un retour arrière, les invitations déjà envoyées par e-mail restent valables.
 
+### Story 4.6 : file des demandes de l'équipe
+
+- Migration : `20261111090000_file_des_demandes` (empreinte SHA-256 : `323fe69133b86feafd05e7d1ad8d53b0f473bfd71404eda0bedac80400384bda`). Ajoute deux colonnes facultatives, `etatChangePar` (identifiant de l'utilisateur, sans clé étrangère) et `etatChangeLe`, à `DemandeSelection` et à `DemandeVisite` : dernier changement d'état seulement (décision du porteur du 2026-11-10). Additive.
+- Le nouveau code lit ces colonnes (page `/dashboard/admin/demandes`) et échouerait sans elles : même procédure que les précédentes, branche de sauvegarde datée, `preview` puis production **avant la fusion**, avec sa ligne `_prisma_migrations`.
+  ```sql
+  BEGIN;
+  -- AlterTable
+  ALTER TABLE "DemandeSelection" ADD COLUMN     "etatChangeLe" TIMESTAMPTZ(3),
+  ADD COLUMN     "etatChangePar" TEXT;
+  -- AlterTable
+  ALTER TABLE "DemandeVisite" ADD COLUMN     "etatChangeLe" TIMESTAMPTZ(3),
+  ADD COLUMN     "etatChangePar" TEXT;
+  INSERT INTO "_prisma_migrations" (id, checksum, migration_name, started_at, finished_at, applied_steps_count)
+  VALUES (gen_random_uuid()::text, '323fe69133b86feafd05e7d1ad8d53b0f473bfd71404eda0bedac80400384bda',
+          '20261111090000_file_des_demandes', now(), now(), 1);
+  COMMIT;
+  ```
+  Vérifiez l'empreinte avec `sha256sum` avant de l'enregistrer.
+- Contrôle après un changement d'état dans la préversion (SQL, les comptes admin ne s'y connectent pas) : `SELECT id, etat, "etatChangePar", "etatChangeLe" FROM "DemandeVisite" WHERE "etatChangeLe" IS NOT NULL;`.
+- Retour arrière : l'ancien code ignore les colonnes. Pour les retirer (dernier recours) : `ALTER TABLE "DemandeSelection" DROP COLUMN "etatChangePar", DROP COLUMN "etatChangeLe"; ALTER TABLE "DemandeVisite" DROP COLUMN "etatChangePar", DROP COLUMN "etatChangeLe";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261111090000_file_des_demandes';`.
+
 ### Story 3.4 : journal d'événements
 
 - Migration : `20261106090000_journal_evenements` (ajout seulement : tables `Evenement` et `TraitementEvenement`, aucune table existante modifiée).

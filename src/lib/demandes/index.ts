@@ -44,6 +44,30 @@ export {
   type ValeurVisite,
 } from './visite-regles'
 
+// File des demandes de l'équipe (story 4.6) : admin seulement.
+export {
+  changerEtatDemande,
+  fileDesDemandes,
+  type DemandeLue,
+  type DemandeSelectionLue,
+  type DemandeVisiteLue,
+  type ResultatChangementEtat,
+  type ResultatFile,
+} from './file'
+export {
+  ETATS_A_TRAITER,
+  ETATS_DEMANDE,
+  ETATS_TRAITES,
+  TYPES_DEMANDE,
+  etatDemandeValide,
+  libelleEtatDemande,
+  messageRefusEtatDemande,
+  typeDemandeValide,
+  type CodeRefusEtatDemande,
+  type EtatDemande,
+  type TypeDemande,
+} from './file-regles'
+
 function empreinte(type: 'ip' | 'email', valeur: string): string {
   // AUTH_SECRET sert de sel : une empreinte d'IP ne se retrouve pas par simple liste.
   const sel = process.env.AUTH_SECRET ?? ''

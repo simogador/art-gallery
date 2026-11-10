@@ -133,8 +133,8 @@ export async function envoyerAccuseDemande(evenement: EvenementLuA<'DemandeSelec
 /** Alerte à l'équipe : numéro de la demande et lien vers l'administration, sans donnée personnelle. */
 export async function alerterEquipeDemande(evenement: EvenementLuA<'DemandeSelectionRecue'>): Promise<void> {
   const { demandeId } = evenement.charge
-  // La file des demandes (story 4.6) aura sa page ; d'ici là, le lien mène à l'administration.
-  const contenu = contenuAlerteDemande({ numero: demandeId, lien: urlAbsolue('/dashboard/admin') })
+  // La file des demandes de l'équipe (story 4.6).
+  const contenu = contenuAlerteDemande({ numero: demandeId, lien: urlAbsolue('/dashboard/admin/demandes') })
   const resultat = await envoyer({ a: CONTACT_EQUIPE, ...contenu, cle: `${evenement.id}:alerterEquipeDemande` })
   if (!resultat.ok) {
     console.error('[notifications] alerte de demande non envoyée', { evenement: evenement.id, demande: demandeId, code: resultat.code })
@@ -174,8 +174,8 @@ export async function envoyerAccuseVisite(evenement: EvenementLuA<'DemandeVisite
 /** Alerte à l'équipe pour une demande de visite : numéro et lien vers l'administration seulement. */
 export async function alerterEquipeVisite(evenement: EvenementLuA<'DemandeVisiteRecue'>): Promise<void> {
   const { demandeId } = evenement.charge
-  // La file des demandes (story 4.6) aura sa page ; d'ici là, le lien mène à l'administration.
-  const contenu = contenuAlerteVisite({ numero: demandeId, lien: urlAbsolue('/dashboard/admin') })
+  // La file des demandes de l'équipe (story 4.6).
+  const contenu = contenuAlerteVisite({ numero: demandeId, lien: urlAbsolue('/dashboard/admin/demandes') })
   const resultat = await envoyer({ a: CONTACT_EQUIPE, ...contenu, cle: `${evenement.id}:alerterEquipeVisite` })
   if (!resultat.ok) {
     console.error('[notifications] alerte de visite non envoyée', { evenement: evenement.id, demande: demandeId, code: resultat.code })

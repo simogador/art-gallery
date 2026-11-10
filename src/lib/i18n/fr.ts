@@ -315,6 +315,40 @@ export type Dictionnaire = {
     readonly rappelCreneaux: (fuseau: string) => string
     readonly confidentialite: string
   }
+  /** File des demandes de l'équipe, `/dashboard/admin/demandes` (story 4.6, FR-25, FR-8). */
+  readonly demandes: {
+    readonly titre: string
+    readonly titrePage: string
+    readonly introduction: string
+    readonly vide: string
+    readonly chargement: string
+    readonly erreur: string
+    readonly reessayer: string
+    readonly voirTraitees: string
+    readonly masquerTraitees: string
+    readonly types: { readonly visite: string; readonly selection: string }
+    readonly typesVisite: { readonly distance: string; readonly atelier: string }
+    readonly etats: { readonly nouvelle: string; readonly planifiee: string; readonly faite: string; readonly sans_suite: string }
+    readonly etatActuel: (etat: string) => string
+    readonly recue: (date: string) => string
+    readonly oeuvre: string
+    readonly oeuvreSupprimee: string
+    readonly creneaux: (fuseau: string) => string
+    readonly espace: string
+    readonly ambiances: string
+    readonly precision: string
+    readonly budget: string
+    readonly email: string
+    readonly telephone: string
+    readonly dernierChangement: (par: string, quand: string) => string
+    readonly auteurInconnu: string
+    readonly changerEtat: string
+    readonly marquer: (etat: string) => string
+    readonly marquerPour: (etat: string, demande: string) => string
+    readonly nomDemande: (type: string, date: string) => string
+    readonly enCours: string
+    readonly refus: { readonly acces_refuse: string; readonly introuvable: string; readonly invalide: string; readonly indisponible: string }
+  }
   /** Textes des e-mails transactionnels (story 4.1) : vouvoiement, sans jargon, jamais de donnée inventée. */
   readonly courriels: {
     readonly salutation: (nom: string) => string
@@ -768,6 +802,44 @@ export const fr = {
     rappelCreneaux: (fuseau: string) => `Les créneaux proposés (fuseau ${fuseau}) :`,
     confidentialite: 'Vos coordonnées ne servent qu’à organiser la visite.',
   },
+  demandes: {
+    titre: 'Demandes',
+    titrePage: 'Demandes — Admin Errancy',
+    introduction: 'Les demandes de visite et de sélection, de la plus ancienne à la plus récente.',
+    vide: 'Aucune demande en attente.',
+    chargement: 'Chargement des demandes…',
+    erreur: 'Les demandes ne se sont pas chargées.',
+    reessayer: 'Réessayer',
+    voirTraitees: 'Voir les demandes traitées',
+    masquerTraitees: 'Masquer les demandes traitées',
+    types: { visite: 'Visite', selection: 'Sélection personnalisée' },
+    typesVisite: { distance: 'À distance', atelier: 'En atelier' },
+    etats: { nouvelle: 'Nouvelle', planifiee: 'Planifiée', faite: 'Faite', sans_suite: 'Sans suite' },
+    etatActuel: (etat: string) => `État : ${etat}`,
+    recue: (date: string) => `Reçue le ${date}`,
+    oeuvre: 'Œuvre',
+    oeuvreSupprimee: 'Œuvre supprimée',
+    creneaux: (fuseau: string) => `Créneaux proposés (fuseau ${fuseau})`,
+    espace: 'Espace',
+    ambiances: 'Goûts',
+    precision: 'Précision',
+    budget: 'Budget maximum',
+    email: 'E-mail',
+    telephone: 'Téléphone',
+    dernierChangement: (par: string, quand: string) => `Dernier changement par ${par}, le ${quand}`,
+    auteurInconnu: 'un compte supprimé',
+    changerEtat: 'Changer l’état',
+    marquer: (etat: string) => `Marquer « ${etat} »`,
+    marquerPour: (etat: string, demande: string) => `Marquer « ${etat} » : ${demande}`,
+    nomDemande: (type: string, date: string) => `${type}, reçue le ${date}`,
+    enCours: 'Enregistrement…',
+    refus: {
+      acces_refuse: 'Vous n’avez pas le droit de modifier cette demande.',
+      introuvable: 'Cette demande n’existe plus.',
+      invalide: 'Cet état n’est pas reconnu.',
+      indisponible: 'Le changement n’a pas pu être enregistré. Réessayez.',
+    },
+  },
   courriels: {
     salutation: (nom: string) => `Bonjour ${nom},`,
     salutationSansNom: 'Bonjour,',
@@ -797,7 +869,7 @@ export const fr = {
     alerteDemande: {
       sujet: 'Nouvelle demande de sélection',
       intro: (numero: string) => `Une demande de sélection personnalisée vient d’arriver (numéro ${numero}).`,
-      bouton: 'Ouvrir l’administration',
+      bouton: 'Ouvrir la file des demandes',
       suite: 'Les coordonnées du visiteur ne figurent pas dans ce message.',
     },
     accuseVisite: {
@@ -812,7 +884,7 @@ export const fr = {
     alerteVisite: {
       sujet: 'Nouvelle demande de visite',
       intro: (numero: string) => `Une demande de visite d’œuvre vient d’arriver (numéro ${numero}).`,
-      bouton: 'Ouvrir l’administration',
+      bouton: 'Ouvrir la file des demandes',
       suite: 'Les coordonnées du visiteur ne figurent pas dans ce message.',
     },
     renvoyee: {
