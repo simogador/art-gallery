@@ -5,8 +5,10 @@ import { Header, Footer, MouvementReduit } from '@/components/layout'
 import { cookies } from 'next/headers'
 import { auth } from '@/auth'
 import { BoutonConseil } from '@/components/ui/BoutonConseil'
+import { ChoixMesure } from '@/components/ui/ChoixMesure'
 import { UniteProvider } from '@/components/ui/UniteToggle'
 import { COOKIE_UNITE, lireUnite } from '@/lib/i18n'
+import { COOKIE_CHOIX, lireChoix } from '@/lib/mesure/regles'
 import '@/styles/globals.css'
 
 // Polices hébergées dans le projet (src/app/fonts, licence SIL OFL) : le build ne dépend plus
@@ -62,6 +64,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const session = await auth()
   // Story 3.2 : unité des dimensions mémorisée sur l'appareil (cookie absent ou invalide : cm).
   const unite = lireUnite(cookies().get(COOKIE_UNITE)?.value)
+  // Story 4.8 : choix de mesure lu dans le cookie (absent : la bannière non bloquante le propose).
+  const choixMesure = lireChoix(cookies().get(COOKIE_CHOIX)?.value)
   return (
     <html lang="fr" className={`${cormorant.variable} ${inter.variable}`}>
       <body>
@@ -79,6 +83,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               {children}
             </main>
             <Footer conseil={<BoutonConseil surSombre />} />
+            <ChoixMesure choix={choixMesure} />
           </UniteProvider>
         </MouvementReduit>
       </body>

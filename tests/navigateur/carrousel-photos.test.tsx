@@ -6,6 +6,9 @@ import { CarrouselPhotos } from '@/app/galerie/[id]/CarrouselPhotos'
 import { fr } from '@/lib/i18n'
 import type { PhotoFiche } from '@/lib/types'
 
+// Le barrel `@/components/ui` importe l'action du pays de livraison (code serveur, qui mesure depuis la story 4.8) : simulée.
+vi.mock('@/app/actions/pays', () => ({ choisirPaysLivraison: () => {} }))
+
 // Carrousel de la fiche (défilement natif, compteur, plein écran, zoom) dans un vrai navigateur.
 // `next/image` est remplacé par une balise `img` (alias de la configuration) : aucune requête externe.
 

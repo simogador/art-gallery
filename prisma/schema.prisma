@@ -453,3 +453,19 @@ model TraitementEvenement {
 
   @@id([evenementId, gestionnaire])
 }
+
+// ── Mesure du tunnel (FR-27, AD-19, story 4.8) ──────────────────────────────
+// Taux de consentement et de refus seulement : un compteur par jour et par choix, sans identifiant,
+// sans IP ni cookie. Écrit seulement par le module mesure.
+enum ChoixMesure {
+  accepte
+  refuse
+}
+
+model CompteurChoixMesure {
+  jour   DateTime    @db.Date
+  choix  ChoixMesure
+  nombre Int         @default(0)
+
+  @@id([jour, choix])
+}

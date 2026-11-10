@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import { Button, Input } from '@/components/ui'
 import { fr } from '@/lib/i18n'
+import { BoutonGererMesure } from '@/components/ui/ChoixMesure'
 
 // Story 3.2 : textes du dictionnaire (fr.piedDePage), aucun texte visible en dur (react/jsx-no-literals).
 const T = fr.piedDePage
@@ -210,6 +211,8 @@ export function Footer({ conseil }: { conseil?: React.ReactNode }) {
                 {label}
               </Link>
             ))}
+            {/* Story 4.8 : rouvre le choix de mesure de la fréquentation. */}
+            <BoutonGererMesure className="inline-flex min-h-touch-target items-center font-sans text-[10px] uppercase tracking-widest hover:text-background hover:underline underline-offset-[3px] transition-colors duration-300" />
           </div>
         </div>
       </div>

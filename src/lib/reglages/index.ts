@@ -57,6 +57,20 @@ export function numeroWhatsApp(env: Record<string, string | undefined> = process
   return brut ? brut : null
 }
 
+// Mesure du tunnel (FR-27, AD-19, story 4.8) : clé d'API et adresse d'hébergement (UE) du prestataire
+// de mesure, variables Vercel `MESURE_CLE` et `MESURE_ADRESSE` saisies par le porteur (seul endroit
+// qui les lit ; jamais dans le code, un test, une PR ni un journal). Aucune valeur par défaut : absente
+// ou invalide, null et rien ne part. L'adresse doit être en https (sans barre finale).
+export function cleMesure(env: Record<string, string | undefined> = process.env): string | null {
+  const brut = env.MESURE_CLE?.trim()
+  return brut ? brut : null
+}
+
+export function adresseMesure(env: Record<string, string | undefined> = process.env): string | null {
+  const brut = env.MESURE_ADRESSE?.trim().replace(/\/+$/, '')
+  return brut && /^https:\/\/[^\s/]+$/.test(brut) ? brut : null
+}
+
 // Invitation des artistes (story 2.4, UXQ-8, décision du porteur du 2026-11-02) : durée de
 // validité du lien, et adresse de « Écrire à l'équipe ».
 export const DUREE_INVITATION_JOURS = 7

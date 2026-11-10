@@ -371,3 +371,29 @@ Retour arrière :
 - 2026-11-10 (story 4.2) : migration `20261110180000_demandes_selection` (avec son empreinte SHA-256) appliquée depuis l'éditeur SQL de Neon sur `preview`, puis sur `production` avant la fusion de la PR #53. Point de restauration production : branche `sauvegarde-avant-4-2-2026-11-10`. Table `DemandeSelection` vérifiée vide sur la production ; sur la préversion, une demande de test enregistrée à l'état `nouvelle`. `/conseil` vérifié en production (affichage seulement, aucun envoi réel).
 - 2026-11-10 (story 4.3) : migration `20261110210000_demandes_visite` (avec son empreinte SHA-256) appliquée depuis l'éditeur SQL de Neon sur `preview`, puis sur `production` avant la fusion de la PR #55. Point de restauration production : branche `sauvegarde-avant-4-3-2026-11-10`. Ligne `_prisma_migrations` vérifiée sur la production ; sur la préversion, une demande de test enregistrée à l'état `nouvelle` (fuseau de l'appareil). Déploiement de production « Ready » ; aucune demande de test créée en production.
 - 2026-11-10 (story 4.6) : migration `20261111090000_file_des_demandes` (avec son empreinte SHA-256) appliquée depuis l'éditeur SQL de Neon sur `preview`, puis sur `production` avant la fusion de la PR #59. Point de restauration production : branche `sauvegarde-avant-4-6-2026-11-10`. Ligne `_prisma_migrations` vérifiée sur preview et production. `/dashboard/admin/demandes` vérifiée en production avec un compte administrateur (« Aucune demande en attente. », aucune demande réelle modifiée).
+
+### Story 4.8 : mesure du tunnel
+
+- Migration : `20261111120000_mesure_choix` (empreinte SHA-256 : `ac9caff7044dddd83fb5ef934616e82b472d2b8fc0eca16c8c3f0026b5275a8b`). Ajoute le type `ChoixMesure` (`accepte`, `refuse`) et la table `CompteurChoixMesure` (jour, choix, nombre ; clé primaire jour + choix, aucun identifiant). Additive : aucune table existante modifiée.
+- Le nouveau code écrit dans cette table à chaque choix de consentement (la bannière est proposée à tous les visiteurs) ; sans elle, le choix reste appliqué (cookie) mais le compteur échoue et un message est journalisé. Même procédure que les précédentes : branche de sauvegarde datée, `preview` puis production **avant la fusion**, avec sa ligne `_prisma_migrations`.
+  ```sql
+  BEGIN;
+  -- CreateEnum
+  CREATE TYPE "ChoixMesure" AS ENUM ('accepte', 'refuse');
+  -- CreateTable
+  CREATE TABLE "CompteurChoixMesure" (
+      "jour" DATE NOT NULL,
+      "choix" "ChoixMesure" NOT NULL,
+      "nombre" INTEGER NOT NULL DEFAULT 0,
+
+      CONSTRAINT "CompteurChoixMesure_pkey" PRIMARY KEY ("jour","choix")
+  );
+  INSERT INTO "_prisma_migrations" (id, checksum, migration_name, started_at, finished_at, applied_steps_count)
+  VALUES (gen_random_uuid()::text, 'ac9caff7044dddd83fb5ef934616e82b472d2b8fc0eca16c8c3f0026b5275a8b',
+          '20261111120000_mesure_choix', now(), now(), 1);
+  COMMIT;
+  ```
+  Vérifiez l'empreinte avec `sha256sum` avant de l'enregistrer.
+- Contrôle (lecture seule) : `SELECT jour, choix, nombre FROM "CompteurChoixMesure" ORDER BY jour DESC;` après un choix dans la préversion.
+- Retour arrière : l'ancien code ignore la table. Pour la retirer (dernier recours) : `DROP TABLE "CompteurChoixMesure"; DROP TYPE "ChoixMesure";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261111120000_mesure_choix';`.
+- Variables Vercel (acte du porteur, jamais dans le code) : `MESURE_CLE` (clé du projet PostHog UE) et `MESURE_ADRESSE` (adresse d'hébergement UE, en https), en Production seulement ; sans elles, rien n'est envoyé.

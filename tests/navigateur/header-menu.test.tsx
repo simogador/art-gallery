@@ -7,6 +7,8 @@ import { fr } from '@/lib/i18n'
 // Routeur et action de déconnexion simulés.
 vi.mock('next/navigation', () => ({ usePathname: () => '/', useRouter: () => ({ refresh: () => {}, push: () => {} }) }))
 vi.mock('@/app/auth/actions', () => ({ logout: () => {} }))
+// Le barrel `@/components/ui` importe l'action du pays de livraison (code serveur, qui mesure depuis la story 4.8) : simulée.
+vi.mock('@/app/actions/pays', () => ({ choisirPaysLivraison: () => {} }))
 
 const t = fr.entete
 const panneau = () => document.querySelector('[role="dialog"][aria-modal="true"]') as HTMLElement | null

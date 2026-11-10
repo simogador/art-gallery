@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils/cn'
 import { fr } from '@/lib/i18n'
 import { boutonConseil, type ContexteConseil } from '@/lib/conseil'
 import { numeroWhatsApp } from '@/lib/reglages'
+import { LienConseil } from './LienConseil'
 
 // Story 4.4 (FR-7, UX-DR14) : bouton « Conseil WhatsApp » unique, avec sa sous-ligne de délai.
 // Composant serveur, calculé à chaque requête (l'état « dans les horaires » dépend de l'heure). Numéro
@@ -31,7 +32,9 @@ export function BoutonConseil({
 
   return (
     <div className={className}>
-      <a
+      <LienConseil
+        slug={contexte.type === 'oeuvre' ? contexte.slug : null}
+        mesure={whatsapp}
         href={bouton.href}
         {...(whatsapp ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         aria-label={whatsapp ? `${nom} ${t.nouvelOnglet}` : nom}
@@ -44,7 +47,7 @@ export function BoutonConseil({
         )}
       >
         {libelle}
-      </a>
+      </LienConseil>
       <p id={idLigne} className={cn('mt-2 font-sans text-sm', !surSombre && 'text-neutral-600')}>
         {bouton.sousLigne}
       </p>
