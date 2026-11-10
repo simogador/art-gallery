@@ -325,7 +325,7 @@ describe('base : règle de visibilité « accord signé requis »', () => {
     const { Hero, CollectionVide, ParcourirGalerie } = await import('@/components/sections')
     const enfants = (element(await Accueil()).props.children as unknown[]).filter(Boolean).map(element)
     // Sections artistes et expositions masquées ; la collection affiche son état vide.
-    expect(enfants.map((e) => e.type)).toEqual([Hero, CollectionVide, ParcourirGalerie])
+    expect(enfants.map((e) => e.type)).toEqual([Hero, CollectionVide, ParcourirGalerie, 'section'])
     expect(enfants[0].props).toEqual({ oeuvre: null, chiffres: { oeuvres: 0, artistes: 0, expositions: 0 }, expositionEnCours: false })
 
     const { default: Galerie } = await import('@/app/galerie/page')
@@ -344,7 +344,7 @@ describe('base : règle de visibilité « accord signé requis »', () => {
     const { Hero, SectionOeuvres, ParcourirGalerie, Artists, Exhibitions } = await import('@/components/sections')
     const enfants = (element(await Accueil()).props.children as unknown[]).filter(Boolean).map(element)
     // Aucune œuvre marquée : pas de sélection, les dernières œuvres publiées seules (story 3.10).
-    expect(enfants.map((e) => e.type)).toEqual([Hero, SectionOeuvres, ParcourirGalerie, Artists, Exhibitions])
+    expect(enfants.map((e) => e.type)).toEqual([Hero, SectionOeuvres, ParcourirGalerie, 'section', Artists, Exhibitions])
     expect((enfants[0].props.oeuvre as { id: string }).id).toBe('aube')
     expect(enfants[0].props.chiffres).toEqual({ oeuvres: 1, artistes: 1, expositions: 1 })
     expect(enfants[0].props.expositionEnCours).toBe(true)

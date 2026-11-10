@@ -41,6 +41,22 @@ export const DOUBLON_DEMANDE_MINUTES = 10
 // 2026-11-10), mêmes limites d'envoi que la sélection (compteurs distincts) et même fenêtre de doublon.
 export const LIMITES_DEMANDE_VISITE = { fenetreMinutes: 60, parIp: 5, parEmail: 3 } as const
 
+// Conseil WhatsApp (story 4.4, FR-7, OQ-7, décision du porteur du 2026-11-10) : l'équipe répond du
+// lundi au vendredi, de 9 h à 18 h, heure de Londres (`Europe/London`, heure d'été comprise ; jours
+// 1 = lundi … 5 = vendredi), en moins de `DELAI_CONSEIL_HEURES` heures pendant ces horaires. Pas de
+// jours fériés. Changer une valeur = une PR (ni écran d'administration, ni migration).
+export const CONSEIL_HORAIRES = { fuseau: 'Europe/London', jours: [1, 2, 3, 4, 5], debut: 9, fin: 18 } as const
+export const DELAI_CONSEIL_HEURES = 2
+
+// Numéro WhatsApp Business : variable Vercel `WHATSAPP_NUMERO`, saisie par le porteur lui-même (comme
+// LOT2_OUVERT, seul endroit qui la lit). Aucune valeur par défaut : absente ou vide, null. La
+// validation et le lien `wa.me` sont dans `src/lib/conseil`. Jamais écrit dans le code, un test, une
+// PR ni un journal.
+export function numeroWhatsApp(env: Record<string, string | undefined> = process.env): string | null {
+  const brut = env.WHATSAPP_NUMERO?.trim()
+  return brut ? brut : null
+}
+
 // Invitation des artistes (story 2.4, UXQ-8, décision du porteur du 2026-11-02) : durée de
 // validité du lien, et adresse de « Écrire à l'équipe ».
 export const DUREE_INVITATION_JOURS = 7

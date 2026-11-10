@@ -18,6 +18,7 @@ import { COOKIE_PAYS, lirePays, nomPays } from '@/lib/livraison'
 import { PAS_AFFICHAGE } from '@/lib/catalogue/filtres'
 import { urlAbsolue } from '@/lib/reglages'
 import { PaysLivraison, UniteToggle } from '@/components/ui'
+import { BoutonConseil } from '@/components/ui/BoutonConseil'
 import { FormulaireFiltres, PucesFiltres, type Puce } from './FiltresGalerie'
 import { VignetteOeuvre } from './VignetteOeuvre'
 
@@ -126,6 +127,10 @@ export default async function GaleriePage({ searchParams }: { searchParams: Para
           </Link>
         </div>
       )}
+
+      <section aria-label={fr.conseilWhatsApp.section} className="mt-16 border-t border-neutral-200 pt-10 text-center">
+        <BoutonConseil className="inline-block" />
+      </section>
     </div>
   )
 }

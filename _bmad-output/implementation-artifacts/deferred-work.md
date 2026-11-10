@@ -176,3 +176,11 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-2-demande-de-selection.md`
   summary: Le bouton « Contacter » de l'en-tête est un `<button>` dans un lien (`<a>`), comme « Connexion ».
   evidence: HTML invalide (deux arrêts de tabulation) ; à corriger avec la refonte de l'en-tête, sans lien avec cette story.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-4-conseil-whatsapp.md`
+  summary: Ajouter le fuseau (« heure de Londres ») à la ligne hors horaires « Réponse demain à partir de 9 h », ou la convertir dans l'heure du visiteur.
+  evidence: un visiteur de la diaspora lit 9 h comme son heure locale ; le texte exact figure dans la partie gelée de la spec (valeur du porteur) ; à décider avec lui.
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-4-conseil-whatsapp.md`
+  summary: Mentionner dans les pages de confiance (Epic 7) que le Conseil WhatsApp envoie le titre et le lien de l'œuvre à un tiers (WhatsApp).
+  evidence: le bouton ouvre une conversation chez un prestataire tiers ; aucune information au visiteur ni durée de conservation décidée.
+

@@ -31,9 +31,11 @@ interface Props {
   related: Artwork[]
   /** Pays de livraison du visiteur (cookie `pays`, France par défaut), nom français compris (story 3.3). */
   pays:    { code: string; nom: string }
+  /** Bouton Conseil WhatsApp rendu par le serveur (story 4.4). */
+  conseil?: React.ReactNode
 }
 
-export function ArtworkDetail({ artwork, related, pays }: Props) {
+export function ArtworkDetail({ artwork, related, pays, conseil }: Props) {
   const [contactOpen,  setContactOpen]  = useState(false)
   const [formSent,     setFormSent]     = useState(false)
   const [loading,      setLoading]      = useState(false)
@@ -199,6 +201,7 @@ export function ArtworkDetail({ artwork, related, pays }: Props) {
                     </Button>
                   </>
                 ) : null}
+                {conseil}
                 <div className="flex items-center gap-3 pt-1">
                   <button className="flex items-center gap-2 font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200">
                     <HeartIcon /> Sauvegarder

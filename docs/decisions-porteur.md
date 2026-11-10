@@ -24,8 +24,8 @@
 
 ## 3. Contact et accompagnement
 
-- **Numéro WhatsApp Business** à afficher : …
-- **Qui répond** et dans quel délai : …
+- **Numéro WhatsApp Business** à afficher : variable Vercel `WHATSAPP_NUMERO`, saisie par le porteur (décision du 2026-11-10, story 4.4)
+- **Qui répond** et dans quel délai : l'équipe, du lundi au vendredi de 9 h à 18 h (Londres), moins de 2 heures pendant ces horaires (décision du 2026-11-10, story 4.4)
 - **Rendez-vous** proposés (showroom, visio, domicile) : …
 
 ## 4. Mesure de départ (baseline)
@@ -94,6 +94,7 @@
 | 2026-11-10 | Demande de sélection personnalisée (story 4.2) : délai de réponse annoncé de 48 heures ; à chaque demande, un e-mail d'alerte à `contact@errancy.art` (numéro de la demande et lien vers l'administration, aucune donnée personnelle) en attendant la file des demandes (story 4.6) | Choix du porteur (spec de la story 4.2) |
 | 2026-11-10 | Demande de visite (story 4.3) : même délai de réponse annoncé de 48 heures que la sélection (valeur unique) ; même alerte à l'équipe (numéro et lien vers l'administration, sans donnée personnelle) ; aucun lien vers la page de visite depuis la fiche avant la barre d'actions (story 4.7) | Choix du porteur (spec de la story 4.3) |
 | 2026-11-10 | Demande de visite (story 4.3) : si l'œuvre est supprimée, la demande du visiteur est gardée, sans lien vers l'œuvre (l'équipe peut encore lui répondre) | Choix du porteur (relecture de la story 4.3) |
+| 2026-11-10 | Conseil WhatsApp (story 4.4, OQ-7) : réponse du lundi au vendredi de 9 h à 18 h, heure de Londres ; délai annoncé « moins de 2 heures pendant les horaires » ; numéro en variable Vercel `WHATSAPP_NUMERO` (saisi par le porteur) ; pas de QR code, le lien `wa.me` suffit ; sans numéro, le bouton ouvre `/conseil` et annonce 48 heures | Choix du porteur (spec de la story 4.4) |
 
 ## Conséquences à traiter (relevées le 2026-10-23, à valider en PRD et architecture)
 

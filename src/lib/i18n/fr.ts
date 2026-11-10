@@ -256,6 +256,25 @@ export type Dictionnaire = {
     readonly confidentialite: string
     readonly nouvelleDemande: string
   }
+  /** Bouton « Conseil WhatsApp » et son repli vers `/conseil` (story 4.4, FR-7, UX-DR14). */
+  readonly conseilWhatsApp: {
+    readonly libelle: string
+    readonly libelleSur: (titre: string) => string
+    readonly repliLibelle: string
+    readonly repliLibelleSur: (titre: string) => string
+    readonly section: string
+    readonly nouvelOnglet: string
+    readonly horaires: (debut: number, fin: number) => string
+    readonly fuseau: string
+    readonly ouvert: (delaiHeures: number, horaires: string) => string
+    readonly ferme: { readonly aujourdhui: (heure: number) => string; readonly demain: (heure: number) => string; readonly lundi: (heure: number) => string }
+    readonly repli: (heures: number) => string
+    readonly messages: {
+      readonly general: string
+      readonly oeuvre: (titre: string, reference: string, lien: string) => string
+      readonly artiste: (nom: string) => string
+    }
+  }
   /** Page `/galerie/[id]/visite` : demande de visite à distance ou en atelier (story 4.3, FR-8). */
   readonly visite: {
     readonly titre: string
@@ -301,8 +320,9 @@ export type Dictionnaire = {
     readonly salutation: (nom: string) => string
     readonly salutationSansNom: string
     readonly signature: string
-    /** Pied de chaque e-mail ; le lien Conseil WhatsApp s'y ajoutera avec la story 4.4. */
     readonly pied: (contact: string) => string
+    /** Ligne ajoutée avant le pied quand le numéro WhatsApp est réglé (story 4.4). */
+    readonly conseilWhatsApp: string
     readonly invitation: {
       readonly sujet: string
       readonly intro: string
@@ -684,6 +704,30 @@ export const fr = {
     confidentialite: 'Vos coordonnées ne servent qu’à vous répondre.',
     nouvelleDemande: 'Faire une autre demande',
   },
+  conseilWhatsApp: {
+    libelle: 'Conseil WhatsApp',
+    libelleSur: (titre: string) => `Conseil WhatsApp sur ${titre}`,
+    repliLibelle: 'Demander conseil',
+    repliLibelleSur: (titre: string) => `Demander conseil sur ${titre}`,
+    section: 'Besoin d’un conseil ?',
+    nouvelOnglet: '(s’ouvre dans un nouvel onglet)',
+    horaires: (debut: number, fin: number) => `lundi au vendredi, ${debut} h–${fin} h`,
+    // À changer avec `CONSEIL_HORAIRES.fuseau` de `reglages` (Europe/London).
+    fuseau: 'heure de Londres',
+    ouvert: (delaiHeures: number, horaires: string) => `Réponse en moins de ${delaiHeures} heures${SEPARATEUR}${horaires}`,
+    ferme: {
+      aujourdhui: (heure: number) => `Réponse aujourd’hui à partir de ${heure} h`,
+      demain: (heure: number) => `Réponse demain à partir de ${heure} h`,
+      lundi: (heure: number) => `Réponse lundi à partir de ${heure} h`,
+    },
+    repli: (heures: number) => `Réponse sous ${heures} heures`,
+    messages: {
+      general: 'Bonjour, je souhaiterais un conseil pour choisir une œuvre sur Errancy.',
+      oeuvre: (titre: string, reference: string, lien: string) =>
+        `Bonjour, je souhaiterais un conseil sur l’œuvre « ${titre} » (référence ${reference}) : ${lien}`,
+      artiste: (nom: string) => `Bonjour, je souhaiterais un conseil au sujet de l’artiste ${nom}.`,
+    },
+  },
   visite: {
     titre: 'Demander une visite',
     titrePage: (titre: string) => `Demander une visite — ${titre}`,
@@ -729,6 +773,7 @@ export const fr = {
     salutationSansNom: 'Bonjour,',
     signature: 'L’équipe Errancy',
     pied: (contact: string) => `Une question ? Écrivez-nous à ${contact}`,
+    conseilWhatsApp: 'Un conseil rapide ? Écrivez-nous sur WhatsApp',
     invitation: {
       sujet: 'Votre invitation à rejoindre Errancy',
       intro: 'L’équipe d’Errancy vous invite à créer votre accès artiste : vous pourrez déposer vos œuvres et suivre leur sélection.',
