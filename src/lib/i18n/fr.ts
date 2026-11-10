@@ -361,6 +361,60 @@ export type Dictionnaire = {
     readonly enCours: string
     readonly refus: { readonly acces_refuse: string; readonly introuvable: string; readonly invalide: string; readonly indisponible: string }
   }
+  /** Annonce de l'ouverture, `/dashboard/admin/ouverture` (story 4.9, FR-35). */
+  readonly ouverture: {
+    readonly titre: string
+    readonly titrePage: string
+    readonly introduction: string
+    readonly nonLevee: string
+    readonly nombre: (n: number) => string
+    readonly vide: string
+    readonly essai: {
+      readonly titre: string
+      readonly texte: string
+      readonly bouton: string
+      readonly enCours: string
+      readonly envoye: string
+      readonly horsProduction: string
+    }
+    readonly envoi: {
+      readonly titre: string
+      readonly bouton: string
+      readonly confirmation: (n: number) => string
+      readonly confirmer: (n: number) => string
+      readonly annuler: string
+      readonly enCours: string
+    }
+    readonly bilan: {
+      readonly titre: string
+      readonly prevenus: (n: number) => string
+      readonly echecs: (n: number) => string
+      readonly restants: (n: number) => string
+      readonly relancer: string
+      readonly aSupprimer: (n: number) => string
+      readonly arret: string
+    }
+    readonly refus: {
+      readonly hors_production: string
+      readonly nombre_invalide: string
+      readonly acces_refuse: string
+      readonly adresse_absente: string
+      readonly envoi_echoue: string
+      readonly indisponible: string
+    }
+    readonly chargement: string
+    readonly erreur: string
+    readonly reessayer: string
+  }
+  /** Page publique de désinscription, `/auth/desinscription/[jeton]` (story 4.9). */
+  readonly desinscription: {
+    readonly titrePage: string
+    readonly titre: string
+    readonly confirmee: string
+    readonly indisponible: string
+    readonly invalide: (contact: string) => string
+    readonly accueil: string
+  }
   /** Textes des e-mails transactionnels (story 4.1) : vouvoiement, sans jargon, jamais de donnée inventée. */
   readonly courriels: {
     readonly salutation: (nom: string) => string
@@ -409,6 +463,13 @@ export type Dictionnaire = {
       readonly intro: (numero: string) => string
       readonly bouton: string
       readonly suite: string
+    }
+    readonly ouverture: {
+      readonly sujet: string
+      readonly intro: string
+      readonly bouton: string
+      readonly suite: string
+      readonly desinscription: string
     }
     readonly renvoyee: {
       readonly sujet: (titre: string) => string
@@ -865,6 +926,64 @@ export const fr = {
       indisponible: 'Le changement n’a pas pu être enregistré. Réessayez.',
     },
   },
+  ouverture: {
+    titre: 'Annoncer l’ouverture',
+    titrePage: 'Annoncer l’ouverture — Admin Errancy',
+    introduction:
+      'Prévenez par e-mail les personnes qui ont laissé leur adresse sur la page de maintenance. Chacune reçoit un seul message, et son adresse est supprimée dès que le message est parti.',
+    nonLevee: 'Cet envoi ne lève pas la maintenance : elle se lève dans Vercel, par le porteur du site.',
+    nombre: (n: number) => (n === 1 ? '1 contact à prévenir' : `${n} contacts à prévenir`),
+    vide: 'Aucun contact à prévenir.',
+    essai: {
+      titre: 'Envoi d’essai',
+      texte: 'Recevez l’e-mail à votre propre adresse, sans prévenir personne. Le lien de désinscription de l’essai ne fonctionne pas.',
+      bouton: 'M’envoyer un e-mail d’essai',
+      enCours: 'Envoi de l’essai…',
+      envoye: 'L’e-mail d’essai est parti vers votre adresse.',
+      horsProduction: 'Essai non envoyé : hors production, rien ne part (le contenu est dans le journal).',
+    },
+    envoi: {
+      titre: 'Envoi aux contacts',
+      bouton: 'Annoncer l’ouverture',
+      confirmation: (n: number) =>
+        `Vous allez envoyer l’e-mail d’ouverture à ${n === 1 ? '1 personne' : `${n} personnes`}. Cet envoi ne peut pas être annulé.`,
+      confirmer: (n: number) => (n === 1 ? 'Envoyer à 1 personne' : `Envoyer à ${n} personnes`),
+      annuler: 'Annuler',
+      enCours: 'Envoi en cours, ne fermez pas la page…',
+    },
+    bilan: {
+      titre: 'Bilan de l’envoi',
+      prevenus: (n: number) => (n <= 1 ? `${n} personne prévenue` : `${n} personnes prévenues`),
+      echecs: (n: number) => (n <= 1 ? `${n} envoi échoué` : `${n} envois échoués`),
+      restants: (n: number) => (n <= 1 ? `${n} contact restant` : `${n} contacts restants`),
+      relancer: 'Un nouvel envoi n’écrira qu’aux contacts restants, jamais à ceux déjà prévenus.',
+      aSupprimer: (n: number) =>
+        n === 1
+          ? '1 adresse n’a pas pu être supprimée : ne relancez pas l’envoi avant de l’avoir retirée.'
+          : `${n} adresses n’ont pas pu être supprimées : ne relancez pas l’envoi avant de les avoir retirées.`,
+      arret: 'L’envoi s’est arrêté après plusieurs échecs de suite.',
+    },
+    refus: {
+      hors_production: 'L’annonce ne part que depuis la production : ici, aucun e-mail ne serait envoyé et aucune adresse n’est touchée.',
+      nombre_invalide: 'Le nombre de contacts à prévenir n’est pas valide. Rechargez la page.',
+      acces_refuse: 'Vous n’avez pas le droit d’envoyer cette annonce.',
+      adresse_absente: 'Votre compte n’a pas d’adresse e-mail.',
+      envoi_echoue: 'L’e-mail n’est pas parti. Réessayez.',
+      indisponible: 'L’opération n’a pas abouti. Réessayez.',
+    },
+    chargement: 'Chargement de la page…',
+    erreur: 'La page ne s’est pas chargée.',
+    reessayer: 'Réessayer',
+  },
+  desinscription: {
+    titrePage: 'Désinscription — Errancy',
+    titre: 'Désinscription',
+    indisponible: 'Nous n’avons pas pu traiter votre demande. Réessayez dans quelques minutes.',
+    confirmee: 'C’est fait : Errancy ne conserve plus votre adresse e-mail et ne vous écrira plus à ce sujet.',
+    invalide: (contact: string) =>
+      `Ce lien a déjà été utilisé ou n’est plus valable. Une question ? Écrivez-nous à ${contact}.`,
+    accueil: 'Retour à l’accueil',
+  },
   courriels: {
     salutation: (nom: string) => `Bonjour ${nom},`,
     salutationSansNom: 'Bonjour,',
@@ -911,6 +1030,13 @@ export const fr = {
       intro: (numero: string) => `Une demande de visite d’œuvre vient d’arriver (numéro ${numero}).`,
       bouton: 'Ouvrir la file des demandes',
       suite: 'Les coordonnées du visiteur ne figurent pas dans ce message.',
+    },
+    ouverture: {
+      sujet: 'Errancy ouvre ses portes',
+      intro: 'Vous avez laissé votre adresse sur notre page d’attente : le site d’Errancy est maintenant ouvert.',
+      bouton: 'Découvrir Errancy',
+      suite: 'Nous supprimons votre adresse de notre liste : vous ne recevrez pas d’autre message de ce type.',
+      desinscription: 'Pour confirmer que votre adresse n’est plus conservée, ouvrez ce lien :',
     },
     renvoyee: {
       sujet: (titre: string) => `Votre œuvre « ${titre} » : nos remarques`,

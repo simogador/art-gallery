@@ -10,5 +10,6 @@ export {
   envoyerInvitation,
   envoyerResultatCuration,
 } from './gestionnaires'
-export { choisirEnvoi } from './choix'
+export { annoncerOuverture, envoyerEssaiOuverture, type BilanAnnonce, type ResultatAnnonce, type ResultatEssai } from './annonce'
+export { choisirEnvoi, envoiReel } from './choix'
 export type { Courriel, EnvoiCourriel, ResultatEnvoi } from './port'

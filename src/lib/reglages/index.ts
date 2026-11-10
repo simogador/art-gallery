@@ -76,6 +76,17 @@ export function adresseMesure(env: Record<string, string | undefined> = process.
 export const DUREE_INVITATION_JOURS = 7
 export const CONTACT_EQUIPE = 'contact@errancy.art'
 
+// Annonce de l'ouverture (FR-35, story 4.9) : le lien de désinscription de l'e-mail reste valable un
+// an (un contact qui l'ouvre tard doit encore pouvoir s'y fier) ; un envoi ne dépasse pas cette durée
+// (limite d'une fonction Vercel) : les contacts non atteints restent à prévenir pour un second envoi.
+export const DUREE_DESINSCRIPTION_JOURS = 365
+export const DUREE_MAX_ANNONCE_SECONDES = 40
+
+// Débit de l'annonce : pause entre deux envois (limite de débit du prestataire) et arrêt après cette
+// série d'échecs consécutifs (panne probable : inutile d'insister).
+export const PAUSE_ENTRE_ENVOIS_MS = 600
+export const ECHECS_CONSECUTIFS_MAX = 5
+
 // E-mails transactionnels (story 4.1, décision du porteur du 2026-11-10) : expéditeur « Errancy »,
 // réponses reçues à l'adresse de l'équipe.
 export const EXPEDITEUR_COURRIELS = `Errancy <${CONTACT_EQUIPE}>`

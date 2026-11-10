@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/utils/artworks'
-import { formaterDate } from '@/lib/i18n'
+import { formaterDate, fr } from '@/lib/i18n'
 import { acteurCourant } from '@/lib/acces'
 import { compterInscriptionsOuverture } from '@/lib/demandes'
 import { compterOeuvres } from '@/lib/disponibilite'
@@ -92,14 +92,22 @@ export default async function AdminPage() {
           <p className="font-serif text-3xl font-light text-foreground">{inscritsOuverture}</p>
           <p className="font-sans text-[10px] text-neutral-600 mt-1">laissés sur la page de maintenance</p>
         </div>
-        {inscritsOuverture > 0 && (
-          <a
-            href="/api/admin/inscriptions-ouverture"
-            className="font-sans text-xs uppercase tracking-widest px-4 py-2 border border-neutral-200 rounded-sm hover:border-foreground transition-colors duration-300"
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/dashboard/admin/ouverture"
+            className="inline-flex min-h-touch-target items-center font-sans text-xs uppercase tracking-widest px-4 py-2 border border-neutral-200 rounded-sm hover:border-foreground transition-colors duration-300"
           >
-            Exporter la liste (CSV)
-          </a>
-        )}
+            {fr.ouverture.titre}
+          </Link>
+          {inscritsOuverture > 0 && (
+            <a
+              href="/api/admin/inscriptions-ouverture"
+              className="font-sans text-xs uppercase tracking-widest px-4 py-2 border border-neutral-200 rounded-sm hover:border-foreground transition-colors duration-300"
+            >
+              Exporter la liste (CSV)
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Recent orders */}

@@ -2,7 +2,8 @@
 title: 'Story 4.9 — Annonce de l''ouverture aux contacts de la maintenance'
 type: 'feature'
 created: '2026-11-10'
-status: 'draft'
+baseline_commit: '0249ea06270512c9e6ba0fae7b161ece2118c2d3'
+status: 'in-review'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-4-1-emails-transactionnels.md']
@@ -82,3 +83,25 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 
 **Manual checks:**
 - Préversion : les comptes administrateur ne s'y connectent pas ; vérification par SQL et journal. En production, avant l'envoi réel : relire l'e-mail d'essai ; l'envoi réel est le geste du porteur, le jour de l'ouverture.
+
+## Review Triage Log
+
+| # | Source | Constat | Verdict | Route | Preuve / suite |
+|---|--------|---------|---------|-------|----------------|
+| 1 | Edge | Hors production, l'adaptateur « journal » renvoie ok : l'annonce supprimerait les vraies adresses sans envoi (base de production jointe depuis un autre environnement) | high | patch | vérifié (`choix.ts`, `adaptateur-journal.ts`) ; `envoiReel()` et refus `hors_production` avant toute écriture ; test avec le vrai `choix.ts` |
+| 2 | Blind, Edge | Suppression de l'adresse qui échoue après l'envoi accepté : contact compté en échec, lien révoqué, doublon à la relance | medium | patch | trois tentatives isolées, contact compté prévenu, bilan `aSupprimer` ; test |
+| 3 | Edge | L'envoi ne porte pas sur le nombre confirmé (inscriptions arrivées pendant la confirmation) | medium | patch | `max` = nombre confirmé, validé côté serveur ; test |
+| 4 | Edge | Aucune pause ni arrêt après des échecs en série (limite de débit du prestataire) ; marge mince sous `maxDuration` | medium | patch | pause de 600 ms, arrêt après 5 échecs de suite, durée 40 s ; tests |
+| 5 | Blind | L'e-mail dit « votre adresse vient d'être supprimée » avant que ce soit fait | medium | patch | texte reformulé ; test |
+| 6 | Blind, Edge, Verification Gap | Écran : confirmation encore affichée pendant l'envoi, nombre périmé, focus perdu, plusieurs `role="status"` insérés avec leur texte | medium | patch | une région `aria-live`, focus déplacé, `router.refresh()` ; tests navigateur |
+| 7 | Blind, Edge | Panne de base sur la page de désinscription : message « lien déjà utilisé » faux | low | patch | message distinct ; test |
+| 8 | Verification Gap | `Referrer-Policy` de la page de désinscription non prouvé ; choix hors production non testé | medium | patch | test de `next.config.mjs` ; test hors production |
+| 9 | Blind, Edge | Réponse du prestataire perdue après acceptation : contact compté en échec, nouvelle clé d'idempotence, annonce renvoyée à la relance | high | defer | clé liée au lien émis ; un lien stable demande un autre schéma de jeton ; rare (délai de 8 s) ; limite consignée dans AGENTS.md ; deferred-work.md |
+| 10 | Edge | Pas d'en-tête `List-Unsubscribe` (le port `Courriel` n'a pas d'en-têtes) | low | defer | changement du port 4.1 ; deferred-work.md |
+| 11 | Blind, Edge | Jeton consommé en GET (préchargement de messagerie) | low | rejet | sans conséquence : l'adresse est déjà supprimée ; limite consignée |
+| 12 | Verification Gap | `docs/migrations.md` non mis à jour | false | rejet | le journal s'écrit après application par le porteur, dans la PR de suivi |
+| 13 | Verification Gap | Test « maintenance et robots.txt ne changent pas » tautologique ; clé d'idempotence, contenu de l'essai, lien Conseil de l'e-mail peu testés | low | rejet | le code ne touche à aucun de ces fichiers (diff) ; le reste est couvert par les tests d'envoi |
+| 14 | Blind | Titre de la carte de l'accueil admin identique au bouton d'envoi | low | rejet | la confirmation en deux temps empêche tout envoi accidentel |
+| 15 | Blind, Edge | Essai sans limite ; clé d'essai non stable ; jetons orphelins non purgés ; lien consommé sans limite de débit | low | rejet | envoi à sa propre adresse ; aucune donnée personnelle dans les jetons |
+| 16 | Blind | Import profond `@/lib/acces/desinscription` depuis `demandes` | low | rejet | même pratique que les autres modules ; aucune règle ne l'interdit |
+| 17 | Blind | Statuts de la spec et du suivi différents | false | rejet | l'étape de présentation passe le suivi à `review` |
