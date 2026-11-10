@@ -28,6 +28,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 - États de l'œuvre lus par un prédicat de `disponibilite` exposé dans le type d'affichage (aucune lecture directe de colonne) ; l'état « réservée » se distingue de « vendue » dans le type.
 - Textes dans `fr` (`fr.fiche`), aucun texte en dur ; cibles d'au moins 44 × 44 px ; focus global conservé ; mouvement coupé sous `prefers-reduced-motion`.
 - La page de visite devient joignable depuis la fiche (retrait de la mention « aucun lien avant la 4.7 » dans `AGENTS.md` et la spec 4.3).
+- Décisions du porteur du 2026-11-10 : l'ancien bouton d'ajout au panier reste tel quel dans la barre seulement quand `lot2Ouvert()` est vrai (l'Epic 7 le refera) ; une œuvre réservée n'a que le Conseil WhatsApp tant que « Me prévenir » (4.5) n'existe pas, la 4.5 l'y ajoutera ; les boutons inactifs « Sauvegarder » et « Partager » sont retirés de la fiche.
 
 **Never:**
 - « Me prévenir » et ses inscriptions (4.5), mesure du clic (4.8), réservation et paiement (Epics 6 et 7), nouvelle migration ; bouton grisé ou durée de réservation montrée.
@@ -47,15 +48,9 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 
 </frozen-after-approval>
 
-## Open Questions
-
-1. **Que devient le bouton d'ajout au panier quand le Lot 2 est ouvert ?** — options : A) il reste tel quel dans la barre quand `lot2Ouvert()` est vrai : aujourd'hui sur la fiche, il s'affiche même Lot 2 fermé ; l'Epic 7 le refera (recommandé) / B) il disparaît de la fiche dans tous les cas : l'achat se refera entièrement avec l'Epic 7.
-2. **Que montrer pour une œuvre réservée tant que « Me prévenir » (4.5) n'existe pas ?** — options : A) le Conseil WhatsApp seul, « Me prévenir » viendra avec la 4.5 (recommandé : aucune œuvre ne peut être réservée avant l'Epic 6) / B) faire la 4.5 avant la 4.7.
-3. **Que faire des boutons « Sauvegarder » et « Partager » de la fiche, qui ne font rien ?** — options : A) les laisser tels quels, hors périmètre / B) les retirer, ils promettent une action qui n'existe pas (recommandé) / C) les rendre fonctionnels (partage du lien de l'œuvre).
-
 ## Code Map
 
-- `src/app/galerie/[id]/ArtworkDetail.tsx` -- à retirer : boutons panier, « Prendre rendez-vous », formulaire « Acquérir cette œuvre / M'alerter » (`Modal`, `handleContact`, qui n'envoie rien) ; à ajouter : la barre.
+- `src/app/galerie/[id]/ArtworkDetail.tsx` -- à retirer : « Prendre rendez-vous », boutons « Sauvegarder » et « Partager », formulaire « Acquérir cette œuvre / M'alerter » (`Modal`, `handleContact`, qui n'envoie rien) ; à garder : le bouton d'ajout au panier, seulement Lot 2 ouvert ; à ajouter : la barre.
 - `src/app/galerie/[id]/BarreActions.tsx` (client, à créer) -- barre fixe ou collante, masquée à la saisie ; reçoit `BoutonConseil` en propriété.
 - `src/app/galerie/[id]/page.tsx` -- lit `lot2Ouvert()` et passe état, pays livré, bouton Conseil à la fiche.
 - `src/lib/catalogue/mappers.ts`, `src/lib/types/index.ts`, `src/lib/disponibilite/etats.ts` -- distinguer « réservée » de « vendue » (`sold` reste), prédicat pur dans `disponibilite`.
