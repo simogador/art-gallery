@@ -8,12 +8,12 @@ import { gradient, accent } from '@/lib/catalogue/mappers'
 import { ToggleAction } from '@/components/dashboard/ToggleAction'
 import { DeleteButton } from '@/components/dashboard/DeleteButton'
 import { acteurCourant } from '@/lib/acces'
-import { basculesPublication, fileDeCuration, messageRefusCuration, MESSAGES_REFUS_SELECTION } from '@/lib/curation'
+import { basculesPublication, fileDeCuration, messageRefusCuration } from '@/lib/curation'
 import {
   basculePossible, estDisponible, estEnCuration, estMarqueeDisponible, estPubliee, estRecopiee, estRetiree, estVendue, libelleEtat,
 } from '@/lib/disponibilite'
 import { FileDeCuration } from './FileDeCuration'
-import { actionSelection } from './actions'
+import { BasculeSelection, RetourSelection } from './BasculeSelection'
 
 export const metadata: Metadata = { title: 'Œuvres — Admin Errancy' }
 
@@ -26,13 +26,6 @@ const BANDEAUX_DECISION: Record<string, string> = {
   renvoyee: 'Œuvre renvoyée à l’artiste : elle redevient un brouillon, avec votre commentaire sur sa fiche.',
 }
 
-// Story 3.10 : retour de la bascule « Sélection de l'accueil » (le choix apparaît sur l'accueil sous 60 s).
-const BANDEAUX_SELECTION: Record<string, string> = {
-  marquee: 'Sélection de l’accueil mise à jour. L’œuvre y figure dès qu’elle est visible et disponible (au plus 60 secondes plus tard).',
-  retiree_selection: 'Sélection de l’accueil mise à jour. L’œuvre n’y figure plus (au plus 60 secondes plus tard).',
-  ...MESSAGES_REFUS_SELECTION,
-}
-
 export default async function AdminOeuvresPage({ searchParams }: Props) {
   const acteur = await acteurCourant()
   if (acteur.type !== 'admin') redirect('/dashboard')
@@ -40,9 +33,7 @@ export default async function AdminOeuvresPage({ searchParams }: Props) {
   // Story 2.7 : file de curation en tête (module curation), et bandeau après une décision.
   const decision = (await searchParams)?.decision
   const selection = (await searchParams)?.selection
-  const bandeau =
-    (typeof decision === 'string' ? BANDEAUX_DECISION[decision] : undefined) ??
-    (typeof selection === 'string' && Object.hasOwn(BANDEAUX_SELECTION, selection) ? BANDEAUX_SELECTION[selection] : undefined)
+  const bandeau = typeof decision === 'string' ? BANDEAUX_DECISION[decision] : undefined
   const file = await fileDeCuration(acteur)
 
   const artworks = await prisma.artwork.findMany({
@@ -77,6 +68,8 @@ export default async function AdminOeuvresPage({ searchParams }: Props) {
           {bandeau}
         </p>
       )}
+
+      <RetourSelection code={typeof selection === 'string' && !bandeau ? selection : undefined} />
 
       <FileDeCuration file={file.ok ? file.file : []} erreur={file.ok ? undefined : messageRefusCuration(file.code)} />
 
@@ -114,14 +107,7 @@ export default async function AdminOeuvresPage({ searchParams }: Props) {
               <p className="font-sans text-xs text-neutral-600 mt-0.5">{[artwork.year, artwork.medium].filter(Boolean).join(' · ')}</p>
               {/* Sélection de l'accueil (story 3.10) : action serveur du module curation, admin seulement. */}
               {(selectionnable(artwork) || artwork.featured) && (
-                <form action={actionSelection.bind(null, artwork.slug, !artwork.featured)} className="mt-1">
-                  <button
-                    type="submit"
-                    className="min-h-touch-target font-sans text-[10px] uppercase tracking-widest text-neutral-600 hover:text-foreground underline underline-offset-4"
-                  >
-                    {artwork.featured ? 'Dans la sélection de l’accueil · Retirer' : 'Ajouter à la sélection de l’accueil'}
-                  </button>
-                </form>
+                <BasculeSelection slug={artwork.slug} marquee={artwork.featured} />
               )}
             </div>
 

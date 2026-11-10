@@ -6,7 +6,9 @@
 # - « Migrations » (story 1.4) : toutes les migrations sur un PostgreSQL jetable, puis
 #   contrôle d'écart avec schema.prisma. Son DATABASE_URL ne vise que ce service jetable ;
 # - « Tests » (story 1.5) : Vitest, chaque fichier crée puis supprime sa propre base sur le
-#   PostgreSQL jetable désigné par TEST_DATABASE_URL.
+#   PostgreSQL jetable désigné par TEST_DATABASE_URL ;
+# - « Navigateur » (rétrospective de l'epic 3, A2) : interactions des composants dans Chromium
+#   (mode navigateur de Vitest + Playwright), actions serveur simulées, sans base ni secret.
 name: CI
 
 on:
@@ -106,3 +108,17 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+
+  navigateur:
+    name: Navigateur
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json # engines.node (24.x)
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:navigateur
