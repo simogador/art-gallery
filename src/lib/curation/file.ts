@@ -28,7 +28,8 @@ import type { RenvoiCuration } from './depot-regles'
 // `publiee`, exige l'accord écrit signé de l'artiste et la liste de contrôle complète) ou « Renvoyer
 // à l'artiste » (`en_curation` → `brouillon`, commentaire obligatoire). Chaque décision est
 // conservée (DecisionCuration). Accord signé : date enregistrée sur la fiche artiste. Admin seulement.
-// Aucun e-mail (epic 4) : l'artiste voit le renvoi sur sa fiche de dépôt.
+// L'artiste est prévenu par e-mail (story 4.1, événements `OeuvreValidee` et `OeuvreRenvoyee`) et
+// voit aussi le renvoi sur sa fiche de dépôt.
 
 export type RefusCuration = { ok: false; code: CodeRefusCuration; erreur?: string }
 
@@ -153,10 +154,14 @@ export async function validerOeuvre(acteur: Acteur, slug: unknown, controle: unk
       where: { id: ligne.id },
       data: { publication },
     })
-    await tx.decisionCuration.create({
+    const decision = await tx.decisionCuration.create({
       data: { artworkId: ligne.id, decision: 'valider', controle: coches, adminId: acteur.userId },
+      select: { id: true },
     })
-    evenements.push(await ecrireEvenement(tx, { nom: 'PublicationChangee', charge: { artworkId: ligne.id, artistId: ligne.artistId } }))
+    const charge = { artworkId: ligne.id, artistId: ligne.artistId }
+    evenements.push(await ecrireEvenement(tx, { nom: 'PublicationChangee', charge }))
+    // Story 4.1 : l'artiste est prévenu par e-mail (un seul, même si l'événement est rejoué).
+    evenements.push(await ecrireEvenement(tx, { nom: 'OeuvreValidee', charge: { decisionId: decision.id, ...charge } }))
     return { ok: true, slug }
   })
   if (resultat.ok) await repartirApresValidation(evenements)
@@ -189,7 +194,7 @@ export async function renvoyerOeuvre(
       where: { id: ligne.id },
       data: { publication },
     })
-    await tx.decisionCuration.create({
+    const decision = await tx.decisionCuration.create({
       data: {
         artworkId: ligne.id,
         decision: 'renvoyer',
@@ -197,8 +202,12 @@ export async function renvoyerOeuvre(
         controle: controlesCoches(controle),
         adminId: acteur.userId,
       },
+      select: { id: true },
     })
-    evenements.push(await ecrireEvenement(tx, { nom: 'PublicationChangee', charge: { artworkId: ligne.id, artistId: ligne.artistId } }))
+    const charge = { artworkId: ligne.id, artistId: ligne.artistId }
+    evenements.push(await ecrireEvenement(tx, { nom: 'PublicationChangee', charge }))
+    // Story 4.1 : l'artiste reçoit le commentaire de l'équipe par e-mail.
+    evenements.push(await ecrireEvenement(tx, { nom: 'OeuvreRenvoyee', charge: { decisionId: decision.id, ...charge } }))
     return { ok: true, slug }
   })
   if (resultat.ok) await repartirApresValidation(evenements)

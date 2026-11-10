@@ -31,6 +31,10 @@ describe('catalogue des événements (pur)', () => {
     const { evenementValide } = await import('@/lib/evenements/catalogue')
     expect(evenementValide({ nom: 'PublicationChangee', charge: { artworkId: 'a', artistId: 'b' } })).toBe(true)
     expect(evenementValide({ nom: 'DisponibiliteChangee', charge: { artworkId: 'a', artistId: 'b' } })).toBe(true)
+    expect(evenementValide({ nom: 'InvitationEmise', charge: { invitationId: 'i' } })).toBe(true)
+    expect(evenementValide({ nom: 'InvitationEmise', charge: { invitationId: 'i', email: 'x@y.z' } })).toBe(false)
+    expect(evenementValide({ nom: 'OeuvreValidee', charge: { decisionId: 'd', artworkId: 'a', artistId: 'b' } })).toBe(true)
+    expect(evenementValide({ nom: 'OeuvreRenvoyee', charge: { artworkId: 'a', artistId: 'b' } })).toBe(false)
     expect(evenementValide({ nom: 'OeuvreVendue', charge: { artworkId: 'a', artistId: 'b' } })).toBe(false)
     expect(evenementValide({ nom: 'toString', charge: { artworkId: 'a', artistId: 'b' } })).toBe(false)
     expect(evenementValide({ nom: 'PublicationChangee', charge: { artworkId: 'a' } })).toBe(false)
@@ -135,8 +139,10 @@ describe('base : journal et cache', () => {
     await oeuvre('en-attente', 'en_curation')
     const r = await validerOeuvre({ type: 'admin', userId: 'admin-1' } as never, 'en-attente', CONTROLES_CURATION.map((c) => c.code))
     expect(r).toEqual({ ok: true, slug: 'en-attente' })
-    expect((await db.query('SELECT nom, charge FROM "Evenement"')).rows).toEqual([
+    // Story 4.1 : la validation écrit aussi OeuvreValidee (e-mail de l'artiste), ids seulement.
+    expect((await db.query('SELECT nom, charge FROM "Evenement" ORDER BY nom DESC')).rows).toEqual([
       { nom: 'PublicationChangee', charge: { artworkId: 'id-en-attente', artistId: 'artiste-1' } },
+      { nom: 'OeuvreValidee', charge: { decisionId: expect.any(String), artworkId: 'id-en-attente', artistId: 'artiste-1' } },
     ])
     expect(cache.revalidateTag).toHaveBeenCalledTimes(3)
   })

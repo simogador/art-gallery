@@ -366,6 +366,9 @@ model Invitation {
   accepteeLe    DateTime?
   charteVersion String?
   createdAt     DateTime  @default(now())
+  // Story 4.1 : résultat de l'envoi de l'e-mail d'invitation (le jeton n'est émis qu'à l'envoi).
+  envoyeeLe     DateTime?
+  echecEnvoiLe  DateTime?
 
   @@index([artistId])
 }

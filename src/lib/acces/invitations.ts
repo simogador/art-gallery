@@ -1,23 +1,33 @@
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
-import { DUREE_INVITATION_JOURS } from '@/lib/reglages'
+import { ecrireEvenement, repartirApresValidation } from '@/lib/evenements'
 import type { Acteur } from './acteur'
 import { CHARTE_ARTISTE_VERSION } from './charte'
-import { consommerJeton, emettreJeton, lireJetonValide, revoquerJetons } from './jetons'
+import { consommerJeton, lireJetonValide, revoquerJetons } from './jetons'
 import { LONGUEUR_MIN_MOT_DE_PASSE, OCTETS_MAX_MOT_DE_PASSE } from './regles'
 
 // Invitation des artistes (FR-34, AD-14, story 2.4) : l'équipe invite un artiste existant ; le lien
 // personnel (jeton `invitation`, cible = id de l'invitation) crée son compte `artist`, rattaché à
-// sa fiche. Aucun e-mail n'est envoyé : le lien est montré une seule fois à l'admin.
+// sa fiche. L'invitation écrit l'événement `InvitationEmise` ; le gestionnaire de `notifications`
+// émet le jeton à l'envoi de l'e-mail (story 4.1) : le lien n'existe en clair que dans l'e-mail, il
+// n'est jamais montré à l'écran. Un envoi refusé se voit et se relance (nouvelle invitation).
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export type RefusInvitation = {
   ok: false
-  code: 'acces_refuse' | 'introuvable' | 'email_invalide' | 'deja_relie' | 'email_utilise' | 'email_invite_ailleurs'
+  code:
+    | 'acces_refuse'
+    | 'introuvable'
+    | 'email_invalide'
+    | 'deja_relie'
+    | 'email_utilise'
+    | 'email_invite_ailleurs'
+    /** L'invitation est créée mais l'e-mail n'est pas parti : à relancer. */
+    | 'envoi_echoue'
 }
 
-export type ResultatInvitation = { ok: true; jeton: string; echeance: Date } | RefusInvitation
+export type ResultatInvitation = { ok: true; email: string; echeance: Date } | RefusInvitation
 
 export type RefusActivation = {
   ok: false
@@ -49,8 +59,10 @@ class Refus extends Error {
 }
 
 /**
- * Invite un artiste sans compte (réservé aux admins) et renvoie le jeton en clair, à transmettre
- * une seule fois. Une nouvelle invitation révoque les liens précédents encore valables.
+ * Invite un artiste sans compte (réservé aux admins) : crée l'invitation, révoque les liens
+ * précédents encore valables et écrit l'événement `InvitationEmise` ; l'e-mail part à la
+ * répartition, avant de répondre. Le lien n'est jamais renvoyé ici. Refus `envoi_echoue` si
+ * l'e-mail n'est pas parti (l'invitation reste, relançable depuis l'écran de l'équipe).
  */
 export async function inviterArtiste(
   acteur: Acteur,
@@ -73,8 +85,7 @@ export async function inviterArtiste(
   const ailleurs = await invitationsEnAttenteParEmail(email, maintenant)
   if (ailleurs.some((artiste) => artiste !== artistId)) return { ok: false, code: 'email_invite_ailleurs' }
 
-  const echeance = new Date(maintenant.getTime() + DUREE_INVITATION_JOURS * 24 * 60 * 60 * 1000)
-  const jeton = await prisma.$transaction(async (tx) => {
+  const { invitationId, evenementId } = await prisma.$transaction(async (tx) => {
     // Verrou sur la fiche : deux invitations simultanées du même artiste se suivent, et la seconde
     // révoque bien le lien de la première.
     await tx.$queryRaw`SELECT 1 FROM "Artist" WHERE "id" = ${artistId} FOR UPDATE`
@@ -83,13 +94,22 @@ export async function inviterArtiste(
       select: { id: true },
     })
     await revoquerJetons(tx, 'invitation', precedentes.map((i) => i.id), maintenant)
+    // Date posée sous le verrou : « la plus récente » suit l'ordre réel des invitations.
     const invitation = await tx.invitation.create({
-      data: { artistId, email, creeParId: acteur.userId },
+      data: { artistId, email, creeParId: acteur.userId, createdAt: new Date() },
       select: { id: true },
     })
-    return emettreJeton(tx, { usage: 'invitation', cible: invitation.id, echeance })
+    const evenementId = await ecrireEvenement(tx, { nom: 'InvitationEmise', charge: { invitationId: invitation.id } })
+    return { invitationId: invitation.id, evenementId }
   })
-  return { ok: true, jeton, echeance }
+  await repartirApresValidation([evenementId])
+  const envoi = await prisma.invitation.findUnique({ where: { id: invitationId }, select: { envoyeeLe: true } })
+  if (!envoi?.envoyeeLe) return { ok: false, code: 'envoi_echoue' }
+  const jeton = await prisma.jeton.findFirst({
+    where: { usage: 'invitation', cible: invitationId, consommeLe: null, revoqueLe: null },
+    select: { echeance: true },
+  })
+  return jeton ? { ok: true, email, echeance: jeton.echeance } : { ok: false, code: 'envoi_echoue' }
 }
 
 // Artistes visés par une invitation encore valable à cette adresse.
@@ -126,15 +146,26 @@ export async function lireInvitation(jeton: string, maintenant = new Date()): Pr
   return { email: invitation.email, artiste: invitation.artist.name, echeance: valide.echeance }
 }
 
-/** Dernière invitation en attente (non acceptée, lien encore valable) de chaque artiste. */
+/**
+ * État de la dernière invitation non acceptée d'un artiste, pour l'écran de l'équipe :
+ * `envoyee` (e-mail parti, lien valable), `echec` (« L'e-mail n'est pas parti », à relancer),
+ * `en_cours` (envoi pas encore terminé), `lien_manuel` (invitation d'avant l'envoi automatique :
+ * lien valable, transmis à la main). Une invitation envoyée dont le lien a expiré n'apparaît plus.
+ */
+export type InvitationEnAttente = {
+  email: string
+  statut: 'envoyee' | 'echec' | 'en_cours' | 'lien_manuel'
+  echeance: Date | null
+}
+
 export async function invitationsEnAttente(
   artistIds: string[],
   maintenant = new Date(),
-): Promise<Record<string, { email: string; echeance: Date }>> {
+): Promise<Record<string, InvitationEnAttente>> {
   const invitations = await prisma.invitation.findMany({
     where: { artistId: { in: artistIds }, accepteeLe: null },
-    orderBy: { createdAt: 'asc' },
-    select: { id: true, artistId: true, email: true },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    select: { id: true, artistId: true, email: true, envoyeeLe: true, echecEnvoiLe: true },
   })
   const jetons = await prisma.jeton.findMany({
     where: {
@@ -146,10 +177,21 @@ export async function invitationsEnAttente(
     },
     select: { cible: true, echeance: true },
   })
-  const resultat: Record<string, { email: string; echeance: Date }> = {}
+  const resultat: Record<string, InvitationEnAttente> = {}
+  // Ordre croissant : la dernière invitation de chaque artiste l'emporte.
   for (const invitation of invitations) {
     const jeton = jetons.find((j) => j.cible === invitation.id)
-    if (jeton) resultat[invitation.artistId] = { email: invitation.email, echeance: jeton.echeance }
+    const { email } = invitation
+    if (invitation.envoyeeLe) {
+      if (jeton) resultat[invitation.artistId] = { email, statut: 'envoyee', echeance: jeton.echeance }
+      else delete resultat[invitation.artistId]
+    } else if (invitation.echecEnvoiLe) {
+      resultat[invitation.artistId] = { email, statut: 'echec', echeance: null }
+    } else if (jeton) {
+      resultat[invitation.artistId] = { email, statut: 'lien_manuel', echeance: jeton.echeance }
+    } else {
+      resultat[invitation.artistId] = { email, statut: 'en_cours', echeance: null }
+    }
   }
   return resultat
 }

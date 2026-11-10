@@ -18,6 +18,8 @@ export function messageRefusInvitation(code: RefusInvitation['code']): string {
       return 'Un compte existe déjà avec cette adresse : utilisez une autre adresse pour l’artiste.'
     case 'email_invite_ailleurs':
       return 'Cette adresse a déjà une invitation en cours pour un autre artiste.'
+    case 'envoi_echoue':
+      return 'L’e-mail n’est pas parti. L’invitation est enregistrée : relancez-la dans un instant.'
   }
 }
 

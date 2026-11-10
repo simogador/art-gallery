@@ -28,6 +28,7 @@ export {
   invitationsEnAttente,
   inviterArtiste,
   lireInvitation,
+  type InvitationEnAttente,
   type InvitationLue,
   type RefusActivation,
   type RefusInvitation,

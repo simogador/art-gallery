@@ -1,11 +1,12 @@
 import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@/generated/prisma/client'
-import { ABONNEMENTS } from '@/lib/abonnements'
+import { ABONNEMENTS, type Abonnement } from '@/lib/abonnements'
 import {
   VERSIONS_EVENEMENTS,
   estNomEvenement,
   evenementValide,
   type EvenementLu,
+  type NomEvenement,
   type NouvelEvenement,
 } from './catalogue'
 
@@ -74,10 +75,11 @@ export async function repartir(ids: string[]): Promise<void> {
     try {
       const evenement = await lireEvenement(id)
       if (!evenement) continue
-      for (const abonnement of ABONNEMENTS[evenement.nom]) {
+      // Le typage relie chaque nom à ses gestionnaires dans `abonnements.ts` ; ici le nom est dynamique.
+      for (const abonnement of ABONNEMENTS[evenement.nom] as Abonnement<NomEvenement>[]) {
         try {
           if (!(await reclamer(evenement.id, abonnement.nom))) continue
-          await abonnement.gestionnaire(evenement)
+          await abonnement.gestionnaire(evenement as never)
         } catch (erreur) {
           console.error('[evenements] gestionnaire en échec', {
             evenement: evenement.id,

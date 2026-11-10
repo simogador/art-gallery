@@ -224,6 +224,34 @@ export type Dictionnaire = {
     readonly reessayer: string
     readonly chargement: string
   }
+  /** Textes des e-mails transactionnels (story 4.1) : vouvoiement, sans jargon, jamais de donnée inventée. */
+  readonly courriels: {
+    readonly salutation: (nom: string) => string
+    readonly signature: string
+    /** Pied de chaque e-mail ; le lien Conseil WhatsApp s'y ajoutera avec la story 4.4. */
+    readonly pied: (contact: string) => string
+    readonly invitation: {
+      readonly sujet: string
+      readonly intro: string
+      readonly bouton: string
+      readonly validite: (jours: number, echeance: string) => string
+      readonly lienAlternatif: string
+      readonly neConcernePas: string
+    }
+    readonly validee: {
+      readonly sujet: (titre: string) => string
+      readonly intro: (titre: string) => string
+      readonly suite: string
+      readonly bouton: string
+    }
+    readonly renvoyee: {
+      readonly sujet: (titre: string) => string
+      readonly intro: (titre: string) => string
+      readonly messageEquipe: string
+      readonly suite: string
+      readonly bouton: string
+    }
+  }
 }
 
 export const fr = {
@@ -524,5 +552,31 @@ export const fr = {
     erreurPage: 'Cette page ne s’est pas chargée.',
     reessayer: 'Réessayer',
     chargement: 'Chargement de la galerie',
+  },
+  courriels: {
+    salutation: (nom: string) => `Bonjour ${nom},`,
+    signature: 'L’équipe Errancy',
+    pied: (contact: string) => `Une question ? Écrivez-nous à ${contact}`,
+    invitation: {
+      sujet: 'Votre invitation à rejoindre Errancy',
+      intro: 'L’équipe d’Errancy vous invite à créer votre accès artiste : vous pourrez déposer vos œuvres et suivre leur sélection.',
+      bouton: 'Créer mon accès',
+      validite: (jours: number, echeance: string) => `Ce lien est personnel. Il est valable ${jours} jours, jusqu’au ${echeance}.`,
+      lienAlternatif: 'Si le bouton ne s’ouvre pas, copiez ce lien dans votre navigateur :',
+      neConcernePas: 'Cette invitation ne vous concerne pas ? Ignorez simplement ce message.',
+    },
+    validee: {
+      sujet: (titre: string) => `Votre œuvre « ${titre} » est publiée`,
+      intro: (titre: string) => `Bonne nouvelle : l’équipe a sélectionné votre œuvre « ${titre} ». Elle est maintenant publiée sur Errancy.`,
+      suite: 'Vous pouvez la consulter sur le site à tout moment.',
+      bouton: 'Voir l’œuvre',
+    },
+    renvoyee: {
+      sujet: (titre: string) => `Votre œuvre « ${titre} » : nos remarques`,
+      intro: (titre: string) => `L’équipe a étudié votre œuvre « ${titre} » et vous la renvoie avant de la publier.`,
+      messageEquipe: 'Le message de l’équipe :',
+      suite: 'Vous pouvez corriger votre dépôt, puis envoyer à nouveau l’œuvre à l’équipe.',
+      bouton: 'Reprendre mon dépôt',
+    },
   },
 } as const satisfies Dictionnaire
