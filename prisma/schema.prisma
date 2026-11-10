@@ -310,6 +310,9 @@ model DemandeSelection {
   email          String
   telephone      String?
   etat           EtatDemande @default(nouvelle)
+  // Dernier changement d'état seulement (story 4.6) : identifiant de l'utilisateur, sans relation.
+  etatChangePar  String?
+  etatChangeLe   DateTime?   @db.Timestamptz(3)
   createdAt      DateTime    @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime    @updatedAt @db.Timestamptz(3)
 
@@ -336,6 +339,9 @@ model DemandeVisite {
   email     String
   telephone String?
   etat      EtatDemande @default(nouvelle)
+  // Dernier changement d'état seulement (story 4.6) : identifiant de l'utilisateur, sans relation.
+  etatChangePar String?
+  etatChangeLe  DateTime? @db.Timestamptz(3)
   createdAt DateTime    @default(now()) @db.Timestamptz(3)
   updatedAt DateTime    @updatedAt @db.Timestamptz(3)
 

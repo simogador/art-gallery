@@ -138,7 +138,7 @@ describe('base : demandes de sélection', () => {
     expect(accuse.texte.trimEnd().endsWith('Une question ? Écrivez-nous à contact@errancy.art')).toBe(true)
     const alerte = envoi.envoyes.find((c) => c.a === 'contact@errancy.art')!
     expect(alerte.texte).toContain(lignes[0].id)
-    expect(alerte.texte).toContain('https://www.errancy.art/dashboard/admin')
+    expect(alerte.texte).toContain('https://www.errancy.art/dashboard/admin/demandes')
     expect(alerte.texte + alerte.html + alerte.sujet).not.toMatch(/exemple\.test|Claire|6 12 34|salon|1500|calme/i)
   })
 

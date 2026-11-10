@@ -184,3 +184,11 @@
   summary: Mentionner dans les pages de confiance (Epic 7) que le Conseil WhatsApp envoie le titre et le lien de l'œuvre à un tiers (WhatsApp).
   evidence: le bouton ouvre une conversation chez un prestataire tiers ; aucune information au visiteur ni durée de conservation décidée.
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-6-file-des-demandes.md`
+  summary: Ajouter à la file des demandes de l'équipe la section des inscriptions « Me prévenir » par œuvre (nombre et ordre), avec la story 4.5.
+  evidence: la story 4.6 la demande, mais la table des inscriptions n'existe pas avant la 4.5 ; le porteur a décidé de la laisser de côté (2026-11-10).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-6-file-des-demandes.md`
+  summary: Paginer ou limiter la file des demandes de l'équipe quand le volume grossit (vue « demandes traitées » surtout).
+  evidence: `fileDesDemandes` lit toutes les demandes sans limite ; sans effet au volume actuel, mais la vue des demandes traitées ne fait que grandir.
+

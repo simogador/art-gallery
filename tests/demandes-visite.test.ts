@@ -226,7 +226,7 @@ describe('base : demandes de visite', () => {
     const alerte = envoi.envoyes.find((c) => c.a === 'contact@errancy.art')!
     expect(alerte.sujet).toBe('Nouvelle demande de visite')
     expect(alerte.texte).toContain(lignes[0].id)
-    expect(alerte.texte).toContain('https://www.errancy.art/dashboard/admin')
+    expect(alerte.texte).toContain('https://www.errancy.art/dashboard/admin/demandes')
     expect(alerte.texte + alerte.html + alerte.sujet).not.toMatch(/exemple\.test|Claire|514|Montreal/i)
 
     // Jamais les coordonnées de l'artiste, dans aucun e-mail.
