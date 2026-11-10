@@ -24,8 +24,8 @@
 
 ## 3. Contact et accompagnement
 
-- **Numéro WhatsApp Business** à afficher : …
-- **Qui répond** et dans quel délai : …
+- **Numéro WhatsApp Business** à afficher : variable Vercel `WHATSAPP_NUMERO`, saisie par le porteur (décision du 2026-11-10, story 4.4)
+- **Qui répond** et dans quel délai : l'équipe, du lundi au vendredi de 9 h à 18 h (Londres), moins de 2 heures pendant ces horaires (décision du 2026-11-10, story 4.4)
 - **Rendez-vous** proposés (showroom, visio, domicile) : …
 
 ## 4. Mesure de départ (baseline)

@@ -4,6 +4,7 @@ import localFont from 'next/font/local'
 import { Header, Footer, MouvementReduit } from '@/components/layout'
 import { cookies } from 'next/headers'
 import { auth } from '@/auth'
+import { BoutonConseil } from '@/components/ui/BoutonConseil'
 import { UniteProvider } from '@/components/ui/UniteToggle'
 import { COOKIE_UNITE, lireUnite } from '@/lib/i18n'
 import '@/styles/globals.css'
@@ -77,7 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <main id="contenu" tabIndex={-1}>
               {children}
             </main>
-            <Footer />
+            <Footer conseil={<BoutonConseil surSombre />} />
           </UniteProvider>
         </MouvementReduit>
       </body>

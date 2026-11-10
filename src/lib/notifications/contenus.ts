@@ -1,10 +1,12 @@
 import { fr, formaterDateHeure } from '@/lib/i18n'
 import type { TypeVisite } from '@/lib/demandes/visite-regles'
-import { CONTACT_EQUIPE, DELAI_REPONSE_DEMANDE_HEURES, DUREE_INVITATION_JOURS } from '@/lib/reglages'
+import { lienWhatsApp, messageConseil } from '@/lib/conseil'
+import { CONTACT_EQUIPE, DELAI_REPONSE_DEMANDE_HEURES, DUREE_INVITATION_JOURS, numeroWhatsApp } from '@/lib/reglages'
 
 // Contenus des e-mails transactionnels (story 4.1) : textes du dictionnaire `fr`, vouvoiement. Pur
-// (aucun accès à la base). Chaque e-mail se termine par l'adresse de l'équipe ; le lien Conseil
-// WhatsApp s'y ajoutera avec la story 4.4.
+// (aucun accès à la base). Chaque e-mail se termine par l'adresse de l'équipe, précédée (story 4.4)
+// du lien Conseil WhatsApp quand le numéro est réglé (message général) ; sans numéro, le pied reste
+// inchangé.
 
 export type Contenu = { sujet: string; texte: string; html: string }
 
@@ -30,10 +32,13 @@ type Gabarit = {
   suite: string[]
   /** Afficher l'adresse du lien en clair sous le bouton (invitation). */
   lienEnClair?: string
+  /** Alerte interne à l'équipe : pas de ligne Conseil WhatsApp (destinataire = l'équipe). */
+  sansConseil?: boolean
 }
 
 function assembler(g: Gabarit): Contenu {
   const t = fr.courriels
+  const conseil = g.sansConseil ? null : lienWhatsApp(numeroWhatsApp(), messageConseil({ type: 'general' }))
   const texte = [
     g.nom ? t.salutation(g.nom) : t.salutationSansNom,
     ...g.intro,
@@ -41,6 +46,7 @@ function assembler(g: Gabarit): Contenu {
     ...(g.bouton ? [`${g.bouton.libelle} : ${g.bouton.lien}`] : []),
     ...g.suite,
     t.signature,
+    ...(conseil ? [`${t.conseilWhatsApp} : ${conseil}`] : []),
     t.pied(CONTACT_EQUIPE),
   ].join('\n\n')
 
@@ -61,6 +67,9 @@ function assembler(g: Gabarit): Contenu {
       : '',
     ...g.suite.map(p),
     p(t.signature),
+    conseil
+      ? `<p style="margin:24px 0 0;font-size:14px"><a href="${echapperHtml(conseil)}">${echapperHtml(t.conseilWhatsApp)}</a></p>`
+      : '',
     `<p style="margin:24px 0 0;font-size:14px;color:#555555">${echapperHtml(t.pied(CONTACT_EQUIPE))}</p>`,
     '</div></body></html>',
   ].join('')
@@ -122,6 +131,7 @@ export function contenuAlerteDemande(p: { numero: string; lien: string }): Conte
     intro: [t.intro(p.numero)],
     bouton: { libelle: t.bouton, lien: p.lien },
     suite: [t.suite],
+    sansConseil: true,
   })
 }
 
@@ -152,5 +162,6 @@ export function contenuAlerteVisite(p: { numero: string; lien: string }): Conten
     intro: [t.intro(p.numero)],
     bouton: { libelle: t.bouton, lien: p.lien },
     suite: [t.suite],
+    sansConseil: true,
   })
 }

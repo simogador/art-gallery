@@ -2,7 +2,8 @@
 title: 'Story 4.4 — Conseil WhatsApp contextualisé, avec repli'
 type: 'feature'
 created: '2026-11-10'
-status: 'draft'
+status: 'done'
+baseline_commit: 'a744c77728ebcdd30d0a93545c85dd2c2ef6a14b'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-4-3-demande-de-visite.md']
@@ -75,3 +76,27 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 
 **Manual checks:**
 - Préversion : sans numéro, le bouton mène à `/conseil` ; avec le numéro en variable Preview, le lien `wa.me` s'ouvre avec le bon message (essai par le porteur).
+
+## Review Triage Log
+
+| # | Source | Constat | Verdict | Route | Preuve / suite |
+|---|--------|---------|---------|-------|----------------|
+| 1 | Verification Gap, Edge, Blind | Le lien WhatsApp « conseil pour choisir une œuvre » est ajouté aussi aux alertes internes à l'équipe (`assembler` commun) | medium | patch | vérifié dans `contenus.ts` ; les alertes de demande et de visite n'ont pas de lien ; test sur tous les gabarits |
+| 2 | Verification Gap, Blind | Le placement du bouton (fiche, page artiste, accueil, galerie, pied) n'est vérifié par aucun test ; l'accueil ne vérifie qu'un `section` vide | medium | patch | tests de rendu des pages et du pied (contexte œuvre, nom de l'artiste, bouton dans la section) |
+| 3 | Edge | Pied d'e-mail testé sur un seul gabarit | low | patch | fusionné avec le constat 1 (tous les gabarits, numéro réglé et absent) |
+| 4 | Blind, Edge | Clé `fr.conseilWhatsApp.delai` jamais utilisée | low | patch | suppression directe |
+| 5 | Edge, Blind | « Réponse demain à partir de 9 h » sans fuseau (le visiteur de la diaspora lit son heure locale) | medium | defer | le texte exact figure dans la partie gelée de la spec ; ajouter « heure de Londres » à décider avec le porteur ; deferred-work.md |
+| 6 | Blind | Le bouton envoie le visiteur, avec le titre et le lien de l'œuvre, à WhatsApp (Meta) : aucune mention de tiers | medium | defer | pages de confiance et confidentialité de l'Epic 7 ; deferred-work.md |
+| 7 | Edge, Blind | Deux boutons sur la même page (page et pied) ; « une seule action principale » | low | rejet | la spec place le bouton sur ces pages **et** dans le pied ; le bouton du pied est secondaire, sans l'œuvre dans son nom |
+| 8 | Blind | Pas de focus visible sur le pied noir | false | rejet | le pied porte déjà la classe `fond-sombre` (focus clair) |
+| 9 | Edge, Blind | Bouton affiché sur une œuvre vendue | false | rejet | `epic-4-context.md` : vendue = Conseil WhatsApp + lien artiste |
+| 10 | Edge | « Moins de 2 heures » annoncé jusqu'à 18 h | low | rejet | le porteur a dit « moins de 2 heures pendant les horaires » |
+| 11 | Edge, Blind | Numéro sans indicatif accepté s'il a 8 à 15 chiffres ; repli silencieux sur un numéro invalide | low | rejet | le porteur essaie le lien sur la préversion avant la production (contrôle manuel de la spec) ; un journal ou une alerte serait un ajout |
+| 12 | Edge | Jours fériés | low | rejet | hors périmètre déclaré (« Never ») |
+| 13 | Edge | Composant serveur dans une frontière client ou page statique | false | rejet | le composant n'est importé que par des fichiers serveur et passé en propriété ; le layout lit déjà des cookies |
+| 14 | Edge | Titre très long dans le message | low | rejet | les titres de dépôt sont bornés ; WhatsApp tronque lui-même |
+| 15 | Blind | Texte des horaires non lié à `CONSEIL_HORAIRES` | low | rejet | un changement d'horaires est une PR qui touche les deux ; la comparaison coûte plus que le risque |
+| 16 | Blind | Minuit, changement d'heure, fuseau illisible non testés | low | rejet | `heureMurale` impose `h23` ; l'heure d'été est testée ; branche de repli prudente |
+| 17 | Blind | Statut de la spec et du suivi différents | false | rejet | l'étape de présentation passe le suivi à `review` |
+| 18 | Edge, Blind | Bouton de repli du pied sur `/conseil` pointe sur la page courante ; section nommée sans titre visible ; section vide sur `/galerie` | low | rejet | sans effet gênant ; correction = branches en plus |
+

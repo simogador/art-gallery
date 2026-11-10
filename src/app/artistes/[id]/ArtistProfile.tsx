@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { PaysLivraison, UniteToggle } from '@/components/ui'
+import { BoutonConseil } from '@/components/ui/BoutonConseil'
 import { VignetteOeuvre } from '@/app/galerie/VignetteOeuvre'
 import { fr, SEPARATEUR } from '@/lib/i18n'
 import type { Artist, Artwork } from '@/lib/types'
@@ -74,6 +75,9 @@ export function ArtistProfile({
             {[artist.discipline, artist.country].filter(Boolean).join(SEPARATEUR)}
           </p>
           <p className="mt-1 font-sans text-body-strong text-foreground">{T.selectionne}</p>
+
+          {/* Story 4.4 : Conseil WhatsApp avec le nom de l'artiste dans le message prérempli. */}
+          <BoutonConseil className="mt-6" contexte={{ type: 'artiste', nom: artist.name }} />
 
           <Section id="artiste-biographie" titre={T.sections.biographie}>
             <Texte>{artist.bio}</Texte>

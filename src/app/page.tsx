@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { Hero, SectionOeuvres, ParcourirGalerie, CollectionVide, Artists, Exhibitions } from '@/components/sections'
+import { BoutonConseil } from '@/components/ui/BoutonConseil'
 import { accueilPublic } from '@/lib/catalogue'
 import { fr } from '@/lib/i18n'
 import { COOKIE_PAYS, lirePays, nomPays } from '@/lib/livraison'
@@ -30,6 +31,9 @@ export default async function HomePage() {
       )}
       {!aDesOeuvres && <CollectionVide />}
       <ParcourirGalerie />
+      <section aria-label={fr.conseilWhatsApp.section} className="container-premium py-12 text-center">
+        <BoutonConseil className="inline-block" />
+      </section>
       {artistes.length > 0 && <Artists artists={artistes} />}
       {expositions.length > 0 && <Exhibitions exhibitions={expositions} />}
     </>

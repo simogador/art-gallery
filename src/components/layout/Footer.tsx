@@ -39,7 +39,8 @@ const columnVariants = {
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 
-export function Footer() {
+/** `conseil` : bouton Conseil WhatsApp rendu par le serveur (story 4.4), posé sous la présentation. */
+export function Footer({ conseil }: { conseil?: React.ReactNode }) {
   const [email,     setEmail]     = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [loading,   setLoading]   = useState(false)
@@ -82,6 +83,8 @@ export function Footer() {
             <p className="font-sans text-sm leading-relaxed text-pretty mb-8 max-w-xs">
               {T.presentation}
             </p>
+
+            {conseil && <div className="mb-8">{conseil}</div>}
 
             {/* Social */}
             <div className="flex items-center gap-3 mb-10">
