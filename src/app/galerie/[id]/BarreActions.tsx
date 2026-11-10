@@ -95,6 +95,12 @@ export function BarreActions({
             {fr.fiche.barre.visite}
           </Link>
         )}
+        {etat === 'reservee' && (
+          // Aucune heure de fin : « Me prévenir » est une alerte, jamais une promesse de priorité.
+          <Link href={`/galerie/${slug}/prevenir`} className={lienSecondaire}>
+            {fr.fiche.barre.prevenir}
+          </Link>
+        )}
         {etat === 'vendue' && (
           <Link href={`/artistes/${artiste.slug}`} className={lienSecondaire}>
             {fr.fiche.vendue.lienArtiste(artiste.nom)}

@@ -58,6 +58,17 @@ export const DISPONIBLE = {
   disponibilite: 'disponible',
 } satisfies Prisma.ArtworkWhereInput
 
+/** Réservée : publiée, en attente de l'achat d'un acheteur (inscriptions « Me prévenir », story 4.5). */
+export const RESERVEE = {
+  publication: 'publiee',
+  disponibilite: 'reservee',
+} satisfies Prisma.ArtworkWhereInput
+
+/** Sortie de la vente pour de bon : vendue (ici ou ailleurs) ou retirée ; les inscriptions « Me prévenir » n'ont plus d'objet (story 4.5). */
+export const SORTIE_DE_VENTE = {
+  disponibilite: { in: ['vendue', 'vendue_ailleurs', 'retiree'] },
+} satisfies Prisma.ArtworkWhereInput
+
 /** Retirée de la vente après publication : sa fiche redirige vers la page de l'artiste. */
 export const RETIREE = {
   publication: 'publiee',

@@ -41,6 +41,12 @@ export const DOUBLON_DEMANDE_MINUTES = 10
 // 2026-11-10), mêmes limites d'envoi que la sélection (compteurs distincts) et même fenêtre de doublon.
 export const LIMITES_DEMANDE_VISITE = { fenetreMinutes: 60, parIp: 5, parEmail: 3 } as const
 
+// « Me prévenir » sur une œuvre réservée (story 4.5, FR-9) : limites d'envoi (compteurs distincts :
+// un même e-mail peut suivre plusieurs œuvres, d'où un seuil par e-mail un peu plus large) et durée du
+// lien de désinscription de l'e-mail de confirmation (un an, comme celui de l'annonce d'ouverture).
+export const LIMITES_INSCRIPTION_PREVENIR = { fenetreMinutes: 60, parIp: 10, parEmail: 5 } as const
+export const DUREE_DESINSCRIPTION_ALERTE_JOURS = 365
+
 // Conseil WhatsApp (story 4.4, FR-7, OQ-7, décision du porteur du 2026-11-10) : l'équipe répond du
 // lundi au vendredi, de 9 h à 18 h, heure de Londres (`Europe/London`, heure d'été comprise ; jours
 // 1 = lundi … 5 = vendredi), en moins de `DELAI_CONSEIL_HEURES` heures pendant ces horaires. Pas de

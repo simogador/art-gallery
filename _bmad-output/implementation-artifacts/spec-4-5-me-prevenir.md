@@ -2,7 +2,8 @@
 title: 'Story 4.5 — « Me prévenir » sur une œuvre réservée'
 type: 'feature'
 created: '2026-11-10'
-status: 'draft'
+baseline_commit: 'c84a7f0b4248268b5a17b18aefa1dbc971060ab7'
+status: 'in-review'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-4-3-demande-de-visite.md']
@@ -87,3 +88,22 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 
 **Manual checks:**
 - Aucune œuvre ne peut être réservée avant l'Epic 6 : en préversion, vérification par SQL (état posé à la main sur une œuvre de test de la branche `preview` seulement, remis ensuite) ; jamais de changement d'état en production.
+
+## Review Triage Log
+
+| # | Source | Constat | Verdict | Route | Preuve / suite |
+|---|--------|---------|---------|-------|----------------|
+| 1 | Edge | Cycle d'imports `notifications → demandes → evenements → abonnements → notifications` : selon l'ordre de chargement, des gestionnaires restent `undefined` dans `ABONNEMENTS` (aucun e-mail ni suppression, seul un `console.error`) | high | patch | reproduit par un test jetable ; le cycle existait déjà via `annonce.ts` (4.9) mais était inoffensif, la 4.5 l'a rendu nuisible ; `abonnements.ts` relie les gestionnaires par import différé (`via`) ; `tests/abonnements-ordre.test.ts` pour chaque ordre de chargement |
+| 2 | Blind, Edge | Course vente/inscription : une inscription peut rester sur une œuvre vendue (aucun verrou sur l'œuvre) | medium | patch | verrou partagé (`FOR SHARE`) sur l'œuvre avant de relire l'état ; refus `oeuvre_indisponible` ; test |
+| 3 | Blind | « Un lien de désinscription figure dans l'e-mail de confirmation » est faux pour un e-mail déjà inscrit ou un envoi échoué | medium | patch | texte reformulé avec l'adresse de contact ; test |
+| 4 | Blind, Edge | Section de l'équipe : une erreur de lecture fait tomber toute la file des demandes ; tri redondant | low | patch | `inscriptions_indisponibles`, message dans la section ; test |
+| 5 | Blind, Verification Gap | `inputMode="email"` absent ; `aria-describedby`, non-mesure de `/prevenir`, échec du gestionnaire de suppression, vente réelle, barre réservée avec Lot 2 ouvert non testés | low | patch | tests ajoutés |
+| 6 | Blind | La promesse « Nous vous écrirons si elle redevient disponible » n'est tenue qu'avec l'Epic 6 | medium | rejet | texte exact validé par le porteur (critère d'acceptation de la story) ; l'écran n'est atteignable qu'avec l'état `reservee`, posé par l'Epic 6 ; consigné dans AGENTS.md |
+| 7 | Edge | « Annuler » une déclaration « vendue ailleurs » ou « retirée » ne rétablit pas les inscriptions supprimées | medium | defer | décision du porteur sur la suppression (3A) ; attendre la fin du délai d'annulation à décider ; limite consignée ; deferred-work.md |
+| 8 | Blind, Edge | Pas de double confirmation de l'adresse : un tiers peut recevoir une confirmation (limites 10 par IP et 5 par e-mail et par heure) | medium | defer | choix de produit (double opt-in) ; deferred-work.md |
+| 9 | Edge | Suppression à la vente échouée : aucun balayage (AQ-2 ouverte) | low | defer | même règle que les autres gestionnaires ; consigné |
+| 10 | Blind, Edge | Lien consommé en GET (scanners de messagerie) | low | rejet | même limite que la 4.9 ; l'inscription se refait en un geste |
+| 11 | Blind, Edge | Limites non atomiques, alias `+tag`, rotation d'IP, oracle temporel du doublon, œuvre dépubliée gardant ses inscrits, cache de 60 s sur la page | low | rejet | limites héritées des stories 4.2 et 4.3 ; le serveur revérifie à l'envoi |
+| 12 | Verification Gap | `docs/migrations.md` non mis à jour ; test navigateur non lancé par le relecteur | false | rejet | le journal s'écrit après application par le porteur ; le test navigateur passe en local (81) et en CI |
+| 13 | Edge, Verification Gap | Pendant la maintenance, `/auth/desinscription-alerte/*` est réécrit vers la page de maintenance | low | rejet | aucune inscription n'existe pendant la maintenance ; même cas que la 4.9 |
+

@@ -210,3 +210,13 @@
   summary: Ajouter l'en-tête `List-Unsubscribe` aux e-mails d'annonce (désinscription en un clic des messageries).
   evidence: le port `Courriel` de la story 4.1 n'a pas de champ d'en-têtes ; à ajouter au port et à l'adaptateur.
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-5-me-prevenir.md`
+  summary: Ne pas perdre les inscriptions « Me prévenir » quand l'artiste annule sa déclaration « vendue ailleurs » ou « retirée » dans le délai d'annulation.
+  evidence: `retirerInscriptionsPrevenir` supprime à `DisponibiliteChangee` ; « Annuler » remet `disponible` sans rétablir les inscriptions ; attendre la fin du délai ou limiter à `vendue` (à décider avec le porteur).
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-5-me-prevenir.md`
+  summary: Double confirmation (double opt-in) de l'adresse « Me prévenir » pour qu'un tiers ne reçoive pas un e-mail qu'il n'a pas demandé.
+  evidence: l'inscription est active avant toute confirmation ; limites par IP et par e-mail seulement ; décision de produit à prendre avec les pages de confiance (Epic 7).
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-5-me-prevenir.md`
+  summary: Relancer la suppression des inscriptions d'une œuvre vendue quand le gestionnaire a échoué.
+  evidence: pas de balayage des échecs (AQ-2 ouverte) ; la fonction est idempotente mais rien ne la rejoue.
+

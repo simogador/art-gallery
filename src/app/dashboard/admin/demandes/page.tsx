@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { acteurCourant } from '@/lib/acces'
-import { fileDesDemandes, libelleEtatDemande, type DemandeLue } from '@/lib/demandes'
+import { fileDesDemandes, inscriptionsParOeuvre, libelleEtatDemande, type DemandeLue, type OeuvreAvecInscriptions } from '@/lib/demandes'
 import { AMBIANCES } from '@/lib/curation/depot-regles'
 import { fr, SEPARATEUR, formaterDate, formaterDateHeure, formaterMontant } from '@/lib/i18n'
 import { CommandeEtat } from './CommandeEtat'
@@ -86,6 +86,55 @@ function LigneDemande({ demande }: { demande: DemandeLue }) {
   )
 }
 
+// Section « Me prévenir » (story 4.5) : par œuvre réservée, le nombre d'inscrits et leur ordre d'arrivée.
+// Lecture seule : aucun changement d'état ni suppression par l'équipe.
+function SectionPrevenir({ oeuvres }: { oeuvres: OeuvreAvecInscriptions[] | null }) {
+  const d = fr.demandes.prevenir
+  return (
+    <section aria-labelledby="demandes-prevenir" className="mt-12">
+      <h2 id="demandes-prevenir" className="font-serif text-2xl text-foreground">
+        {d.titre}
+      </h2>
+      <p className="mt-2 font-sans text-sm text-neutral-600">{d.introduction}</p>
+      {oeuvres === null ? (
+        <p role="alert" className="mt-6 font-sans text-base text-foreground">
+          {d.indisponible}
+        </p>
+      ) : oeuvres.length === 0 ? (
+        <p role="status" className="mt-6 font-sans text-base text-foreground">
+          {d.vide}
+        </p>
+      ) : (
+        <ul className="mt-6 space-y-4">
+          {oeuvres.map((o) => (
+            <li key={o.artworkId} className="rounded-sm border border-neutral-200 p-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                <h3 className="font-serif text-lg text-foreground">
+                  <Link href={`/galerie/${o.slug}`} className="underline underline-offset-4">
+                    {o.titre}
+                  </Link>
+                </h3>
+                <p className="font-sans text-xs uppercase tracking-widest text-foreground">{d.nombre(o.nombre)}</p>
+              </div>
+              <ol className="mt-3 space-y-1">
+                {o.inscrits.map((i) => (
+                  <li key={i.rang} className="font-sans text-sm text-foreground">
+                    {d.rang(i.rang)}
+                    {SEPARATEUR}
+                    {i.email}
+                    {SEPARATEUR}
+                    <span className="text-neutral-600">{d.arrivee(formaterDate(i.recueLe))}</span>
+                  </li>
+                ))}
+              </ol>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 export default async function AdminDemandesPage({ searchParams }: Props) {
   const acteur = await acteurCourant()
   if (acteur.type !== 'admin') redirect('/dashboard')
@@ -94,6 +143,8 @@ export default async function AdminDemandesPage({ searchParams }: Props) {
   const traitees = brut === '1'
   const resultat = await fileDesDemandes(acteur, { traitees })
   if (!resultat.ok) redirect('/dashboard')
+  const prevenir = await inscriptionsParOeuvre(acteur)
+  if (!prevenir.ok && prevenir.code === 'acces_refuse') redirect('/dashboard')
 
   return (
     <div>
@@ -119,6 +170,8 @@ export default async function AdminDemandesPage({ searchParams }: Props) {
           ))}
         </ul>
       )}
+
+      <SectionPrevenir oeuvres={prevenir.ok ? prevenir.oeuvres : null} />
     </div>
   )
 }

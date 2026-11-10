@@ -15,6 +15,9 @@ export type ChargeDecision = { decisionId: string; artworkId: string; artistId: 
 /** Demande de sélection (story 4.2) : coordonnées et texte saisis lus en base à l'envoi, jamais portés ici. */
 export type ChargeDemande = { demandeId: string }
 
+/** Inscription « Me prévenir » (story 4.5) : adresse et titre lus en base à l'envoi, jamais portés ici. */
+export type ChargeInscription = { inscriptionId: string }
+
 /** Nom → version courante. La clé fait foi à l'exécution comme au typage. */
 export const VERSIONS_EVENEMENTS = {
   PublicationChangee: 1,
@@ -24,6 +27,7 @@ export const VERSIONS_EVENEMENTS = {
   OeuvreRenvoyee: 1,
   DemandeSelectionRecue: 1,
   DemandeVisiteRecue: 1,
+  InscriptionPrevenirRecue: 1,
 } as const
 
 export type NomEvenement = keyof typeof VERSIONS_EVENEMENTS
@@ -38,6 +42,8 @@ export type ChargesEvenements = {
   DemandeSelectionRecue: ChargeDemande
   /** Demande de visite (story 4.3) : œuvre, créneaux et coordonnées lus en base à l'envoi. */
   DemandeVisiteRecue: ChargeDemande
+  /** Inscription « Me prévenir » sur une œuvre réservée (story 4.5), enregistrée à la création seulement. */
+  InscriptionPrevenirRecue: ChargeInscription
 }
 
 export type EvenementA<N extends NomEvenement> = { nom: N; charge: ChargesEvenements[N] }
@@ -64,6 +70,7 @@ const CLES_CHARGES: { [N in NomEvenement]: readonly (keyof ChargesEvenements[N])
   OeuvreRenvoyee: ['decisionId', 'artworkId', 'artistId'],
   DemandeSelectionRecue: ['demandeId'],
   DemandeVisiteRecue: ['demandeId'],
+  InscriptionPrevenirRecue: ['inscriptionId'],
 }
 
 function chargeConforme(nom: NomEvenement, charge: unknown): boolean {
