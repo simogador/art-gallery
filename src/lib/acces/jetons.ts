@@ -9,6 +9,11 @@ type Tx = Prisma.TransactionClient
 // 32 octets en base64url : 43 caractères [A-Za-z0-9_-].
 const FORMAT = /^[A-Za-z0-9_-]{43}$/
 
+/** Forme d'un jeton émis par `emettreJeton` : permet d'écarter une valeur absurde sans toucher la base. */
+export function jetonBienForme(valeur: string): boolean {
+  return FORMAT.test(valeur)
+}
+
 export function empreinteJeton(valeur: string): string {
   return createHash('sha256').update(valeur).digest('hex')
 }

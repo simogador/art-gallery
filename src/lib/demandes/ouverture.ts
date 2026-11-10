@@ -3,6 +3,7 @@ import type { Acteur } from '@/lib/acces'
 import {
   consommerJetonDesinscription,
   emettreJetonDesinscription,
+  lienDesinscriptionBienForme,
   revoquerJetonDesinscription,
 } from '@/lib/acces/desinscription'
 
@@ -59,6 +60,7 @@ export async function abandonnerDesinscription(contactId: string): Promise<void>
  * l'adresse, si elle est encore là, est supprimée. `true` seulement si le lien était utilisable.
  */
 export async function desinscrire(jeton: string): Promise<boolean> {
+  if (!lienDesinscriptionBienForme(jeton)) return false
   return prisma.$transaction(async (tx) => {
     const contactId = await consommerJetonDesinscription(tx, jeton)
     if (!contactId) return false

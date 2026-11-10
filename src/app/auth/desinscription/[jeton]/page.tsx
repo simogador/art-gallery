@@ -17,7 +17,9 @@ export default async function DesinscriptionPage({ params }: { params: { jeton: 
   let panne = false
   try {
     confirmee = await desinscrire(params.jeton)
-  } catch {
+  } catch (erreur) {
+    // Cause seulement (nom et code), jamais le jeton ni une adresse.
+    console.error('[desinscription] traitement impossible', (erreur as { code?: string }).code ?? (erreur as Error).name)
     // Base indisponible : message distinct (le lien n'est pas consommé, l'internaute peut réessayer).
     panne = true
   }

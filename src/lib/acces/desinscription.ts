@@ -1,6 +1,6 @@
 import type { Prisma } from '@/generated/prisma/client'
 import { DUREE_DESINSCRIPTION_JOURS } from '@/lib/reglages'
-import { consommerJeton, emettreJeton, revoquerJetons } from './jetons'
+import { consommerJeton, emettreJeton, jetonBienForme, revoquerJetons } from './jetons'
 
 // Lien de désinscription de l'annonce d'ouverture (FR-35, AD-14, story 4.9) : jeton d'usage
 // `desinscription` dont la cible est l'id de l'inscription. Seul `acces` crée et vérifie les jetons ;
@@ -44,3 +44,6 @@ export async function consommerJetonDesinscription(tx: Tx, valeur: string, maint
   const jeton = await consommerJeton(tx, valeur, 'desinscription', maintenant)
   return jeton?.cible ?? null
 }
+
+/** Une valeur qui n'a pas la forme d'un jeton n'ouvre aucune transaction. */
+export { jetonBienForme as lienDesinscriptionBienForme }
