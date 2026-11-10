@@ -2,7 +2,7 @@ import type { Artist, Artwork, Exhibition, ArtMedium, ExhibitionStatus, PhotoFic
 import { centimesEnEuros } from './conversions'
 import { formaterDate } from '@/lib/i18n/formats'
 // Partie pure du module disponibilite : ce fichier reste importable par un composant client.
-import { estDisponible, type EtatOeuvre } from '@/lib/disponibilite/etats'
+import { estDisponible, estReservee, type EtatOeuvre } from '@/lib/disponibilite/etats'
 
 /* ── Visual palettes (deterministic from slug) ─────────────────────────── */
 
@@ -193,6 +193,8 @@ export function mapArtwork(w: DbArtwork): Artwork {
     featured: w.featured,
     // Story 2.2 : « vendue » pour l'UI = non disponible (réservée, vendue ailleurs… comprises).
     sold: !estDisponible(w),
+    // Story 4.7 : « réservée » se distingue de « vendue » (`sold` reste vrai pour les deux).
+    reservee: estReservee(w),
     ...(dateDepot(w.createdAt) ? { deposeLe: dateDepot(w.createdAt) } : {}),
     imageUrl: w.imageUrl ?? null,
     ...(w.photos ? { photos: photosDeFiche(w.photos, w.imageUrl ?? null) } : {}),

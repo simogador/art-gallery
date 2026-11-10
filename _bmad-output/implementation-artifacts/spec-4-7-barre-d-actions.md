@@ -2,7 +2,8 @@
 title: 'Story 4.7 — Barre d''actions de la fiche (Lot 1)'
 type: 'feature'
 created: '2026-11-10'
-status: 'draft'
+status: 'done'
+baseline_commit: '0d15b96768cd1d4f8ad3eee0987faa118951b20d'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-4-4-conseil-whatsapp.md']
@@ -78,3 +79,24 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 
 **Manual checks:**
 - Préversion, sur téléphone ou en fenêtre étroite : barre fixe, lien de visite, aucune barre qui cache le contenu ; à partir de `lg`, bloc collant.
+
+## Review Triage Log
+
+| # | Source | Constat | Verdict | Route | Preuve / suite |
+|---|--------|---------|---------|-------|----------------|
+| 1 | Blind, Edge | Le dégagement `pb-52` est dans la page, le pied de page est en dehors : sur mobile la barre fixe cache le bas du pied de page ; 13 rem est une estimation | medium | patch | vérifié (`ArtworkDetail.tsx` ligne 88, `layout.tsx` ligne 81) ; la barre mesure sa hauteur et dégage le bas du document ; test navigateur |
+| 2 | Verification Gap | Le passage de `lot2Ouvert()` de la page à la fiche n'est vérifié par aucun test | medium | patch | deux cas dans `tests/conseil-emplacements.test.ts` |
+| 3 | Edge, Blind | Masquage à la saisie : clignote d'un champ à l'autre, état de départ faux si un champ a déjà le focus, `select` pris pour une saisie | medium | patch | `relatedTarget`, élément actif au montage, `select` exclu ; test navigateur |
+| 4 | Edge | `fixed inset-x-0 bottom-0` restent sous `lg:sticky` | low | patch | `lg:bottom-auto lg:inset-x-auto` |
+| 5 | Edge, Blind | Test « réservée sans lien artiste » qui passe à tort si le repère est absent | low | patch | assertion sur l'index trouvé |
+| 6 | Edge, Blind | Lot 2 ouvert : le bouton d'achat et le Conseil sont tous deux principaux (« jamais plus d'une action principale ») | medium | defer | décision du porteur « tel quel » ; Lot 2 fermé en production ; hiérarchie de l'achat à refaire avec l'Epic 7 ; deferred-work.md |
+| 7 | Blind | Une œuvre réservée garde le libellé « Vendue » | medium | defer | aucune réservation avant l'Epic 6 ; libellé « Réservée » à poser avec les réservations ; deferred-work.md |
+| 8 | Edge | `BarreActions` dans un `motion.div` parent animé (transform) | false | rejet | le parent n'a que des variantes sans transformation ; la barre est hors des enfants animés |
+| 9 | Edge | État déduit de `sold` : `reservee` facultatif devient « vendue » s'il manque | low | rejet | `mapArtwork` le pose toujours ; seules les œuvres visibles atteignent la fiche ; rendre le champ obligatoire toucherait chaque constructeur |
+| 10 | Edge | `role="textbox"`, `contenteditable="plaintext-only"`, iframe non détectés | low | rejet | aucun champ de ce type sur la fiche |
+| 11 | Edge | Retrait de « M'alerter » : œuvre réservée sans moyen de suivi | low | rejet | décision du porteur (Conseil seul jusqu'à la 4.5) |
+| 12 | Blind | La barre est avant le contenu dans le DOM : l'ordre de lecture au clavier | low | rejet | compromis courant d'une barre collante ; à vérifier à la main |
+| 13 | Blind | Textes en dur déplacés dans le bloc d'achat | low | rejet | `ArtworkDetail.tsx` est dans `exceptions-textes.cjs` ; ancien parcours d'achat refait en Epic 7 |
+| 14 | Blind | Statuts de la spec et du suivi, apostrophes typographiques | false | rejet | l'étape de présentation passe le suivi à `review` ; apostrophes sans effet |
+| 15 | Verification Gap | Mise en page vérifiée seulement par noms de classes | low | rejet | convention du dépôt (« mise en page réelle vérifiée à la main ») ; vérification sur la préversion |
+

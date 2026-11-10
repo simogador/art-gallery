@@ -75,6 +75,14 @@ describe('emplacements du bouton Conseil WhatsApp', () => {
     expect(conseil.props.contexte).toEqual({ type: 'oeuvre', slug: 'nuit', titre: 'Nuit' })
   })
 
+  it.each([['oui', true], [undefined, false]])('fiche : la page passe lot2Ouvert (LOT2_OUVERT=%s)', async (valeur, attendu) => {
+    if (valeur) vi.stubEnv('LOT2_OUVERT', valeur)
+    else vi.stubEnv('LOT2_OUVERT', '')
+    const { default: Page } = await import('@/app/galerie/[id]/page')
+    const arbre = (await Page({ params: { id: 'nuit' } })) as Noeud
+    expect(arbre.props.lot2Ouvert).toBe(attendu)
+  })
+
   it.each([false, true])('fiche : ArtworkDetail affiche le bouton reçu (vendue : %s)', async (sold) => {
     const { ArtworkDetail } = await import('@/app/galerie/[id]/ArtworkDetail')
     const artwork = { ...lectures.oeuvre, sold, year: 2024, title: 'Nuit', photos: [], gradient: '', accentColor: '' }

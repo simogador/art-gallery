@@ -192,3 +192,10 @@
   summary: Paginer ou limiter la file des demandes de l'équipe quand le volume grossit (vue « demandes traitées » surtout).
   evidence: `fileDesDemandes` lit toutes les demandes sans limite ; sans effet au volume actuel, mais la vue des demandes traitées ne fait que grandir.
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-7-barre-d-actions.md`
+  summary: Quand le Lot 2 s'ouvre, n'avoir qu'une action principale sur la fiche (l'achat) et passer le Conseil WhatsApp en secondaire.
+  evidence: l'ancien bouton d'ajout au panier (décision « tel quel » du 2026-11-10) est principal à côté du Conseil principal ; à refaire avec l'Epic 7.
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-7-barre-d-actions.md`
+  summary: Afficher « Réservée » (et non « Vendue ») pour une œuvre réservée, avec les réservations.
+  evidence: `fr.fiche.etat` n'a que « disponible » et « vendue » ; la barre distingue déjà `reservee`, mais aucune œuvre ne peut être réservée avant l'Epic 6.
+
