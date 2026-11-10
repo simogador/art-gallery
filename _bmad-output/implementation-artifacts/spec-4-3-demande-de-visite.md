@@ -2,7 +2,7 @@
 title: 'Story 4.3 — Demande de visite à distance ou en atelier'
 type: 'feature'
 created: '2026-11-10'
-status: 'draft'
+status: 'ready-for-dev'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-4-2-demande-de-selection.md']
