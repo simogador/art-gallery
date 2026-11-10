@@ -19,6 +19,16 @@ const session = vi.hoisted(() => ({ userId: null as string | null }))
 const signIn = vi.hoisted(() => vi.fn())
 const jar = vi.hoisted(() => ({ valeurs: new Map<string, string>(), supprimes: [] as { name: string; path?: string }[] }))
 const entetes = vi.hoisted(() => ({ valeurs: new Map<string, string>() }))
+// Story 4.1 : l'invitation part par e-mail (adaptateur factice) ; le lien n'existe que dans l'e-mail.
+const courriels = vi.hoisted(() => ({ envoyes: [] as { a: string; sujet: string; texte: string; html: string; cle: string }[] }))
+vi.mock('@/lib/notifications/choix', () => ({
+  envoiActif: () => ({
+    envoyer: async (c: { a: string; sujet: string; texte: string; html: string; cle: string }) => {
+      courriels.envoyes.push(c)
+      return { ok: true }
+    },
+  }),
+}))
 
 vi.mock('@/auth', () => ({
   auth: vi.fn(async () => (session.userId ? { user: { id: session.userId } } : null)),
@@ -85,7 +95,7 @@ describe('règles pures', () => {
 
 describe('messages', () => {
   it('un texte en français pour chaque refus', () => {
-    for (const code of ['acces_refuse', 'introuvable', 'email_invalide', 'deja_relie', 'email_utilise', 'email_invite_ailleurs'] as const) {
+    for (const code of ['acces_refuse', 'introuvable', 'email_invalide', 'deja_relie', 'email_utilise', 'email_invite_ailleurs', 'envoi_echoue'] as const) {
       expect(messageRefusInvitation(code)).toMatch(/\.$/)
     }
     expect(messageRefusActivation('invalide')).toBe('Ce lien d’invitation a expiré.')
@@ -101,9 +111,12 @@ describe('base : invitations', () => {
 
   async function inviter(artistId = 'artiste-a', email = 'karim@exemple.test') {
     const { inviterArtiste } = await import('@/lib/acces/invitations')
+    const avant = courriels.envoyes.length
     const r = await inviterArtiste(ADMIN as never, artistId, email)
     if (!r.ok) throw new Error(`invitation refusée : ${r.code}`)
-    return r
+    const lien = /\/auth\/invitation\/([A-Za-z0-9_-]{43})/.exec(courriels.envoyes[avant]?.texte ?? '')
+    if (!lien) throw new Error('aucun lien dans l’e-mail')
+    return { ...r, jeton: lien[1] }
   }
   const SAISIE = { motDePasse: 'motdepasse-solide', confirmation: 'motdepasse-solide', charteAcceptee: true }
 
@@ -128,6 +141,8 @@ describe('base : invitations', () => {
     jar.valeurs.clear()
     jar.supprimes = []
     entetes.valeurs.clear()
+    courriels.envoyes.length = 0
+    await db.query('DELETE FROM "Evenement"')
     await db.query('DELETE FROM "Jeton"')
     await db.query('DELETE FROM "Invitation"')
     await db.query('DELETE FROM "Artwork"')
@@ -190,7 +205,7 @@ describe('base : invitations', () => {
     expect(await lireInvitation(premier.jeton)).toBeNull()
     expect(await lireInvitation(second.jeton)).toMatchObject({ email: 'nouveau@exemple.test', artiste: 'Karim Benali' })
     expect(await invitationsEnAttente(['artiste-a', 'artiste-b'])).toEqual({
-      'artiste-a': { email: 'nouveau@exemple.test', echeance: second.echeance },
+      'artiste-a': { email: 'nouveau@exemple.test', statut: 'envoyee', echeance: second.echeance },
     })
   })
 
@@ -316,15 +331,15 @@ describe('base : invitations', () => {
   })
 
   describe('actions serveur', () => {
-    it('invitation : lien construit sur l’origine de la requête (préversion ou production)', async () => {
+    it('invitation : e-mail envoyé, lien jamais renvoyé à l’écran', async () => {
       const { actionInviter } = await import('@/app/dashboard/admin/artistes/actions')
       acteur.courant = ADMIN
-      entetes.valeurs.set('x-forwarded-host', 'errancy-git-x.vercel.app, proxy.interne')
-      entetes.valeurs.set('x-forwarded-proto', 'https,http')
       const f = new FormData()
       f.set('email', 'karim@exemple.test')
       const etat = await actionInviter('artiste-a', null, f)
-      expect(etat).toMatchObject({ ok: true, lien: expect.stringMatching(/^https:\/\/errancy-git-x\.vercel\.app\/auth\/invitation\/[A-Za-z0-9_-]{43}$/) })
+      expect(etat).toMatchObject({ ok: true, email: 'karim@exemple.test' })
+      expect(JSON.stringify(etat)).not.toMatch(/auth\/invitation|[A-Za-z0-9_-]{43}/)
+      expect(courriels.envoyes).toHaveLength(1)
       acteur.courant = { type: 'visiteur' }
       expect(await actionInviter('artiste-a', null, f)).toEqual({ ok: false, message: 'Seule l’équipe Errancy peut inviter un artiste.' })
     })

@@ -35,6 +35,11 @@ export const LIMITES_INSCRIPTION_OUVERTURE = { fenetreMinutes: 60, parIp: 10, pa
 export const DUREE_INVITATION_JOURS = 7
 export const CONTACT_EQUIPE = 'contact@errancy.art'
 
+// E-mails transactionnels (story 4.1, décision du porteur du 2026-11-10) : expéditeur « Errancy »,
+// réponses reçues à l'adresse de l'équipe.
+export const EXPEDITEUR_COURRIELS = `Errancy <${CONTACT_EQUIPE}>`
+export const REPONSE_COURRIELS = CONTACT_EQUIPE
+
 // Passage pendant la maintenance, décidé en edge par le middleware à partir du rôle du jeton :
 // les admins voient tout ; les artistes seulement leur espace privé, pour déposer leurs œuvres
 // avant l'ouverture (décision du porteur du 2026-11-02, story 2.4). Les pages /auth restent ouvertes.

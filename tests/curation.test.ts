@@ -367,9 +367,12 @@ describe('base : curation par l’équipe', () => {
     const encore = await lireDepot(ARTISTE as never, slug)
     expect(encore.ok && encore.depot.renvoi?.commentaire).toBe(COMMENTAIRE)
     expect((await envoyerEnCuration(ARTISTE as never, slug)).ok).toBe(true)
-    // Story 3.4 : envoi, renvoi puis nouvel envoi écrivent chacun PublicationChangee (ids seulement).
-    const evenements = (await db.query(`SELECT nom, charge FROM "Evenement" WHERE charge->>'artworkId' = $1`, [id])).rows
+    // Story 3.4 : envoi, renvoi puis nouvel envoi écrivent chacun PublicationChangee (ids seulement) ;
+    // story 4.1 : le renvoi écrit en plus OeuvreRenvoyee (pour l'e-mail de l'artiste).
+    const evenements = (await db.query(`SELECT nom, charge FROM "Evenement" WHERE charge->>'artworkId' = $1 AND nom = 'PublicationChangee'`, [id])).rows
     expect(evenements).toEqual(Array(3).fill({ nom: 'PublicationChangee', charge: { artworkId: id, artistId: ARTISTE.artiste.id } }))
+    const renvois = (await db.query(`SELECT charge FROM "Evenement" WHERE charge->>'artworkId' = $1 AND nom = 'OeuvreRenvoyee'`, [id])).rows
+    expect(renvois).toEqual([{ charge: { decisionId: expect.any(String), artworkId: id, artistId: ARTISTE.artiste.id } }])
 
     const file2 = await fileDeCuration(ADMIN as never)
     if (!file2.ok) throw new Error(file2.code)

@@ -153,3 +153,13 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-10-accueil-curatorial.md`
   summary: Tests de rendu de `Artists`, `Exhibitions` (ordre, plafond de 4) et de la bascule « Sélection de l'accueil » de l'administration (seuls les types et le module sont vérifiés).
   evidence: logique de présentation sans risque pour l'instant (relecture story 3.10).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-1-emails-transactionnels.md`
+  summary: `InvitationArtiste.tsx` (états de l'invitation, alerte « L'e-mail n'est pas parti », bouton « Relancer ») n'a pas de test navigateur.
+  evidence: l'état vient de `useFormState`, non pris en charge par le harnais (React 18 stable) ; la partie serveur (`envoi_echoue`, statuts) est testée. À isoler dans un composant sans `useFormState`, comme `PhotoArtiste`.
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-1-emails-transactionnels.md`
+  summary: Sur un délai dépassé ou une réponse ambiguë du prestataire, le jeton d'invitation est révoqué alors que l'e-mail est peut-être parti.
+  evidence: le prestataire peut avoir accepté le message avant l'expiration des 8 s ; l'artiste recevrait alors un lien mort jusqu'à ce que l'équipe relance (la relance envoie un second e-mail). À traiter avec le balayage des échecs (AQ-2).
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-1-emails-transactionnels.md`
+  summary: Avant la mise en production des e-mails : enregistrement DMARC du domaine, accord de sous-traitance du prestataire et mise à jour de la politique de confidentialité.
+  evidence: relevé en relecture ; hors code, à décider avec le porteur (pages de confiance, Epic 7).

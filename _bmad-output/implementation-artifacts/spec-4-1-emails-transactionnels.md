@@ -2,7 +2,8 @@
 title: 'Story 4.1 — E-mails transactionnels fiables'
 type: 'feature'
 created: '2026-11-10'
-status: 'ready-for-dev'
+status: 'done'
+baseline_commit: 'c8960904cc42cb9288e828da063fcf41ee502879'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.md']
@@ -55,11 +56,11 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/lib/notifications/` -- port d'envoi, adaptateur du prestataire, adaptateur « journal », choix par environnement
-- [ ] `src/lib/evenements/catalogue.ts`, `src/lib/abonnements.ts` -- événements d'invitation et de curation, gestionnaires
-- [ ] `src/lib/acces/invitations.ts`, `src/lib/curation/file.ts`, écrans admin -- émission d'événements, jeton émis à l'envoi
-- [ ] `src/lib/i18n/fr.ts` -- textes des trois e-mails
-- [ ] `tests/notifications.test.ts` -- matrice ; `AGENTS.md`, `docs/`
+- [x] `src/lib/notifications/` -- port d'envoi, adaptateur du prestataire, adaptateur « journal », choix par environnement
+- [x] `src/lib/evenements/catalogue.ts`, `src/lib/abonnements.ts` -- événements d'invitation et de curation, gestionnaires
+- [x] `src/lib/acces/invitations.ts`, `src/lib/curation/file.ts`, écrans admin -- émission d'événements, jeton émis à l'envoi
+- [x] `src/lib/i18n/fr.ts` -- textes des trois e-mails
+- [x] `tests/notifications.test.ts` -- matrice ; `AGENTS.md`, `docs/`
 
 **Acceptance Criteria:**
 - Given une invitation, une validation ou un renvoi, when l'action réussit, then un seul e-mail part (jamais deux, même après rejeu).
@@ -79,3 +80,23 @@ Décisions prises sans question : l'événement d'invitation ne porte que l'id d
 
 **Manual checks:**
 - Préversion : l'adaptateur « journal » est actif (aucun e-mail réel) ; l'envoi réel se vérifie en production avec le prestataire choisi.
+
+## Review Triage Log
+
+| # | Source | Constat | Verdict | Route | Preuve / suite |
+|---|--------|---------|---------|-------|----------------|
+| 1 | Edge, Blind | Erreur après la réclamation (avant `noterEnvoiInvitation`) : l'invitation reste « en cours » ou « lien d'avant la 4.1 » sans relance visible | medium | patch | `envoyerInvitation` note l'échec avant de relancer l'erreur, et retente la note une fois ; test « erreur après la réclamation » |
+| 2 | Edge | `noterEnvoiInvitation('echec')` révoque le jeton d'une invitation déjà envoyée | low | patch | révocation seulement si `envoyeeLe` est vide ; test « écran de l'équipe » |
+| 3 | Verification Gap, Blind | États `en_cours`, `lien_manuel`, lien expiré non testés | medium | patch | test « écran de l'équipe : états… » |
+| 4 | Verification Gap, Blind | `InvitationArtiste.tsx` sans test d'interface (`useFormState` non testable dans le harnais) | low | defer | deferred-work.md |
+| 5 | Edge, Blind | Délai ou réponse ambiguë du prestataire : jeton révoqué alors que l'e-mail est peut-être parti | low | defer | la relance révoque de toute façon l'ancien lien ; deferred-work.md |
+| 6 | Edge, Blind | `createdAt` posé par l'horloge de l'application (décalage entre instances) | low | false | invitations espacées de plusieurs secondes, décalage d'horloge de l'ordre de la milliseconde ; la correction (séquence) ajouterait une colonne |
+| 7 | Edge | Artiste sans compte : aucun e-mail de résultat | low | false | décision de la spec (Design Notes) ; le renvoi reste lisible sur sa fiche |
+| 8 | Edge | Commentaire vide dans l'e-mail de renvoi | low | false | commentaire de 10 à 1 000 caractères exigé avant l'écriture de la décision |
+| 9 | Edge | Lien « Voir l'œuvre » si l'œuvre est retirée entre-temps | low | reject | cas rare, effet cosmétique (page introuvable) ; correction = règle de visibilité de plus |
+| 10 | Edge, Blind | `envoi_echoue` renvoyé quand la cause n'est pas un refus du prestataire | low | false | après le correctif 1, tout état sans envoi porte `echecEnvoiLe` ; le message « relancez » reste juste |
+| 11 | Edge | Clé API absente en production : seules les invitations le montrent | low | reject | `console.error` avec code `non_configure` ; acte du porteur documenté dans `docs/migrations.md` |
+| 12 | Blind | E-mails envoyés pendant la requête de l'admin (latence) | low | reject | répartition avant la réponse décidée le 2026-11-06 ; `after()` avec la story 5.3 |
+| 13 | Blind | « 1 jours » si la durée change ; `revalidatePath` sur refus ; libellés d'écran hors `fr` | low | reject | durée fixée à 7 jours ; effets sans conséquence ; l'écran admin n'est pas une surface du dictionnaire |
+| 14 | Blind | Échappements de typage de `repartir` | low | reject | déjà typé par `ABONNEMENTS` ; un test couvre chaque événement |
+| 15 | Blind | DMARC, accord de sous-traitance, `.env.example` | low | defer | deferred-work.md |

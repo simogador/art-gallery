@@ -5,14 +5,14 @@ import { useFormState, useFormStatus } from 'react-dom'
 import { formaterDateHeure } from '@/lib/i18n'
 import { actionInviter, type EtatInvitation } from './actions'
 
-// Invitation d'un artiste sans compte (story 2.4) : saisie de l'e-mail, puis lien affiché une seule
-// fois, à envoyer à la main tant qu'aucun prestataire d'e-mail n'est choisi (AQ-1).
+// Invitation d'un artiste sans compte (story 2.4, 4.1) : saisie de l'e-mail ; l'e-mail d'invitation
+// part du site et le lien n'est jamais affiché. Un envoi refusé se dit et se relance.
 
 type Props = {
   artistId: string
   nom: string
   /** Invitation encore valable, s'il y en a une. */
-  enAttente: { email: string; echeance: string } | null
+  enAttente: { email: string; statut: 'envoyee' | 'echec' | 'en_cours' | 'lien_manuel'; echeance: string | null } | null
 }
 
 // « 12 novembre à 15 h 42 », heure de Paris (story 3.2).
@@ -26,61 +26,46 @@ function BoutonCreer() {
       disabled={pending}
       className="min-h-[44px] px-4 bg-foreground text-background font-sans text-xs uppercase tracking-widest rounded-sm disabled:opacity-40"
     >
-      {pending ? 'Création…' : 'Créer le lien'}
+      {pending ? 'Envoi…' : 'Envoyer l’invitation'}
     </button>
   )
 }
 
-function LienUnique({ lien, echeance }: { lien: string; echeance: string }) {
-  const [copie, setCopie] = useState<'oui' | 'manuelle' | null>(null)
+function Envoyee({ email, echeance }: { email: string; echeance: string }) {
   return (
-    <div role="status" className="flex flex-col gap-2 border border-green-200 bg-green-50 rounded-sm p-3">
-      <label htmlFor="lien-invitation" className="font-sans text-xs text-green-800">
-        Lien à envoyer à l’artiste. Il ne sera plus affiché ; il expire le {dateLongue(echeance)}.
-      </label>
-      <div className="flex flex-wrap gap-2">
-        <input
-          id="lien-invitation"
-          readOnly
-          value={lien}
-          onFocus={(e) => e.currentTarget.select()}
-          className="min-h-[44px] flex-1 min-w-0 px-3 border border-neutral-500 rounded-sm font-mono text-base bg-white"
-        />
-        <button
-          type="button"
-          onClick={async () => {
-            // Presse-papiers indisponible (http, permission refusée) : le lien est sélectionné à la main.
-            try {
-              await navigator.clipboard.writeText(lien)
-              setCopie('oui')
-            } catch {
-              ;(document.getElementById('lien-invitation') as HTMLInputElement | null)?.select()
-              setCopie('manuelle')
-            }
-          }}
-          className="min-h-[44px] px-4 border border-neutral-300 rounded-sm font-sans text-xs uppercase tracking-widest bg-white"
-        >
-          {copie === 'oui' ? 'Copié' : 'Copier'}
-        </button>
-      </div>
-      {copie === 'manuelle' && (
-        <p className="font-sans text-xs text-green-800">Copie automatique impossible : le lien est sélectionné, copiez-le avec le clavier.</p>
-      )}
-    </div>
+    <p role="status" className="font-sans text-xs text-green-800 border border-green-200 bg-green-50 rounded-sm p-3">
+      Invitation envoyée à {email}. Le lien expire le {dateLongue(echeance)}.
+    </p>
   )
+}
+
+function etatEnAttente(enAttente: NonNullable<Props['enAttente']>): { texte: string; alerte: boolean } {
+  switch (enAttente.statut) {
+    case 'echec':
+      return { texte: `L’e-mail n’est pas parti (invitation pour ${enAttente.email}). Relancez l’invitation.`, alerte: true }
+    case 'en_cours':
+      return { texte: `Envoi de l’invitation à ${enAttente.email} en cours.`, alerte: false }
+    case 'lien_manuel':
+      return { texte: `Lien créé pour ${enAttente.email}, valable jusqu’au ${dateLongue(enAttente.echeance ?? '')}.`, alerte: false }
+    case 'envoyee':
+      return { texte: `Invitation envoyée à ${enAttente.email}, valable jusqu’au ${dateLongue(enAttente.echeance ?? '')}.`, alerte: false }
+  }
 }
 
 export function InvitationArtiste({ artistId, nom, enAttente }: Props) {
   const [ouvert, setOuvert] = useState(false)
   const [etat, envoyer] = useFormState(actionInviter.bind(null, artistId), null as EtatInvitation)
 
-  if (etat?.ok) return <LienUnique lien={etat.lien} echeance={etat.echeance} />
+  if (etat?.ok) return <Envoyee email={etat.email} echeance={etat.echeance} />
 
   return (
     <div className="flex flex-col gap-2">
       {enAttente && !ouvert && (
-        <p className="font-sans text-xs text-neutral-500">
-          Lien créé pour {enAttente.email}, valable jusqu’au {dateLongue(enAttente.echeance)}.
+        <p
+          role={etatEnAttente(enAttente).alerte ? 'alert' : undefined}
+          className={`font-sans text-xs ${etatEnAttente(enAttente).alerte ? 'text-red-700' : 'text-neutral-600'}`}
+        >
+          {etatEnAttente(enAttente).texte}
         </p>
       )}
       {ouvert ? (
@@ -121,11 +106,11 @@ export function InvitationArtiste({ artistId, nom, enAttente }: Props) {
             onClick={() => setOuvert(true)}
             className="min-h-[44px] px-4 border border-neutral-300 rounded-sm font-sans text-xs uppercase tracking-widest text-neutral-700 hover:border-foreground"
           >
-            {enAttente ? 'Renvoyer une invitation' : 'Inviter'}
+            {enAttente ? (enAttente.statut === 'echec' ? 'Relancer l’invitation' : 'Renvoyer une invitation') : 'Inviter'}
             <span className="sr-only"> {nom}</span>
           </button>
-          {enAttente && (
-            <p className="font-sans text-[11px] text-neutral-600 mt-1">Un nouveau lien remplace le précédent.</p>
+          {enAttente && enAttente.statut !== 'echec' && (
+            <p className="font-sans text-[11px] text-neutral-600 mt-1">Un nouvel e-mail remplace le précédent.</p>
           )}
         </div>
       )}

@@ -6,10 +6,19 @@
 /** Œuvre concernée et son artiste (ids seulement). */
 export type ChargeOeuvre = { artworkId: string; artistId: string }
 
+/** Invitation d'un artiste (story 4.1) : l'adresse est lue en base à l'envoi, jamais portée par l'événement. */
+export type ChargeInvitation = { invitationId: string }
+
+/** Décision de curation (story 4.1) : le commentaire de l'équipe est lu en base à l'envoi. */
+export type ChargeDecision = { decisionId: string; artworkId: string; artistId: string }
+
 /** Nom → version courante. La clé fait foi à l'exécution comme au typage. */
 export const VERSIONS_EVENEMENTS = {
   PublicationChangee: 1,
   DisponibiliteChangee: 1,
+  InvitationEmise: 1,
+  OeuvreValidee: 1,
+  OeuvreRenvoyee: 1,
 } as const
 
 export type NomEvenement = keyof typeof VERSIONS_EVENEMENTS
@@ -18,6 +27,9 @@ export type NomEvenement = keyof typeof VERSIONS_EVENEMENTS
 export type ChargesEvenements = {
   PublicationChangee: ChargeOeuvre
   DisponibiliteChangee: ChargeOeuvre
+  InvitationEmise: ChargeInvitation
+  OeuvreValidee: ChargeDecision
+  OeuvreRenvoyee: ChargeDecision
 }
 
 export type EvenementA<N extends NomEvenement> = { nom: N; charge: ChargesEvenements[N] }
@@ -28,22 +40,34 @@ export type NouvelEvenement = { [N in NomEvenement]: EvenementA<N> }[NomEvenemen
 /** Événement relu du journal. */
 export type EvenementLu = NouvelEvenement & { id: string; version: number }
 
+/** Événement relu, d'un nom donné. */
+export type EvenementLuA<N extends NomEvenement> = EvenementA<N> & { id: string; version: number }
+
 export function estNomEvenement(nom: unknown): nom is NomEvenement {
   return typeof nom === 'string' && Object.prototype.hasOwnProperty.call(VERSIONS_EVENEMENTS, nom)
 }
 
-function estChargeOeuvre(charge: unknown): charge is ChargeOeuvre {
-  if (typeof charge !== 'object' || charge === null) return false
+/** Clés exactes de la charge de chaque événement : des ids, rien d'autre. */
+const CLES_CHARGES: { [N in NomEvenement]: readonly (keyof ChargesEvenements[N])[] } = {
+  PublicationChangee: ['artworkId', 'artistId'],
+  DisponibiliteChangee: ['artworkId', 'artistId'],
+  InvitationEmise: ['invitationId'],
+  OeuvreValidee: ['decisionId', 'artworkId', 'artistId'],
+  OeuvreRenvoyee: ['decisionId', 'artworkId', 'artistId'],
+}
+
+function chargeConforme(nom: NomEvenement, charge: unknown): boolean {
+  if (typeof charge !== 'object' || charge === null || Array.isArray(charge)) return false
   const c = charge as Record<string, unknown>
+  const attendues: readonly string[] = CLES_CHARGES[nom]
   const cles = Object.keys(c)
   return (
-    cles.length === 2 &&
-    typeof c.artworkId === 'string' && c.artworkId !== '' &&
-    typeof c.artistId === 'string' && c.artistId !== ''
+    cles.length === attendues.length &&
+    attendues.every((cle) => typeof c[cle] === 'string' && c[cle] !== '')
   )
 }
 
-/** Contrôle à l'exécution : nom connu et charge conforme (deux ids, rien d'autre). */
+/** Contrôle à l'exécution : nom connu et charge conforme (les ids attendus, rien d'autre). */
 export function evenementValide(evenement: { nom: unknown; charge: unknown }): evenement is NouvelEvenement {
-  return estNomEvenement(evenement.nom) && estChargeOeuvre(evenement.charge)
+  return estNomEvenement(evenement.nom) && chargeConforme(evenement.nom, evenement.charge)
 }

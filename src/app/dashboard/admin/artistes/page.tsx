@@ -139,7 +139,11 @@ export default async function AdminArtistesPage() {
               nom={artist.name}
               enAttente={
                 enAttente[artist.id]
-                  ? { email: enAttente[artist.id].email, echeance: enAttente[artist.id].echeance.toISOString() }
+                  ? {
+                      email: enAttente[artist.id].email,
+                      statut: enAttente[artist.id].statut,
+                      echeance: enAttente[artist.id].echeance?.toISOString() ?? null,
+                    }
                   : null
               }
             />

@@ -237,6 +237,24 @@ Retour arrière :
 - 2026-11-10 (story 3.11) : migration `20261110090000_pages_artistes` (avec son empreinte SHA-256) appliquée depuis l'éditeur SQL de Neon sur `preview`, puis sur `production` avant la fusion de la PR #48. Point de restauration production : branche `sauvegarde-avant-3-11-2026-11-10`. Préversion vérifiée avec un artiste de test renseigné par SQL.
 - Retour arrière : l'ancien code ignore les colonnes ajoutées (les pages artistes reprennent leur ancien aspect). Pour retirer la migration (dernier recours, les textes et la photo d'atelier sont perdus) : `ALTER TABLE "Artist" DROP COLUMN "formation", DROP COLUMN "expositions", DROP COLUMN "atelierUrl";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261110090000_pages_artistes';`. Un portrait remplacé depuis l'administration reste dans `imageUrl`.
 
+### Story 4.1 : e-mails transactionnels
+
+- Migration : `20261110120000_envoi_invitations` (empreinte SHA-256 : `23ff62d47282e14a709e68935db23f126934734ba65fa1283119ef8711b1f9bd`). Ajoute à `Invitation` deux colonnes facultatives : `envoyeeLe` et `echecEnvoiLe` (`TIMESTAMP(3)`). Ajout seulement, aucune recopie.
+- Le nouveau code lit ces colonnes (écran des artistes, envoi de l'invitation) et échouerait sans elles : même procédure que les précédentes, branche de sauvegarde datée, `preview` puis production **avant la fusion**, avec la ligne `_prisma_migrations` et l'empreinte SHA-256.
+  ```sql
+  BEGIN;
+  -- AlterTable
+  ALTER TABLE "Invitation" ADD COLUMN     "echecEnvoiLe" TIMESTAMP(3),
+  ADD COLUMN     "envoyeeLe" TIMESTAMP(3);
+  INSERT INTO "_prisma_migrations" (id, checksum, migration_name, started_at, finished_at, applied_steps_count)
+  VALUES (gen_random_uuid()::text, '23ff62d47282e14a709e68935db23f126934734ba65fa1283119ef8711b1f9bd',
+          '20261110120000_envoi_invitations', now(), now(), 1);
+  COMMIT;
+  ```
+  Vérifiez l'empreinte avec `sha256sum` avant de l'enregistrer.
+- Resend (avant la mise en production, actes du porteur, hors code) : créer le compte, ajouter le domaine `errancy.art` en région UE (Irlande), publier chez l'hébergeur du domaine les enregistrements SPF et DKIM que Resend indique, puis créer la variable Vercel `RESEND_API_KEY` (Production seulement : en préversion, l'adaptateur « journal » n'envoie rien). Sans clé en production, l'invitation dit « L'e-mail n'est pas parti ».
+- Retour arrière : l'ancien code ignore les colonnes ajoutées. Pour les retirer (dernier recours) : `ALTER TABLE "Invitation" DROP COLUMN "envoyeeLe", DROP COLUMN "echecEnvoiLe";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261110120000_envoi_invitations';`. L'ancien code montrait le lien d'invitation à l'écran : après un retour arrière, les invitations déjà envoyées par e-mail restent valables.
+
 ### Story 3.4 : journal d'événements
 
 - Migration : `20261106090000_journal_evenements` (ajout seulement : tables `Evenement` et `TraitementEvenement`, aucune table existante modifiée).
