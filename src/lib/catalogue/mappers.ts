@@ -113,7 +113,10 @@ type DbArtwork = {
   profondeurMm: number | null
   featured: boolean
   engagementCertificat: boolean
-  artist: { slug: string; name: string }
+  artist: { slug: string; name: string; nationality?: string }
+  // Story 3.9 : lus seulement par la galerie.
+  ambiance?: string | null
+  couleurDominante?: string | null
   // Story 3.5 : photos de prise de vue, présentes seulement quand la lecture les demande.
   photos?: { type: string; url: string; largeur: number | null; hauteur: number | null }[]
 } & EtatOeuvre
@@ -157,6 +160,9 @@ export function mapArtwork(w: DbArtwork): Artwork {
     year: w.year,
     medium: toArtMedium(w.medium),
     technique: w.medium,
+    ...(w.ambiance !== undefined ? { ambiance: w.ambiance } : {}),
+    ...(w.couleurDominante !== undefined ? { couleurDominante: w.couleurDominante } : {}),
+    ...(w.artist.nationality !== undefined ? { paysArtiste: w.artist.nationality } : {}),
     price: centimesEnEuros(w.prixCentimes) ?? 0,
     // Story 3.2 : millimètres, mis en forme à l'affichage dans l'unité choisie (formaterDimensions
     // de i18n) ; hauteur ou largeur vide : aucune taille affichée.

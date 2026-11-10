@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import type { ReactElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import type { Artwork } from '@/lib/types'
 import { Client } from 'pg'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -21,6 +22,7 @@ vi.mock('@/lib/stripe', () => ({ getStripe: () => ({ checkout: { sessions: { cre
 // Story 3.3 : la galerie et la fiche lisent le cookie `pays` (absent ici : France).
 vi.mock('next/headers', () => ({ cookies: () => ({ get: () => undefined }), headers: () => new Headers() }))
 vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: () => {}, push: () => {} }),
   redirect: (url: string) => {
     throw new Error(`redirection:${url}`)
   },
@@ -222,9 +224,12 @@ describe('base : règle de visibilité « accord signé requis »', () => {
   it('réel : une œuvre validée d’un artiste avec accord est la seule affichée en galerie', async () => {
     await catalogueMixte()
     const { default: Galerie } = await import('@/app/galerie/page')
-    const props = element(await Galerie()).props
-    expect((props.artworks as { id: string }[]).map((w) => w.id)).toEqual(['aube'])
-    expect(props.artistNames).toEqual(['Nom mustapha-timija'])
+    // Story 3.9 : la galerie lit le catalogue visible (module catalogue) et le rend côté serveur.
+    const { lireGalerie } = await import('@/lib/catalogue')
+    const lue = await lireGalerie('FR', {})
+    expect(lue.oeuvres.map((w) => w.id)).toEqual(['aube'])
+    expect(lue.options.artistes.map((a) => a.nom)).toEqual(['Nom mustapha-timija'])
+    expect(renderToStaticMarkup(await Galerie({ searchParams: {} }))).toContain('/galerie/aube')
 
     const { default: Fiche } = await import('@/app/galerie/[id]/page')
     await expect(Fiche({ params: { id: 'aube' } })).resolves.toBeTruthy()
@@ -325,7 +330,9 @@ describe('base : règle de visibilité « accord signé requis »', () => {
     expect(enfants[1].props).toEqual({ artworks: [] })
 
     const { default: Galerie } = await import('@/app/galerie/page')
-    expect(element(await Galerie()).props.artworks).toEqual([])
+    const vide = renderToStaticMarkup(await Galerie({ searchParams: {} }))
+    expect(vide).not.toContain('/galerie/')
+    expect(vide).toContain('0 œuvre')
     const { default: Artistes } = await import('@/app/artistes/page')
     expect(element(await Artistes()).props.artists).toEqual([])
     const { default: Expositions } = await import('@/app/expositions/page')
