@@ -27,3 +27,6 @@ tsconfig.tsbuildinfo
 
 /src/generated/prisma
 .vercel
+
+# Captures d'échec des tests navigateur
+.vitest/

@@ -348,6 +348,8 @@ describe('SectionsFiche (story 3.6)', () => {
   })
 })
 
+// Le défilement, le compteur, le plein écran et le zoom (dont « jamais de défilement automatique »)
+// sont vérifiés dans un vrai navigateur : tests/navigateur/carrousel-photos.test.tsx.
 describe('CarrouselPhotos', () => {
   const photos: PhotoFiche[] = [
     { url: 'https://res.cloudinary.com/x/a.jpg', type: 'mise_en_situation', largeur: 800, hauteur: 1000 },
@@ -375,11 +377,6 @@ describe('CarrouselPhotos', () => {
     expect(html).not.toContain('Photo précédente')
     expect(html).not.toContain('Photo suivante')
     expect(html).toContain('Photo de l’œuvre')
-  })
-
-  it('jamais de défilement automatique', () => {
-    const source = readFileSync(path.join(RACINE, 'src/app/galerie/[id]/CarrouselPhotos.tsx'), 'utf8')
-    expect(source).not.toMatch(/setInterval|autoplay|autoPlay/)
   })
 })
 
@@ -469,7 +466,7 @@ describe('base : photos de la fiche', () => {
 })
 
 describe('story 3.8 : maintenance active et adresse du site (reglages)', () => {
-  it('même règle qu’avant dans le middleware : off, on, sinon production Vercel seulement', async () => {
+  it('règle de maintenance (le middleware l’applique : tests/middleware.test.ts) : off, on, sinon production Vercel seulement', async () => {
     const { maintenanceActive, urlAbsolue, URL_SITE } = await import('@/lib/reglages')
     expect(maintenanceActive({ MAINTENANCE_MODE: 'off', VERCEL_ENV: 'production' })).toBe(false)
     expect(maintenanceActive({ MAINTENANCE_MODE: 'on' })).toBe(true)
@@ -479,8 +476,5 @@ describe('story 3.8 : maintenance active et adresse du site (reglages)', () => {
     expect(maintenanceActive({})).toBe(false)
     expect(URL_SITE).toBe('https://www.errancy.art')
     expect(urlAbsolue('/galerie/x')).toBe('https://www.errancy.art/galerie/x')
-    const middleware = readFileSync(path.join(RACINE, 'src/middleware.ts'), 'utf8')
-    expect(middleware).toMatch(/import \{[^}]*\bmaintenanceActive\b[^}]*\} from '@\/lib\/reglages'/)
-    expect(middleware).toContain('maintenanceActive(')
   })
 })

@@ -262,15 +262,8 @@ describe('base : accueil et sélection de l’équipe', () => {
       expect(html).toContain(lien)
     })
 
-    it('le lien Panier du menu mobile est derrière lot2Ouvert, et le layout le transmet', async () => {
+    it('le layout transmet lot2Ouvert() à l’en-tête (le panneau du menu mobile selon sa valeur : tests/navigateur/header-menu.test.tsx)', async () => {
       const { readFileSync } = await import('node:fs')
-      const header = readFileSync('src/components/layout/Header.tsx', 'utf8')
-      const liens = [...header.matchAll(/href="\/panier"/g)].map((m) => m.index!)
-      expect(liens.length).toBeGreaterThan(0)
-      for (const i of liens) {
-        const avant = header.slice(0, i)
-        expect(avant.lastIndexOf('{lot2Ouvert && ('), 'lien /panier hors de lot2Ouvert').toBeGreaterThan(-1)
-      }
       expect(readFileSync('src/app/layout.tsx', 'utf8')).toContain('lot2Ouvert={lot2Ouvert()}')
     })
 

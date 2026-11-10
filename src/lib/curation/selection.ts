@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import type { CodeRefusSelection } from './selection-regles'
 import type { Acteur } from '@/lib/acces'
 import { lireEtatVerrouille, estPubliee, estRetiree } from '@/lib/disponibilite'
 
@@ -6,16 +7,10 @@ import { lireEtatVerrouille, estPubliee, estRetiree } from '@/lib/disponibilite'
 // fiche) est la seule sélection de l'accueil, écrit seulement ici. Pas d'événement : le choix apparaît
 // sur l'accueil au plus 60 s plus tard (cache du catalogue, accepté en 3.4).
 
-export type CodeRefusSelection = 'acces_refuse' | 'introuvable' | 'non_publiee' | 'retiree'
+export type { CodeRefusSelection } from './selection-regles'
+export { MESSAGES_REFUS_SELECTION } from './selection-regles'
 
 export type ResultatSelection = { ok: true } | { ok: false; code: CodeRefusSelection }
-
-export const MESSAGES_REFUS_SELECTION: Record<CodeRefusSelection, string> = {
-  acces_refuse: 'Seule l’équipe peut choisir la sélection de l’accueil.',
-  introuvable: 'Œuvre introuvable.',
-  non_publiee: 'Seule une œuvre publiée peut entrer dans la sélection de l’accueil.',
-  retiree: 'Une œuvre retirée ne peut pas entrer dans la sélection de l’accueil.',
-}
 
 /**
  * Marque (`marquee`) ou démarque une œuvre de la sélection de l'accueil ; réservé aux admins, sur la
