@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
-import { ARTISTE_VISIBLE, VISIBLE } from '@/lib/disponibilite'
+import { ARTISTE_VISIBLE, DISPONIBLE, VISIBLE } from '@/lib/disponibilite'
+import { prixLivresPourPays } from '@/lib/livraison'
 import { mapArtist, mapArtwork } from './mappers'
 import { enCache, ETIQUETTE_CATALOGUE, etiquetteArtiste } from './cache'
 import type { Artist, Artwork } from '@/lib/types'
@@ -10,10 +11,7 @@ const ARTISTE_INCLUDE = {
   _count: { select: { artworks: { where: VISIBLE } } },
   artworks: {
     where: VISIBLE,
-    select: {
-      medium: true,
-      exhibitions: { select: { exhibitionId: true } },
-    },
+    select: { medium: true },
   },
 } as const
 
@@ -41,16 +39,21 @@ export async function getArtistBySlug(slug: string): Promise<Artist | null> {
   })
 }
 
-export async function getArtistArtworksBySlug(slug: string): Promise<Artwork[]> {
+// Story 3.11 (FR-19) : œuvres disponibles de l'artiste (les vendues, réservées et retirées n'y figurent
+// pas). Avec `codePays` (cookie `pays` lu par la page), chacune porte son prix livré et son délai
+// (module livraison, relu à chaque requête, jamais en cache).
+export async function getArtistArtworksBySlug(slug: string, codePays?: string): Promise<Artwork[]> {
   const id = await prisma.artist.findUnique({ where: { slug }, select: { id: true } })
   if (!id) return []
-  return enCache(['artiste-oeuvres', slug], [etiquetteArtiste(id.id), ETIQUETTE_CATALOGUE], async () => {
-    const rows = await prisma.artwork.findMany({
+  const rows = await enCache(['artiste-oeuvres-disponibles', slug], [etiquetteArtiste(id.id), ETIQUETTE_CATALOGUE], () =>
+    prisma.artwork.findMany({
       // AND : VISIBLE porte déjà une condition sur l'artiste, qu'un `artist` voisin écraserait.
-      where: { AND: [VISIBLE, { artist: { slug } }] },
+      where: { AND: [VISIBLE, DISPONIBLE, { artist: { slug } }] },
       orderBy: [{ featured: 'desc' }, { year: 'desc' }],
       include: { artist: { select: { slug: true, name: true } } },
-    })
-    return rows.map(mapArtwork)
-  })
+    }),
+  )
+  if (codePays === undefined) return rows.map(mapArtwork)
+  const prix = await prixLivresPourPays(codePays, rows.map((r) => r.id))
+  return rows.map((r) => ({ ...mapArtwork(r), prixLivre: prix.get(r.id) }))
 }

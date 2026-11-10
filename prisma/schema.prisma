@@ -16,6 +16,11 @@ model Artist {
   deathYear   Int?
   bio         String    @db.Text
   statement   String?   @db.Text
+  // Story 3.11 (FR-19) : page publique gérée par l'équipe, écrite seulement par le module curation.
+  // formation et expositions : textes libres ; atelierUrl : photo d'atelier (Cloudinary).
+  formation   String?   @db.Text
+  expositions String?   @db.Text
+  atelierUrl  String?
   imageUrl    String
   coverUrl    String?
   website     String?

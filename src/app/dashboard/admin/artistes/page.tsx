@@ -7,6 +7,7 @@ import { DeleteButton } from '@/components/dashboard/DeleteButton'
 import { acteurCourant, invitationsEnAttente } from '@/lib/acces'
 import { InvitationArtiste } from './InvitationArtiste'
 import { AccordArtiste } from './AccordArtiste'
+import { FicheArtiste } from './FicheArtiste'
 
 export const metadata: Metadata = { title: 'Artistes — Admin Errancy' }
 
@@ -118,6 +119,19 @@ export default async function AdminArtistesPage() {
             artistId={artist.id}
             nom={artist.name}
             accordSigneLe={artist.accordSigneLe ? artist.accordSigneLe.toISOString() : null}
+          />
+          {/* Story 3.11 (FR-19) : page publique gérée par l'équipe. */}
+          <FicheArtiste
+            artistId={artist.id}
+            nom={artist.name}
+            fiche={{
+              bio: artist.bio,
+              statement: artist.statement,
+              formation: artist.formation,
+              expositions: artist.expositions,
+              imageUrl: artist.imageUrl || null,
+              atelierUrl: artist.atelierUrl,
+            }}
           />
           {!artist.user && (
             <InvitationArtiste

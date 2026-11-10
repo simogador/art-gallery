@@ -65,15 +65,18 @@ type DbArtist = {
   birthYear: number
   deathYear: number | null
   bio: string
+  statement?: string | null
+  formation?: string | null
+  expositions?: string | null
+  atelierUrl?: string | null
   featured: boolean
   imageUrl?: string | null
   _count?: { artworks: number }
-  artworks?: { medium: string; exhibitions: { exhibitionId: string }[] }[]
+  artworks?: { medium: string }[]
 }
 
 export function mapArtist(a: DbArtist): Artist {
   const worksCount = a._count?.artworks ?? a.artworks?.length ?? 0
-  const exhibitionIds = new Set(a.artworks?.flatMap((w) => w.exhibitions.map((e) => e.exhibitionId)) ?? [])
   const primaryMedium = a.artworks?.length
     ? a.artworks.reduce<Record<string, number>>((acc, w) => {
         const d = toArtMedium(w.medium)
@@ -88,13 +91,16 @@ export function mapArtist(a: DbArtist): Artist {
     name: a.name,
     discipline,
     country: a.nationality,
-    bio: a.bio,
+    bio: a.bio.trim(),
     worksCount,
-    yearsActive: `${a.birthYear + 20} — ${a.deathYear ?? 'présent'}`,
-    exhibitions: exhibitionIds.size,
+    // Story 3.11 : ni « années d'activité » ni compteur d'expositions déduits ; seulement ce que l'équipe a saisi.
+    statement: a.statement?.trim() || null,
+    formation: a.formation?.trim() || null,
+    expositions: a.expositions?.trim() || null,
+    atelierUrl: a.atelierUrl?.trim() || null,
     gradient: gradient(a.slug),
     featured: a.featured,
-    imageUrl: a.imageUrl || null,
+    imageUrl: a.imageUrl?.trim() || null,
   }
 }
 

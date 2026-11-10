@@ -6,7 +6,5 @@
 // qui refait une de ces pages la retire ; la CI échoue si une entrée y est ajoutée
 // (scripts/verifier-exceptions-prisma.cjs origin/main tests/exceptions-interface.cjs).
 module.exports = [
-  'src/app/artistes/ArtistsList.tsx', // story 3.11
-  'src/app/artistes/[id]/ArtistProfile.tsx', // story 3.11
   'src/app/galerie/[id]/ArtworkDetail.tsx', // fiche, stories 3.5 à 3.8
 ]

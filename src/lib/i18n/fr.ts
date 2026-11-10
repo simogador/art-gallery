@@ -161,6 +161,27 @@ export type Dictionnaire = {
     readonly droitsNonInclus: string
     readonly recalcules: (pays: string) => string
   }
+  readonly artistes: {
+    readonly titre: string
+    readonly description: string
+    readonly introduction: string
+    readonly liste: string
+    readonly vide: string
+    readonly introuvable: string
+    readonly selectionne: string
+    readonly portrait: (nom: string) => string
+    readonly atelier: (nom: string) => string
+    readonly sections: {
+      readonly biographie: string
+      readonly demarche: string
+      readonly formation: string
+      readonly expositions: string
+      readonly atelier: string
+      readonly oeuvres: string
+    }
+    readonly oeuvres: string
+    readonly fichier: { readonly type: string; readonly poids: string }
+  }
   readonly galerie: {
     readonly titre: string
     readonly description: string
@@ -435,6 +456,33 @@ export const fr = {
   },
   // Story 3.9 : galerie filtrée pour un mur et un budget (décision du porteur du 2026-11-09 : le
   // texte d'introduction ne promet ni certificat, ni assurance, ni installation).
+  // Story 3.11 : pages artistes (FR-19). Pages gérées par l'équipe (OQ-14) ; aucune valeur inventée,
+  // aucune coordonnée (FR-8), aucune promesse de certificat, d'assurance ni d'installation.
+  artistes: {
+    titre: 'Les artistes',
+    description: 'Les artistes dont Errancy présente les œuvres : leur parcours, leur démarche et leurs œuvres disponibles, avec leur prix livré chez vous.',
+    introduction: 'Les artistes dont vous retrouvez les œuvres dans la galerie, présentés par l’équipe d’Errancy.',
+    liste: 'Artistes de la galerie',
+    vide: 'Les premiers artistes seront présentés très bientôt. Revenez nous voir.',
+    introuvable: 'Artiste introuvable',
+    selectionne: 'Sélectionné par Errancy',
+    portrait: (nom: string) => `Portrait de ${nom}`,
+    atelier: (nom: string) => `L’atelier de ${nom}`,
+    sections: {
+      biographie: 'Biographie',
+      demarche: 'Démarche',
+      formation: 'Formation',
+      expositions: 'Expositions',
+      atelier: 'L’atelier',
+      oeuvres: 'Œuvres disponibles',
+    },
+    oeuvres: 'Œuvres disponibles de l’artiste',
+    fichier: {
+      type: 'Choisissez une photo (JPEG, PNG, HEIC…).',
+      poids: 'Ce fichier dépasse 10 Mo : choisissez-en un plus léger.',
+    },
+  },
+
   galerie: {
     titre: 'La collection',
     description: 'La collection des œuvres choisies par Errancy : peintures, sculptures, photographies et art numérique, avec leur prix livré chez vous.',

@@ -2,7 +2,8 @@
 title: 'Story 3.11 — Pages artistes'
 type: 'feature'
 created: '2026-11-10'
-status: 'draft'
+status: 'done'
+baseline_commit: 'fadaa40c623cb9ef6d5ec1667b07e8a8fdd22117'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.md', '{project-root}/docs/migrations.md']
@@ -63,12 +64,12 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `prisma/schema.prisma`, `prisma/migrations/…_pages_artistes/` -- trois colonnes facultatives, ajout seulement.
-- [ ] `src/lib/curation/` -- écriture de la fiche publique, envoi signé et enregistrement des photos (admin seulement).
-- [ ] `src/app/dashboard/admin/artistes/` -- formulaire et envois de photos.
-- [ ] `src/lib/catalogue/`, `src/lib/types/index.ts` -- lecture des nouveaux champs, œuvres disponibles avec prix livré, sans valeur inventée.
-- [ ] `src/app/artistes/**`, `src/lib/i18n/fr.ts` -- pages refaites, textes dans `fr`, sorties des listes d'exceptions.
-- [ ] `tests/artistes.test.ts` -- matrice ; `AGENTS.md`, `docs/migrations.md`.
+- [x] `prisma/schema.prisma`, `prisma/migrations/…_pages_artistes/` -- trois colonnes facultatives, ajout seulement.
+- [x] `src/lib/curation/` -- écriture de la fiche publique, envoi signé et enregistrement des photos (admin seulement).
+- [x] `src/app/dashboard/admin/artistes/` -- formulaire et envois de photos.
+- [x] `src/lib/catalogue/`, `src/lib/types/index.ts` -- lecture des nouveaux champs, œuvres disponibles avec prix livré, sans valeur inventée.
+- [x] `src/app/artistes/**`, `src/lib/i18n/fr.ts` -- pages refaites, textes dans `fr`, sorties des listes d'exceptions.
+- [x] `tests/artistes.test.ts` -- matrice ; `AGENTS.md`, `docs/migrations.md`.
 
 **Acceptance Criteria:**
 - Given l'administration d'un artiste, when l'équipe renseigne les éléments et envoie les photos, then ils sont enregistrés par `curation` et un non-admin est refusé.
@@ -80,6 +81,21 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-3-context.m
 ## Spec Change Log
 
 ## Review Triage Log
+
+| # | Constat (relecteurs) | Verdict | Preuve | Suite |
+|---|---|---|---|---|
+| 1 | Enregistrement d'une photo non atomique : deux envois simultanés laissent un orphelin ; échec de l'écriture laisse le fichier envoyé (B, E) | medium | lecture de `precedente` puis `update` sans condition | patch : `updateMany` conditionnel, suppression du nouveau fichier si perdu ou en échec |
+| 2 | Ancienne photo détruite aussitôt alors que la page reste en cache 60 s : image cassée (E) | medium | `destroy` immédiat, `enCache` 60 s | patch : ne plus détruire l'ancienne photo (orphelin accepté, noté) |
+| 3 | Taille et type du contrôle navigateur empruntés à la photo d'œuvre ; HEIC sans `type` refusé (B, E) | medium | `refusFichier('face_lumiere_du_jour')` | patch : `refusFichierArtiste` dans `fiche-artiste-regles.ts` |
+| 4 | Caractère nul ou de contrôle collé : erreur PostgreSQL, 500 sans message (E) | medium | `texte()` ne filtre pas | patch : retrait des contrôles, refus propre |
+| 5 | Coordonnées non testées avec un vrai e-mail en base ni sur les métadonnées ; « Pas de livraison vers [pays] » non testé en rendu ; sections vides une à une ; signature des paramètres (V) | medium | tests lus | patch : tests |
+| 6 | `bio` non rognée, coupe d'emoji dans la description, initiales sur nom vide (E) | low | mappers et page | patch |
+| 7 | Même code `fichier_refuse` pour cible invalide (B) | low | `estCiblePhotoArtiste` | patch : `valeur_invalide` |
+| 8 | Aucun message si l'artiste n'a aucune œuvre disponible (E) | low | la spec demande « page sans section d'œuvres » | rejeté |
+| 9 | Pas d'action « Retirer » la photo d'atelier (E) | low | hors spec | defer |
+| 10 | Champs non signés (format, taille), rejeu d'une réponse authentique, admin seulement (E) | low | signature couvre `public_id` et `version` | rejeté |
+| 11 | Requête d'artiste hors cache ; œuvres lues avant `notFound()` ; cache des 404 pendant 60 s ; message « dans la minute » ; formulaire non recalé ; `maxLength` UTF-16 (B, E) | low | délai de 60 s accepté par le porteur | rejeté |
+| 12 | Statuts spec / sprint (B) | false | le sprint passe en `review` à la présentation | rejeté |
 
 ## Design Notes
 

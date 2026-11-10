@@ -217,6 +217,25 @@ Retour arrière :
 - 2026-11-04 : migration `20261104064428_declarations_disponibilite` (avec son empreinte SHA-256) appliquée depuis l'éditeur SQL de Neon sur `preview`, puis sur `production`, avant la fusion de la PR #34. Point de restauration : branche `avant-declarations-04-11`.
 - 2026-11-04 et 2026-11-05 (story 2.10) : migration A `20261104202353_dimensions_par_defaut` (avec son empreinte SHA-256) appliquée depuis l'éditeur SQL de Neon sur `preview` puis sur `production`, avant la fusion de la PR #36 (2026-11-04, déploiement de production terminé vers 21 h 35 UTC). Sur `preview`, dépôt « Test 2.10 » par Kara Walker et retour arrière (commit `89515a0`) vérifiés. Points de restauration : branches `avant-anciennes-colonnes-preview-04-11` et `avant-anciennes-colonnes-04-11`. Le 2026-11-05, contrôles en lecture seule sur `production` tous vides (dimensions à compléter, prix à saisir, écarts d'état, œuvres modifiées depuis la mise en ligne), nouvelle sauvegarde `avant-suppression-colonnes-05-11` vérifiée identique à `production` (nombre d'œuvres, prix et dimensions en texte), puis migration B `20261104202403_suppression_anciennes_colonnes` (avec son empreinte SHA-256) appliquée sur `production` (accueil, galerie et administration des œuvres vérifiés sans erreur), puis sur `preview`.
 
+### Story 3.11 : pages artistes
+
+- Migration : `20261110090000_pages_artistes` (empreinte SHA-256 : `d5a49b22163e2fff5ec1252296c4f48c0b25f28864f3a38310f2720a2c546c1c`). Ajoute à `Artist` trois colonnes facultatives : `formation` et `expositions` (`TEXT`), `atelierUrl` (`TEXT`). Ajout seulement, aucune recopie.
+- Le nouveau code lit ces colonnes (pages artistes, administration) et échouerait sans elles : même procédure que les précédentes, `preview` puis production **avant la fusion**, avec la ligne `_prisma_migrations` et l'empreinte SHA-256.
+  ```sql
+  BEGIN;
+  -- AlterTable
+  ALTER TABLE "Artist" ADD COLUMN     "atelierUrl" TEXT,
+  ADD COLUMN     "expositions" TEXT,
+  ADD COLUMN     "formation" TEXT;
+  INSERT INTO "_prisma_migrations" (id, checksum, migration_name, started_at, finished_at, applied_steps_count)
+  VALUES (gen_random_uuid()::text, 'd5a49b22163e2fff5ec1252296c4f48c0b25f28864f3a38310f2720a2c546c1c',
+          '20261110090000_pages_artistes', now(), now(), 1);
+  COMMIT;
+  ```
+  Vérifiez l'empreinte avec `sha256sum` avant de l'enregistrer.
+- Cloudinary : les photos d'artiste utilisent les mêmes variables que le dépôt d'œuvre (story 2.5), dossier `errancy/artistes/<id>/`.
+- Retour arrière : l'ancien code ignore les colonnes ajoutées (les pages artistes reprennent leur ancien aspect). Pour retirer la migration (dernier recours, les textes et la photo d'atelier sont perdus) : `ALTER TABLE "Artist" DROP COLUMN "formation", DROP COLUMN "expositions", DROP COLUMN "atelierUrl";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261110090000_pages_artistes';`. Un portrait remplacé depuis l'administration reste dans `imageUrl`.
+
 ### Story 3.4 : journal d'événements
 
 - Migration : `20261106090000_journal_evenements` (ajout seulement : tables `Evenement` et `TraitementEvenement`, aucune table existante modifiée).

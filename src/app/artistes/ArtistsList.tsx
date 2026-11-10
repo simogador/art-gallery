@@ -1,320 +1,67 @@
-'use client'
-
-import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { cn } from '@/lib/utils/cn'
-import { Badge, Button } from '@/components/ui'
+import { fr, SEPARATEUR } from '@/lib/i18n'
 import type { Artist } from '@/lib/types'
 
-/* ─── Variants ────────────────────────────────────────────────────────────── */
+// Liste des artistes (story 3.11, FR-19) : seulement les artistes publics (accord signé, actifs, au
+// moins une œuvre visible, story 2.9), lus par la page. Aucun chiffre déduit ni inventé ; une seule
+// cible par artiste (sa page).
 
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.1 } },
+const T = fr.artistes
+
+function Initiales({ nom }: { nom: string }) {
+  return nom
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => [...n][0])
+    .slice(0, 2)
+    .join('')
 }
 
-const fadeUpVariants = {
-  hidden:  { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] } },
-}
-
-/* ─── Component ───────────────────────────────────────────────────────────── */
-
-interface Props {
-  artists: Artist[]
-  /** Nombre réel d'expositions visibles (une exposition à plusieurs artistes compte une fois). */
-  exhibitionsCount: number
-}
-
-export function ArtistsList({ artists, exhibitionsCount }: Props) {
-  const disciplines = ['Tous', ...Array.from(new Set(artists.map((a) => a.discipline)))]
-  const totalWorks = artists.reduce((s, a) => s + a.worksCount, 0)
-  // Story 2.9 : chiffres réels, masqués quand ils valent zéro.
-  const stats = [
-    { value: artists.length,   label: 'Artistes' },
-    { value: totalWorks,       label: 'Œuvres' },
-    { value: exhibitionsCount, label: 'Expositions' },
-  ].filter(({ value }) => value > 0)
-
-  const [activeFilter, setActiveFilter] = useState('Tous')
-
-  const filtered = activeFilter === 'Tous'
-    ? artists
-    : artists.filter((a) => a.discipline === activeFilter)
-
+export function ArtistsList({ artists }: { artists: Artist[] }) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="container-premium pb-16 pt-28 md:pb-24 md:pt-36">
+      <h1 className="font-serif text-display-md text-foreground">{T.titre}</h1>
+      <span className="ornament-rule mt-4" aria-hidden="true" />
+      <p className="mt-4 max-w-xl font-sans text-base text-neutral-600 text-pretty">{T.introduction}</p>
 
-      {/* ── Hero ── */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-24 overflow-hidden">
-        <GridLines />
-        <motion.div
-          className="container-premium relative z-10"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.span variants={fadeUpVariants} className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-4 block">
-            Nos représentés
-          </motion.span>
-          <motion.h1
-            variants={fadeUpVariants}
-            className="font-serif font-light text-foreground"
-            style={{ fontSize: 'clamp(2.75rem, 6vw, 5rem)' }}
-          >
-            Les{' '}
-            <em className="not-italic">artistes</em>
-          </motion.h1>
-          <motion.div variants={fadeUpVariants} className="my-6">
-            <div className="divider" />
-          </motion.div>
-          <motion.p
-            variants={fadeUpVariants}
-            className="font-sans text-base text-neutral-500 max-w-xl text-pretty leading-relaxed"
-          >
-            Une constellation de talents internationaux, unis par une exigence commune
-            de l&apos;excellence et une vision singulière du monde contemporain.
-          </motion.p>
-
-          {/* Global stats */}
-          {stats.length > 0 && (
-            <motion.div
-              variants={fadeUpVariants}
-              className="flex items-center gap-10 mt-10 pt-8 border-t border-neutral-200"
-            >
-              {stats.map(({ value, label }) => (
-                <div key={label} className="flex flex-col">
-                  <span className="font-serif text-3xl font-light text-foreground leading-none">{value}</span>
-                  <span className="font-sans text-xs uppercase tracking-widest text-neutral-400 mt-1">{label}</span>
-                </div>
-              ))}
-            </motion.div>
-          )}
-        </motion.div>
-      </section>
-
-      {/* ── Filter + Grid ── */}
-      <section className="py-16 md:py-24">
-        <div className="container-premium">
-
-          {/* Filter pills */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center gap-2 flex-wrap mb-14"
-          >
-            {disciplines.map((d) => {
-              const count   = d === 'Tous' ? artists.length : artists.filter((a) => a.discipline === d).length
-              const isActive = activeFilter === d
-              return (
-                <button
-                  key={d}
-                  onClick={() => setActiveFilter(d)}
-                  className={cn(
-                    'relative inline-flex items-center gap-2',
-                    'font-sans text-xs uppercase tracking-widest',
-                    'px-4 py-2 rounded-sm border transition-all duration-300',
-                    isActive
-                      ? 'bg-foreground text-background border-foreground'
-                      : 'text-neutral-500 border-neutral-200 hover:border-neutral-400 hover:text-foreground',
-                  )}
-                >
-                  {d}
-                  <span className={cn('text-[10px] font-normal', isActive ? 'text-neutral-400' : 'text-neutral-300')}>
-                    {count}
-                  </span>
-                  {isActive && (
-                    <motion.div
-                      layoutId="artist-filter-pill"
-                      className="absolute inset-0 bg-foreground rounded-sm -z-10"
-                      transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+      {artists.length > 0 ? (
+        <ul aria-label={T.liste} className="mt-10 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 md:gap-x-6 lg:grid-cols-4">
+          {artists.map((artist) => (
+            <li key={artist.id}>
+              <Link href={`/artistes/${artist.id}`} className="group block">
+                <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-neutral-100">
+                  {artist.imageUrl ? (
+                    <Image
+                      src={artist.imageUrl}
+                      alt=""
+                      fill
+                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover"
                     />
+                  ) : (
+                    <span
+                      className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${artist.gradient} font-serif text-display-md font-light text-foreground`}
+                      aria-hidden="true"
+                    >
+                      <Initiales nom={artist.name} />
+                    </span>
                   )}
-                </button>
-              )
-            })}
-          </motion.div>
-
-          {/* Grid ; story 2.9 : sans artiste visible (accord signé et œuvre publiée), l'état vide. */}
-          {artists.length > 0 ? (
-            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-              {filtered.map((artist, i) => (
-                <ArtistCard key={artist.id} artist={artist} index={i} />
-              ))}
-            </motion.div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-neutral-200 rounded-sm">
-              <p className="font-serif text-xl font-light text-neutral-400">Les artistes arrivent bientôt</p>
-              <p className="font-sans text-sm text-neutral-400 mt-2 max-w-sm text-pretty">
-                Nous présenterons ici les artistes de la galerie dès la publication de leurs premières œuvres.
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ── Dark CTA ── */}
-      <section className="fond-sombre py-24 bg-foreground relative overflow-hidden">
-        <BackgroundDecor />
-        <div className="container-premium relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
-          <div>
-            <span className="font-sans text-xs uppercase tracking-[0.25em] text-gold mb-3 block">
-              Rejoindre la galerie
-            </span>
-            <p
-              className="font-serif font-light text-background text-balance leading-tight"
-              style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', maxWidth: '30rem' }}
-            >
-              Vous êtes artiste ?
-            </p>
-            <p className="font-sans text-sm text-neutral-500 mt-3 max-w-sm text-pretty">
-              Nous sélectionnons de nouveaux talents chaque trimestre. Soumettez votre dossier
-              pour intégrer notre programme de représentation.
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row items-center gap-3 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="lg"
-              className="border-neutral-700 text-neutral-300 hover:border-neutral-400 hover:text-background"
-            >
-              <Link href="/">Retour à la galerie</Link>
-            </Button>
-            <Button variant="clair" size="lg">
-              Soumettre son dossier
-            </Button>
-          </div>
-        </div>
-      </section>
-    </div>
-  )
-}
-
-/* ─── ArtistCard ──────────────────────────────────────────────────────────── */
-
-function ArtistCard({ artist, index }: { artist: Artist; index: number }) {
-  const [hovered, setHovered] = useState(false)
-
-  return (
-    <motion.article
-      custom={index}
-      initial={{ opacity: 0, y: 32 }}
-      whileInView={{
-        opacity: 1, y: 0,
-        transition: { duration: 0.55, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] },
-      }}
-      viewport={{ once: true, margin: '-60px' }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      className="group cursor-pointer"
-    >
-      <Link href={`/artistes/${artist.id}`} className="block">
-        {/* Portrait */}
-        <div className="relative overflow-hidden rounded-sm aspect-[3/4] mb-5">
-          <div className={cn('absolute inset-0 bg-gradient-to-br', artist.gradient, 'opacity-70')} />
-
-          {/* Monogram */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-              <span
-                className="font-serif font-light leading-none select-none"
-                style={{ fontSize: 'clamp(4rem, 8vw, 6rem)', color: 'rgba(10,10,10,0.13)' }}
-              >
-                {artist.name.split(' ').map((n) => n[0]).join('')}
-              </span>
-              <div className="w-10 h-px bg-gold/40" />
-            </div>
-          </div>
-
-          {/* Hover overlay */}
-          <motion.div
-            className="absolute inset-0 bg-foreground/75 flex flex-col justify-end p-5"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: hovered ? 1 : 0 }}
-            transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-          >
-            <motion.div
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: hovered ? 0 : 10, opacity: hovered ? 1 : 0 }}
-              transition={{ duration: 0.3, delay: 0.05 }}
-            >
-              <p className="font-sans text-xs text-neutral-300 leading-relaxed text-pretty">
-                {artist.bio.slice(0, 130)}…
-              </p>
-              <div className="flex items-center gap-1.5 mt-4 font-sans text-xs uppercase tracking-widest text-gold">
-                Voir le profil
-                <ArrowSmIcon />
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* Badges */}
-          <div className="absolute top-3 left-3">
-            {artist.featured && <Badge variant="gold" dot label="Représenté" size="sm" />}
-          </div>
-          <div className="absolute top-3 right-3">
-            <Badge variant="default" label={artist.discipline} size="sm" />
-          </div>
-        </div>
-
-        {/* Info */}
-        <div>
-          <h2 className="font-serif text-xl font-light text-foreground group-hover:text-gold transition-colors duration-300">
-            {artist.name}
-          </h2>
-          <p className="font-sans text-xs text-neutral-500 uppercase tracking-widest mt-1">
-            {artist.discipline} · {artist.country}
-          </p>
-          <div className="flex items-center gap-6 mt-4 pt-4 border-t border-neutral-100">
-            <StatPill value={String(artist.worksCount)} label="Œuvres" />
-            <StatPill value={String(artist.exhibitions)} label="Expositions" />
-            <StatPill value={artist.yearsActive.split('—')[0].trim()} label="Depuis" />
-          </div>
-        </div>
-      </Link>
-    </motion.article>
-  )
-}
-
-/* ─── Helpers ─────────────────────────────────────────────────────────────── */
-
-function StatPill({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="flex flex-col">
-      <span className="font-serif text-lg font-light text-foreground leading-none">{value}</span>
-      <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-400 mt-0.5">{label}</span>
-    </div>
-  )
-}
-
-function ArrowSmIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function GridLines() {
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-      {[20, 50, 80].map((pos) => (
-        <div key={pos} className="absolute top-0 bottom-0 w-px bg-neutral-200/60" style={{ left: `${pos}%` }} />
-      ))}
-      <div className="absolute top-[40%] left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" />
-    </div>
-  )
-}
-
-function BackgroundDecor() {
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-      <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full border border-neutral-800" />
-      <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full border border-neutral-800" />
-      <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/10 to-transparent" />
+                </div>
+                <h2 className="mt-3 font-serif text-heading-sm text-foreground group-hover:underline group-hover:underline-offset-4">
+                  {artist.name}
+                </h2>
+                <p className="mt-1 font-sans text-caption text-neutral-600">
+                  {[artist.discipline, artist.country].filter(Boolean).join(SEPARATEUR)}
+                </p>
+                <p className="font-sans text-caption text-neutral-600">{T.selectionne}</p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-16 text-center font-sans text-base text-neutral-600">{T.vide}</p>
+      )}
     </div>
   )
 }

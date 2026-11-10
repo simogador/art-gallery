@@ -195,7 +195,8 @@ describe('base : lectures et écritures', () => {
       ['a-disponible', false],
       ['b-vendue', true],
     ])
-    expect((await getArtistArtworksBySlug('artiste-1')).map((w) => w.id).sort()).toEqual(['a-disponible', 'b-vendue'])
+    // Story 3.11 : la page de l'artiste ne montre que ses œuvres disponibles (la vendue compte, mais n'est pas listée).
+    expect((await getArtistArtworksBySlug('artiste-1')).map((w) => w.id)).toEqual(['a-disponible'])
     expect((await getArtistBySlug('artiste-1'))?.worksCount).toBe(2)
   })
 
