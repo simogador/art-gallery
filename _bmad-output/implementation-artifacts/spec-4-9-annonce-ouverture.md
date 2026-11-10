@@ -3,7 +3,7 @@ title: 'Story 4.9 — Annonce de l''ouverture aux contacts de la maintenance'
 type: 'feature'
 created: '2026-11-10'
 baseline_commit: '0249ea06270512c9e6ba0fae7b161ece2118c2d3'
-status: 'in-review'
+status: 'done'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-4-1-emails-transactionnels.md']
