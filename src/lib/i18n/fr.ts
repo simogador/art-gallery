@@ -96,6 +96,7 @@ export type Dictionnaire = {
   readonly fiche: {
     readonly coupDeCoeur: string
     readonly etat: { readonly disponible: string; readonly vendue: string }
+    readonly barre: { readonly nom: string; readonly visite: string }
     readonly vendue: {
       readonly proches: string
       readonly pourriezAimer: string
@@ -565,6 +566,8 @@ export const fr = {
   fiche: {
     coupDeCoeur: 'Coup de cœur',
     etat: { disponible: 'Disponible', vendue: 'Vendue' },
+    // Story 4.7 : barre d'actions de la fiche.
+    barre: { nom: 'Actions sur cette œuvre', visite: 'Réserver une visite' },
     // Story 3.7 : section d'œuvres proches ; titre propre à une œuvre vendue et lien vers l'artiste.
     vendue: {
       proches: 'D’autres œuvres à découvrir',

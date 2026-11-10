@@ -87,6 +87,11 @@ export function estDisponible(e: EtatOeuvre): boolean {
   return e.publication === 'publiee' && e.disponibilite === 'disponible'
 }
 
+/** Réservée (axe disponibilité) : l'œuvre n'est plus à vendre mais n'est pas vendue (story 4.7). */
+export function estReservee(e: EtatOeuvre): boolean {
+  return e.disponibilite === 'reservee'
+}
+
 export function estVendue(e: EtatOeuvre): boolean {
   return e.disponibilite === 'vendue'
 }

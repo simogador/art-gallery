@@ -22,7 +22,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.m
 ## Boundaries & Constraints
 
 **Always:**
-- Décisions du porteur du 2026-11-10 : délai de réponse annoncé pour une visite = 48 heures, la valeur unique `DELAI_REPONSE_DEMANDE_HEURES` déjà utilisée pour la sélection ; aucun lien vers la page sur la fiche avant la story 4.7 (la page n'est joignable que par son adresse).
+- Décisions du porteur du 2026-11-10 : délai de réponse annoncé pour une visite = 48 heures, la valeur unique `DELAI_REPONSE_DEMANDE_HEURES` déjà utilisée pour la sélection ; le lien depuis la fiche est posé par la story 4.7 (barre d’actions).
 - Mêmes règles, limites et mécanismes que la story 4.2 (formulaire, validation, anti-abus par IP et e-mail avec empreintes salées, doublon, e-mails par gestionnaires, journaux et charges en identifiants seulement) ; alerte à l'équipe à `CONTACT_EQUIPE` avec le numéro et un lien vers l'administration, sans donnée personnelle (décision du porteur du 2026-11-10 pour les demandes, reprise ici).
 - « En atelier » n'est proposé que si `Artwork.visitesAtelier` vaut vrai (story 2.6), lu par `catalogue` et exposé dans le type d'affichage ; refus côté serveur si la demande en atelier vise une œuvre dont l'artiste ne l'accepte pas.
 - Page réservée à une œuvre visible et disponible (`estVisible`/`estDisponible`) ; œuvre inconnue, non visible, vendue, réservée ou retirée : 404. Le pays de livraison n'entre pas en compte (visite conservée pour un pays non livré).

@@ -43,6 +43,8 @@ export interface Artwork {
   tags:        string[]
   featured:    boolean
   sold:        boolean
+  /** Œuvre réservée (story 4.7) : `sold` reste vrai ; la fiche ne propose alors que le Conseil WhatsApp. */
+  reservee?:   boolean
   /** Date de dépôt (ISO), pour classer les dernières œuvres de l'accueil (story 3.10) ; absente hors catalogue. */
   deposeLe?:   string
   imageUrl:    string | null

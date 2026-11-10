@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { descriptionFiche } from '@/lib/catalogue/mappers'
 import { getArtworkBySlug, getRelatedArtworks, artisteDOeuvreRetiree } from '@/lib/catalogue'
 import { COOKIE_PAYS, lirePays, nomPays } from '@/lib/livraison'
-import { urlAbsolue } from '@/lib/reglages'
+import { lot2Ouvert, urlAbsolue } from '@/lib/reglages'
 import { BoutonConseil } from '@/components/ui/BoutonConseil'
 import { ArtworkDetail } from './ArtworkDetail'
 
@@ -50,5 +50,5 @@ export default async function ArtworkPage({ params }: Props) {
   // Story 4.4 : bouton Conseil WhatsApp rendu côté serveur (heure et numéro lus à chaque requête).
   const conseil = <BoutonConseil contexte={{ type: 'oeuvre', slug: artwork.id, titre: artwork.title }} />
 
-  return <ArtworkDetail artwork={artwork} related={related} pays={{ code: pays, nom: nomPays(pays) }} conseil={conseil} />
+  return <ArtworkDetail artwork={artwork} related={related} pays={{ code: pays, nom: nomPays(pays) }} conseil={conseil} lot2Ouvert={lot2Ouvert()} />
 }

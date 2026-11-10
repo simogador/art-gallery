@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
-import { Button, Badge, Modal, UniteToggle, useUnite } from '@/components/ui'
+import { Button, Badge, UniteToggle, useUnite } from '@/components/ui'
 import { formaterDimensionsDouble, formaterMontant, fr } from '@/lib/i18n'
 import { useCartStore } from '@/lib/store/cart'
 import { ArtworkImage } from '@/components/ui'
@@ -12,6 +12,7 @@ import { photosDeFiche } from '@/lib/catalogue/mappers'
 import { CarrouselPhotos } from './CarrouselPhotos'
 import { RangeeFiche } from './RangeeFiche'
 import { SectionsFiche } from './SectionsFiche'
+import { BarreActions, type EtatBarre } from './BarreActions'
 import type { Artwork } from '@/lib/types'
 
 /* ─── Variants ────────────────────────────────────────────────────────────── */
@@ -33,28 +34,20 @@ interface Props {
   pays:    { code: string; nom: string }
   /** Bouton Conseil WhatsApp rendu par le serveur (story 4.4). */
   conseil?: React.ReactNode
+  /** Le Lot 2 est ouvert (`lot2Ouvert()`, lu par la page) : seul cas où l'ancien bouton d'ajout au panier reste dans la barre. */
+  lot2Ouvert?: boolean
 }
 
-export function ArtworkDetail({ artwork, related, pays, conseil }: Props) {
-  const [contactOpen,  setContactOpen]  = useState(false)
-  const [formSent,     setFormSent]     = useState(false)
-  const [loading,      setLoading]      = useState(false)
+export function ArtworkDetail({ artwork, related, pays, conseil, lot2Ouvert = false }: Props) {
   const [addedToCart,  setAddedToCart]  = useState(false)
 
   const { addItem, removeItem, hasItem } = useCartStore()
   const inCart = hasItem(artwork.id)
+  const etat: EtatBarre = !artwork.sold ? 'disponible' : artwork.reservee ? 'reservee' : 'vendue'
   // Story 3.2 : les deux unités toujours visibles, celle choisie d'abord (« 24 × 29,9 in » puis « 61 × 76 cm »).
   const tailles = formaterDimensionsDouble(artwork, useUnite())
   // Story 3.5 : photos de prise de vue ; repli sur l'image principale quand la lecture n'en a pas.
   const photos = artwork.photos ?? photosDeFiche(undefined, artwork.imageUrl)
-
-  const handleContact = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    await new Promise((r) => setTimeout(r, 900))
-    setLoading(false)
-    setFormSent(true)
-  }
 
   function handleAddToCart() {
     addItem({
@@ -70,6 +63,24 @@ export function ArtworkDetail({ artwork, related, pays, conseil }: Props) {
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
   }
+
+  // Story 4.7 : ancien bouton d'ajout au panier (décision du porteur du 2026-11-10), refait en Epic 7.
+  const achat = inCart ? (
+    <div className="flex gap-3">
+      <Link href="/panier" className="flex-1">
+        <Button variant="primary" size="lg" fullWidth rightIcon={<ArrowIcon />}>
+          Voir le panier
+        </Button>
+      </Link>
+      <Button variant="ghost" size="lg" onClick={() => removeItem(artwork.id)} aria-label="Retirer du panier">
+        <TrashIcon />
+      </Button>
+    </div>
+  ) : (
+    <Button variant="primary" size="lg" fullWidth onClick={handleAddToCart} rightIcon={addedToCart ? <CheckIcon /> : <CartIcon />}>
+      {addedToCart ? 'Ajouté !' : 'Ajouter au panier'}
+    </Button>
+  )
 
   return (
     <>
@@ -104,6 +115,16 @@ export function ArtworkDetail({ artwork, related, pays, conseil }: Props) {
               initial="hidden"
               animate="visible"
             >
+              {/* Story 4.7 : barre d'actions (fixe en bas sur mobile, collante dès lg). Hors des `motion.div`
+                  enfants : une transformation parente ferait perdre son ancrage à la barre fixe. */}
+              <BarreActions
+                etat={etat}
+                slug={artwork.id}
+                artiste={{ slug: artwork.artistId, nom: artwork.artist }}
+                conseil={conseil}
+                achat={lot2Ouvert ? achat : undefined}
+              />
+
               {/* Libellé de disponibilité (point + libellé) */}
               <motion.div custom={0} variants={fadeUp} className="flex items-center gap-3 mb-3">
                 {artwork.featured && !artwork.sold && (
@@ -165,54 +186,6 @@ export function ArtworkDetail({ artwork, related, pays, conseil }: Props) {
                 )}
               </motion.div>
 
-              {/* CTA buttons */}
-              <motion.div custom={6} variants={fadeUp} className="flex flex-col gap-3 mb-10">
-                {!artwork.sold ? (
-                  <>
-                    {inCart ? (
-                      <div className="flex gap-3">
-                        <Link href="/panier" className="flex-1">
-                          <Button variant="primary" size="lg" fullWidth rightIcon={<ArrowIcon />}>
-                            Voir le panier
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="lg"
-                          onClick={() => removeItem(artwork.id)}
-                          aria-label="Retirer du panier"
-                        >
-                          <TrashIcon />
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        fullWidth
-                        onClick={handleAddToCart}
-                        rightIcon={addedToCart ? <CheckIcon /> : <CartIcon />}
-                      >
-                        {addedToCart ? 'Ajouté !' : 'Ajouter au panier'}
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="md" fullWidth onClick={() => setContactOpen(true)}>
-                      Prendre rendez-vous
-                    </Button>
-                  </>
-                ) : null}
-                {conseil}
-                <div className="flex items-center gap-3 pt-1">
-                  <button className="flex items-center gap-2 font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200">
-                    <HeartIcon /> Sauvegarder
-                  </button>
-                  <span className="text-neutral-200">·</span>
-                  <button className="flex items-center gap-2 font-sans text-xs uppercase tracking-widest text-neutral-400 hover:text-foreground transition-colors duration-200">
-                    <ShareIcon /> Partager
-                  </button>
-                </div>
-              </motion.div>
-
               {/* Story 3.6 : les quatre questions (sections natives, seule la première ouverte). */}
               <motion.div custom={7} variants={fadeUp}>
                 <SectionsFiche key={artwork.id} artwork={artwork} pays={pays} vendue={artwork.sold} />
@@ -239,74 +212,6 @@ export function ArtworkDetail({ artwork, related, pays, conseil }: Props) {
         )}
       </div>
 
-      {/* ── Contact Modal ── */}
-      <Modal
-        open={contactOpen}
-        onClose={() => { setContactOpen(false); setFormSent(false) }}
-        title={artwork.sold ? 'M\'alerter' : 'Acquérir cette œuvre'}
-        subtitle={artwork.title}
-        size="md"
-        footer={
-          !formSent ? (
-            <>
-              <Button variant="ghost" size="md" onClick={() => setContactOpen(false)}>Annuler</Button>
-              <Button variant="gold" size="md" form="contact-form" type="submit" loading={loading}>
-                Envoyer la demande
-              </Button>
-            </>
-          ) : undefined
-        }
-      >
-        {formSent ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="py-8 flex flex-col items-center text-center gap-4"
-          >
-            <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center">
-              <CheckCircleIcon />
-            </div>
-            <div>
-              <p className="font-serif text-xl font-light">Demande envoyée</p>
-              <p className="font-sans text-sm text-neutral-500 mt-2">
-                Notre équipe vous contactera dans les 24h ouvrées.
-              </p>
-            </div>
-          </motion.div>
-        ) : (
-          <form id="contact-form" onSubmit={handleContact} className="flex flex-col gap-4">
-            <p className="font-sans text-sm text-neutral-500 mb-2">
-              {artwork.sold
-                ? `Indiquez votre contact pour être alerté dès qu'une œuvre similaire à "${artwork.title}" est disponible.`
-                : `Renseignez vos coordonnées pour engager le processus d'acquisition de "${artwork.title}".`
-              }
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label="Prénom" name="firstname" placeholder="Marie" required />
-              <FormField label="Nom" name="lastname" placeholder="Dupont" required />
-            </div>
-            <FormField label="Email" name="email" type="email" placeholder="marie@exemple.fr" required />
-            <FormField label="Téléphone" name="phone" type="tel" placeholder="+33 6 00 00 00 00" />
-            <div className="flex flex-col gap-1.5">
-              <label className="font-sans text-xs font-medium uppercase tracking-widest text-neutral-500">
-                Message (optionnel)
-              </label>
-              <textarea
-                name="message"
-                rows={3}
-                placeholder="Questions, délai, lieu de livraison souhaité…"
-                className={cn(
-                  'w-full px-4 py-2.5 rounded-sm border border-neutral-200',
-                  'font-sans text-sm text-foreground bg-transparent',
-                  'placeholder:text-neutral-400',
-                  'outline-none focus:border-foreground transition-colors duration-300',
-                  'resize-none',
-                )}
-              />
-            </div>
-          </form>
-        )}
-      </Modal>
     </>
   )
 }
@@ -409,35 +314,6 @@ function RelatedSection({ artworks, paysNom, vendue, artiste }: {
   )
 }
 
-/* ─── Form field ──────────────────────────────────────────────────────────── */
-
-function FormField({
-  label, name, type = 'text', placeholder, required,
-}: {
-  label: string; name: string; type?: string; placeholder?: string; required?: boolean
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={name} className="font-sans text-xs font-medium uppercase tracking-widest text-neutral-500">
-        {label}
-      </label>
-      <input
-        id={name}
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        required={required}
-        className={cn(
-          'px-4 py-2.5 rounded-sm border border-neutral-200',
-          'font-sans text-sm text-foreground bg-transparent',
-          'placeholder:text-neutral-400',
-          'outline-none focus:border-foreground transition-colors duration-300',
-        )}
-      />
-    </div>
-  )
-}
-
 /* ─── Art motif ───────────────────────────────────────────────────────────── */
 
 function LargeArtMotif({ color, seed, size = 200 }: { color: string; seed: string | number; size?: number }) {
@@ -480,10 +356,6 @@ const icon = (d: string, opts?: { fill?: boolean; size?: number }) => {
 
 const ChevronRightIcon   = () => icon('M9 18l6-6-6-6')
 const ArrowIcon          = () => icon('M3 12h18M13 6l6 6-6 6')
-const ZoomIcon           = () => icon('M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0zm-2 3l2 2')
-const HeartIcon          = () => icon('M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z')
-const ShareIcon          = () => icon('M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13')
-const CheckCircleIcon    = () => icon('M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3', { size: 28 })
 const CartIcon           = () => icon('M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0')
 const CheckIcon          = () => icon('M20 6 9 17l-5-5')
 const TrashIcon          = () => icon('M3 6h18M19 6l-1 14H6L5 6M9 6V4h6v2')
