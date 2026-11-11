@@ -111,6 +111,19 @@ describe('seuls les modules disponibilite et curation lisent ou écrivent les de
       )
     expect(trouves).toEqual([])
   })
+
+  it('la table Reservation n’est lue ni écrite que par disponibilite (story 6.2)', () => {
+    const acces = /\.reservation\b|\breservations?\s*:\s*\{|"Reservation"/
+    const trouves = fichiers('src')
+      .filter((f) => !['src/generated/', 'src/lib/disponibilite/'].some((a) => f.split(path.sep).join('/').startsWith(a)))
+      .flatMap((f) =>
+        readFileSync(f, 'utf8')
+          .split('\n')
+          .filter((ligne) => !/^\s*(\/\/|\*|\/\*)/.test(ligne) && acces.test(ligne))
+          .map((ligne) => `${f}: ${ligne.trim()}`),
+      )
+    expect(trouves).toEqual([])
+  })
 })
 
 describe('base : lectures et écritures', () => {

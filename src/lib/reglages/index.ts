@@ -116,6 +116,12 @@ export const DELAI_REPONSE_CURATION_JOURS = 7
 // « Écrire à l'équipe ».
 export const DELAI_ANNULATION_DECLARATION_MINUTES = 15
 
+// Réservation (story 6.2, FR-12, AD-7) : durée d'une réservation posée au paiement et plafond de
+// réservations simultanées d'origine `paiement` par e-mail et par appareil (décision du porteur du
+// 2026-11-11 ; la vente assistée de l'équipe n'est pas limitée).
+export const DUREE_RESERVATION_PAIEMENT_MINUTES = 30
+export const PLAFONDS_RESERVATION = { parEmail: 3, parAppareil: 3 } as const
+
 // Format d'une œuvre sur la fiche (story 3.5, décision du porteur du 2026-11-07) : selon le plus
 // grand côté (hauteur ou largeur), petit < 40 cm, grand > 100 cm, moyen entre les deux (bornes
 // incluses). Changer un seuil = une PR (ni écran d'administration, ni migration).
