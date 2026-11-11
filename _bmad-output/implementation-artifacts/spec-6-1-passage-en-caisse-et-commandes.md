@@ -49,15 +49,13 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-6-context.m
 | Collision de numéro | numéro déjà pris | nouveau numéro, un seul passage créé | — |
 | Œuvre supprimée plus tard | ligne existante | ligne gardée, `artworkId` nul, slug et titre conservés | — |
 | Recopie rejouée | script lancé deux fois | aucun doublon, contrôle identique | — |
+**Decisions (porteur, 2026-11-11):**
+- `Paiement` est créée dans cette story, minimale (passage, source, référence externe, montant en centimes, état, paire source + référence unique) ; 6.4 y ajoute les ports et le constat.
+- Numéro lisible : « ERR- » suivi de huit caractères aléatoires sans lettres ambiguës (ex. ERR-7K4M-9Q2X), unique en base.
+- Recopie d'`Order` : chaque ancien `Order` devient une seule commande « historique » (total, devise, slugs, e-mail, identifiants Stripe), sans ligne figée et hors des sommes dues ; aucune valeur inventée.
+- Les lectures d'`Order` (pages d'administration) basculent dans la story 6.3 ; la 6.1 ne touche à aucune page.
 
 </frozen-after-approval>
-
-## Open Questions
-
-1. **La table `Paiement` est-elle créée dans cette story ?** — options : A) oui, minimale (passage, source, référence externe, montant en centimes, état, paire source + référence unique) : l'énoncé de l'epic recopie les anciennes commandes « vers passage en caisse, commande, ligne et paiement », et 6.4 y ajoute les ports et le constat (recommandé) / B) non : 6.1 ne crée que passage, commande et ligne, et la recopie des anciennes commandes payées garde son identifiant Stripe dans la commande en attendant 6.4.
-2. **Quel format pour le numéro lisible de commande ?** — options : A) « ERR- » suivi de huit caractères aléatoires sans lettres ambiguës, par exemple ERR-7K4M-9Q2X : unique, simple à dicter, ne révèle pas le nombre de commandes (recommandé) / B) séquentiel par année, par exemple ERR-2026-0001 : plus lisible, mais révèle le volume de ventes et demande un compteur sans conflit.
-3. **Comment recopier une ancienne commande ?** — l'ancien `Order` n'a que le total et la liste de slugs, pas le prix par œuvre ni les frais ; options : A) reconstituer lignes et artistes d'après les prix actuels, en marquant la commande `reconstituee` : donne des lignes, mais des valeurs devinées / B) garder chaque ancien `Order` comme une seule commande « historique » (total, devise, slugs, e-mail, identifiants Stripe) sans ligne figée et hors des sommes dues : n'invente aucune valeur, conforme à la règle du dépôt (recommandé) / C) ne rien recopier tant qu'il n'existe pas de commande réelle : le porteur compte d'abord les lignes d'`Order` en production (requête fournie), le script reste écrit et testé.
-4. **Quand basculer les lectures d'`Order` vers les nouvelles tables (temps 3 d'AD-20) ?** — trois pages d'administration lisent `Order` (vue d'ensemble, fiche utilisateur) ; options : A) dans cette story : elles lisent les nouvelles tables, deux fichiers sortent de la liste d'exceptions Prisma, mais rien de neuf n'y apparaît tant que 6.3 n'existe pas / B) dans 6.3, avec le premier écran des commandes : 6.1 n'a aucun effet visible et ne touche à aucune page (recommandé).
 
 ## Code Map
 
