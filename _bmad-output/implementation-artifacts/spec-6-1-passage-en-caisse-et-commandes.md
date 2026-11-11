@@ -2,7 +2,8 @@
 title: 'Story 6.1 — Passage en caisse et commandes par artiste, aux montants figés'
 type: 'feature'
 created: '2026-11-11'
-status: 'draft'
+status: 'in-review'
+baseline_commit: '455e768a8f89d893079a1f337545456f53981db9'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-6-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-3-3-pays-prix-total.md']
@@ -89,3 +90,27 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-6-context.m
 
 **Manual checks:**
 - Migration puis script appliqués par le porteur (sauvegarde `sauvegarde-avant-6-1-…`, `preview`, production, avant la fusion) ; comptage d'`Order` en production avant la recopie ; aucun écran à vérifier.
+
+## Review Triage Log
+
+Passe 1 (trois relecteurs : aveugle, cas limites, lacunes de vérification).
+
+| Constat | Verdict | Route | Preuve |
+|---|---|---|---|
+| Œuvre vendue ou réservée acceptée (`VISIBLE` sans `DISPONIBLE`) | medium | defer | La spec gelée renvoie disponibilité et réservation à la 6.2 ; noté en limite connue dans `AGENTS.md`. |
+| Pas de verrou de ligne d'œuvre, deux passages simultanés réussissent | medium | defer | Même cause : la réservation sans double vente est la 6.2. |
+| Devise de ligne non mise en majuscules (contrainte `^[A-Z]{3}$`) | medium | patch | `passage.ts` écrit `prix.devise` brut ; `livraison` compare avec `upper()`, donc une offre en minuscules est atteignable. |
+| Test d'atomicité n'exerce aucun retour arrière | medium | patch | L'échec survient dans `numerosLibres`, avant toute écriture. |
+| Délai de transaction par défaut (5 s) | low | patch | Trois requêtes par œuvre dans une transaction interactive. |
+| Retrait `P2002` sur numéro non testé | low | defer | Course difficile à provoquer, improbable (30^8) ; limite connue. |
+| `adresse` / `telephone` facultatifs | low | defer | La matrice ne rend obligatoires que l'e-mail et le nom ; à confirmer par le porteur en 6.3 (limite connue). |
+| `lireCommande` sans contrôle d'acteur | low | patch | Documenter dans `AGENTS.md` : l'appelant contrôle, comme `creerPassageEnCaisse`. |
+| Limites connues absentes d'`AGENTS.md`, section mal placée dans `docs/migrations.md` | low | patch | Constaté dans le diff. |
+| Suppression d'un artiste ayant une commande (clé étrangère `Restrict`, 500) | low | defer | Aucune commande réelle avant la 6.3 ; à traiter avec le premier écran des commandes. |
+| `pays` hors forme ISO, `oeuvres` non tableau, `CHECK` brut | false | rejet | Un pays inconnu n'a pas de zone : `non_livree` avant toute écriture ; l'appelant est typé. |
+| Plafond de la liste d'œuvres | low | rejet | Fix = nouvelle surface (code de refus) ; les appelants (6.3, 7.2) bornent leurs listes. |
+| Script SQL : devise ou montant atypique, exécutions simultanées, commande historique périmée, alphabet dupliqué | low | rejet | Échec franc et atomique (aucune écriture partielle) ; usage unique par le porteur ; alphabet noté en limite. |
+| Intégrité de schéma (égalité des devises, index Stripe, `zoneId` sans clé) | low | rejet | Aucun lecteur avant 6.4 ; corrections = complexité sans dommage montré. |
+| Statut de suivi `in-progress` contre `in-review` | false | rejet | `sprint-status` passe à `review` à la présentation, comme les autres stories. |
+| Repli `pas_de_zone` de `prixLivreFige` jamais atteint | false | rejet | Garde défensive pour le typage, inoffensive. |
+

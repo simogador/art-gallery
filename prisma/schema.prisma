@@ -28,6 +28,7 @@ model Artist {
   active      Boolean   @default(true)
   artworks    Artwork[]
   invitations Invitation[]
+  commandes   Commande[]
   userId      String?   @unique
   user        User?     @relation(fields: [userId], references: [id])
   // Story 2.7 (FR-16) : date de signature de l'accord écrit, enregistrée par l'équipe ; sans elle,
@@ -74,6 +75,7 @@ model Artwork {
   declarationsDisponibilite DeclarationDisponibilite[]
   demandesVisite    DemandeVisite[]
   inscriptionsPrevenir InscriptionPrevenir[]
+  lignesCommande    LigneCommande[]
   // Story 2.6 (FR-20) : visites en atelier (null : pas encore renseignée), trois engagements de
   // l'artiste et date d'envoi en curation (ordre de la file, story 2.7). Écrits seulement par curation.
   visitesAtelier       Boolean?
@@ -485,4 +487,111 @@ model CompteurChoixMesure {
   nombre Int         @default(0)
 
   @@id([jour, choix])
+}
+
+// ── Commandes (FR-10, AD-12, AR-10, story 6.1) ──────────────────────────────
+// Écrites seulement par le module commandes. Un passage en caisse = un acheteur sans compte, un pays de
+// livraison, une devise ; il produit une commande par artiste, aux montants figés en centimes (copiés
+// de `livraison` à la création, insensibles à un changement ultérieur de tarif, de slug ou de titre).
+// Contraintes CHECK écrites à la main dans la migration (Prisma ne les décrit pas).
+
+enum EtatCommande {
+  en_attente_paiement
+  confirmee
+  annulee
+  // Ancienne commande (table Order) recopiée : sans ligne figée, hors des sommes dues.
+  historique
+}
+
+model PassageEnCaisse {
+  id            String               @id @default(cuid())
+  paysLivraison String               @db.VarChar(2)
+  devise        String               @db.VarChar(3)
+  coordonnees   CoordonneesAcheteur?
+  commandes     Commande[]
+  paiements     Paiement[]
+  createdAt     DateTime             @default(now()) @db.Timestamptz(3)
+}
+
+// Coordonnées de l'acheteur sans compte : jamais dans User, jamais dans les journaux.
+model CoordonneesAcheteur {
+  id        String          @id @default(cuid())
+  passage   PassageEnCaisse @relation(fields: [passageId], references: [id], onDelete: Cascade)
+  passageId String          @unique
+  email     String
+  nom       String
+  adresse   String?         @db.Text
+  telephone String?
+  createdAt DateTime        @default(now()) @db.Timestamptz(3)
+}
+
+model Commande {
+  id                        String           @id @default(cuid())
+  // Numéro lisible (« ERR-7K4M-9Q2X »), produit par le seul générateur de commandes.
+  numero                    String           @unique
+  passage                   PassageEnCaisse? @relation(fields: [passageId], references: [id], onDelete: Restrict)
+  passageId                 String?
+  artist                    Artist?          @relation(fields: [artistId], references: [id], onDelete: Restrict)
+  artistId                  String?
+  etat                      EtatCommande     @default(en_attente_paiement)
+  devise                    String           @db.VarChar(3)
+  lignes                    LigneCommande[]
+  // Commande historique seulement (recopie d'Order, scripts/sql/recopier-anciennes-commandes.sql).
+  ordreHistoriqueId         String?          @unique
+  montantHistoriqueCentimes Int?
+  slugsHistoriques          String?          @db.Text
+  emailHistorique           String?
+  stripeSessionId           String?
+  stripePaymentIntentId     String?
+  createdAt                 DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime         @updatedAt @db.Timestamptz(3)
+
+  @@index([passageId])
+  @@index([artistId, etat])
+}
+
+// Ligne figée : instantané de l'œuvre (slug, titre), de son prix, des frais, de la zone et du délai.
+model LigneCommande {
+  id            String   @id @default(cuid())
+  commande      Commande @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  commandeId    String
+  // L'œuvre peut disparaître : la ligne garde son instantané.
+  artwork       Artwork? @relation(fields: [artworkId], references: [id], onDelete: SetNull)
+  artworkId     String?
+  slug          String
+  titre         String
+  prixCentimes  Int
+  fraisCentimes Int
+  totalCentimes Int
+  devise        String   @db.VarChar(3)
+  zoneId        String
+  zoneNom       String
+  delaiMinJours Int
+  delaiMaxJours Int
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([commandeId])
+  @@index([artworkId])
+}
+
+enum EtatPaiement {
+  ouvert
+  constate
+  abandonne
+}
+
+// Minimal (décision du porteur du 2026-11-11) : la story 6.4 y ajoute les ports et le constat.
+model Paiement {
+  id               String          @id @default(cuid())
+  passage          PassageEnCaisse @relation(fields: [passageId], references: [id], onDelete: Restrict)
+  passageId        String
+  source           String
+  referenceExterne String
+  montantCentimes  Int
+  etat             EtatPaiement    @default(ouvert)
+  createdAt        DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime        @updatedAt @db.Timestamptz(3)
+
+  @@unique([source, referenceExterne])
+  @@index([passageId])
 }

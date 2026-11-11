@@ -219,4 +219,15 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-5-me-prevenir.md`
   summary: Relancer la suppression des inscriptions d'une œuvre vendue quand le gestionnaire a échoué.
   evidence: pas de balayage des échecs (AQ-2 ouverte) ; la fonction est idempotente mais rien ne la rejoue.
-
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-1-passage-en-caisse-et-commandes.md`
+  summary: Contrôler la disponibilité et verrouiller la ligne des œuvres à la création d'un passage en caisse.
+  evidence: `creerPassageEnCaisse` filtre sur `VISIBLE` seulement : une œuvre vendue ou réservée peut entrer dans une commande, et deux passages simultanés réussissent ; la spec 6.1 renvoie cela à la 6.2.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-1-passage-en-caisse-et-commandes.md`
+  summary: Tester le nouvel essai sur collision de numéro (`P2002`) à l'écriture.
+  evidence: la boucle de nouvel essai de `passage.ts` n'est exercée par aucun test ; course improbable mais non prouvée.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-1-passage-en-caisse-et-commandes.md`
+  summary: Confirmer avec le porteur si l'adresse postale de l'acheteur est obligatoire pour une commande à expédier.
+  evidence: `adresse` est facultative dans `CoordonneesAcheteur` (la matrice ne l'exige pas) ; à trancher avec le premier écran de la 6.3.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-1-passage-en-caisse-et-commandes.md`
+  summary: Gérer la suppression d'un artiste qui a des commandes (réponse 409 au lieu de 500).
+  evidence: `DELETE /api/admin/artistes/[id]` ne rattrape pas l'erreur de clé étrangère `Restrict` de `Commande.artistId`.

@@ -260,17 +260,73 @@ export async function derniereOeuvreAvecOffres(
 // Le pays est toujours passé par l'appelant (cookie `pays` lu par la page, `lirePays`).
 
 /** Prix livré d'une œuvre vers un pays (code ISO) ; pays inconnu ou sans zone : non livrée. */
-export async function prixLivre(oeuvre: OeuvreAPrix & { id: string }, codePays: string): Promise<PrixLivre> {
-  if (oeuvre.prixCentimes === null) return calculerPrixLivre(oeuvre, false, null)
-  const zone = await prisma.zonePays.findUnique({ where: { codePays }, select: { zoneId: true } })
-  if (!zone) return calculerPrixLivre(oeuvre, false, null)
-  const offre = await prisma.offreLivraison.findUnique({
-    where: { artworkId_zoneId: { artworkId: oeuvre.id, zoneId: zone.zoneId } },
+export async function prixLivre(
+  oeuvre: OeuvreAPrix & { id: string },
+  codePays: string,
+  tx: Prisma.TransactionClient = prisma,
+): Promise<PrixLivre> {
+  return (await prixLivreAvecZone(oeuvre, codePays, tx)).prix
+}
+
+/**
+ * Valeurs à figer dans une commande (story 6.1) : prix livré, avec le prix de l'œuvre seul, les frais, la
+ * zone (id et nom) et le délai (préparation + transport). Même règle que `prixLivre`, lue dans la
+ * transaction de l'appelant ; l'appelant ne calcule rien.
+ */
+export type PrixLivreFige =
+  | {
+      livree: true
+      prixCentimes: number
+      fraisCentimes: number
+      totalCentimes: number
+      devise: string
+      zoneId: string
+      zoneNom: string
+      delaiMinJours: number
+      delaiMaxJours: number
+    }
+  | { livree: false; raison: RaisonNonLivree }
+
+export async function prixLivreFige(
+  tx: Prisma.TransactionClient,
+  oeuvre: OeuvreAPrix & { id: string },
+  codePays: string,
+): Promise<PrixLivreFige> {
+  const { prix, zone } = await prixLivreAvecZone(oeuvre, codePays, tx)
+  if (!prix.livree || !zone || oeuvre.prixCentimes === null) {
+    return { livree: false, raison: prix.livree ? 'pas_de_zone' : prix.raison }
+  }
+  return {
+    livree: true,
+    prixCentimes: oeuvre.prixCentimes,
+    fraisCentimes: prix.fraisCentimes,
+    totalCentimes: prix.totalCentimes,
+    devise: prix.devise,
+    zoneId: zone.id,
+    zoneNom: zone.nom,
+    delaiMinJours: prix.delaiMinJours,
+    delaiMaxJours: prix.delaiMaxJours,
+  }
+}
+
+async function prixLivreAvecZone(
+  oeuvre: OeuvreAPrix & { id: string },
+  codePays: string,
+  tx: Prisma.TransactionClient,
+): Promise<{ prix: PrixLivre; zone: { id: string; nom: string } | null }> {
+  if (oeuvre.prixCentimes === null) return { prix: calculerPrixLivre(oeuvre, false, null), zone: null }
+  const lien = await tx.zonePays.findUnique({
+    where: { codePays },
+    select: { zoneId: true, zone: { select: { nom: true } } },
+  })
+  if (!lien) return { prix: calculerPrixLivre(oeuvre, false, null), zone: null }
+  const offre = await tx.offreLivraison.findUnique({
+    where: { artworkId_zoneId: { artworkId: oeuvre.id, zoneId: lien.zoneId } },
     select: {
       livree: true, fraisCentimes: true, devise: true, preparationJours: true, transportMinJours: true, transportMaxJours: true,
     },
   })
-  return calculerPrixLivre(oeuvre, true, offre)
+  return { prix: calculerPrixLivre(oeuvre, true, offre), zone: { id: lien.zoneId, nom: lien.zone.nom } }
 }
 
 /**
