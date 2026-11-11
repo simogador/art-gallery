@@ -2,7 +2,7 @@
 title: 'Story 6.2 — Réservation en bloc sans double vente'
 type: 'feature'
 created: '2026-11-11'
-status: 'in-review'
+status: 'done'
 baseline_commit: '2e23406dfa708ab943124d0fa0caf125c8e3fbe4'
 route: 'dispatch'
 review_loop_iteration: 0
