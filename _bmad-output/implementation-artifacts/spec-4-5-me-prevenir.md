@@ -3,7 +3,7 @@ title: 'Story 4.5 — « Me prévenir » sur une œuvre réservée'
 type: 'feature'
 created: '2026-11-10'
 baseline_commit: 'c84a7f0b4248268b5a17b18aefa1dbc971060ab7'
-status: 'in-review'
+status: 'done'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-4-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-4-3-demande-de-visite.md']
