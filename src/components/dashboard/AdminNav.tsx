@@ -9,6 +9,7 @@ const NAV = [
   { href: '/dashboard/admin/artistes',     label: 'Artistes',        icon: UserIcon,   exact: false },
   { href: '/dashboard/admin/oeuvres',      label: 'Œuvres',          icon: GridIcon,   exact: false },
   { href: '/dashboard/admin/demandes',     label: 'Demandes',        icon: InboxIcon,  exact: false },
+  { href: '/dashboard/admin/commandes',    label: 'Vente assistée',  icon: InboxIcon,  exact: false },
   { href: '/dashboard/admin/ouverture',    label: 'Ouverture',       icon: MegaphoneIcon, exact: false },
   { href: '/dashboard/admin/zones',        label: 'Zones',           icon: GlobeIcon,  exact: false },
   { href: '/dashboard/admin/utilisateurs', label: 'Utilisateurs',    icon: UsersIcon,  exact: false },

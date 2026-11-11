@@ -237,3 +237,24 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-2-reservation-en-bloc-sans-double-vente.md`
   summary: Convertir une erreur `P2002` de l'index unique partiel des réservations en refus typé.
   evidence: le filet n'est jamais atteint sous le verrou de ligne ; il lèverait l'erreur brute s'il l'était.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-3-vente-assistee-reserver-et-envoyer-le-lien.md`
+  summary: Libérer une réservation de vente assistée (issue `liberee`, qui, quand, lien inactif) et afficher la vue des réservations en cours et le journal des terminées.
+  evidence: découpage décidé par le porteur le 2026-11-11 (1B) : la 6.3 ne pose que la réservation, l'e-mail et la page de l'acheteur.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-3-vente-assistee-reserver-et-envoyer-le-lien.md`
+  summary: Rattacher la commande à la demande de visite ou de sélection d'origine (FR-28), automatiquement quand la réservation est posée depuis la demande ; choisir le propriétaire de la table de rattachement (`demandes` ou colonne de `Reservation`).
+  evidence: même découpage ; décision structurante de modèle de données, à poser au porteur avant d'écrire.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-3-vente-assistee-reserver-et-envoyer-le-lien.md`
+  summary: Renvoyer le lien quand l'e-mail de la vente assistée n'est pas parti.
+  evidence: sans libération (story suivante), une réservation posée dont l'e-mail a échoué ne peut être relancée que par l'équipe hors de l'application.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-3-vente-assistee-reserver-et-envoyer-le-lien.md`
+  summary: Basculer les pages d'administration des commandes de `Order` vers `Commande` ; traiter la suppression d'un artiste ayant une commande (clé `Restrict`).
+  evidence: décision du porteur du 2026-11-11 (4A) : la lecture des commandes arrive avec le constat de paiement (6.4).
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-3-vente-assistee-reserver-et-envoyer-le-lien.md`
+  summary: Permettre à l'équipe de révoquer le lien d'une commande déjà envoyé (mauvaise adresse) et retirer de la page de l'acheteur une œuvre libérée ensuite.
+  evidence: revue 6.3 : la révocation ne se fait aujourd'hui que sur échec d'envoi ; à traiter avec la libération.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-3-vente-assistee-reserver-et-envoyer-le-lien.md`
+  summary: Tester que `/dashboard/admin/commandes` redirige un non-admin.
+  evidence: seule l'écriture est testée (`acces_refuse`) ; la visibilité de la page ne l'est pas.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-3-vente-assistee-reserver-et-envoyer-le-lien.md`
+  summary: Laisser passer `/commande` (page et échange du lien) pendant la maintenance : modifier `passeLaMaintenance` de `src/lib/reglages` et le middleware, sans lever la maintenance ; première tâche de la story suivante.
+  evidence: décision du porteur du 2026-11-11 (« B, dans la story suivante ») : sans cela le lien de l'acheteur mène à la page de maintenance tant que `MAINTENANCE_MODE` est actif.

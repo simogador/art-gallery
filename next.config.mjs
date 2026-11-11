@@ -17,6 +17,8 @@ const nextConfig = {
       { source: '/auth/desinscription/:path*', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
       // Story 4.5 : de même pour le lien de désinscription de l'alerte « Me prévenir ».
       { source: '/auth/desinscription-alerte/:path*', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
+      // Story 6.3 : le lien de la commande d'une vente assistée (`/commande` couvre aussi la page sans jeton).
+      { source: '/commande/:path*', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
     ]
   },
   experimental: {

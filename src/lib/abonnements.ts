@@ -65,4 +65,6 @@ export const ABONNEMENTS: { [N in NomEvenement]: Abonnement<N>[] } = {
   ],
   // Story 4.5 : e-mail de confirmation avec lien de désinscription (rien d'autre n'est envoyé aux inscrits).
   InscriptionPrevenirRecue: [{ nom: 'envoyerConfirmationPrevenir', gestionnaire: via('envoyerConfirmationPrevenir') }],
+  // Story 6.3 : le lien de la commande part par e-mail, émis à l'envoi (un seul e-mail par événement).
+  VenteAssisteePosee: [{ nom: 'envoyerLienVenteAssistee', gestionnaire: via('envoyerLienVenteAssistee') }],
 }

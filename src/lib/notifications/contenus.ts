@@ -200,3 +200,16 @@ export function contenuConfirmationPrevenir(p: { titre: string; lienDesinscripti
     lienSecondaire: { intro: t.desinscription, lien: p.lienDesinscription },
   })
 }
+
+/** E-mail du lien de la commande d'une vente assistée (story 6.3) : échéance en heure fixe, jamais de compte à rebours. */
+export function contenuVenteAssistee(p: { nom: string; lien: string; echeance: Date }): Contenu {
+  const t = fr.courriels.venteAssistee
+  return assembler({
+    sujet: t.sujet,
+    nom: p.nom,
+    intro: [t.intro, t.reserveJusqua(formaterDateHeure(p.echeance))],
+    bouton: { libelle: t.bouton, lien: p.lien },
+    suite: [t.paiement, t.lienPersonnel],
+    lienEnClair: p.lien,
+  })
+}

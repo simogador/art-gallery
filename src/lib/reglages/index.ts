@@ -122,6 +122,11 @@ export const DELAI_ANNULATION_DECLARATION_MINUTES = 15
 export const DUREE_RESERVATION_PAIEMENT_MINUTES = 30
 export const PLAFONDS_RESERVATION = { parEmail: 3, parAppareil: 3 } as const
 
+// Vente assistée (story 6.3, FR-12) : durée de la réservation posée par l'équipe (48 h par défaut,
+// réglable à la pose entre ces bornes) ; le lien envoyé à l'acheteur vit autant que la réservation.
+export const DUREE_RESERVATION_VENTE_ASSISTEE_HEURES = 48
+export const LIMITES_RESERVATION_VENTE_ASSISTEE_HEURES = { min: 1, max: 336 } as const
+
 // Format d'une œuvre sur la fiche (story 3.5, décision du porteur du 2026-11-07) : selon le plus
 // grand côté (hauteur ou largeur), petit < 40 cm, grand > 100 cm, moyen entre les deux (bornes
 // incluses). Changer un seuil = une PR (ni écran d'administration, ni migration).

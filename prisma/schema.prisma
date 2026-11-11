@@ -422,6 +422,7 @@ enum UsageJeton {
   invitation
   desinscription
   desinscription_alerte
+  commande_assistee
 }
 
 model Jeton {
