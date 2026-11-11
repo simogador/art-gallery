@@ -2,7 +2,7 @@
 title: 'Story 6.1 — Passage en caisse et commandes par artiste, aux montants figés'
 type: 'feature'
 created: '2026-11-11'
-status: 'in-review'
+status: 'done'
 baseline_commit: '455e768a8f89d893079a1f337545456f53981db9'
 route: 'dispatch'
 review_loop_iteration: 0
