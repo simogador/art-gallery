@@ -62,15 +62,24 @@ async function numerosLibres(tx: Prisma.TransactionClient, n: number, generer: (
 /**
  * Crée le passage en caisse. Tout est refusé (rien d'écrit) ou tout est écrit : liste vide, coordonnées
  * invalides, œuvre non visible ou sans prix (`oeuvre_indisponible`), devises mélangées, œuvre non
- * livrée vers le pays (`non_livree`, avec la raison de `livraison`).
+ * livrée vers le pays (`non_livree`, avec la raison de `livraison`). Avec `tx` (story 6.3), l'écriture
+ * se fait dans la transaction de l'appelant, qui annule tout si une étape suivante refuse.
  */
-export async function creerPassageEnCaisse(entree: EntreePassage, options: Options = {}): Promise<ResultatPassage> {
+export async function creerPassageEnCaisse(
+  entree: EntreePassage,
+  options: Options = {},
+  tx?: Prisma.TransactionClient,
+): Promise<ResultatPassage> {
   const slugs = [...new Set(entree.oeuvres.filter((s): s is string => typeof s === 'string' && s !== ''))]
   if (slugs.length === 0) return { ok: false, code: 'liste_vide' }
   const coordonnees = validerCoordonnees(entree.coordonnees)
   if (!coordonnees.ok) return { ok: false, code: 'coordonnees_invalides', erreurs: coordonnees.erreurs }
   const pays = typeof entree.pays === 'string' ? entree.pays.trim().toUpperCase() : ''
   const generer = options.generateur ?? genererNumero
+
+  // Dans la transaction de l'appelant (AD-3, story 6.3) : pas de nouvel essai ici, une erreur de numéro
+  // y annulerait la transaction entière ; l'appelant décide.
+  if (tx) return ecrirePassage(tx, slugs, pays, coordonnees.valeur, generer)
 
   for (let essai = 1; ; essai++) {
     try {

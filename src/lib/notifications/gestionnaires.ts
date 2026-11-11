@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { abandonnerConfirmationPrevenir, preparerConfirmationPrevenir, retirerInscriptionsPrevenirSiSortie } from '@/lib/demandes'
+import { abandonnerLienVenteAssistee, preparerLienVenteAssistee } from '@/lib/commandes/vente-assistee'
 import { emettreLienInvitation, noterEnvoiInvitation } from '@/lib/acces/lien-invitation'
 import type { EvenementLuA } from '@/lib/evenements/catalogue'
 import { CONTACT_EQUIPE, urlAbsolue } from '@/lib/reglages'
@@ -13,6 +14,7 @@ import {
   contenuInvitation,
   contenuOeuvreRenvoyee,
   contenuOeuvreValidee,
+  contenuVenteAssistee,
 } from './contenus'
 import type { Courriel, ResultatEnvoi } from './port'
 
@@ -225,5 +227,37 @@ export async function retirerInscriptionsPrevenir(evenement: EvenementLuA<'Dispo
   const supprimees = await retirerInscriptionsPrevenirSiSortie(artworkId)
   if (supprimees > 0) {
     console.info('[notifications] inscriptions « Me prévenir » supprimées', { evenement: evenement.id, artwork: artworkId, nombre: supprimees })
+  }
+}
+
+/**
+ * Vente assistée posée (story 6.3, AD-14) : émet le lien de la commande à l'envoi, envoie l'e-mail à
+ * l'acheteur (adresse lue en base). Un échec d'envoi révoque le lien (un échec de préparation annule sa
+ * transaction : aucun jeton n'existe, la répartition le journalise, ids seulement) :
+ * la réservation reste posée, l'équipe voit « L'e-mail n'est pas parti » et relance autrement.
+ */
+export async function envoyerLienVenteAssistee(evenement: EvenementLuA<'VenteAssisteePosee'>): Promise<void> {
+  const { passageId } = evenement.charge
+  const lien = await preparerLienVenteAssistee(passageId)
+  if (!lien) {
+    console.info('[notifications] vente assistée sans objet, aucun e-mail', { evenement: evenement.id, passage: passageId })
+    return
+  }
+  let resultat: ResultatEnvoi = { ok: false, code: 'indisponible' }
+  try {
+    const contenu = contenuVenteAssistee({ nom: lien.nom, lien: urlAbsolue(`/commande/${lien.jeton}`), echeance: lien.echeance })
+    resultat = await envoyer({ a: lien.email, ...contenu, cle: `${evenement.id}:envoyerLienVenteAssistee` })
+  } finally {
+    // Même si la construction ou l'envoi a échoué : le lien émis ne reste pas valable sans e-mail.
+    if (!resultat.ok) {
+      try {
+        await abandonnerLienVenteAssistee(passageId)
+      } catch {
+        console.error('[notifications] lien de vente assistée non révoqué', { evenement: evenement.id, passage: passageId })
+      }
+    }
+  }
+  if (!resultat.ok) {
+    console.error('[notifications] lien de vente assistée non envoyé', { evenement: evenement.id, passage: passageId, code: resultat.code })
   }
 }

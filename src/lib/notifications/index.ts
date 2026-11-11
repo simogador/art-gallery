@@ -9,6 +9,7 @@ export {
   envoyerAccuseVisite,
   envoyerConfirmationPrevenir,
   envoyerInvitation,
+  envoyerLienVenteAssistee,
   envoyerResultatCuration,
   retirerInscriptionsPrevenir,
 } from './gestionnaires'

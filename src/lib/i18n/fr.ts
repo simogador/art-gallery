@@ -371,6 +371,54 @@ export type Dictionnaire = {
       readonly indisponible: string
     }
   }
+  /** Vente assistée de l'équipe, `/dashboard/admin/commandes` (story 6.3, FR-12). */
+  readonly venteAssistee: {
+    readonly titre: string
+    readonly titrePage: string
+    readonly introduction: string
+    readonly champs: {
+      readonly email: string
+      readonly nom: string
+      readonly pays: string
+      readonly oeuvres: string
+      readonly oeuvresAide: string
+      readonly heures: string
+      readonly heuresAide: (defaut: number) => string
+    }
+    readonly erreurs: { readonly oeuvresManquantes: string; readonly heuresInvalides: string }
+    readonly resume: (n: number) => string
+    readonly envoyer: string
+    readonly envoiEnCours: string
+    readonly succes: (email: string, echeance: string) => string
+    readonly emailNonParti: string
+    readonly refus: {
+      readonly acces_refuse: string
+      readonly liste_vide: string
+      readonly monnaies_differentes: string
+      readonly plafond_atteint: string
+      readonly invalide: string
+      readonly coordonnees_invalides: string
+      readonly oeuvre_indisponible: (slug: string) => string
+      readonly non_livree: (slug: string) => string
+      readonly indisponible: string
+    }
+  }
+  /** Page publique de la commande d'une vente assistée, `/commande` (story 6.3). */
+  readonly commande: {
+    readonly titrePage: string
+    readonly titre: string
+    readonly reserveJusqua: (echeance: string) => string
+    readonly numero: (numero: string) => string
+    readonly livraison: (pays: string) => string
+    readonly prix: string
+    readonly frais: string
+    readonly total: string
+    readonly delai: (min: number, max: number) => string
+    readonly droitsNonInclus: string
+    readonly paiement: string
+    readonly panne: string
+    readonly inactif: { readonly titre: string; readonly texte: string }
+  }
   /** Annonce de l'ouverture, `/dashboard/admin/ouverture` (story 4.9, FR-35). */
   readonly ouverture: {
     readonly titre: string
@@ -516,6 +564,14 @@ export type Dictionnaire = {
       readonly bouton: string
       readonly suite: string
       readonly desinscription: string
+    }
+    readonly venteAssistee: {
+      readonly sujet: string
+      readonly intro: string
+      readonly reserveJusqua: (echeance: string) => string
+      readonly bouton: string
+      readonly paiement: string
+      readonly lienPersonnel: string
     }
     readonly confirmationPrevenir: {
       readonly sujet: (titre: string) => string
@@ -1025,6 +1081,61 @@ export const fr = {
       indisponible: 'Les inscriptions « Me prévenir » ne se sont pas chargées. Rechargez la page dans un instant.',
     },
   },
+  venteAssistee: {
+    titre: 'Vente assistée',
+    titrePage: 'Vente assistée — Admin Errancy',
+    introduction:
+      'Réservez des œuvres pour un acheteur après un conseil ou une visite. Il reçoit par e-mail le lien de sa commande ; vous lui transmettez le moyen de paiement.',
+    champs: {
+      email: 'E-mail de l’acheteur',
+      nom: 'Nom de l’acheteur',
+      pays: 'Pays de livraison',
+      oeuvres: 'Œuvres (un identifiant par ligne)',
+      oeuvresAide: 'L’identifiant est la fin de l’adresse de la fiche : pour /galerie/mon-oeuvre, saisissez mon-oeuvre.',
+      heures: 'Durée de la réservation (heures)',
+      heuresAide: (defaut: number) => `${defaut} heures si vous laissez la valeur proposée.`,
+    },
+    erreurs: {
+      oeuvresManquantes: 'Indiquez au moins une œuvre.',
+      heuresInvalides: 'Indiquez un nombre entier d’heures.',
+    },
+    resume: (n: number) => (n > 1 ? `${n} champs sont à corriger.` : '1 champ est à corriger.'),
+    envoyer: 'Réserver et envoyer le lien',
+    envoiEnCours: 'Réservation…',
+    succes: (email: string, echeance: string) => `Les œuvres sont réservées jusqu’au ${echeance}. Le lien est parti à ${email}.`,
+    emailNonParti:
+      'Les œuvres sont réservées, mais l’e-mail n’est pas parti : l’acheteur n’a pas de lien. Prévenez-le autrement.',
+    refus: {
+      acces_refuse: 'Seule l’équipe peut réserver pour un acheteur.',
+      liste_vide: 'Indiquez au moins une œuvre.',
+      monnaies_differentes: 'Ces œuvres sont vendues dans des monnaies différentes : faites une réservation par monnaie.',
+      plafond_atteint: 'Le plafond de réservations est atteint.',
+      invalide: 'La saisie n’est pas valide. Vérifiez la durée de la réservation.',
+      coordonnees_invalides: 'Les coordonnées de l’acheteur sont à corriger.',
+      oeuvre_indisponible: (slug: string) => `L’œuvre « ${slug} » n’est pas disponible : rien n’a été réservé.`,
+      non_livree: (slug: string) => `L’œuvre « ${slug} » n’est pas livrée vers ce pays : rien n’a été réservé.`,
+      indisponible: 'La réservation n’a pas pu être faite. Réessayez dans un instant.',
+    },
+  },
+  commande: {
+    titrePage: 'Votre commande — Errancy',
+    titre: 'Votre commande',
+    reserveJusqua: (echeance: string) => `Vos œuvres sont réservées jusqu’au ${echeance} (heure de Paris).`,
+    numero: (numero: string) => `Commande ${numero}`,
+    livraison: (pays: string) => `Livraison vers ${pays}`,
+    prix: 'Œuvre',
+    frais: 'Livraison',
+    total: 'Total',
+    delai: (min: number, max: number) =>
+      min === max ? `Livrée sous ${min} jour${min > 1 ? 's' : ''}` : `Livrée sous ${min} à ${max} jours`,
+    droitsNonInclus: 'Droits et taxes d’import éventuels non inclus',
+    paiement: 'L’équipe Errancy vous transmet le moyen de paiement. Rien n’est à régler depuis cette page.',
+    panne: 'Nous n’avons pas pu charger votre commande. Réessayez dans un instant.',
+    inactif: {
+      titre: 'Ce lien n’est plus actif',
+      texte: 'La réservation est terminée ou ce lien n’est plus valable. Écrivez-nous : nous vous aidons à retrouver votre sélection.',
+    },
+  },
   ouverture: {
     titre: 'Annoncer l’ouverture',
     titrePage: 'Annoncer l’ouverture — Admin Errancy',
@@ -1136,6 +1247,14 @@ export const fr = {
       bouton: 'Découvrir Errancy',
       suite: 'Nous supprimons votre adresse de notre liste : vous ne recevrez pas d’autre message de ce type.',
       desinscription: 'Pour confirmer que votre adresse n’est plus conservée, ouvrez ce lien :',
+    },
+    venteAssistee: {
+      sujet: 'Votre sélection est réservée',
+      intro: 'Comme convenu, l’équipe d’Errancy a réservé pour vous les œuvres de votre sélection.',
+      reserveJusqua: (echeance: string) => `Elles vous sont réservées jusqu’au ${echeance} (heure de Paris).`,
+      bouton: 'Voir ma commande',
+      paiement: 'L’équipe vous transmet par ailleurs le moyen de paiement.',
+      lienPersonnel: 'Ce lien est personnel : il donne accès au récapitulatif de votre commande jusqu’à la fin de la réservation.',
     },
     confirmationPrevenir: {
       sujet: (titre: string) => `Nous vous prévenons pour « ${titre} »`,

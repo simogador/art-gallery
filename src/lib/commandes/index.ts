@@ -12,6 +12,21 @@ export {
   type RefusPassage,
   type ResultatPassage,
 } from './passage'
+export {
+  abandonnerLienVenteAssistee,
+  heuresValides,
+  lireLienVenteAssistee,
+  lireRecapitulatifAssiste,
+  poserVenteAssistee,
+  preparerLienVenteAssistee,
+  type CommandeRecapitulatif,
+  type LienVenteAssistee,
+  type LigneRecapitulatif,
+  type Recapitulatif,
+  type RefusVenteAssistee,
+  type ResultatVenteAssistee,
+  type SaisieVenteAssistee,
+} from './vente-assistee'
 export { ETAT_INITIAL, ETATS_COMMANDE, TRANSITIONS, transitionPermise, type EtatCommande } from './etats'
 export { ALPHABET_NUMERO, FORME_NUMERO, PREFIXE_NUMERO, genererNumero } from './numero'
 export {

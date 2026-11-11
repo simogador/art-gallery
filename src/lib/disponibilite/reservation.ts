@@ -249,3 +249,19 @@ export async function libererReservationsEchues(maintenant: Date = new Date(), t
     return libererLignes(t, echues, 'expiree', maintenant)
   })
 }
+
+/**
+ * Réservations encore actives d'un passage (issue vide), échues ou non : lecture seule, sans contrôle
+ * d'acteur (l'appelant le fait). Story 6.3 : le lien de la vente assistée et sa page en dépendent.
+ */
+export async function reservationsActivesDuPassage(
+  passageId: string,
+  tx: Prisma.TransactionClient = prisma,
+): Promise<{ artworkId: string; origine: OrigineReservation; echeance: Date }[]> {
+  if (typeof passageId !== 'string' || passageId === '') return []
+  return tx.reservation.findMany({
+    where: { passageId, issue: null },
+    select: { artworkId: true, origine: true, echeance: true },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  })
+}

@@ -341,6 +341,7 @@ export {
   libererReservation,
   libererReservationsEchues,
   reserverOeuvres,
+  reservationsActivesDuPassage,
   type EntreeReservation,
   type ReservationPosee,
   type ResultatLiberation,
