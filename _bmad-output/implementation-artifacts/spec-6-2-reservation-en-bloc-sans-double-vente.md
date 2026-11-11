@@ -2,7 +2,8 @@
 title: 'Story 6.2 — Réservation en bloc sans double vente'
 type: 'feature'
 created: '2026-11-11'
-status: 'draft'
+status: 'in-review'
+baseline_commit: '2e23406dfa708ab943124d0fa0caf125c8e3fbe4'
 route: 'dispatch'
 review_loop_iteration: 0
 context: ['{project-root}/_bmad-output/implementation-artifacts/epic-6-context.md', '{project-root}/_bmad-output/implementation-artifacts/spec-6-1-passage-en-caisse-et-commandes.md']
@@ -53,6 +54,26 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-6-context.m
 - Une réservation échue mais non libérée reste affichée « réservée » jusqu'à la prochaine tentative de réservation ou jusqu'au balayage de la story 6.7 ; les pages publiques et le catalogue ne changent pas.
 
 </frozen-after-approval>
+
+## Review Triage Log
+
+Passe 1 (trois relecteurs : aveugle, cas limites, lacunes de vérification).
+
+| Constat | Verdict | Route | Preuve |
+|---|---|---|---|
+| Réservation échue du même passage prise pour « déjà faite » (échéance périmée, œuvre déclarée vendue ailleurs ou retirée entre-temps) | medium | patch | La branche « même passage » ne contrôle ni `estEchue` ni l'état de l'œuvre. Corrigée : renouvelée si échue, refusée si l'œuvre n'est plus `reservee`. |
+| Plafond contournable en rappelant le même passage avec d'autres slugs | medium | patch | `compter` exclut son propre passage. Filtre retiré, test ajouté. |
+| E-mail ou appareil d'espaces seulement : empreinte commune | low | patch | Normalisé à vide mais traité comme présent. Empreinte seulement si non vide. |
+| Répartition des événements sans `tx` non testée | medium | patch | Supprimer `repartirApresValidation` ne fait échouer aucun test. Test sur `TraitementEvenement`. |
+| E-mail peu normalisé (`a+1@x`), empreinte d'appareil sans fabricant, rejeu avec autre échéance, filet de l'index brut | low | patch (documentation) | Limites connues ajoutées à `AGENTS.md`. |
+| Concurrence du plafond par appareil non testée | low | defer | Même code de verrou que l'e-mail, testé ; aucun consommateur avant la 6.3. |
+| Erreur `P2002` de l'index partiel non convertie en refus typé | low | defer | Filet jamais atteint sous le verrou de ligne ; couvert par les tests de concurrence. |
+| Sel `AUTH_SECRET ?? ''` | false | rejet | Même convention que `demandes` (sélection, visite, « Me prévenir »). |
+| `repartirApresValidation` qui lève après commit | false | rejet | La fonction journalise et ne lève jamais (`try/catch`). |
+| `origine` hors énumération à l'exécution, `passageId` vide à la libération | low | rejet | Appelants typés ; corrections = branches de plus sans cas atteignable. |
+| Lecture des actives avant verrou dans `libererReservation` | low | rejet | `updateMany … issue: null` rend la fermeture sûre ; une réservation créée en concurrence est fermée au tirage suivant. |
+| Index sur `echeance`, énumérations triplées, hygiène du schéma, relation `Artwork.reservations` | low | rejet | Volume faible, aucun dommage nommé ; la relation est exigée par Prisma. |
+| Statut de suivi `in-progress` contre `in-review` | false | rejet | `sprint-status` passe à `review` à la présentation, comme pour la 6.1. |
 
 ## Code Map
 

@@ -335,3 +335,14 @@ export async function derniereDeclaration(
   return (await dernieresDeclarations(acteur, [slug], maintenant)).get(slug) ?? null
 }
 
+
+// ── Story 6.2 (FR-12, AD-7) : réservation en bloc sans double vente ──────────────────────────
+export {
+  libererReservation,
+  libererReservationsEchues,
+  reserverOeuvres,
+  type EntreeReservation,
+  type ReservationPosee,
+  type ResultatLiberation,
+  type ResultatReservation,
+} from './reservation'

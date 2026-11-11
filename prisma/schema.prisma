@@ -1,6 +1,7 @@
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -43,6 +44,7 @@ model Artist {
 
 model Artwork {
   id          String             @id @default(cuid())
+  reservations Reservation[]
   slug        String             @unique
   title       String
   year        Int
@@ -594,4 +596,40 @@ model Paiement {
 
   @@unique([source, referenceExterne])
   @@index([passageId])
+}
+
+// Story 6.2 (FR-12, AD-7) : une réservation par œuvre et par passage, active tant que `issue` est
+// vide. Écrite seulement par le module disponibilite. Pas de clé étrangère vers le passage en caisse
+// (autre module) ; empreintes salées de l'e-mail et de l'appareil, jamais l'adresse.
+enum OrigineReservation {
+  paiement
+  vente_assistee
+  priorite
+}
+
+enum IssueReservation {
+  expiree
+  liberee
+  confirmee
+  interrompue
+}
+
+model Reservation {
+  id                String             @id @default(cuid())
+  artwork           Artwork            @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  artworkId         String
+  passageId         String
+  origine           OrigineReservation
+  echeance          DateTime           @db.Timestamptz(3)
+  issue             IssueReservation?
+  issueLe           DateTime?          @db.Timestamptz(3)
+  empreinteEmail    String?
+  empreinteAppareil String?
+  createdAt         DateTime           @default(now()) @db.Timestamptz(3)
+
+  // Une réservation active par œuvre (partialIndexes) : filet sous le verrou de ligne.
+  @@unique([artworkId], where: raw("\"issue\" IS NULL"), map: "Reservation_active_par_oeuvre")
+  @@index([passageId])
+  @@index([empreinteEmail])
+  @@index([empreinteAppareil])
 }

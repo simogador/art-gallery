@@ -231,3 +231,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-1-passage-en-caisse-et-commandes.md`
   summary: Gérer la suppression d'un artiste qui a des commandes (réponse 409 au lieu de 500).
   evidence: `DELETE /api/admin/artistes/[id]` ne rattrape pas l'erreur de clé étrangère `Restrict` de `Commande.artistId`.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-2-reservation-en-bloc-sans-double-vente.md`
+  summary: Tester la concurrence du plafond de réservations par appareil.
+  evidence: seule la concurrence par e-mail est testée ; le verrou consultatif par appareil est le même code, sans consommateur avant la 6.3.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-2-reservation-en-bloc-sans-double-vente.md`
+  summary: Convertir une erreur `P2002` de l'index unique partiel des réservations en refus typé.
+  evidence: le filet n'est jamais atteint sous le verrou de ligne ; il lèverait l'erreur brute s'il l'était.
