@@ -48,12 +48,11 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-6-context.m
 | Déclaration entre-temps | œuvre `vendue_ailleurs` pendant la réservation | libération ou expiration n'y touchent pas | mise à jour conditionnelle |
 | Index absent | migrations appliquées | l'index unique partiel existe | test de CI |
 
+**Decisions (porteur, 2026-11-11):**
+- Plafond de réservations simultanées : 3 œuvres par e-mail et 3 par appareil, appliqué aux seules réservations d'origine `paiement` ; la vente assistée de l'équipe n'est pas limitée.
+- Une réservation échue mais non libérée reste affichée « réservée » jusqu'à la prochaine tentative de réservation ou jusqu'au balayage de la story 6.7 ; les pages publiques et le catalogue ne changent pas.
+
 </frozen-after-approval>
-
-## Open Questions
-
-1. **Quelles valeurs pour le plafond de réservations simultanées, et à qui s'applique-t-il ?** — options : A) 3 œuvres réservées en même temps par e-mail et 3 par appareil, appliqué aux seules réservations d'origine `paiement` (l'équipe réserve sans limite en vente assistée) (recommandé) / B) plafond plus strict, 1 passage à la fois par e-mail et par appareil, à préciser / C) plafond identique pour la vente assistée : l'équipe est aussi limitée par e-mail de l'acheteur.
-2. **Que voit le visiteur quand une réservation est échue mais pas encore libérée ?** — sans balayage (6.7, AQ-2 ouverte), l'œuvre reste affichée « réservée » jusqu'à la prochaine tentative de réservation ; options : A) accepter cet écart, la protection reste exacte (l'échue est libérée dès qu'une nouvelle réservation est tentée) ; la fiche n'est corrigée qu'au balayage (recommandé : aucun appelant public avant l'Epic 7, et la vente assistée a la vue admin de 6.3) / B) faire lire « disponible » aux pages publiques dès l'échéance passée : touche le catalogue, son cache de 60 s et les inscriptions « Me prévenir ».
 
 ## Code Map
 

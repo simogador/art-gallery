@@ -101,6 +101,7 @@
 | 2026-11-10 | Annonce de l'ouverture (story 4.9) : l'adresse d'un contact est supprimée dès que son e-mail d'annonce est accepté (une seule annonce, rien d'autre n'est fait de la liste) ; un envoi d'essai à l'adresse de l'administrateur connecté est proposé avant l'envoi réel | Choix du porteur (spec de la story 4.9) |
 | 2026-11-10 | « Me prévenir » (story 4.5) : jeton de désinscription d'un usage dédié (`desinscription_alerte`) ; ordre d'arrivée calculé d'après la date, sans numéro stocké ; inscriptions supprimées quand l'œuvre est vendue, vendue ailleurs ou retirée | Choix du porteur (spec de la story 4.5) |
 | 2026-11-11 | Passage en caisse et commandes (story 6.1) : table `Paiement` minimale créée dès la 6.1 ; numéro de commande aléatoire du type ERR-7K4M-9Q2X ; chaque ancien `Order` gardé comme commande « historique » sans ligne inventée ni somme due ; lecture d'`Order` basculée dans la story 6.3 | Choix du porteur (spec de la story 6.1) |
+| 2026-11-11 | Réservation en bloc (story 6.2) : plafond de 3 œuvres réservées en même temps par e-mail et 3 par appareil, pour les seules réservations d'origine `paiement` (l'équipe n'est pas limitée en vente assistée) ; une réservation échue reste affichée « réservée » jusqu'à la prochaine tentative de réservation ou au balayage (6.7) | Choix du porteur (spec de la story 6.2) |
 
 ## Conséquences à traiter (relevées le 2026-10-23, à valider en PRD et architecture)
 
