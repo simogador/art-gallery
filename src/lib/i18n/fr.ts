@@ -416,6 +416,16 @@ export type Dictionnaire = {
     readonly erreur: string
     readonly reessayer: string
   }
+  /** Coordonnées de l'acheteur d'un passage en caisse (story 6.1) : messages par champ. */
+  readonly commandes: {
+    readonly erreurs: {
+      readonly emailInvalide: string
+      readonly nomManquant: string
+      readonly nomTropLong: (max: number) => string
+      readonly adresseTropLongue: (max: number) => string
+      readonly telephoneInvalide: string
+    }
+  }
   /** Page `/galerie/[id]/prevenir` : « Me prévenir » sur une œuvre réservée (story 4.5, FR-9). */
   readonly prevenir: {
     readonly titre: string
@@ -929,6 +939,16 @@ export const fr = {
     confirmation: (heures: number) => `Demande reçue. Nous vous répondons sous ${heures} heures.`,
     rappelCreneaux: (fuseau: string) => `Les créneaux proposés (fuseau ${fuseau}) :`,
     confidentialite: 'Vos coordonnées ne servent qu’à organiser la visite.',
+  },
+  // Story 6.1 : coordonnées de l'acheteur d'un passage en caisse.
+  commandes: {
+    erreurs: {
+      emailInvalide: 'Indiquez une adresse e-mail valide.',
+      nomManquant: 'Indiquez le nom de l’acheteur.',
+      nomTropLong: (max: number) => `Le nom ne peut pas dépasser ${max} caractères.`,
+      adresseTropLongue: (max: number) => `L’adresse ne peut pas dépasser ${max} caractères.`,
+      telephoneInvalide: 'Indiquez un numéro de téléphone valide, ou laissez le champ vide.',
+    },
   },
   // Story 4.5 : « Me prévenir » sur une œuvre réservée (FR-9). Jamais d'heure de fin de réservation.
   prevenir: {
