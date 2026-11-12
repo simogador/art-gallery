@@ -1,11 +1,12 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { acteurCourant } from '@/lib/acces'
-import { commandesEnAttenteDeLEquipe, incidentsDeLEquipe, reservationsDeLEquipe } from '@/lib/commandes'
+import { commandesEnAttenteDeLEquipe, incidentsDeLEquipe, remboursementsDeLEquipe, reservationsDeLEquipe } from '@/lib/commandes'
 import { fr, formaterDateHeure, formaterMontant, SEPARATEUR } from '@/lib/i18n'
 import { DUREE_RESERVATION_VENTE_ASSISTEE_HEURES } from '@/lib/reglages'
 import { FormulaireVenteAssistee } from './FormulaireVenteAssistee'
 import { PaiementsEnAttente } from './PaiementsEnAttente'
+import { RemboursementsEquipe } from './RemboursementsEquipe'
 import { ReservationsEquipe } from './ReservationsEquipe'
 
 // Vente assistée (story 6.3, FR-12) : l'équipe réserve des œuvres pour un acheteur identifié et lui
@@ -24,6 +25,7 @@ export default async function AdminCommandesPage() {
   const p = fr.paiement
   const enAttente = await commandesEnAttenteDeLEquipe(acteur).catch(() => undefined)
   const incidents = await incidentsDeLEquipe(acteur).catch(() => undefined)
+  const remboursements = await remboursementsDeLEquipe(acteur).catch(() => undefined)
   const quand = (d: Date | null) => (d ? formaterDateHeure(d) : '—')
   const beneficiaire = (b: { nom: string; email: string } | null) => (b ? `${b.nom} (${b.email})` : t.beneficiaireInconnu)
 
@@ -42,6 +44,7 @@ export default async function AdminCommandesPage() {
               acheteur: beneficiaire(c.acheteur),
               devise: c.devise,
               total: formaterMontant(c.totalCentimes, c.devise),
+              totalAvecAnnulees: c.totalAvecAnnuleesCentimes === null ? null : formaterMontant(c.totalAvecAnnuleesCentimes, c.devise),
               commandes: c.commandes,
             }))}
           />
@@ -61,9 +64,15 @@ export default async function AdminCommandesPage() {
                 <li key={i.id} className="font-sans text-sm text-foreground">
                   {[
                     p.incidents.causes[i.cause === 'devise_differente' ? 'monnaie_differente' : i.cause],
+                    i.commandeNumero ? `${p.incidents.commande} ${i.commandeNumero}` : null,
                     beneficiaire(i.acheteur),
-                    i.attenduCentimes === null ? null : `${p.incidents.attendu} ${formaterMontant(i.attenduCentimes, i.devise ?? undefined)}`,
-                    i.recuCentimes === null ? null : `${p.incidents.recu} ${formaterMontant(i.recuCentimes, i.devise ?? undefined)}`,
+                    // Commande annulée : le montant est celui à rembourser (allocation), pas un écart de montant.
+                    i.cause === 'oeuvre_indisponible' || i.cause === 'commande_annulee'
+                      ? i.attenduCentimes === null ? null : `${p.incidents.aRembourser} ${formaterMontant(i.attenduCentimes, i.devise ?? undefined)}`
+                      : i.attenduCentimes === null ? null : `${p.incidents.attendu} ${formaterMontant(i.attenduCentimes, i.devise ?? undefined)}`,
+                    i.cause === 'oeuvre_indisponible' || i.cause === 'commande_annulee'
+                      ? null
+                      : i.recuCentimes === null ? null : `${p.incidents.recu} ${formaterMontant(i.recuCentimes, i.devise ?? undefined)}`,
                     `${p.incidents.le} ${quand(i.creeLe)}`,
                   ]
                     .filter((x): x is string => x !== null)
@@ -72,6 +81,23 @@ export default async function AdminCommandesPage() {
               ))}
             </ul>
           </>
+        )}
+      </section>
+      <section aria-labelledby="remboursements-a-traiter" className="mt-12">
+        <h2 id="remboursements-a-traiter" className="font-serif text-2xl text-foreground">{p.remboursements.titre}</h2>
+        <p className="mt-2 max-w-prose font-sans text-sm text-neutral-600">{p.remboursements.introduction}</p>
+        {remboursements ? (
+          <RemboursementsEquipe
+            remboursements={remboursements.map((r) => ({
+              id: r.id,
+              commande: r.commandeNumero,
+              acheteur: beneficiaire(r.acheteur),
+              montant: formaterMontant(r.montantCentimes, r.devise),
+              demandeLe: quand(r.demandeLe),
+            }))}
+          />
+        ) : (
+          <p role="alert" className="mt-3 font-sans text-sm text-foreground">{p.remboursements.panne}</p>
         )}
       </section>
       <section aria-labelledby="reservations-en-cours" className="mt-12">

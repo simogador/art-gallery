@@ -380,6 +380,7 @@ export type Dictionnaire = {
     readonly oeuvres: string
     readonly commande: string
     readonly totalARecevoir: string
+    readonly totalAvecAnnulees: string
     readonly champs: { readonly reference: string; readonly referenceAide: string; readonly montant: (monnaie: string) => string; readonly montantAide: string }
     readonly bouton: string
     readonly confirmer: (montant: string, commandes: number) => string
@@ -389,6 +390,8 @@ export type Dictionnaire = {
     readonly erreurs: { readonly reference: string; readonly montant: string }
     readonly resume: (n: number) => string
     readonly succes: (commandes: number) => string
+    /** Constat tardif (story 6.5) : certaines commandes confirmées, d'autres annulées avec remboursement demandé. */
+    readonly succesTardif: (confirmees: number, annulees: number) => string
     readonly dejaConstate: string
     readonly refus: {
       readonly acces_refuse: string
@@ -396,18 +399,62 @@ export type Dictionnaire = {
       readonly introuvable: string
       readonly montant_different: string
       readonly monnaie_differente: string
-      readonly oeuvre_indisponible: (slug: string | undefined) => string
       readonly indisponible: string
     }
     readonly incidents: {
       readonly titre: string
       readonly vide: string
       readonly panne: string
-      readonly causes: { readonly montant_different: string; readonly monnaie_differente: string; readonly oeuvre_indisponible: string }
+      readonly causes: {
+        readonly montant_different: string
+        readonly monnaie_differente: string
+        readonly oeuvre_indisponible: string
+        readonly commande_annulee: string
+      }
+      readonly commande: string
+      readonly aRembourser: string
       readonly attendu: string
       readonly recu: string
       readonly le: string
       readonly suite: string
+    }
+    /** « Annuler la commande » (story 6.5). */
+    readonly annulation: {
+      readonly bouton: string
+      readonly confirmer: (numero: string) => string
+      readonly oui: string
+      readonly non: string
+      readonly enCours: string
+      readonly succes: string
+      readonly dejaAnnulee: string
+      readonly refus: {
+        readonly acces_refuse: string
+        readonly invalide: string
+        readonly introuvable: string
+        readonly etat_invalide: string
+        readonly indisponible: string
+      }
+    }
+    /** Remboursements à traiter (story 6.5, exécutés à la main, OQ-1 ouverte). */
+    readonly remboursements: {
+      readonly titre: string
+      readonly introduction: string
+      readonly vide: string
+      readonly panne: string
+      readonly commande: string
+      readonly acheteur: string
+      readonly montant: string
+      readonly demandeLe: string
+      readonly bouton: string
+      readonly enCours: string
+      readonly succes: string
+      readonly dejaEffectue: string
+      readonly refus: {
+        readonly acces_refuse: string
+        readonly invalide: string
+        readonly introuvable: string
+        readonly indisponible: string
+      }
     }
   }
   /** Vente assistée de l'équipe, `/dashboard/admin/commandes` (story 6.3, FR-12). */
@@ -1167,6 +1214,7 @@ export const fr = {
     oeuvres: 'Œuvres',
     commande: 'Commande',
     totalARecevoir: 'Total à recevoir',
+    totalAvecAnnulees: 'Ou, avec les commandes annulées (qui seront alors remboursées)',
     champs: {
       reference: 'Référence du paiement',
       referenceAide: 'La référence du virement ou du lien de paiement ; elle ne sert qu’une fois.',
@@ -1186,6 +1234,8 @@ export const fr = {
     resume: (n: number) => (n > 1 ? `${n} champs sont à corriger.` : '1 champ est à corriger.'),
     succes: (commandes: number) =>
       commandes > 1 ? `Paiement constaté : ${commandes} commandes sont confirmées et les œuvres sont vendues.` : 'Paiement constaté : la commande est confirmée et les œuvres sont vendues.',
+    succesTardif: (confirmees: number, annulees: number) =>
+      `Paiement constaté : ${confirmees} ${confirmees > 1 ? 'commandes confirmées' : 'commande confirmée'}, ${annulees} ${annulees > 1 ? 'commandes annulées' : 'commande annulée'}. Un remboursement est à traiter pour chaque commande annulée : prévenez l’acheteur vous-même.`,
     dejaConstate: 'Ce paiement était déjà constaté : rien n’a changé.',
     refus: {
       acces_refuse: 'Seule l’équipe peut constater un paiement.',
@@ -1193,10 +1243,6 @@ export const fr = {
       introuvable: 'Ce passage n’existe pas.',
       montant_different: 'Le montant ne correspond pas au total à recevoir. Rien n’est confirmé ; un incident est enregistré.',
       monnaie_differente: 'La monnaie ne correspond pas à celle de la commande. Rien n’est confirmé ; un incident est enregistré.',
-      oeuvre_indisponible: (slug: string | undefined) =>
-        slug
-          ? `L’œuvre ${slug} n’est plus vendable. Rien n’est confirmé ; un incident est enregistré.`
-          : 'Une œuvre n’est plus vendable. Rien n’est confirmé ; un incident est enregistré.',
       indisponible: 'Le constat n’a pas pu être enregistré. Réessayez dans un instant.',
     },
     incidents: {
@@ -1206,12 +1252,52 @@ export const fr = {
       causes: {
         montant_different: 'Montant différent du total à recevoir',
         monnaie_differente: 'Monnaie différente',
-        oeuvre_indisponible: 'Œuvre plus vendable',
+        oeuvre_indisponible: 'Œuvre prise par un autre acheteur : commande annulée, remboursement demandé',
+        commande_annulee: 'Paiement reçu pour une commande annulée ou abandonnée : remboursement demandé',
       },
+      commande: 'Commande',
+      aRembourser: 'Montant à rembourser',
       attendu: 'Attendu',
       recu: 'Reçu',
       le: 'Le',
-      suite: 'L’annulation et le remboursement viendront avec une prochaine version : prévenez l’acheteur et traitez-le à la main.',
+      suite: 'Aucun e-mail ne part : prévenez l’acheteur vous-même. Les remboursements demandés sont à traiter ci-dessous.',
+    },
+    annulation: {
+      bouton: 'Annuler la commande',
+      confirmer: (numero: string) => `Annuler la commande ${numero} ? Ses œuvres seront libérées et rien n’est remboursé, puisque rien n’a été reçu.`,
+      oui: 'Oui, annuler la commande',
+      non: 'Garder la commande',
+      enCours: 'Annulation…',
+      succes: 'La commande est annulée et ses œuvres sont libérées.',
+      dejaAnnulee: 'Cette commande était déjà annulée : rien n’a changé.',
+      refus: {
+        acces_refuse: 'Seule l’équipe peut annuler une commande.',
+        invalide: 'Cette commande n’est pas reconnue.',
+        introuvable: 'Cette commande n’existe pas.',
+        etat_invalide: 'Cette commande n’attend plus son paiement : elle ne peut pas être annulée ici.',
+        indisponible: 'L’annulation n’a pas pu être enregistrée. Réessayez dans un instant.',
+      },
+    },
+    remboursements: {
+      titre: 'Remboursements à traiter',
+      introduction:
+        'Quand une commande est annulée alors que son paiement est arrivé, le montant de la commande est à rembourser à la main. Une fois le remboursement fait, marquez-le comme effectué.',
+      vide: 'Aucun remboursement à traiter.',
+      panne: 'Les remboursements ne se sont pas chargés. Rechargez la page dans un instant.',
+      commande: 'Commande',
+      acheteur: 'Acheteur',
+      montant: 'À rembourser',
+      demandeLe: 'Demandé le',
+      bouton: 'Marquer comme effectué',
+      enCours: 'Enregistrement…',
+      succes: 'Le remboursement est marqué comme effectué.',
+      dejaEffectue: 'Ce remboursement était déjà marqué comme effectué : rien n’a changé.',
+      refus: {
+        acces_refuse: 'Seule l’équipe peut marquer un remboursement.',
+        invalide: 'Ce remboursement n’est pas reconnu.',
+        introuvable: 'Ce remboursement n’existe pas.',
+        indisponible: 'Le remboursement n’a pas pu être enregistré. Réessayez dans un instant.',
+      },
     },
   },
   venteAssistee: {

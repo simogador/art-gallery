@@ -7,5 +7,6 @@ export {
   SOURCE_CONSTAT_MANUEL,
   constatManuel,
   constaterManuellement,
+  remboursementManuel,
   lireReference,
 } from './adaptateurs/constat-manuel'

@@ -87,7 +87,7 @@ export async function poserVenteAssistee(
       async (tx) => {
         const passage = await creerPassageEnCaisse(
           { pays: saisie.pays, oeuvres: slugs, coordonnees: { email: saisie.email, nom: saisie.nom, adresse: '', telephone: '' } },
-          {},
+          { echeanceReservation: echeance },
           tx,
         )
         if (!passage.ok) throw new Refus(passage)
@@ -176,6 +176,8 @@ export async function lireRecapitulatifAssiste(jeton: string, maintenant: Date =
       paysLivraison: true,
       devise: true,
       commandes: {
+        // Une commande annulée n'est jamais proposée au paiement.
+        where: { etat: { not: 'annulee' } },
         orderBy: { createdAt: 'asc' },
         select: {
           numero: true,
@@ -191,7 +193,7 @@ export async function lireRecapitulatifAssiste(jeton: string, maintenant: Date =
       },
     },
   })
-  if (!passage) return null
+  if (!passage || passage.commandes.length === 0) return null
   return { pays: passage.paysLivraison, devise: passage.devise, echeance: lien.echeance, commandes: passage.commandes }
 }
 

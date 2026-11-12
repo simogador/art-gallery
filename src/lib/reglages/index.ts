@@ -130,6 +130,11 @@ export const PLAFONDS_RESERVATION = { parEmail: 3, parAppareil: 3 } as const
 export const DUREE_RESERVATION_VENTE_ASSISTEE_HEURES = 48
 export const LIMITES_RESERVATION_VENTE_ASSISTEE_HEURES = { min: 1, max: 336 } as const
 
+// Abandon d'une commande (story 6.5, FR-13, décision 2A) : échéance enregistrée à la création, plus
+// longue que la réservation. Passée, la commande est annulée au prochain constat qui la concerne ou par
+// l'équipe (sans balayage avant la story 6.7) ; l'expiration de la réservation n'annule jamais la commande.
+export const DUREE_ABANDON_COMMANDE_JOURS = 7
+
 // Format d'une œuvre sur la fiche (story 3.5, décision du porteur du 2026-11-07) : selon le plus
 // grand côté (hauteur ou largeur), petit < 40 cm, grand > 100 cm, moyen entre les deux (bornes
 // incluses). Changer un seuil = une PR (ni écran d'administration, ni migration).

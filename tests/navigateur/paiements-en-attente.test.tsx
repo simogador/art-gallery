@@ -6,10 +6,12 @@ import { fr, formaterMontant } from '@/lib/i18n'
 // saisie est contrôlée avant l'envoi, un refus est annoncé en alerte et garde la saisie, un succès est
 // annoncé et vide les champs, la liste est relue, un seul appel malgré un double appui.
 const actionConstaterPaiement = vi.fn()
+const actionAnnulerCommande = vi.fn()
 const refresh = vi.fn()
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => refresh(), push: () => {} }) }))
 vi.mock('@/app/dashboard/admin/commandes/actions', () => ({
   actionConstaterPaiement: (...a: unknown[]) => actionConstaterPaiement(...a),
+  actionAnnulerCommande: (...a: unknown[]) => actionAnnulerCommande(...a),
 }))
 
 const { PaiementsEnAttente } = await import('@/app/dashboard/admin/commandes/PaiementsEnAttente')
@@ -20,12 +22,13 @@ const passage = (surcharge = {}) => ({
   acheteur: 'Claire Martin (claire@exemple.test)',
   devise: 'EUR',
   total: '2 080 €',
-  commandes: [{ numero: 'ERR-AAAA-BBBB', oeuvres: ['Nuit bleue'] }, { numero: 'ERR-CCCC-DDDD', oeuvres: ['Rivage'] }],
+  commandes: [{ id: 'c1', numero: 'ERR-AAAA-BBBB', oeuvres: ['Nuit bleue'] }, { id: 'c2', numero: 'ERR-CCCC-DDDD', oeuvres: ['Rivage'] }],
   ...surcharge,
 })
 
 beforeEach(() => {
   actionConstaterPaiement.mockReset()
+  actionAnnulerCommande.mockReset()
   refresh.mockReset()
 })
 
@@ -101,5 +104,38 @@ describe('PaiementsEnAttente (navigateur)', () => {
     oui.click()
     expect(actionConstaterPaiement).toHaveBeenCalledTimes(1)
     fin({ ok: true, message: t.succes(2) })
+  })
+
+  it('« Annuler la commande » : confirmation en deux temps, un seul appel avec l’id, annoncé et focus sur l’annonce, liste relue', async () => {
+    const a = fr.paiement.annulation
+    let fin: (v: unknown) => void = () => {}
+    actionAnnulerCommande.mockReturnValue(new Promise((r) => { fin = r }))
+    const ecran = await render(<PaiementsEnAttente passages={[passage()]} />)
+    await ecran.getByRole('button', { name: `${a.bouton} ERR-CCCC-DDDD` }).click()
+    expect(ecran.container.textContent).toContain(a.confirmer('ERR-CCCC-DDDD'))
+    expect(actionAnnulerCommande).not.toHaveBeenCalled()
+    // Renoncer : rien n'est envoyé.
+    await ecran.getByRole('button', { name: a.non }).click()
+    expect(actionAnnulerCommande).not.toHaveBeenCalled()
+    await ecran.getByRole('button', { name: `${a.bouton} ERR-CCCC-DDDD` }).click()
+    const oui = [...ecran.container.querySelectorAll('button')].find((b) => b.textContent === a.oui) as HTMLButtonElement
+    oui.click()
+    oui.click()
+    expect(actionAnnulerCommande).toHaveBeenCalledTimes(1)
+    expect(actionAnnulerCommande).toHaveBeenCalledWith('c2')
+    fin({ ok: true, message: a.succes })
+    await expect.element(ecran.getByRole('status')).toHaveTextContent(a.succes)
+    expect(refresh).toHaveBeenCalled()
+    await vi.waitFor(() => expect(document.activeElement?.getAttribute('role')).toBe('status'))
+  })
+
+  it('« Annuler la commande » refusée : message en alerte, aucun focus volé', async () => {
+    const a = fr.paiement.annulation
+    actionAnnulerCommande.mockResolvedValue({ ok: false, message: a.refus.etat_invalide })
+    const ecran = await render(<PaiementsEnAttente passages={[passage()]} />)
+    await ecran.getByRole('button', { name: `${a.bouton} ERR-AAAA-BBBB` }).click()
+    await ecran.getByRole('button', { name: a.oui }).click()
+    await expect.element(ecran.getByRole('alert')).toHaveTextContent(a.refus.etat_invalide)
+    expect(actionAnnulerCommande).toHaveBeenCalledWith('c1')
   })
 })

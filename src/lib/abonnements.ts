@@ -71,4 +71,6 @@ export const ABONNEMENTS: { [N in NomEvenement]: Abonnement<N>[] } = {
   // artiste, équipe) viendront avec une story suivante, sans gestionnaire ici.
   PaiementConstate: [],
   CommandeConfirmee: [],
+  // Story 6.5 : l'annulation est seulement relatée ; l'équipe prévient l'acheteur elle-même (e-mails : story suivante).
+  CommandeAnnulee: [],
 }

@@ -233,12 +233,15 @@ export async function reserverOeuvres(entree: EntreeReservation, tx?: Prisma.Tra
  */
 export async function libererReservation(
   passageId: string,
-  options: { issue?: Extract<IssueReservation, 'liberee' | 'expiree'>; maintenant?: Date; /** Utilisateur qui libère (journal). */ par?: string } = {},
+  options: { issue?: Extract<IssueReservation, 'liberee' | 'expiree'>; maintenant?: Date; /** Utilisateur qui libère (journal). */ par?: string; /** Story 6.5 : ne libère que ces œuvres du passage (annulation d'une commande). */ artworkIds?: readonly string[] } = {},
   tx?: Prisma.TransactionClient,
 ): Promise<ResultatLiberation> {
   const maintenant = options.maintenant ?? new Date()
   return dansTransaction(tx, async (t) => {
-    const actives = await t.reservation.findMany({ where: { passageId, issue: null }, select: { id: true, artworkId: true } })
+    const actives = await t.reservation.findMany({
+      where: { passageId, issue: null, ...(options.artworkIds ? { artworkId: { in: [...options.artworkIds] } } : {}) },
+      select: { id: true, artworkId: true },
+    })
     return libererLignes(t, actives, options.issue ?? 'liberee', maintenant, options.par ?? null)
   })
 }
