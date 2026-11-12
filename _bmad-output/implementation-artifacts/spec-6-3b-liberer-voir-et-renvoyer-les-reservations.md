@@ -1,7 +1,7 @@
 ---
 title: 'Story 6.3 bis — Libérer et voir les réservations, renvoyer le lien, `/commande` pendant la maintenance'
 created: '2026-11-12'
-status: 'in-review'
+status: 'done'
 baseline_commit: 'dbb23e5'
 route: 'dispatch'
 review_loop_iteration: 0
