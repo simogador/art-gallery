@@ -43,6 +43,14 @@ export {
   type IncidentDeLEquipe,
   type ResultatPaiementConstate,
 } from './paiement'
+export {
+  annulerCommande,
+  marquerRemboursementEffectue,
+  remboursementsDeLEquipe,
+  type RemboursementDeLEquipe,
+  type ResultatAnnulation,
+  type ResultatRemboursementEffectue,
+} from './annulation'
 export { ETAT_INITIAL, ETATS_COMMANDE, TRANSITIONS, transitionPermise, type EtatCommande } from './etats'
 export { ALPHABET_NUMERO, FORME_NUMERO, PREFIXE_NUMERO, genererNumero } from './numero'
 export {

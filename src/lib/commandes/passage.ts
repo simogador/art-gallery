@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@/generated/prisma/client'
+import { DUREE_ABANDON_COMMANDE_JOURS } from '@/lib/reglages'
 import { VISIBLE } from '@/lib/disponibilite/etats'
 import { prixLivreFige, type RaisonNonLivree } from '@/lib/livraison'
 import { validerCoordonnees, type ErreursCoordonnees } from './coordonnees-regles'
@@ -33,10 +34,18 @@ export type ResultatPassage = { ok: true; passageId: string; commandes: Commande
 type Options = {
   /** Générateur de numéros (tests : forcer une collision). */
   generateur?: () => string
+  /** Échéance de la réservation posée avec le passage (vente assistée) : l'abandon est toujours après elle. */
+  echeanceReservation?: Date
 }
 
 const TOURS_NUMERO_MAX = 20
 const ESSAIS_MAX = 3
+
+/** Échéance d'abandon (story 6.5) : toujours après la réservation (échéance de la réservation + durée d'abandon). */
+export function abandonApres(echeanceReservation?: Date, maintenant: Date = new Date()): Date {
+  const base = echeanceReservation && echeanceReservation.getTime() > maintenant.getTime() ? echeanceReservation : maintenant
+  return new Date(base.getTime() + DUREE_ABANDON_COMMANDE_JOURS * 24 * 3600 * 1000)
+}
 
 function codeErreur(erreur: unknown): string | undefined {
   return (erreur as { code?: string } | null)?.code
@@ -79,11 +88,12 @@ export async function creerPassageEnCaisse(
 
   // Dans la transaction de l'appelant (AD-3, story 6.3) : pas de nouvel essai ici, une erreur de numéro
   // y annulerait la transaction entière ; l'appelant décide.
-  if (tx) return ecrirePassage(tx, slugs, pays, coordonnees.valeur, generer)
+  const abandonneLe = abandonApres(options.echeanceReservation)
+  if (tx) return ecrirePassage(tx, slugs, pays, coordonnees.valeur, generer, abandonneLe)
 
   for (let essai = 1; ; essai++) {
     try {
-      return await prisma.$transaction((tx) => ecrirePassage(tx, slugs, pays, coordonnees.valeur, generer), {
+      return await prisma.$transaction((tx) => ecrirePassage(tx, slugs, pays, coordonnees.valeur, generer, abandonneLe), {
         maxWait: 5000,
         timeout: 20000,
       })
@@ -101,6 +111,7 @@ async function ecrirePassage(
   pays: string,
   coordonnees: { email: string; nom: string; adresse: string | null; telephone: string | null },
   generer: () => string,
+  abandonneLe: Date,
 ): Promise<ResultatPassage> {
   // `AND` : `VISIBLE` porte une clé `artist` qu'un étalement à côté d'une autre écraserait.
   const lues = await tx.artwork.findMany({
@@ -144,6 +155,7 @@ async function ecrirePassage(
         artistId,
         etat,
         devise,
+        abandonneLe,
         lignes: {
           create: deLArtiste.map(({ oeuvre, prix }) => ({
             artworkId: oeuvre.id,

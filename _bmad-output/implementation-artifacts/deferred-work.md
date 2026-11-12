@@ -270,3 +270,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-4-paiement-constate-et-confirmation.md`
   summary: Enrichir les incidents (œuvres et références concernées, numéros de commande, lien vers le passage), paginer la liste, gérer le focus clavier du formulaire de constat et tester le rendu de la page.
   evidence: revue 6.4 : l'incident ne retient que cause, montants et date ; la liste est limitée à 100 sans pagination ; à traiter avec la vue des incidents de la 6.5.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-5-paiement-tardif-abandon-et-incidents.md`
+  summary: Enregistrer un incident quand un second paiement arrive sur un passage déjà constaté, ou quand une commande a déjà un remboursement lié à un autre paiement.
+  evidence: revue 6.5 : le constat rejoué sous une autre référence renvoie `dejaConstate` sans trace, et un second paiement pour la même commande n'est jamais remboursé.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-5-paiement-tardif-abandon-et-incidents.md`
+  summary: Permettre de constater depuis l'écran un paiement pour un passage dont toutes les commandes sont annulées (cas SM-C1 d'un paiement après abandon).
+  evidence: revue 6.5 : `PaiementsEnAttente` ne liste que les passages ayant une commande en attente ; le module le traite, l'écran non (limite (d) d'AGENTS.md).

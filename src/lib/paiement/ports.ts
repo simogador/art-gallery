@@ -23,7 +23,7 @@ export interface Encaissement {
   readonly source: string
 }
 
-/** Remboursement d'un paiement (story 6.5) : aucune implémentation avant cette story. */
+/** Remboursement d'un paiement (story 6.5) : seule l'implémentation manuelle existe (`adaptateurs/constat-manuel.ts`). */
 export interface Remboursement {
   rembourser(demande: { paiementId: string; montantCentimes: number }): Promise<{ ok: boolean; reference?: string }>
 }

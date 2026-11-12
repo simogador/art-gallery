@@ -541,6 +541,11 @@ model Commande {
   devise                    String           @db.VarChar(3)
   lignes                    LigneCommande[]
   incidents                 Incident[]
+  // Story 6.5 : échéance d'abandon (plus longue que la réservation), posée à la création ; vide pour
+  // les anciennes commandes, jamais jugées abandonnées. Remboursement demandé si la commande est annulée
+  // alors que son paiement est arrivé.
+  abandonneLe               DateTime?              @db.Timestamptz(3)
+  remboursement             RemboursementCommande?
   // Commande historique seulement (recopie d'Order, scripts/sql/recopier-anciennes-commandes.sql).
   ordreHistoriqueId         String?          @unique
   montantHistoriqueCentimes Int?
@@ -594,6 +599,7 @@ model Paiement {
   referenceExterne String
   montantCentimes  Int
   etat             EtatPaiement    @default(ouvert)
+  remboursements   RemboursementCommande[]
   // Story 6.4 : qui a constaté le paiement (id de l'utilisateur, sans clé étrangère) et quand.
   constatePar      String?
   constateLe       DateTime?       @db.Timestamptz(3)
@@ -614,6 +620,8 @@ enum CauseIncident {
   montant_different
   devise_differente
   oeuvre_indisponible
+  // Story 6.5 : paiement arrivé pour une commande déjà annulée ou abandonnée (jamais confirmée).
+  commande_annulee
 }
 
 model Incident {
@@ -632,6 +640,32 @@ model Incident {
 
   @@index([passageId])
   @@index([traiteLe])
+}
+
+// Story 6.5 (FR-13, NFR-4) : remboursement d'une commande annulée alors que son paiement est arrivé,
+// égal à son allocation (total de ses lignes figées). Un seul par commande (unique). Exécuté à la main
+// par l'équipe (OQ-1 ouverte) : `demande` puis `effectue`, avec l'auteur et la date. Écrit seulement
+// par le module commandes.
+enum EtatRemboursement {
+  demande
+  effectue
+}
+
+model RemboursementCommande {
+  id              String            @id @default(cuid())
+  commande        Commande          @relation(fields: [commandeId], references: [id], onDelete: Restrict)
+  commandeId      String            @unique
+  paiement        Paiement?         @relation(fields: [paiementId], references: [id], onDelete: SetNull)
+  paiementId      String?
+  montantCentimes Int
+  devise          String            @db.VarChar(3)
+  etat            EtatRemboursement @default(demande)
+  // Id de l'utilisateur qui a marqué le remboursement effectué (sans clé étrangère) et quand.
+  effectuePar     String?
+  effectueLe      DateTime?         @db.Timestamptz(3)
+  createdAt       DateTime          @default(now()) @db.Timestamptz(3)
+
+  @@index([etat])
 }
 
 // Story 6.2 (FR-12, AD-7) : une réservation par œuvre et par passage, active tant que `issue` est

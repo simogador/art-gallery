@@ -1,4 +1,4 @@
-import { MONTANT_MAX_CENTIMES, type Encaissement, type FaitPaiementConstate } from '../ports'
+import { MONTANT_MAX_CENTIMES, type Encaissement, type FaitPaiementConstate, type Remboursement } from '../ports'
 
 // Adaptateur « constat manuel » (story 6.4) : l'équipe constate un virement ou un lien de paiement reçu
 // hors de l'application et en garde la trace (qui, quand, référence). Aucun appel externe.
@@ -6,6 +6,17 @@ import { MONTANT_MAX_CENTIMES, type Encaissement, type FaitPaiementConstate } fr
 export const SOURCE_CONSTAT_MANUEL = 'constat_manuel'
 
 export const constatManuel: Encaissement = { source: SOURCE_CONSTAT_MANUEL }
+
+/**
+ * Remboursement manuel (story 6.5, OQ-1 ouverte) : aucun appel externe. La demande est consignée par
+ * `commandes` (`RemboursementCommande`, état `demande`) ; l'équipe rembourse l'acheteur elle-même puis
+ * marque la demande effectuée. Le port répond donc « accepté » sans référence.
+ */
+export const remboursementManuel: Remboursement = {
+  async rembourser() {
+    return { ok: true }
+  },
+}
 
 export const LONGUEUR_MAX_REFERENCE = 120
 

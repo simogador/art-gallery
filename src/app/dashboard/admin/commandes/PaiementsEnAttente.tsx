@@ -1,11 +1,11 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { champsPrix } from '@/lib/catalogue/conversions'
 import { fr, formaterMontant } from '@/lib/i18n'
 import { MONTANT_MAX_CENTIMES } from '@/lib/paiement/ports'
-import { actionConstaterPaiement } from './actions'
+import { actionAnnulerCommande, actionConstaterPaiement } from './actions'
 
 // Commandes en attente de paiement et formulaire « Constater un paiement » (story 6.4). Le constat est
 // irréversible : confirmation en deux temps par passage. État local, garde `useRef` contre le double
@@ -19,13 +19,65 @@ export type VuePaiementEnAttente = {
   /** Code de la monnaie du passage (étiquette du champ, montant confirmé). */
   devise: string
   total: string
-  commandes: { numero: string; oeuvres: string[] }[]
+  /** Total avec les commandes annulées du passage ; null sans commande annulée. */
+  totalAvecAnnulees?: string | null
+  commandes: { id: string; numero: string; oeuvres: string[] }[]
 }
 
 type Resultat = { passageId: string; ok: boolean; message: string }
 
 const CHAMP = 'mt-1 block w-full min-h-touch-target rounded-sm border border-neutral-500 bg-transparent px-3 font-sans text-input text-foreground'
 const BOUTON = 'min-h-touch-target rounded-sm border border-foreground px-4 font-sans text-button text-foreground disabled:opacity-40'
+
+// « Annuler la commande » (story 6.5) : confirmation en deux temps, garde `useRef` contre le double appui.
+// Rien n'est remboursé : aucun paiement n'est arrivé.
+function AnnulerCommande({ passageId, commande, onDebut, onResultat }: {
+  passageId: string
+  commande: { id: string; numero: string }
+  onDebut: () => void
+  onResultat: (r: Resultat) => void
+}) {
+  const t = fr.paiement.annulation
+  const occupe = useRef(false)
+  const [confirmer, setConfirmer] = useState(false)
+  const [enCours, setEnCours] = useState(false)
+
+  async function annuler() {
+    if (occupe.current) return
+    occupe.current = true
+    setEnCours(true)
+    onDebut()
+    try {
+      const r = await actionAnnulerCommande(commande.id)
+      setConfirmer(false)
+      onResultat({ passageId, ok: r.ok, message: r.message })
+    } catch {
+      setConfirmer(false)
+      onResultat({ passageId, ok: false, message: t.refus.indisponible })
+    } finally {
+      occupe.current = false
+      setEnCours(false)
+    }
+  }
+
+  return confirmer ? (
+    <div className="mt-2 max-w-md">
+      <p className="font-sans text-sm text-foreground">{t.confirmer(commande.numero)}</p>
+      <div className="mt-2 flex flex-wrap gap-3">
+        <button type="button" disabled={enCours} onClick={annuler} className={BOUTON}>
+          {enCours ? t.enCours : t.oui}
+        </button>
+        <button type="button" disabled={enCours} onClick={() => setConfirmer(false)} className={BOUTON}>
+          {t.non}
+        </button>
+      </div>
+    </div>
+  ) : (
+    <button type="button" onClick={() => setConfirmer(true)} aria-label={`${t.bouton} ${commande.numero}`} className={`mt-2 ${BOUTON}`}>
+      {t.bouton}
+    </button>
+  )
+}
 
 function Constat({ vue, resultat, onDebut, onResultat }: {
   vue: VuePaiementEnAttente
@@ -129,10 +181,15 @@ export function PaiementsEnAttente({ passages }: { passages: VuePaiementEnAttent
   const t = fr.paiement
   const router = useRouter()
   const [resultat, setResultat] = useState<Resultat | null>(null)
+  const statut = useRef<HTMLDivElement>(null)
+  // Un succès est annoncé et reçoit le focus : la ligne concernée disparaît à la relecture de la liste.
+  useEffect(() => {
+    if (resultat?.ok) statut.current?.focus()
+  }, [resultat])
 
   return (
     <div>
-      <div role="status" aria-live="polite">
+      <div role="status" aria-live="polite" tabIndex={-1} ref={statut}>
         {resultat?.ok && <p className="mt-3 font-sans text-sm text-foreground">{resultat.message}</p>}
       </div>
       {passages.length === 0 ? (
@@ -145,13 +202,29 @@ export function PaiementsEnAttente({ passages }: { passages: VuePaiementEnAttent
                 <span className="text-neutral-600">{t.acheteur}</span> {p.acheteur}
               </p>
               {p.commandes.map((c) => (
-                <p key={c.numero}>
-                  <span className="text-neutral-600">{t.commande}</span> {c.numero} <span className="text-neutral-600">{t.oeuvres}</span> {c.oeuvres.join(', ')}
-                </p>
+                <div key={c.id}>
+                  <p>
+                    <span className="text-neutral-600">{t.commande}</span> {c.numero} <span className="text-neutral-600">{t.oeuvres}</span> {c.oeuvres.join(', ')}
+                  </p>
+                  <AnnulerCommande
+                    passageId={p.passageId}
+                    commande={c}
+                    onDebut={() => setResultat(null)}
+                    onResultat={(r) => {
+                      setResultat(r)
+                      router.refresh()
+                    }}
+                  />
+                </div>
               ))}
               <p>
                 <span className="text-neutral-600">{t.totalARecevoir}</span> {p.total}
               </p>
+              {p.totalAvecAnnulees && (
+                <p>
+                  <span className="text-neutral-600">{t.totalAvecAnnulees}</span> {p.totalAvecAnnulees}
+                </p>
+              )}
               <Constat
                 vue={p}
                 resultat={resultat?.passageId === p.passageId ? resultat : null}
