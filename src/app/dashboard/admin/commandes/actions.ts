@@ -1,7 +1,16 @@
 'use server'
 
 import { acteurCourant } from '@/lib/acces'
-import { heuresValides, libererVenteAssistee, poserVenteAssistee, renvoyerLienVenteAssistee, type ErreursCoordonnees } from '@/lib/commandes'
+import { champsPrix } from '@/lib/catalogue/conversions'
+import {
+  heuresValides,
+  libererVenteAssistee,
+  poserVenteAssistee,
+  renvoyerLienVenteAssistee,
+  traiterPaiementConstate,
+  type ErreursCoordonnees,
+} from '@/lib/commandes'
+import { MONTANT_MAX_CENTIMES, constaterManuellement } from '@/lib/paiement'
 import { lireIdentifiants } from '@/lib/commandes/vente-assistee-regles'
 import { fr, formaterDateHeure } from '@/lib/i18n'
 import { DUREE_RESERVATION_VENTE_ASSISTEE_HEURES } from '@/lib/reglages'
@@ -71,6 +80,35 @@ export async function actionRenvoyerLien(passageId: string): Promise<ResultatAct
     const r = await renvoyerLienVenteAssistee(await acteurCourant(), String(passageId ?? ''))
     if (!r.ok) return { ok: false, message: t.refus[r.code] }
     return r.envoye ? { ok: true, message: t.renvoyee } : { ok: false, message: fr.venteAssistee.emailNonParti }
+  } catch {
+    return { ok: false, message: t.refus.indisponible }
+  }
+}
+
+// Story 6.4 : constater un paiement. Droits vérifiés par le module commandes (admin seulement).
+export type ResultatActionPaiement = { ok: true; message: string } | { ok: false; message: string }
+
+export async function actionConstaterPaiement(passageId: string, reference: string, montant: string): Promise<ResultatActionPaiement> {
+  const t = fr.paiement
+  const prix = champsPrix(montant)
+  if (!prix.ok || prix.champs.prixCentimes === null || prix.champs.prixCentimes > MONTANT_MAX_CENTIMES) return { ok: false, message: t.erreurs.montant }
+  try {
+    const acteur = await acteurCourant()
+    if (acteur.type !== 'admin') return { ok: false, message: t.refus.acces_refuse }
+    const fait = constaterManuellement({
+      passageId: String(passageId ?? ''),
+      reference,
+      montantCentimes: prix.champs.prixCentimes,
+      par: acteur.userId,
+    })
+    if (!fait) return { ok: false, message: t.erreurs.reference }
+    const r = await traiterPaiementConstate(acteur, fait)
+    if (r.ok) return { ok: true, message: r.dejaConstate ? t.dejaConstate : t.succes(r.commandes) }
+    if (r.code === 'refuse') {
+      if (r.cause === 'oeuvre_indisponible') return { ok: false, message: t.refus.oeuvre_indisponible(r.slug) }
+      return { ok: false, message: r.cause === 'montant_different' ? t.refus.montant_different : t.refus.monnaie_differente }
+    }
+    return { ok: false, message: t.refus[r.code] }
   } catch {
     return { ok: false, message: t.refus.indisponible }
   }

@@ -67,4 +67,8 @@ export const ABONNEMENTS: { [N in NomEvenement]: Abonnement<N>[] } = {
   InscriptionPrevenirRecue: [{ nom: 'envoyerConfirmationPrevenir', gestionnaire: via('envoyerConfirmationPrevenir') }],
   // Story 6.3 : le lien de la commande part par e-mail, émis à l'envoi (un seul e-mail par événement).
   VenteAssisteePosee: [{ nom: 'envoyerLienVenteAssistee', gestionnaire: via('envoyerLienVenteAssistee') }],
+  // Story 6.4 : le constat et la confirmation sont seulement relatés au journal ; les e-mails (acheteur,
+  // artiste, équipe) viendront avec une story suivante, sans gestionnaire ici.
+  PaiementConstate: [],
+  CommandeConfirmee: [],
 }

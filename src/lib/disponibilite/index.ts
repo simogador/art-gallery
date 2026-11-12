@@ -343,10 +343,12 @@ export {
   reserverOeuvres,
   reservationsActivesDuPassage,
   reservationsPourAdmin,
+  vendreOeuvresDuPassage,
   NOMBRE_TERMINEES_ADMIN,
   type ReservationLue,
   type EntreeReservation,
   type ReservationPosee,
   type ResultatLiberation,
   type ResultatReservation,
+  type ResultatVente,
 } from './reservation'

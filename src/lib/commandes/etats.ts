@@ -1,6 +1,6 @@
 // Table de transitions d'états d'une commande (AD-9), seule du module commandes. Partie pure, sans
-// accès à la base. Story 6.1 : seule la création est livrée (état initial) ; la confirmation (6.4),
-// l'annulation (6.5, 6.6) et leurs acteurs viendront s'appuyer sur cette table.
+// accès à la base. Story 6.1 : création (état initial) ; story 6.4 : confirmation par le constat d'un
+// paiement (`traiterPaiementConstate`) ; l'annulation (6.5, 6.6) viendra s'appuyer sur cette table.
 
 export const ETATS_COMMANDE = ['en_attente_paiement', 'confirmee', 'annulee', 'historique'] as const
 export type EtatCommande = (typeof ETATS_COMMANDE)[number]

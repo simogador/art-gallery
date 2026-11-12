@@ -264,3 +264,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-3b-liberer-voir-et-renvoyer-les-reservations.md`
   summary: Gérer le focus de `ReservationsEquipe` (retour du focus après « Libérer » et « Annuler », après la disparition d'une ligne) et tester le rendu de `/dashboard/admin/commandes`.
   evidence: revue 6.3 bis : le bouton qui avait le focus disparaît, le focus tombe sur `<body>` ; la page n'est couverte que par les tests du module.
+- source_spec: none
+  summary: E-mails de la confirmation d'une commande (story 6.4) : confirmation à l'acheteur (récapitulatif par commande, délai), « Nouvelle commande » à l'artiste avec l'échéance de prise en charge en heure fixe, alerte « nouvelle commande » à l'équipe, un seul e-mail par événement même rejoué.
+  evidence: découpage décidé par le porteur le 2026-11-12 : la story du paiement constaté ne livre que le module paiement, la confirmation atomique et idempotente et l'écran de l'équipe ; les e-mails s'abonnent ensuite à l'événement de confirmation.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-4-paiement-constate-et-confirmation.md`
+  summary: Enrichir les incidents (œuvres et références concernées, numéros de commande, lien vers le passage), paginer la liste, gérer le focus clavier du formulaire de constat et tester le rendu de la page.
+  evidence: revue 6.4 : l'incident ne retient que cause, montants et date ; la liste est limitée à 100 sans pagination ; à traiter avec la vue des incidents de la 6.5.

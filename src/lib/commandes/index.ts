@@ -34,6 +34,15 @@ export {
   type ResultatVenteAssistee,
   type SaisieVenteAssistee,
 } from './vente-assistee'
+export {
+  commandesEnAttenteDeLEquipe,
+  incidentsDeLEquipe,
+  traiterPaiementConstate,
+  type CauseIncident,
+  type CommandeEnAttente,
+  type IncidentDeLEquipe,
+  type ResultatPaiementConstate,
+} from './paiement'
 export { ETAT_INITIAL, ETATS_COMMANDE, TRANSITIONS, transitionPermise, type EtatCommande } from './etats'
 export { ALPHABET_NUMERO, FORME_NUMERO, PREFIXE_NUMERO, genererNumero } from './numero'
 export {
