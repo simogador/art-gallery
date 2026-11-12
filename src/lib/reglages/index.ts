@@ -100,9 +100,12 @@ export const REPONSE_COURRIELS = CONTACT_EQUIPE
 
 // Passage pendant la maintenance, décidé en edge par le middleware à partir du rôle du jeton :
 // les admins voient tout ; les artistes seulement leur espace privé, pour déposer leurs œuvres
-// avant l'ouverture (décision du porteur du 2026-11-02, story 2.4). Les pages /auth restent ouvertes.
+// avant l'ouverture (décision du porteur du 2026-11-02, story 2.4). Les pages /auth restent ouvertes, ainsi
+// que /commande (lien de l'acheteur d'une vente assistée, décision du porteur du 2026-11-11, story 6.3 bis) :
+// la maintenance reste pilotée par `MAINTENANCE_MODE`, rien ici ne la lève.
 export function passeLaMaintenance(role: string | null, chemin: string): boolean {
   if (chemin === '/auth' || chemin.startsWith('/auth/')) return true
+  if (chemin === '/commande' || chemin.startsWith('/commande/')) return true
   if (role === 'admin') return true
   return role === 'artist' && (chemin === '/dashboard/artiste' || chemin.startsWith('/dashboard/artiste/'))
 }

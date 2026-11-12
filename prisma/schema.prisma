@@ -624,6 +624,8 @@ model Reservation {
   echeance          DateTime           @db.Timestamptz(3)
   issue             IssueReservation?
   issueLe           DateTime?          @db.Timestamptz(3)
+  /// Utilisateur qui a libéré la réservation (story 6.3 bis) ; sans clé étrangère, vide si l'issue est automatique.
+  issuePar          String?
   empreinteEmail    String?
   empreinteAppareil String?
   createdAt         DateTime           @default(now()) @db.Timestamptz(3)

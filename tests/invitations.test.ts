@@ -83,6 +83,14 @@ describe('règles pures', () => {
     expect(passeLaMaintenance(null, '/auth/invitation')).toBe(true)
     expect(passeLaMaintenance(null, '/authentique')).toBe(false)
     expect(passeLaMaintenance(null, '/')).toBe(false)
+    // Lien de l'acheteur d'une vente assistée (6.3 bis) : ouvert à tous ; le reste reste en maintenance.
+    for (const role of [null, 'user', 'artist', 'admin']) {
+      expect(passeLaMaintenance(role, '/commande')).toBe(true)
+      expect(passeLaMaintenance(role, '/commande/abc')).toBe(true)
+    }
+    expect(passeLaMaintenance(null, '/commandes')).toBe(false)
+    expect(passeLaMaintenance(null, '/commande-faux')).toBe(false)
+    expect(passeLaMaintenance(null, '/galerie')).toBe(false)
   })
 
   it('la version de la charte change avec son texte', () => {

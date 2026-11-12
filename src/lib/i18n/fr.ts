@@ -391,6 +391,44 @@ export type Dictionnaire = {
     readonly envoiEnCours: string
     readonly succes: (email: string, echeance: string) => string
     readonly emailNonParti: string
+    /** Réservations en cours et journal (story 6.3 bis). */
+    readonly suivi: {
+      readonly titreEnCours: string
+      readonly vide: string
+      readonly titreJournal: string
+      readonly videJournal: string
+      readonly beneficiaire: string
+      readonly beneficiaireInconnu: string
+      readonly oeuvres: string
+      readonly origine: string
+      readonly origines: { readonly paiement: string; readonly vente_assistee: string; readonly priorite: string }
+      readonly echeance: string
+      readonly echue: string
+      readonly lienEnvoye: string
+      readonly lienNonEnvoye: string
+      readonly liberer: string
+      readonly confirmerLiberer: (titre: string) => string
+      readonly confirmer: string
+      readonly annuler: string
+      readonly renvoyer: string
+      readonly enCours: string
+      readonly issue: string
+      readonly issues: { readonly expiree: string; readonly liberee: string; readonly confirmee: string; readonly interrompue: string }
+      readonly par: string
+      readonly parAutomatique: string
+      readonly le: string
+      readonly liberee: string
+      readonly renvoyee: string
+      readonly dejaTerminee: string
+      readonly refus: {
+        readonly acces_refuse: string
+        readonly invalide: string
+        readonly reservation_terminee: string
+        readonly lien_actif: string
+        readonly indisponible: string
+      }
+      readonly panne: string
+    }
     readonly refus: {
       readonly acces_refuse: string
       readonly liste_vide: string
@@ -1105,6 +1143,43 @@ export const fr = {
     succes: (email: string, echeance: string) => `Les œuvres sont réservées jusqu’au ${echeance}. Le lien est parti à ${email}.`,
     emailNonParti:
       'Les œuvres sont réservées, mais l’e-mail n’est pas parti : l’acheteur n’a pas de lien. Prévenez-le autrement.',
+    suivi: {
+      titreEnCours: 'Réservations en cours',
+      vide: 'Aucune réservation en cours.',
+      titreJournal: 'Réservations terminées (les 50 dernières)',
+      videJournal: 'Aucune réservation terminée.',
+      beneficiaire: 'Bénéficiaire',
+      beneficiaireInconnu: 'Non renseigné',
+      oeuvres: 'Œuvres',
+      origine: 'Origine',
+      origines: { paiement: 'Paiement', vente_assistee: 'Vente assistée', priorite: 'Priorité' },
+      echeance: 'Jusqu’au',
+      echue: 'échue, à libérer',
+      lienEnvoye: 'Lien envoyé',
+      lienNonEnvoye: 'L’e-mail n’est pas parti',
+      liberer: 'Libérer',
+      confirmerLiberer: (titre: string) => `Libérer la réservation (${titre}) ? Les œuvres redeviennent disponibles et le lien cesse de fonctionner. La commande reste en attente de paiement.`,
+      confirmer: 'Oui, libérer',
+      annuler: 'Annuler',
+      renvoyer: 'Renvoyer le lien',
+      enCours: 'En cours…',
+      issue: 'Issue',
+      issues: { expiree: 'Expirée', liberee: 'Libérée', confirmee: 'Confirmée', interrompue: 'Interrompue' },
+      par: 'Par',
+      parAutomatique: 'Automatique',
+      le: 'Le',
+      liberee: 'La réservation est libérée : les œuvres sont de nouveau disponibles.',
+      renvoyee: 'Le lien est reparti à l’acheteur.',
+      dejaTerminee: 'Cette réservation était déjà terminée.',
+      refus: {
+        acces_refuse: 'Seule l’équipe peut libérer ou renvoyer.',
+        invalide: 'Cette réservation ne peut pas être libérée ici.',
+        reservation_terminee: 'La réservation est terminée ou échue : le lien ne peut pas être renvoyé.',
+        lien_actif: 'Un lien actif existe déjà : l’e-mail est parti.',
+        indisponible: 'L’action n’a pas pu être faite. Réessayez dans un instant.',
+      },
+      panne: 'Les réservations ne se sont pas chargées. Rechargez la page dans un instant.',
+    },
     refus: {
       acces_refuse: 'Seule l’équipe peut réserver pour un acheteur.',
       liste_vide: 'Indiquez au moins une œuvre.',
