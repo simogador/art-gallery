@@ -2,7 +2,7 @@
 title: 'Story 6.5 — Paiement tardif, abandon et incidents'
 type: 'feature'
 created: '2026-11-12'
-status: 'in-review'
+status: 'done'
 baseline_commit: '9125415'
 route: 'dispatch'
 review_loop_iteration: 0
