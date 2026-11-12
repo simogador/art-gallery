@@ -1,7 +1,7 @@
 ---
 title: 'Story 6.4 — Paiement constaté par l''équipe et confirmation idempotente'
 created: '2026-11-12'
-status: 'in-review'
+status: 'done'
 baseline_commit: 'e342bf4'
 route: 'dispatch'
 review_loop_iteration: 0
