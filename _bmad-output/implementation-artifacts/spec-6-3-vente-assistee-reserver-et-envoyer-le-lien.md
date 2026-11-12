@@ -1,7 +1,7 @@
 ---
 title: 'Story 6.3 — Vente assistée : réserver pour un acheteur et lui envoyer son lien'
 created: '2026-11-11'
-status: 'in-review'
+status: 'done'
 baseline_commit: 'aadbae4'
 route: 'dispatch'
 review_loop_iteration: 0

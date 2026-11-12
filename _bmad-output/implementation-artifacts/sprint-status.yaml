@@ -95,7 +95,7 @@ development_status:
   epic-6: in-progress
   6-1-passage-en-caisse-et-commandes-par-artiste-aux-montants-figé: done
   6-2-réservation-en-bloc-sans-double-vente: done
-  6-3-vente-assistée-réserver-pour-un-acheteur-et-lui-envoyer-son: review
+  6-3-vente-assistée-réserver-pour-un-acheteur-et-lui-envoyer-son: done
   6-4-paiement-constaté-par-l-équipe-et-confirmation-idempotente: backlog
   6-5-paiement-tardif-abandon-et-incidents: backlog
   6-6-vente-ailleurs-pendant-une-réservation: backlog
