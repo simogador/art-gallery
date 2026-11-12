@@ -371,6 +371,45 @@ export type Dictionnaire = {
       readonly indisponible: string
     }
   }
+  /** Paiement constaté par l'équipe, `/dashboard/admin/commandes` (story 6.4, FR-13). */
+  readonly paiement: {
+    readonly titre: string
+    readonly introduction: string
+    readonly vide: string
+    readonly acheteur: string
+    readonly oeuvres: string
+    readonly commande: string
+    readonly totalARecevoir: string
+    readonly champs: { readonly reference: string; readonly referenceAide: string; readonly montant: (monnaie: string) => string; readonly montantAide: string }
+    readonly bouton: string
+    readonly confirmer: (montant: string, commandes: number) => string
+    readonly oui: string
+    readonly annuler: string
+    readonly enCours: string
+    readonly erreurs: { readonly reference: string; readonly montant: string }
+    readonly resume: (n: number) => string
+    readonly succes: (commandes: number) => string
+    readonly dejaConstate: string
+    readonly refus: {
+      readonly acces_refuse: string
+      readonly invalide: string
+      readonly introuvable: string
+      readonly montant_different: string
+      readonly monnaie_differente: string
+      readonly oeuvre_indisponible: (slug: string | undefined) => string
+      readonly indisponible: string
+    }
+    readonly incidents: {
+      readonly titre: string
+      readonly vide: string
+      readonly panne: string
+      readonly causes: { readonly montant_different: string; readonly monnaie_differente: string; readonly oeuvre_indisponible: string }
+      readonly attendu: string
+      readonly recu: string
+      readonly le: string
+      readonly suite: string
+    }
+  }
   /** Vente assistée de l'équipe, `/dashboard/admin/commandes` (story 6.3, FR-12). */
   readonly venteAssistee: {
     readonly titre: string
@@ -1117,6 +1156,62 @@ export const fr = {
       rang: (rang: number) => `N° ${rang}`,
       arrivee: (date: string) => `inscrit le ${date}`,
       indisponible: 'Les inscriptions « Me prévenir » ne se sont pas chargées. Rechargez la page dans un instant.',
+    },
+  },
+  paiement: {
+    titre: 'Paiements à constater',
+    introduction:
+      'Quand vous avez reçu le paiement d’un acheteur (virement ou lien de paiement), constatez-le ici : les œuvres passent en vendues et les commandes du passage sont confirmées ensemble. Le montant doit être exactement le total à recevoir.',
+    vide: 'Aucune commande n’attend son paiement.',
+    acheteur: 'Acheteur',
+    oeuvres: 'Œuvres',
+    commande: 'Commande',
+    totalARecevoir: 'Total à recevoir',
+    champs: {
+      reference: 'Référence du paiement',
+      referenceAide: 'La référence du virement ou du lien de paiement ; elle ne sert qu’une fois.',
+      montant: (monnaie: string) => `Montant reçu (${monnaie})`,
+      montantAide: 'Par exemple 1 450 ou 1 450,50.',
+    },
+    bouton: 'Constater un paiement',
+    confirmer: (montant: string, commandes: number) =>
+      `Confirmer ${montant} pour ${commandes} ${commandes > 1 ? 'commandes' : 'commande'} ? Les œuvres seront vendues et cela ne s’annule pas ici.`,
+    oui: 'Oui, constater',
+    annuler: 'Annuler',
+    enCours: 'Enregistrement…',
+    erreurs: {
+      reference: 'Indiquez la référence du paiement (120 caractères au plus).',
+      montant: 'Indiquez un montant en euros, par exemple 1 450,50.',
+    },
+    resume: (n: number) => (n > 1 ? `${n} champs sont à corriger.` : '1 champ est à corriger.'),
+    succes: (commandes: number) =>
+      commandes > 1 ? `Paiement constaté : ${commandes} commandes sont confirmées et les œuvres sont vendues.` : 'Paiement constaté : la commande est confirmée et les œuvres sont vendues.',
+    dejaConstate: 'Ce paiement était déjà constaté : rien n’a changé.',
+    refus: {
+      acces_refuse: 'Seule l’équipe peut constater un paiement.',
+      invalide: 'Ce constat n’est pas possible : aucune commande n’attend ce paiement, ou la référence sert déjà ailleurs.',
+      introuvable: 'Ce passage n’existe pas.',
+      montant_different: 'Le montant ne correspond pas au total à recevoir. Rien n’est confirmé ; un incident est enregistré.',
+      monnaie_differente: 'La monnaie ne correspond pas à celle de la commande. Rien n’est confirmé ; un incident est enregistré.',
+      oeuvre_indisponible: (slug: string | undefined) =>
+        slug
+          ? `L’œuvre ${slug} n’est plus vendable. Rien n’est confirmé ; un incident est enregistré.`
+          : 'Une œuvre n’est plus vendable. Rien n’est confirmé ; un incident est enregistré.',
+      indisponible: 'Le constat n’a pas pu être enregistré. Réessayez dans un instant.',
+    },
+    incidents: {
+      titre: 'Incidents de paiement',
+      vide: 'Aucun incident.',
+      panne: 'Les paiements ne se sont pas chargés. Rechargez la page dans un instant.',
+      causes: {
+        montant_different: 'Montant différent du total à recevoir',
+        monnaie_differente: 'Monnaie différente',
+        oeuvre_indisponible: 'Œuvre plus vendable',
+      },
+      attendu: 'Attendu',
+      recu: 'Reçu',
+      le: 'Le',
+      suite: 'L’annulation et le remboursement viendront avec une prochaine version : prévenez l’acheteur et traitez-le à la main.',
     },
   },
   venteAssistee: {

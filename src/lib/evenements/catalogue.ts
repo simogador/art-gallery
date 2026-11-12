@@ -21,6 +21,12 @@ export type ChargeInscription = { inscriptionId: string }
 /** Vente assistée (story 6.3) : adresse, nom et lien lus en base ou émis à l'envoi, jamais portés ici. */
 export type ChargePassage = { passageId: string }
 
+/** Paiement constaté (story 6.4) : ids seulement. */
+export type ChargePaiement = { paiementId: string }
+
+/** Commande confirmée (story 6.4) : ids seulement. */
+export type ChargeCommande = { commandeId: string }
+
 /** Nom → version courante. La clé fait foi à l'exécution comme au typage. */
 export const VERSIONS_EVENEMENTS = {
   PublicationChangee: 1,
@@ -32,6 +38,8 @@ export const VERSIONS_EVENEMENTS = {
   DemandeVisiteRecue: 1,
   InscriptionPrevenirRecue: 1,
   VenteAssisteePosee: 1,
+  PaiementConstate: 1,
+  CommandeConfirmee: 1,
 } as const
 
 export type NomEvenement = keyof typeof VERSIONS_EVENEMENTS
@@ -50,6 +58,10 @@ export type ChargesEvenements = {
   InscriptionPrevenirRecue: ChargeInscription
   /** Réservation d'une vente assistée posée par l'équipe (story 6.3) : déclenche l'e-mail du lien à l'acheteur. */
   VenteAssisteePosee: ChargePassage
+  /** Paiement d'un passage constaté par l'équipe (story 6.4) : relate seulement, aucun e-mail. */
+  PaiementConstate: ChargePaiement
+  /** Commande passée de « en attente de paiement » à « confirmée » (story 6.4) : relate seulement. */
+  CommandeConfirmee: ChargeCommande
 }
 
 export type EvenementA<N extends NomEvenement> = { nom: N; charge: ChargesEvenements[N] }
@@ -78,6 +90,8 @@ const CLES_CHARGES: { [N in NomEvenement]: readonly (keyof ChargesEvenements[N])
   DemandeVisiteRecue: ['demandeId'],
   InscriptionPrevenirRecue: ['inscriptionId'],
   VenteAssisteePosee: ['passageId'],
+  PaiementConstate: ['paiementId'],
+  CommandeConfirmee: ['commandeId'],
 }
 
 function chargeConforme(nom: NomEvenement, charge: unknown): boolean {

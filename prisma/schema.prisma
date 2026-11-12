@@ -513,6 +513,7 @@ model PassageEnCaisse {
   coordonnees   CoordonneesAcheteur?
   commandes     Commande[]
   paiements     Paiement[]
+  incidents     Incident[]
   createdAt     DateTime             @default(now()) @db.Timestamptz(3)
 }
 
@@ -539,6 +540,7 @@ model Commande {
   etat                      EtatCommande     @default(en_attente_paiement)
   devise                    String           @db.VarChar(3)
   lignes                    LigneCommande[]
+  incidents                 Incident[]
   // Commande historique seulement (recopie d'Order, scripts/sql/recopier-anciennes-commandes.sql).
   ordreHistoriqueId         String?          @unique
   montantHistoriqueCentimes Int?
@@ -592,11 +594,44 @@ model Paiement {
   referenceExterne String
   montantCentimes  Int
   etat             EtatPaiement    @default(ouvert)
+  // Story 6.4 : qui a constaté le paiement (id de l'utilisateur, sans clé étrangère) et quand.
+  constatePar      String?
+  constateLe       DateTime?       @db.Timestamptz(3)
+  incidents        Incident[]
   createdAt        DateTime        @default(now()) @db.Timestamptz(3)
   updatedAt        DateTime        @updatedAt @db.Timestamptz(3)
 
   @@unique([source, referenceExterne])
+  // Un seul paiement ouvert par passage (partialIndexes) : filet sous le verrou du passage.
+  @@unique([passageId], where: raw("\"etat\" = 'ouvert'"), map: "Paiement_ouvert_par_passage")
   @@index([passageId])
+}
+
+// Story 6.4 (FR-13, AD-8) : un constat qui ne peut pas confirmer la commande (montant ou devise
+// différents, œuvre plus vendable) laisse un incident à l'équipe ; l'annulation et le remboursement
+// sont la story 6.5. `traiteLe` est facultatif : aucun écran de résolution avant la 6.5.
+enum CauseIncident {
+  montant_different
+  devise_differente
+  oeuvre_indisponible
+}
+
+model Incident {
+  id              String          @id @default(cuid())
+  passage         PassageEnCaisse @relation(fields: [passageId], references: [id], onDelete: Restrict)
+  passageId       String
+  paiement        Paiement?       @relation(fields: [paiementId], references: [id], onDelete: SetNull)
+  paiementId      String?
+  commande        Commande?       @relation(fields: [commandeId], references: [id], onDelete: SetNull)
+  commandeId      String?
+  cause           CauseIncident
+  attenduCentimes Int?
+  recuCentimes    Int?
+  createdAt       DateTime        @default(now()) @db.Timestamptz(3)
+  traiteLe        DateTime?       @db.Timestamptz(3)
+
+  @@index([passageId])
+  @@index([traiteLe])
 }
 
 // Story 6.2 (FR-12, AD-7) : une réservation par œuvre et par passage, active tant que `issue` est

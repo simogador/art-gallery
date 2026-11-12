@@ -302,3 +302,69 @@ export async function reservationsPourAdmin(
   const lire = ({ artwork, ...r }: (typeof actives)[number]): ReservationLue => ({ ...r, slug: artwork.slug, titre: artwork.title })
   return { enCours: actives.map(lire), terminees: terminees.map(lire) }
 }
+
+export type ResultatVente =
+  | { ok: true; evenements: string[] }
+  | { ok: false; code: 'oeuvre_indisponible'; artworkId: string }
+
+/**
+ * Vend les œuvres d'un passage payé (story 6.4, FR-13), dans la transaction de l'appelant : œuvres
+ * verrouillées dans l'ordre des id, toutes décidées avant la première écriture, puis mise à jour
+ * conditionnelle vers `vendue` et fermeture `confirmee` de la réservation du passage. Une œuvre n'est
+ * vendable que si elle est `reservee` par ce passage ou `disponible` ; une œuvre vendue, vendue ailleurs
+ * ou retirée, ou réservée par un autre passage non échu, refuse tout (`oeuvre_indisponible`, id nommé,
+ * rien d'écrit). Une réservation échue d'un autre passage est fermée (`expiree`). Aucun contrôle
+ * d'acteur : l'appelant (`commandes`) le fait. L'appelant répartit les événements après sa transaction.
+ */
+export async function vendreOeuvresDuPassage(
+  passageId: string,
+  artworkIds: readonly string[],
+  tx: Prisma.TransactionClient,
+  maintenant: Date = new Date(),
+): Promise<ResultatVente> {
+  const ids = [...new Set(artworkIds)].sort()
+  if (ids.length === 0) return { ok: true, evenements: [] }
+  const oeuvres = await lireEtVerrouiller(tx, ids)
+  const parId = new Map(oeuvres.map((o) => [o.id, o]))
+  const actives = await tx.reservation.findMany({
+    where: { artworkId: { in: ids }, issue: null },
+    select: { id: true, artworkId: true, passageId: true, echeance: true },
+  })
+  const activeDe = new Map(actives.map((r) => [r.artworkId, r]))
+
+  const aVendre: { o: LigneOeuvre; reservationId: string | null; autreEchue: string | null }[] = []
+  for (const id of ids) {
+    const o = parId.get(id)
+    if (!o) return { ok: false, code: 'oeuvre_indisponible', artworkId: id }
+    const active = activeDe.get(id)
+    const autre = active && active.passageId !== passageId ? active : null
+    if (autre && !estEchue(autre.echeance, maintenant)) return { ok: false, code: 'oeuvre_indisponible', artworkId: id }
+    const propre = active && active.passageId === passageId ? active : null
+    const vendable = propre ? o.disponibilite === 'reservee' : o.disponibilite === 'disponible' || (autre !== null && o.disponibilite === 'reservee')
+    if (!vendable) return { ok: false, code: 'oeuvre_indisponible', artworkId: id }
+    // Visibilité relue sous le verrou (publiée, non retirée, artiste actif avec accord signé).
+    const visible = estVisible({
+      publication: o.publication as 'publiee' | null,
+      disponibilite: o.disponibilite as 'disponible' | null,
+      artist: { accordSigneLe: o.accordSigneLe, active: o.active },
+    })
+    if (!visible) return { ok: false, code: 'oeuvre_indisponible', artworkId: id }
+    aVendre.push({ o, reservationId: propre?.id ?? null, autreEchue: autre?.id ?? null })
+  }
+
+  const evenements: string[] = []
+  for (const { o, reservationId, autreEchue } of aVendre) {
+    if (autreEchue) await tx.reservation.updateMany({ where: { id: autreEchue, issue: null }, data: { issue: 'expiree', issueLe: maintenant } })
+    const changement = await tx.artwork.updateMany({
+      where: { id: o.id, disponibilite: { in: ['reservee', 'disponible'] } },
+      data: { disponibilite: 'vendue' },
+    })
+    // Filet : jamais atteint sous le verrou de ligne ; annule la transaction entière.
+    if (changement.count !== 1) throw new Error('vente_conflit')
+    if (reservationId) {
+      await tx.reservation.updateMany({ where: { id: reservationId, issue: null }, data: { issue: 'confirmee', issueLe: maintenant } })
+    }
+    evenements.push(await ecrireEvenement(tx, { nom: 'DisponibiliteChangee', charge: { artworkId: o.id, artistId: o.artistId } }))
+  }
+  return { ok: true, evenements }
+}
