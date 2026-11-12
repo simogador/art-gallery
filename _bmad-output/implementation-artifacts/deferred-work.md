@@ -258,3 +258,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-3-vente-assistee-reserver-et-envoyer-le-lien.md`
   summary: Laisser passer `/commande` (page et échange du lien) pendant la maintenance : modifier `passeLaMaintenance` de `src/lib/reglages` et le middleware, sans lever la maintenance ; première tâche de la story suivante.
   evidence: décision du porteur du 2026-11-11 (« B, dans la story suivante ») : sans cela le lien de l'acheteur mène à la page de maintenance tant que `MAINTENANCE_MODE` est actif.
+- source_spec: none
+  summary: Rattacher la commande à la demande de visite ou de sélection d'origine (FR-28), automatiquement quand la réservation est posée depuis la demande ; choisir le propriétaire de la table de rattachement.
+  evidence: découpage décidé par le porteur le 2026-11-12 : la story suivante ne fait que la maintenance, la libération, la vue des réservations et le renvoi ou la révocation du lien ; le rattachement contient une décision de modèle de données à poser avant d'écrire.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-3b-liberer-voir-et-renvoyer-les-reservations.md`
+  summary: Gérer le focus de `ReservationsEquipe` (retour du focus après « Libérer » et « Annuler », après la disparition d'une ligne) et tester le rendu de `/dashboard/admin/commandes`.
+  evidence: revue 6.3 bis : le bouton qui avait le focus disparaît, le focus tombe sur `<body>` ; la page n'est couverte que par les tests du module.

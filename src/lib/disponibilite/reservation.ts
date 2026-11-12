@@ -99,6 +99,7 @@ async function libererLignes(
   reservations: { id: string; artworkId: string }[],
   issue: IssueReservation,
   maintenant: Date,
+  par: string | null = null,
 ): Promise<ResultatLiberation> {
   const ids = [...new Set(reservations.map((r) => r.artworkId))].sort()
   const oeuvres = await lireEtVerrouiller(tx, ids)
@@ -107,7 +108,7 @@ async function libererLignes(
   for (const o of oeuvres) {
     const fermees = await tx.reservation.updateMany({
       where: { id: { in: reservations.filter((r) => r.artworkId === o.id).map((r) => r.id) }, issue: null },
-      data: { issue, issueLe: maintenant },
+      data: { issue, issueLe: maintenant, issuePar: par },
     })
     if (fermees.count === 0) continue
     liberees += fermees.count
@@ -232,13 +233,13 @@ export async function reserverOeuvres(entree: EntreeReservation, tx?: Prisma.Tra
  */
 export async function libererReservation(
   passageId: string,
-  options: { issue?: Extract<IssueReservation, 'liberee' | 'expiree'>; maintenant?: Date } = {},
+  options: { issue?: Extract<IssueReservation, 'liberee' | 'expiree'>; maintenant?: Date; /** Utilisateur qui libère (journal). */ par?: string } = {},
   tx?: Prisma.TransactionClient,
 ): Promise<ResultatLiberation> {
   const maintenant = options.maintenant ?? new Date()
   return dansTransaction(tx, async (t) => {
     const actives = await t.reservation.findMany({ where: { passageId, issue: null }, select: { id: true, artworkId: true } })
-    return libererLignes(t, actives, options.issue ?? 'liberee', maintenant)
+    return libererLignes(t, actives, options.issue ?? 'liberee', maintenant, options.par ?? null)
   })
 }
 
@@ -264,4 +265,40 @@ export async function reservationsActivesDuPassage(
     select: { artworkId: true, origine: true, echeance: true },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
   })
+}
+
+export type ReservationLue = {
+  id: string
+  passageId: string
+  artworkId: string
+  slug: string
+  titre: string
+  origine: OrigineReservation
+  echeance: Date
+  issue: IssueReservation | null
+  issueLe: Date | null
+  /** Identifiant de l'utilisateur qui a libéré ; vide si l'issue est automatique. */
+  issuePar: string | null
+}
+
+export const NOMBRE_TERMINEES_ADMIN = 50
+
+/**
+ * Réservations pour l'équipe (story 6.3 bis) : toutes les actives (échues comprises, tant qu'elles ne sont
+ * pas fermées) et les 50 dernières terminées. Admin seulement, vérifié ici à partir de l'acteur ; sinon null.
+ */
+export async function reservationsPourAdmin(
+  acteur: { type: string },
+): Promise<{ enCours: ReservationLue[]; terminees: ReservationLue[] } | null> {
+  if (acteur.type !== 'admin') return null
+  const select = {
+    id: true, passageId: true, artworkId: true, origine: true, echeance: true, issue: true, issueLe: true, issuePar: true,
+    artwork: { select: { slug: true, title: true } },
+  } as const
+  const [actives, terminees] = await Promise.all([
+    prisma.reservation.findMany({ where: { issue: null }, select, orderBy: [{ echeance: 'asc' }, { id: 'asc' }] }),
+    prisma.reservation.findMany({ where: { issue: { not: null } }, select, orderBy: [{ issueLe: 'desc' }, { id: 'desc' }], take: NOMBRE_TERMINEES_ADMIN }),
+  ])
+  const lire = ({ artwork, ...r }: (typeof actives)[number]): ReservationLue => ({ ...r, slug: artwork.slug, titre: artwork.title })
+  return { enCours: actives.map(lire), terminees: terminees.map(lire) }
 }

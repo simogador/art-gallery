@@ -425,3 +425,10 @@ Retour arrière :
 - Contrôle (lecture seule) : `SELECT unnest(enum_range(NULL::"UsageJeton"));` liste `commande_assistee`.
 - Retour arrière : l'ancien code ignore la valeur ; PostgreSQL ne sait pas retirer une valeur d'énumération, on la laisse. Libérer les œuvres réservées par erreur : `libererReservation` (module `disponibilite`), jamais par SQL direct.
 - 2026-11-11 (story 6.3) : migration `20261115090000_commande_assistee` (empreinte SHA-256 `5362f20c16378b5933b1a8a64c6d650e45b1089dd0373eaa7f70a8bad4270b17`) appliquée depuis l'éditeur SQL de Neon sur `preview`, puis sur `production` avant la fusion de la PR #73. Point de restauration production : branche de sauvegarde `sauvegarde-avant-6-3-…` du 2026-11-11. Valeur `commande_assistee` de `UsageJeton` et ligne `_prisma_migrations` vérifiées sur preview (enum à quatre valeurs, une ligne) ; sur production, la ligne `_prisma_migrations` (une) prouve l'ajout, fait dans la même transaction. Préversion vérifiée : `/dashboard/admin/commandes` et `/commande` (lien inactif).
+
+### Story 6.3 bis : auteur de la libération d'une réservation
+
+- Migration : `20261116090000_reservation_issue_par` (empreinte SHA-256 : `3d4b64fd36c1a8a41cf32f3dac1d2d5e3a761f6ab8538e2985199d0769d6d723`). Additive : une colonne facultative `"issuePar" TEXT` sur `"Reservation"` (id de l'utilisateur qui a libéré, sans clé étrangère). Aucune donnée existante n'est touchée.
+- Le nouveau code lit et écrit cette colonne dès que `/dashboard/admin/commandes` s'ouvre : sans elle, la liste des réservations échoue. Même procédure que les précédentes : branche de sauvegarde datée (`sauvegarde-avant-6-3-bis-…`), `preview` puis production **avant la fusion**, avec la ligne `_prisma_migrations` (vérifiez l'empreinte avec `sha256sum`).
+- Contrôle (lecture seule) : `SELECT column_name FROM information_schema.columns WHERE table_name = 'Reservation' AND column_name = 'issuePar';` renvoie une ligne.
+- Retour arrière : l'ancien code ignore la colonne. Dernier recours : `ALTER TABLE "Reservation" DROP COLUMN "issuePar";` puis `DELETE FROM "_prisma_migrations" WHERE migration_name = '20261116090000_reservation_issue_par';`.

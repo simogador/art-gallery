@@ -411,6 +411,220 @@ describe('base : vente assistée', () => {
     expect(texte).not.toContain(fr.commande.inactif.titre)
   })
 
+  describe('libérer, renvoyer, voir (6.3 bis)', () => {
+    const pose = async (oeuvres = ['o1', 'o2']) => {
+      const { poserVenteAssistee } = await import('@/lib/commandes')
+      const r = await poserVenteAssistee(ADMIN, { ...SAISIE, oeuvres })
+      if (!r.ok) throw new Error('pose refusée')
+      return r
+    }
+    const creerAdmin = () =>
+      db.query(`INSERT INTO "User" (id, email, name, role, "updatedAt") VALUES ('admin-1', 'equipe@exemple.test', 'Camille Équipe', 'admin', now()) ON CONFLICT (id) DO NOTHING`)
+
+    it.each([0, 1, 2])('acteur non admin (%#) : libérer, renvoyer, vue refusés, rien écrit', async (i) => {
+      await oeuvre('o1')
+      const r = await pose(['o1'])
+      envoi.envoyes.length = 0
+      const m = await import('@/lib/commandes')
+      expect(await m.libererVenteAssistee(AUTRES[i], r.passageId)).toEqual({ ok: false, code: 'acces_refuse' })
+      expect(await m.renvoyerLienVenteAssistee(AUTRES[i], r.passageId)).toEqual({ ok: false, code: 'acces_refuse' })
+      expect(await m.reservationsDeLEquipe(AUTRES[i])).toBeNull()
+      expect(await etat('o1')).toBe('reservee')
+      expect(await compter('Reservation', 'WHERE issue IS NULL')).toBe(1)
+      expect(await compter('Jeton', 'WHERE "revoqueLe" IS NULL')).toBe(1)
+      expect(envoi.envoyes).toHaveLength(0)
+    })
+
+    it('libération : œuvres disponibles, issue liberee avec auteur et date, lien révoqué, événements, rejouée sans effet', async () => {
+      await oeuvre('o1')
+      await oeuvre('o2', { artiste: 'art-b' })
+      const r = await pose()
+      const jeton = jetonDuMail()!
+      const { libererVenteAssistee, lireLienVenteAssistee } = await import('@/lib/commandes')
+      const evtAvant = await compter('Evenement', `WHERE nom = 'DisponibiliteChangee'`)
+      const t = new Date()
+      expect(await libererVenteAssistee(ADMIN, r.passageId, t)).toEqual({ ok: true, liberees: 2 })
+      expect(await etat('o1')).toBe('disponible')
+      expect(await etat('o2')).toBe('disponible')
+      const lignes = (await db.query(`SELECT issue::text AS issue, "issueLe", "issuePar" FROM "Reservation"`)).rows
+      expect(lignes).toHaveLength(2)
+      for (const l of lignes) {
+        expect(l.issue).toBe('liberee')
+        expect(l.issuePar).toBe('admin-1')
+        expect(new Date(l.issueLe).getTime()).toBe(t.getTime())
+      }
+      expect(await compter('Jeton', 'WHERE "revoqueLe" IS NOT NULL')).toBe(1)
+      expect(await lireLienVenteAssistee(jeton)).toBeNull()
+      expect(await compter('Evenement', `WHERE nom = 'DisponibiliteChangee'`)).toBe(evtAvant + 2)
+      expect(await compter('Commande', `WHERE etat = 'en_attente_paiement'`)).toBe(2)
+      // Rejouée : succès sans effet.
+      expect(await libererVenteAssistee(ADMIN, r.passageId)).toEqual({ ok: true, liberees: 0 })
+      expect(await compter('Evenement', `WHERE nom = 'DisponibiliteChangee'`)).toBe(evtAvant + 2)
+      // L'œuvre libérée peut être réservée de nouveau.
+      const { poserVenteAssistee } = await import('@/lib/commandes')
+      expect((await poserVenteAssistee(ADMIN, { ...SAISIE, oeuvres: ['o1'] })).ok).toBe(true)
+    })
+
+    it('une œuvre déclarée vendue ailleurs entre-temps n’est pas écrasée', async () => {
+      await oeuvre('o1')
+      await oeuvre('o2')
+      const r = await pose()
+      await db.query(`UPDATE "Artwork" SET disponibilite = 'vendue_ailleurs' WHERE slug = 'o2'`)
+      const { libererVenteAssistee } = await import('@/lib/commandes')
+      expect(await libererVenteAssistee(ADMIN, r.passageId)).toEqual({ ok: true, liberees: 2 })
+      expect(await etat('o1')).toBe('disponible')
+      expect(await etat('o2')).toBe('vendue_ailleurs')
+    })
+
+    it('une réservation d’origine paiement n’est pas libérable ici', async () => {
+      await oeuvre('o1')
+      const r = await pose(['o1'])
+      await db.query(`UPDATE "Reservation" SET origine = 'paiement'`)
+      const { libererVenteAssistee } = await import('@/lib/commandes')
+      expect(await libererVenteAssistee(ADMIN, r.passageId)).toEqual({ ok: false, code: 'invalide' })
+      expect(await etat('o1')).toBe('reservee')
+    })
+
+    it('renvoi : e-mail non parti → nouveau lien, même adresse et même échéance, un seul lien actif', async () => {
+      await oeuvre('o1')
+      envoi.resultat = { ok: false, code: 'refuse' }
+      const r = await pose(['o1'])
+      envoi.resultat = { ok: true }
+      envoi.envoyes.length = 0
+      const echeance = new Date((await db.query(`SELECT echeance FROM "Reservation"`)).rows[0].echeance).getTime()
+      const { renvoyerLienVenteAssistee, lireLienVenteAssistee } = await import('@/lib/commandes')
+      expect(await renvoyerLienVenteAssistee(ADMIN, r.passageId)).toEqual({ ok: true, envoye: true })
+      expect(envoi.envoyes).toHaveLength(1)
+      expect(envoi.envoyes[0].a).toBe('claire.martin@exemple.test')
+      const lien = await lireLienVenteAssistee(jetonDuMail()!)
+      expect(lien?.passageId).toBe(r.passageId)
+      expect(lien?.echeance.getTime()).toBe(echeance)
+      expect(await compter('Jeton', 'WHERE "revoqueLe" IS NULL')).toBe(1)
+      // Lien actif maintenant : un second renvoi est refusé, rien n'est envoyé.
+      envoi.envoyes.length = 0
+      expect(await renvoyerLienVenteAssistee(ADMIN, r.passageId)).toEqual({ ok: false, code: 'lien_actif' })
+      expect(envoi.envoyes).toHaveLength(0)
+    })
+
+    it('renvoi : échec d’envoi → lien révoqué, envoye faux ; réservation échue ou terminée → refus typé', async () => {
+      await oeuvre('o1')
+      envoi.resultat = { ok: false, code: 'refuse' }
+      const r = await pose(['o1'])
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      const m = await import('@/lib/commandes')
+      expect(await m.renvoyerLienVenteAssistee(ADMIN, r.passageId)).toEqual({ ok: true, envoye: false })
+      expect(await compter('Jeton', 'WHERE "revoqueLe" IS NULL')).toBe(0)
+      // Échue (instant postérieur à l'échéance).
+      envoi.envoyes.length = 0
+      envoi.resultat = { ok: true }
+      expect(await m.renvoyerLienVenteAssistee(ADMIN, r.passageId, new Date(Date.now() + 49 * 3_600_000))).toEqual({ ok: false, code: 'reservation_terminee' })
+      // Terminée.
+      await m.libererVenteAssistee(ADMIN, r.passageId)
+      expect(await m.renvoyerLienVenteAssistee(ADMIN, r.passageId)).toEqual({ ok: false, code: 'reservation_terminee' })
+      expect(envoi.envoyes).toHaveLength(0)
+    })
+
+    it('vue de l’équipe : en cours (œuvres, bénéficiaire, origine, échéance, lien) et journal (issue, auteur, date)', async () => {
+      await creerAdmin()
+      await oeuvre('o1')
+      await oeuvre('o2')
+      await oeuvre('o3')
+      const a = await pose(['o1', 'o2'])
+      envoi.resultat = { ok: false, code: 'refuse' }
+      const b = await pose(['o3'])
+      envoi.resultat = { ok: true }
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      const m = await import('@/lib/commandes')
+      await m.libererVenteAssistee(ADMIN, a.passageId)
+      const vue = await m.reservationsDeLEquipe(ADMIN)
+      expect(vue?.enCours).toHaveLength(1)
+      expect(vue?.enCours[0]).toMatchObject({
+        passageId: b.passageId,
+        beneficiaire: { nom: 'Claire Martin', email: 'claire.martin@exemple.test' },
+        origine: 'vente_assistee',
+        echue: false,
+        lienActif: false,
+        oeuvres: [{ slug: 'o3', titre: 'Titre o3' }],
+      })
+      expect(vue?.terminees).toHaveLength(2)
+      for (const l of vue!.terminees) {
+        expect(l).toMatchObject({ passageId: a.passageId, issue: 'liberee', par: 'Camille Équipe', origine: 'vente_assistee' })
+        expect(l.issueLe).toBeInstanceOf(Date)
+      }
+      // État vide.
+      await db.query(`DELETE FROM "Reservation"`)
+      expect(await m.reservationsDeLEquipe(ADMIN)).toEqual({ enCours: [], terminees: [] })
+    })
+
+    it('vue : vente à deux œuvres, e-mail parti → une entrée, lien actif, plus proche échéance ; échue après', async () => {
+      await oeuvre('o1')
+      await oeuvre('o2')
+      const r = await pose()
+      await db.query(`UPDATE "Reservation" SET echeance = echeance - interval '1 hour' WHERE "artworkId" = 'o2'`)
+      const m = await import('@/lib/commandes')
+      const vue = await m.reservationsDeLEquipe(ADMIN)
+      expect(vue?.enCours).toHaveLength(1)
+      const v = vue!.enCours[0]
+      expect(v.oeuvres.map((o) => o.slug).sort()).toEqual(['o1', 'o2'])
+      expect(v.lienActif).toBe(true)
+      expect(v.liberable).toBe(true)
+      expect(v.echue).toBe(false)
+      expect(v.echeance.getTime()).toBe(r.echeance.getTime() - 3_600_000)
+      const apres = await m.reservationsDeLEquipe(ADMIN, new Date(r.echeance.getTime() + 1000))
+      expect(apres?.enCours[0].echue).toBe(true)
+      await db.query(`UPDATE "Reservation" SET origine = 'paiement'`)
+      expect((await m.reservationsDeLEquipe(ADMIN))?.enCours[0].liberable).toBe(false)
+    })
+
+    it('libérer un passage inconnu : invalide', async () => {
+      const { libererVenteAssistee } = await import('@/lib/commandes')
+      expect(await libererVenteAssistee(ADMIN, 'inconnu')).toEqual({ ok: false, code: 'invalide' })
+    })
+
+    it('le journal ne garde que les 50 dernières terminées', async () => {
+      await oeuvre('o1')
+      const r = await pose(['o1'])
+      const { passageId } = r
+      await db.query(
+        `INSERT INTO "Reservation" (id, "artworkId", "passageId", origine, echeance, issue, "issueLe")
+         SELECT 'x' || g, 'o1', $1, 'vente_assistee', now(), 'expiree', now() - (g || ' minutes')::interval FROM generate_series(1, 60) g`,
+        [passageId],
+      )
+      const { reservationsDeLEquipe } = await import('@/lib/commandes')
+      expect((await reservationsDeLEquipe(ADMIN))?.terminees).toHaveLength(50)
+    })
+
+    it('aucun e-mail ni lien dans les journaux lors de la libération et du renvoi', async () => {
+      await oeuvre('o1')
+      envoi.resultat = { ok: false, code: 'refuse' }
+      const journal: string[] = []
+      for (const n of ['log', 'info', 'warn', 'error'] as const) vi.spyOn(console, n).mockImplementation((...a: unknown[]) => void journal.push(JSON.stringify(a)))
+      const r = await pose(['o1'])
+      const m = await import('@/lib/commandes')
+      await m.renvoyerLienVenteAssistee(ADMIN, r.passageId)
+      await m.libererVenteAssistee(ADMIN, r.passageId)
+      const tout = journal.join('\n')
+      expect(tout).not.toContain('exemple.test')
+      expect(tout).not.toMatch(/\/commande\/[A-Za-z0-9_-]{43}/)
+    })
+
+    it('actions : message de libération, renvoi, refus', async () => {
+      acteur.courant = { type: 'admin', userId: 'admin-1' }
+      await oeuvre('o1')
+      envoi.resultat = { ok: false, code: 'refuse' }
+      const r = await pose(['o1'])
+      envoi.resultat = { ok: true }
+      const a = await import('@/app/dashboard/admin/commandes/actions')
+      const t = fr.venteAssistee.suivi
+      expect(await a.actionRenvoyerLien(r.passageId)).toEqual({ ok: true, message: t.renvoyee })
+      expect(await a.actionRenvoyerLien(r.passageId)).toEqual({ ok: false, message: t.refus.lien_actif })
+      expect(await a.actionLibererVenteAssistee(r.passageId)).toEqual({ ok: true, message: t.liberee })
+      expect(await a.actionLibererVenteAssistee(r.passageId)).toEqual({ ok: true, message: t.dejaTerminee })
+      acteur.courant = { type: 'user', userId: 'u1' }
+      expect(await a.actionLibererVenteAssistee(r.passageId)).toEqual({ ok: false, message: t.refus.acces_refuse })
+    })
+  })
+
   describe('actionPoserVenteAssistee', () => {
     const saisie = { email: 'claire@exemple.test', nom: 'Claire', pays: 'FR', oeuvres: 'o1', heures: '' }
     const action = async () => (await import('@/app/dashboard/admin/commandes/actions')).actionPoserVenteAssistee

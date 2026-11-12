@@ -1,7 +1,7 @@
 'use server'
 
 import { acteurCourant } from '@/lib/acces'
-import { poserVenteAssistee, heuresValides, type ErreursCoordonnees } from '@/lib/commandes'
+import { heuresValides, libererVenteAssistee, poserVenteAssistee, renvoyerLienVenteAssistee, type ErreursCoordonnees } from '@/lib/commandes'
 import { lireIdentifiants } from '@/lib/commandes/vente-assistee-regles'
 import { fr, formaterDateHeure } from '@/lib/i18n'
 import { DUREE_RESERVATION_VENTE_ASSISTEE_HEURES } from '@/lib/reglages'
@@ -46,6 +46,31 @@ export async function actionPoserVenteAssistee(saisie: SaisieFormulaireVente): P
       envoye: resultat.envoye,
       message: resultat.envoye ? t.succes(String(saisie.email).trim(), formaterDateHeure(resultat.echeance)) : t.emailNonParti,
     }
+  } catch {
+    return { ok: false, message: t.refus.indisponible }
+  }
+}
+
+// Story 6.3 bis : libérer une réservation et renvoyer le lien. Droits vérifiés par le module commandes.
+export type ResultatActionReservation = { ok: true; message: string } | { ok: false; message: string }
+
+export async function actionLibererVenteAssistee(passageId: string): Promise<ResultatActionReservation> {
+  const t = fr.venteAssistee.suivi
+  try {
+    const r = await libererVenteAssistee(await acteurCourant(), String(passageId ?? ''))
+    if (!r.ok) return { ok: false, message: t.refus[r.code] }
+    return { ok: true, message: r.liberees === 0 ? t.dejaTerminee : t.liberee }
+  } catch {
+    return { ok: false, message: t.refus.indisponible }
+  }
+}
+
+export async function actionRenvoyerLien(passageId: string): Promise<ResultatActionReservation> {
+  const t = fr.venteAssistee.suivi
+  try {
+    const r = await renvoyerLienVenteAssistee(await acteurCourant(), String(passageId ?? ''))
+    if (!r.ok) return { ok: false, message: t.refus[r.code] }
+    return r.envoye ? { ok: true, message: t.renvoyee } : { ok: false, message: fr.venteAssistee.emailNonParti }
   } catch {
     return { ok: false, message: t.refus.indisponible }
   }
