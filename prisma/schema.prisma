@@ -622,6 +622,8 @@ enum CauseIncident {
   oeuvre_indisponible
   // Story 6.5 : paiement arrivé pour une commande déjà annulée ou abandonnée (jamais confirmée).
   commande_annulee
+  // Story 6.6 : l'artiste a déclaré l'œuvre vendue ailleurs ou retirée pendant la réservation ; la commande en attente est annulée.
+  reservation_interrompue
 }
 
 model Incident {

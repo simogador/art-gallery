@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { formatPrice } from '@/lib/utils/artworks'
 import { ArtworkImage, DimensionsChoisies } from '@/components/ui'
-import { SEPARATEUR } from '@/lib/i18n'
+import { fr, SEPARATEUR } from '@/lib/i18n'
 import { oeuvresDeLArtiste, gradient, accent } from '@/lib/catalogue'
 import { acteurCourant } from '@/lib/acces'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
@@ -80,6 +80,7 @@ export default async function OeuvresPage({ searchParams }: Props) {
           action={declaree.annulable ? <BoutonAnnulerDeclaration slug={slugDeclare} retour="liste" lien /> : undefined}
         >
           {messageDeclaration(declaree.type, declaree.le)}
+          {declaree.reservationInterrompue && <> {fr.declarationReservee.bandeau}</>}
         </InfoBanner>
       )}
 

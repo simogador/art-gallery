@@ -410,6 +410,7 @@ export type Dictionnaire = {
         readonly monnaie_differente: string
         readonly oeuvre_indisponible: string
         readonly commande_annulee: string
+        readonly reservation_interrompue: string
       }
       readonly commande: string
       readonly aRembourser: string
@@ -457,6 +458,8 @@ export type Dictionnaire = {
       }
     }
   }
+  /** Bandeau de l'artiste après une déclaration sur une œuvre réservée (story 6.6, FR-21). */
+  readonly declarationReservee: { readonly bandeau: string }
   /** Vente assistée de l'équipe, `/dashboard/admin/commandes` (story 6.3, FR-12). */
   readonly venteAssistee: {
     readonly titre: string
@@ -1254,6 +1257,7 @@ export const fr = {
         monnaie_differente: 'Monnaie différente',
         oeuvre_indisponible: 'Œuvre prise par un autre acheteur : commande annulée, remboursement demandé',
         commande_annulee: 'Paiement reçu pour une commande annulée ou abandonnée : remboursement demandé',
+        reservation_interrompue: 'Œuvre déclarée vendue ailleurs ou retirée par l’artiste pendant la réservation : commande annulée, acheteur à prévenir',
       },
       commande: 'Commande',
       aRembourser: 'Montant à rembourser',
@@ -1299,6 +1303,9 @@ export const fr = {
         indisponible: 'Le remboursement n’a pas pu être enregistré. Réessayez dans un instant.',
       },
     },
+  },
+  declarationReservee: {
+    bandeau: 'Un acheteur avait réservé cette œuvre. L’équipe Errancy le prévient et s’occupe d’un éventuel remboursement. Vous n’avez rien à faire.',
   },
   venteAssistee: {
     titre: 'Vente assistée',

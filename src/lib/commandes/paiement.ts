@@ -21,7 +21,7 @@ import { transitionPermise } from './etats'
 // les autres commandes du passage restent confirmées. Seul l'acteur `admin`, vérifié ici. Jamais
 // d'e-mail ni d'adresse dans les journaux.
 
-export type CauseIncident = 'montant_different' | 'devise_differente' | 'oeuvre_indisponible' | 'commande_annulee'
+export type CauseIncident = 'montant_different' | 'devise_differente' | 'oeuvre_indisponible' | 'commande_annulee' | 'reservation_interrompue'
 
 export type ResultatPaiementConstate =
   | { ok: true; paiementId: string; commandes: number; annulees: number; dejaConstate: boolean }

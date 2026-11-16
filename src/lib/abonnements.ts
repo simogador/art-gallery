@@ -42,6 +42,17 @@ function via<N extends NomEvenement>(nom: NomGestionnaire): Gestionnaire<N> {
   }
 }
 
+/**
+ * Gestionnaire de `commandes`, résolu à la répartition (import différé) : `commandes` importe
+ * `disponibilite` et `evenements`, qui importent ce fichier ; même cycle que `via` pour `notifications`.
+ */
+function viaCommandes<N extends NomEvenement>(nom: 'annulerSuiteReservationAnnulee'): Gestionnaire<N> {
+  return async (evenement) => {
+    const commandes = await import('@/lib/commandes')
+    await (commandes[nom] as unknown as Gestionnaire<N>)(evenement)
+  }
+}
+
 export const ABONNEMENTS: { [N in NomEvenement]: Abonnement<N>[] } = {
   PublicationChangee: [{ nom: 'invaliderCatalogue', gestionnaire: invaliderCatalogue }],
   // Story 4.5 : une œuvre vendue, vendue ailleurs ou retirée n'a plus d'inscrits « Me prévenir » (état relu en base).
@@ -73,4 +84,6 @@ export const ABONNEMENTS: { [N in NomEvenement]: Abonnement<N>[] } = {
   CommandeConfirmee: [],
   // Story 6.5 : l'annulation est seulement relatée ; l'équipe prévient l'acheteur elle-même (e-mails : story suivante).
   CommandeAnnulee: [],
+  // Story 6.6 : la commande en attente de la réservation interrompue est annulée (état relu en base, incident écrit).
+  ReservationAnnulee: [{ nom: 'annulerSuiteReservationAnnulee', gestionnaire: viaCommandes('annulerSuiteReservationAnnulee') }],
 }
