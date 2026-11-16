@@ -3,6 +3,7 @@ import type { Prisma } from '@/generated/prisma/client'
 import type { Acteur } from '@/lib/acces'
 import { DELAI_ANNULATION_DECLARATION_MINUTES } from '@/lib/reglages'
 import { ecrireEvenement, repartirApresValidation } from '@/lib/evenements'
+import { interromprePourDeclaration } from './reservation'
 import {
   annulationAdmise,
   basculePossible,
@@ -215,12 +216,14 @@ export async function declarerDisponibilite(acteur: Acteur, slug: unknown, type:
       where: { id: ligne.id },
       data: { disponibilite },
     })
+    // Story 6.6 : la déclaration prime ; la réservation active de l'œuvre est fermée (`interrompue`) et
+    // `ReservationAnnulee` relaté (la commande en attente est annulée par le gestionnaire de `commandes`).
+    if (ligne.disponibilite === 'reservee') evenements.push(...(await interromprePourDeclaration(tx, ligne.id)))
     const d = await tx.declarationDisponibilite.create({
       data: {
         artworkId: ligne.id,
         type,
         userId: acteur.userId,
-        // Aucune réservation n'existe avant l'epic 6 : toujours faux en pratique.
         reservationInterrompue: ligne.disponibilite === 'reservee',
         createdAt: new Date(),
       },
@@ -338,6 +341,7 @@ export async function derniereDeclaration(
 
 // ── Story 6.2 (FR-12, AD-7) : réservation en bloc sans double vente ──────────────────────────
 export {
+  interromprePourDeclaration,
   libererReservation,
   libererReservationsEchues,
   reserverOeuvres,

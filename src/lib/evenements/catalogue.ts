@@ -27,6 +27,9 @@ export type ChargePaiement = { paiementId: string }
 /** Commande confirmée (story 6.4) : ids seulement. */
 export type ChargeCommande = { commandeId: string }
 
+/** Réservation annulée par la déclaration de l'artiste (story 6.6) : ids seulement. */
+export type ChargeReservationAnnulee = { passageId: string; artworkId: string }
+
 /** Nom → version courante. La clé fait foi à l'exécution comme au typage. */
 export const VERSIONS_EVENEMENTS = {
   PublicationChangee: 1,
@@ -41,6 +44,7 @@ export const VERSIONS_EVENEMENTS = {
   PaiementConstate: 1,
   CommandeConfirmee: 1,
   CommandeAnnulee: 1,
+  ReservationAnnulee: 1,
 } as const
 
 export type NomEvenement = keyof typeof VERSIONS_EVENEMENTS
@@ -65,6 +69,8 @@ export type ChargesEvenements = {
   CommandeConfirmee: ChargeCommande
   /** Commande annulée (story 6.5) : par le constat d'un paiement tardif ou par l'équipe ; relate seulement. */
   CommandeAnnulee: ChargeCommande
+  /** Réservation active fermée (issue `interrompue`) par la déclaration « vendue ailleurs » ou « retirée » de l'artiste (story 6.6). */
+  ReservationAnnulee: ChargeReservationAnnulee
 }
 
 export type EvenementA<N extends NomEvenement> = { nom: N; charge: ChargesEvenements[N] }
@@ -96,6 +102,7 @@ const CLES_CHARGES: { [N in NomEvenement]: readonly (keyof ChargesEvenements[N])
   PaiementConstate: ['paiementId'],
   CommandeConfirmee: ['commandeId'],
   CommandeAnnulee: ['commandeId'],
+  ReservationAnnulee: ['passageId', 'artworkId'],
 }
 
 function chargeConforme(nom: NomEvenement, charge: unknown): boolean {

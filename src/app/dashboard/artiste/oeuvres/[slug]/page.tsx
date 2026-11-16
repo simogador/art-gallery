@@ -7,7 +7,7 @@ import { ArtworkForm } from '@/components/dashboard/ArtworkForm'
 import { acteurCourant } from '@/lib/acces'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
 import { DimensionsChoisies } from '@/components/ui'
-import { SEPARATEUR } from '@/lib/i18n'
+import { fr, SEPARATEUR } from '@/lib/i18n'
 import { lireDepot, lireOeuvreEnCuration } from '@/lib/curation'
 import { zonesOuvertes } from '@/lib/livraison'
 import { CONTACT_EQUIPE, DELAI_ANNULATION_DECLARATION_MINUTES, DELAI_REPONSE_CURATION_JOURS } from '@/lib/reglages'
@@ -126,6 +126,7 @@ export default async function EditOeuvrePage({ params, searchParams }: Props) {
           action={bandeauDeclaration.annulable ? <BoutonAnnulerDeclaration slug={artwork.slug} retour="fiche" lien /> : undefined}
         >
           {messageDeclaration(bandeauDeclaration.type, bandeauDeclaration.le)}
+          {bandeauDeclaration.reservationInterrompue && <> {fr.declarationReservee.bandeau}</>}
         </InfoBanner>
       )}
       {bandeauAnnulation && <InfoBanner>Déclaration annulée : l&apos;œuvre est de nouveau en vente.</InfoBanner>}

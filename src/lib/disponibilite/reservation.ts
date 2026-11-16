@@ -371,3 +371,25 @@ export async function vendreOeuvresDuPassage(
   }
   return { ok: true, evenements }
 }
+
+/**
+ * Ferme les réservations actives d'une œuvre (issue `interrompue`) quand l'artiste la déclare vendue
+ * ailleurs ou retirée (story 6.6, FR-21), dans la transaction de la déclaration, œuvre déjà verrouillée
+ * par l'appelant. Ne touche jamais à l'axe disponibilité (la déclaration prime) et écrit un événement
+ * `ReservationAnnulee` par réservation fermée ; la commande en attente est annulée par son gestionnaire.
+ * Rend les ids d'événements, à répartir par l'appelant après sa transaction.
+ */
+export async function interromprePourDeclaration(
+  tx: Prisma.TransactionClient,
+  artworkId: string,
+  maintenant: Date = new Date(),
+): Promise<string[]> {
+  const actives = await tx.reservation.findMany({ where: { artworkId, issue: null }, select: { id: true, passageId: true } })
+  const evenements: string[] = []
+  for (const r of actives) {
+    const fermee = await tx.reservation.updateMany({ where: { id: r.id, issue: null }, data: { issue: 'interrompue', issueLe: maintenant } })
+    if (fermee.count !== 1) continue
+    evenements.push(await ecrireEvenement(tx, { nom: 'ReservationAnnulee', charge: { passageId: r.passageId, artworkId } }))
+  }
+  return evenements
+}

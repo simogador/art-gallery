@@ -276,3 +276,12 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-5-paiement-tardif-abandon-et-incidents.md`
   summary: Permettre de constater depuis l'écran un paiement pour un passage dont toutes les commandes sont annulées (cas SM-C1 d'un paiement après abandon).
   evidence: revue 6.5 : `PaiementsEnAttente` ne liste que les passages ayant une commande en attente ; le module le traite, l'écran non (limite (d) d'AGENTS.md).
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-6-vente-ailleurs-pendant-une-reservation.md`
+  summary: E-mails à l'acheteur (commande annulée, éventuel remboursement) et à l'équipe (alerte) quand une œuvre réservée est déclarée vendue ailleurs ou retirée ; relance d'un gestionnaire `ReservationAnnulee` en échec.
+  evidence: décision 1A de la 6.6 : l'équipe lit l'incident `reservation_interrompue` sur `/dashboard/admin/commandes` et prévient l'acheteur elle-même ; sans rejeu automatique (AQ-2), un échec laisse la commande en attente jusqu'à l'annulation manuelle.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-6-vente-ailleurs-pendant-une-reservation.md`
+  summary: Extraire le bandeau « Un acheteur avait réservé cette œuvre… » de l'espace artiste en composant testé (présent après une réservation interrompue, absent sinon, sans lien « Annuler »).
+  evidence: revue 6.6 : les deux pages sont des composants serveur sans test de rendu ; seul le texte du dictionnaire et la lecture de la déclaration sont testés.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-6-vente-ailleurs-pendant-une-reservation.md`
+  summary: Traiter la déclaration « vendue ailleurs » ou « retirée » sur une œuvre dont la réservation a expiré et été libérée alors que sa commande est encore en attente (avec le balayage, 6.7).
+  evidence: revue 6.6 : aucun événement `ReservationAnnulee` n'est écrit, la commande reste en attente jusqu'à l'abandon ; le constat d'un paiement est couvert par la 6.5.

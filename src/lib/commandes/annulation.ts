@@ -45,7 +45,7 @@ export async function demanderRemboursement(
 export async function annulerEnAttente(
   tx: Prisma.TransactionClient,
   commande: { id: string; passageId: string; artworkIds: readonly string[] },
-  par: string,
+  par: string | null,
   maintenant: Date,
 ): Promise<string[] | null> {
   if (!transitionPermise('en_attente_paiement', 'annulee')) throw new Error('transition_interdite')
@@ -53,7 +53,7 @@ export async function annulerEnAttente(
   if (maj.count !== 1) return null
   const liberation = commande.artworkIds.length === 0
     ? { evenements: [] as string[] }
-    : await libererReservation(commande.passageId, { issue: 'liberee', par, maintenant, artworkIds: commande.artworkIds }, tx)
+    : await libererReservation(commande.passageId, { issue: 'liberee', par: par ?? undefined, maintenant, artworkIds: commande.artworkIds }, tx)
   return [...liberation.evenements, await ecrireEvenement(tx, { nom: 'CommandeAnnulee', charge: { commandeId: commande.id } })]
 }
 
