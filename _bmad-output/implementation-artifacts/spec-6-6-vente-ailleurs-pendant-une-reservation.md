@@ -2,7 +2,7 @@
 title: 'Story 6.6 — Vente ailleurs pendant une réservation'
 type: 'feature'
 created: '2026-11-12'
-status: 'in-review'
+status: 'done'
 baseline_commit: 'b0eda8e'
 route: 'dispatch'
 review_loop_iteration: 0
