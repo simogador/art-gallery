@@ -2,7 +2,7 @@
 title: 'E-mails de commande — confirmation, annulation, remboursement et alertes de l''équipe'
 type: 'feature'
 created: '2026-11-17'
-status: 'in-review'
+status: 'done'
 baseline_commit: '9a7550a'
 route: 'dispatch'
 review_loop_iteration: 0
