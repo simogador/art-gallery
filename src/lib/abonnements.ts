@@ -78,12 +78,19 @@ export const ABONNEMENTS: { [N in NomEvenement]: Abonnement<N>[] } = {
   InscriptionPrevenirRecue: [{ nom: 'envoyerConfirmationPrevenir', gestionnaire: via('envoyerConfirmationPrevenir') }],
   // Story 6.3 : le lien de la commande part par e-mail, émis à l'envoi (un seul e-mail par événement).
   VenteAssisteePosee: [{ nom: 'envoyerLienVenteAssistee', gestionnaire: via('envoyerLienVenteAssistee') }],
-  // Story 6.4 : le constat et la confirmation sont seulement relatés au journal ; les e-mails (acheteur,
-  // artiste, équipe) viendront avec une story suivante, sans gestionnaire ici.
+  // Story 6.4 : le constat est seulement relaté au journal.
   PaiementConstate: [],
-  CommandeConfirmee: [],
-  // Story 6.5 : l'annulation est seulement relatée ; l'équipe prévient l'acheteur elle-même (e-mails : story suivante).
-  CommandeAnnulee: [],
+  // Commande confirmée : acheteur, artiste (avis sobre) et équipe, un e-mail chacun (réclamation atomique).
+  CommandeConfirmee: [
+    { nom: 'envoyerConfirmationCommande', gestionnaire: via('envoyerConfirmationCommande') },
+    { nom: 'envoyerAvisCommandeArtiste', gestionnaire: via('envoyerAvisCommandeArtiste') },
+    { nom: 'alerterEquipeCommande', gestionnaire: via('alerterEquipeCommande') },
+  ],
+  // Commande annulée : acheteur (avec l'état du remboursement s'il existe) et équipe.
+  CommandeAnnulee: [
+    { nom: 'envoyerAnnulationCommande', gestionnaire: via('envoyerAnnulationCommande') },
+    { nom: 'alerterEquipeCommande', gestionnaire: via('alerterEquipeCommande') },
+  ],
   // Story 6.6 : la commande en attente de la réservation interrompue est annulée (état relu en base, incident écrit).
   ReservationAnnulee: [{ nom: 'annulerSuiteReservationAnnulee', gestionnaire: viaCommandes('annulerSuiteReservationAnnulee') }],
 }

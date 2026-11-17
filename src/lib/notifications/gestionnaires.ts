@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { abandonnerConfirmationPrevenir, preparerConfirmationPrevenir, retirerInscriptionsPrevenirSiSortie } from '@/lib/demandes'
+import { lireDonneesCourrielCommande, lireNumeroCommandeAvecPassage } from '@/lib/commandes/courriels'
 import { abandonnerLienVenteAssistee, preparerLienVenteAssistee } from '@/lib/commandes/vente-assistee'
 import { emettreLienInvitation, noterEnvoiInvitation } from '@/lib/acces/lien-invitation'
 import type { EvenementLuA } from '@/lib/evenements/catalogue'
@@ -8,6 +9,10 @@ import { envoiActif } from './choix'
 import {
   contenuAccuseDemande,
   contenuAccuseVisite,
+  contenuAlerteCommande,
+  contenuCommandeAnnulee,
+  contenuCommandeArtiste,
+  contenuCommandeConfirmee,
   contenuAlerteDemande,
   contenuAlerteVisite,
   contenuConfirmationPrevenir,
@@ -17,6 +22,7 @@ import {
   contenuVenteAssistee,
 } from './contenus'
 import type { Courriel, ResultatEnvoi } from './port'
+import type { Contenu } from './contenus'
 
 // Gestionnaires d'e-mails (story 4.1), reliés aux événements dans `src/lib/abonnements.ts`. Chacun
 // tourne après la réclamation atomique (événement, gestionnaire) : un même événement rejoué n'envoie
@@ -259,5 +265,78 @@ export async function envoyerLienVenteAssistee(evenement: EvenementLuA<'VenteAss
   }
   if (!resultat.ok) {
     console.error('[notifications] lien de vente assistée non envoyé', { evenement: evenement.id, passage: passageId, code: resultat.code })
+  }
+}
+
+type EvenementCommande = EvenementLuA<'CommandeConfirmee'> | EvenementLuA<'CommandeAnnulee'>
+type DonneesCommande = NonNullable<Awaited<ReturnType<typeof lireDonneesCourrielCommande>>>
+
+/**
+ * E-mails de commande (FR-34, FR-25, FR-31) : l'état de la commande est relu en base (un événement
+ * périmé n'envoie rien), l'adresse aussi ; une commande sans passage ou sans adresse n'envoie rien. Un
+ * e-mail par événement et par destinataire (réclamation atomique, clé d'idempotence). Pas de nouvel
+ * essai (AQ-2 ouverte) ; journaux : ids seulement.
+ */
+async function envoyerCommande(
+  evenement: EvenementCommande,
+  nom: string,
+  etatAttendu: 'confirmee' | 'annulee',
+  composer: (d: DonneesCommande) => { a: string; contenu: Contenu } | null,
+): Promise<void> {
+  const { commandeId } = evenement.charge
+  const donnees = await lireDonneesCourrielCommande(commandeId)
+  if (!donnees || donnees.etat !== etatAttendu) {
+    console.info('[notifications] commande sans objet, aucun e-mail', { evenement: evenement.id, commande: commandeId, gestionnaire: nom })
+    return
+  }
+  const message = composer(donnees)
+  if (!message) {
+    console.info('[notifications] aucun destinataire, aucun e-mail', { evenement: evenement.id, commande: commandeId, gestionnaire: nom })
+    return
+  }
+  const resultat = await envoyer({ a: message.a, ...message.contenu, cle: `${evenement.id}:${nom}` })
+  if (!resultat.ok) {
+    console.error('[notifications] e-mail de commande non envoyé', { evenement: evenement.id, commande: commandeId, gestionnaire: nom, code: resultat.code })
+  }
+}
+
+/** Commande confirmée : e-mail à l'acheteur (lignes figées de la commande). */
+export async function envoyerConfirmationCommande(evenement: EvenementLuA<'CommandeConfirmee'>): Promise<void> {
+  await envoyerCommande(evenement, 'envoyerConfirmationCommande', 'confirmee', (d) => ({
+    a: d.acheteur.email,
+    contenu: contenuCommandeConfirmee({ nom: d.acheteur.nom, numero: d.numero, lignes: d.lignes }),
+  }))
+}
+
+/** Commande confirmée : avis sobre à l'artiste (numéro et titres, aucune coordonnée de l'acheteur). Sans compte : rien. */
+export async function envoyerAvisCommandeArtiste(evenement: EvenementLuA<'CommandeConfirmee'>): Promise<void> {
+  await envoyerCommande(evenement, 'envoyerAvisCommandeArtiste', 'confirmee', (d) =>
+    d.artiste?.email
+      ? { a: d.artiste.email, contenu: contenuCommandeArtiste({ artiste: d.artiste.nom, numero: d.numero, titres: d.lignes.map((l) => l.titre) }) }
+      : null,
+  )
+}
+
+/** Commande annulée : e-mail à l'acheteur, avec l'état du remboursement s'il existe. */
+export async function envoyerAnnulationCommande(evenement: EvenementLuA<'CommandeAnnulee'>): Promise<void> {
+  await envoyerCommande(evenement, 'envoyerAnnulationCommande', 'annulee', (d) => ({
+    a: d.acheteur.email,
+    contenu: contenuCommandeAnnulee({ nom: d.acheteur.nom, numero: d.numero, titres: d.lignes.map((l) => l.titre), remboursement: d.remboursement }),
+  }))
+}
+
+/** Commande confirmée ou annulée : alerte à l'équipe, numéro et lien seulement. */
+export async function alerterEquipeCommande(evenement: EvenementCommande): Promise<void> {
+  const { commandeId } = evenement.charge
+  const annulee = evenement.nom === 'CommandeAnnulee'
+  const commande = await lireNumeroCommandeAvecPassage(commandeId)
+  if (!commande || commande.etat !== (annulee ? 'annulee' : 'confirmee')) {
+    console.info('[notifications] commande sans objet, aucune alerte', { evenement: evenement.id, commande: commandeId })
+    return
+  }
+  const contenu = contenuAlerteCommande({ numero: commande.numero, lien: urlAbsolue('/dashboard/admin/commandes'), annulee })
+  const resultat = await envoyer({ a: CONTACT_EQUIPE, ...contenu, cle: `${evenement.id}:alerterEquipeCommande` })
+  if (!resultat.ok) {
+    console.error('[notifications] alerte de commande non envoyée', { evenement: evenement.id, commande: commandeId, code: resultat.code })
   }
 }
