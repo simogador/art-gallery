@@ -285,3 +285,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-6-vente-ailleurs-pendant-une-reservation.md`
   summary: Traiter la déclaration « vendue ailleurs » ou « retirée » sur une œuvre dont la réservation a expiré et été libérée alors que sa commande est encore en attente (avec le balayage, 6.7).
   evidence: revue 6.6 : aucun événement `ReservationAnnulee` n'est écrit, la commande reste en attente jusqu'à l'abandon ; le constat d'un paiement est couvert par la 6.5.
+- source_spec: `_bmad-output/implementation-artifacts/spec-emails-de-commande.md`
+  summary: Prévenir l'acheteur quand son remboursement est marqué effectué, et quand un remboursement naît après une annulation sans paiement (événement `RemboursementEffectue` et gestionnaire).
+  evidence: revue des e-mails de commande : `marquerRemboursementEffectue` n'écrit aucun événement, et l'e-mail d'annulation dit seulement qu'aucun paiement n'était reçu à ce moment-là.
+- source_spec: `_bmad-output/implementation-artifacts/spec-emails-de-commande.md`
+  summary: Rendre visible à l'équipe un e-mail de commande qui n'est pas parti (échec d'envoi ou gestionnaire en échec), avec le rejeu d'AQ-2.
+  evidence: revue des e-mails de commande : l'échec est seulement journalisé (ids) et la réclamation de l'événement est consommée.

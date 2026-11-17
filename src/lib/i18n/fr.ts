@@ -700,6 +700,43 @@ export type Dictionnaire = {
       readonly paiement: string
       readonly lienPersonnel: string
     }
+    /** E-mails de commande : confirmation et annulation à l'acheteur, avis à l'artiste, alertes à l'équipe. */
+    readonly commande: {
+      readonly confirmee: {
+        readonly sujet: (numero: string) => string
+        readonly intro: (numero: string) => string
+        readonly ligne: (titre: string, montant: string) => string
+        readonly delai: (min: number, max: number) => string
+        readonly suite: string
+      }
+      readonly annulee: {
+        readonly sujet: (numero: string) => string
+        readonly intro: (numero: string) => string
+        readonly ligne: (titre: string) => string
+        readonly aucunPaiement: string
+        readonly remboursementDemande: (numero: string) => string
+        readonly remboursementEffectue: (numero: string) => string
+        readonly suite: string
+      }
+      readonly artiste: {
+        readonly sujet: (numero: string) => string
+        readonly intro: (numero: string) => string
+        readonly ligne: (titre: string) => string
+        readonly suite: string
+      }
+      readonly alerteConfirmee: {
+        readonly sujet: (numero: string) => string
+        readonly intro: (numero: string) => string
+        readonly bouton: string
+        readonly suite: string
+      }
+      readonly alerteAnnulee: {
+        readonly sujet: (numero: string) => string
+        readonly intro: (numero: string) => string
+        readonly bouton: string
+        readonly suite: string
+      }
+    }
     readonly confirmationPrevenir: {
       readonly sujet: (titre: string) => string
       readonly intro: (titre: string) => string
@@ -1518,6 +1555,42 @@ export const fr = {
       bouton: 'Voir ma commande',
       paiement: 'L’équipe vous transmet par ailleurs le moyen de paiement.',
       lienPersonnel: 'Ce lien est personnel : il donne accès au récapitulatif de votre commande jusqu’à la fin de la réservation.',
+    },
+    commande: {
+      confirmee: {
+        sujet: (numero: string) => `Commande ${numero} confirmée`,
+        intro: (numero: string) => `Merci : nous avons bien reçu votre paiement, votre commande ${numero} est confirmée.`,
+        ligne: (titre: string, montant: string) => `– « ${titre} » : ${montant}`,
+        delai: (min: number, max: number) => (min === max ? `Délai de livraison estimé : ${min} jour${min > 1 ? 's' : ''}.` : `Délai de livraison estimé : ${min} à ${max} jours.`),
+        suite: 'L’équipe Errancy organise l’expédition avec l’artiste et vous écrit pour la suite.',
+      },
+      annulee: {
+        sujet: (numero: string) => `Commande ${numero} annulée`,
+        intro: (numero: string) => `Votre commande ${numero} a été annulée. Nous en sommes désolés.`,
+        ligne: (titre: string) => `– « ${titre} »`,
+        aucunPaiement: 'À ce jour, nous n’avons reçu aucun paiement pour cette commande.',
+        remboursementDemande: (numero: string) => `Le remboursement de la commande ${numero} a été demandé : l’équipe Errancy s’en occupe et vous écrit.`,
+        remboursementEffectue: (numero: string) => `La commande ${numero} a été remboursée par l’équipe Errancy.`,
+        suite: 'Vous pouvez répondre à ce message pour toute question.',
+      },
+      artiste: {
+        sujet: (numero: string) => `Nouvelle commande ${numero}`,
+        intro: (numero: string) => `Une commande vient d’être confirmée (numéro ${numero}) pour :`,
+        ligne: (titre: string) => `– « ${titre} »`,
+        suite: 'L’équipe Errancy vous écrira pour l’expédition.',
+      },
+      alerteConfirmee: {
+        sujet: (numero: string) => `Commande ${numero} confirmée`,
+        intro: (numero: string) => `La commande ${numero} vient d’être confirmée.`,
+        bouton: 'Ouvrir les commandes',
+        suite: 'Les coordonnées de l’acheteur ne figurent pas dans ce message.',
+      },
+      alerteAnnulee: {
+        sujet: (numero: string) => `Commande ${numero} annulée`,
+        intro: (numero: string) => `La commande ${numero} vient d’être annulée.`,
+        bouton: 'Ouvrir les commandes',
+        suite: 'Les coordonnées de l’acheteur ne figurent pas dans ce message.',
+      },
     },
     confirmationPrevenir: {
       sujet: (titre: string) => `Nous vous prévenons pour « ${titre} »`,

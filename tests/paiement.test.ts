@@ -54,7 +54,7 @@ describe('module paiement (pur)', () => {
     expect(trouves).toEqual([])
   })
 
-  it('événements au catalogue : l’id seulement, sans gestionnaire d’e-mail', async () => {
+  it('événements au catalogue : l’id seulement ; le constat est relaté sans gestionnaire', async () => {
     const { evenementValide } = await import('@/lib/evenements/catalogue')
     expect(evenementValide({ nom: 'PaiementConstate', charge: { paiementId: 'x' } })).toBe(true)
     expect(evenementValide({ nom: 'PaiementConstate', charge: { paiementId: 'x', montant: 1 } })).toBe(false)
@@ -62,10 +62,10 @@ describe('module paiement (pur)', () => {
     expect(evenementValide({ nom: 'CommandeConfirmee', charge: { paiementId: 'x' } })).toBe(false)
     const { ABONNEMENTS } = await import('@/lib/abonnements')
     expect(ABONNEMENTS.PaiementConstate).toEqual([])
-    expect(ABONNEMENTS.CommandeConfirmee).toEqual([])
+    expect(ABONNEMENTS.CommandeConfirmee.map((a) => a.nom)).toEqual(['envoyerConfirmationCommande', 'envoyerAvisCommandeArtiste', 'alerterEquipeCommande'])
     expect(evenementValide({ nom: 'CommandeAnnulee', charge: { commandeId: 'x' } })).toBe(true)
     expect(evenementValide({ nom: 'CommandeAnnulee', charge: { commandeId: 'x', email: 'a@b.c' } })).toBe(false)
-    expect(ABONNEMENTS.CommandeAnnulee).toEqual([])
+    expect(ABONNEMENTS.CommandeAnnulee.map((a) => a.nom)).toEqual(['envoyerAnnulationCommande', 'alerterEquipeCommande'])
   })
 
   it('remboursement manuel : aucun appel externe, demande acceptée sans référence', async () => {

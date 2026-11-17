@@ -3,9 +3,13 @@
 // sont reliés aux événements dans `src/lib/abonnements.ts`.
 
 export {
+  alerterEquipeCommande,
   alerterEquipeDemande,
   alerterEquipeVisite,
   envoyerAccuseDemande,
+  envoyerAnnulationCommande,
+  envoyerAvisCommandeArtiste,
+  envoyerConfirmationCommande,
   envoyerAccuseVisite,
   envoyerConfirmationPrevenir,
   envoyerInvitation,

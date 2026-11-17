@@ -1,4 +1,4 @@
-import { fr, formaterDateHeure } from '@/lib/i18n'
+import { fr, formaterDateHeure, formaterMontant } from '@/lib/i18n'
 import type { TypeVisite } from '@/lib/demandes/visite-regles'
 import { lienWhatsApp, messageConseil } from '@/lib/conseil'
 import { CONTACT_EQUIPE, DELAI_REPONSE_DEMANDE_HEURES, DUREE_INVITATION_JOURS, numeroWhatsApp } from '@/lib/reglages'
@@ -211,5 +211,68 @@ export function contenuVenteAssistee(p: { nom: string; lien: string; echeance: D
     bouton: { libelle: t.bouton, lien: p.lien },
     suite: [t.paiement, t.lienPersonnel],
     lienEnClair: p.lien,
+  })
+}
+
+/** Confirmation à l'acheteur : lignes et totaux figés de la commande, jamais additionnés ici. */
+export function contenuCommandeConfirmee(p: {
+  nom: string
+  numero: string
+  lignes: { titre: string; totalCentimes: number; devise: string; delaiMinJours: number; delaiMaxJours: number }[]
+}): Contenu {
+  const t = fr.courriels.commande.confirmee
+  return assembler({
+    sujet: t.sujet(p.numero),
+    nom: p.nom,
+    intro: [
+      t.intro(p.numero),
+      ...p.lignes.map((l) => `${t.ligne(l.titre, formaterMontant(l.totalCentimes, l.devise))}\n${t.delai(l.delaiMinJours, l.delaiMaxJours)}`),
+    ],
+    suite: [fr.livraison.droitsNonInclus, t.suite],
+  })
+}
+
+/** Annulation à l'acheteur : aucun débit, ou remboursement demandé ou effectué ; aucun délai promis. */
+export function contenuCommandeAnnulee(p: {
+  nom: string
+  numero: string
+  titres: string[]
+  remboursement: 'demande' | 'effectue' | null
+}): Contenu {
+  const t = fr.courriels.commande.annulee
+  const etat =
+    p.remboursement === 'demande'
+      ? t.remboursementDemande(p.numero)
+      : p.remboursement === 'effectue'
+        ? t.remboursementEffectue(p.numero)
+        : t.aucunPaiement
+  return assembler({
+    sujet: t.sujet(p.numero),
+    nom: p.nom,
+    intro: [t.intro(p.numero), ...p.titres.map((titre) => t.ligne(titre)), etat],
+    suite: [t.suite],
+  })
+}
+
+/** Avis à l'artiste : numéro et titres seulement, ni coordonnées de l'acheteur ni échéance. */
+export function contenuCommandeArtiste(p: { artiste: string; numero: string; titres: string[] }): Contenu {
+  const t = fr.courriels.commande.artiste
+  return assembler({
+    sujet: t.sujet(p.numero),
+    nom: p.artiste,
+    intro: [t.intro(p.numero), ...p.titres.map((titre) => t.ligne(titre))],
+    suite: [t.suite],
+  })
+}
+
+/** Alerte à l'équipe pour une commande confirmée ou annulée : numéro et lien, aucune donnée de l'acheteur. */
+export function contenuAlerteCommande(p: { numero: string; lien: string; annulee: boolean }): Contenu {
+  const t = p.annulee ? fr.courriels.commande.alerteAnnulee : fr.courriels.commande.alerteConfirmee
+  return assembler({
+    sujet: t.sujet(p.numero),
+    intro: [t.intro(p.numero)],
+    bouton: { libelle: t.bouton, lien: p.lien },
+    suite: [t.suite],
+    sansConseil: true,
   })
 }
