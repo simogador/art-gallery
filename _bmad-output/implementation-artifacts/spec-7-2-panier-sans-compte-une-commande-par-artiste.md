@@ -2,7 +2,7 @@
 title: 'Story 7.2 — Panier sans compte, une commande par artiste'
 type: 'feature'
 created: '2026-11-18'
-status: 'review'
+status: 'done'
 baseline_commit: 'e2679c2'
 route: 'dispatch'
 review_loop_iteration: 0
