@@ -104,7 +104,7 @@ development_status:
 
   epic-7: backlog
   7-1-pages-légales-et-de-confiance: backlog
-  7-2-panier-sans-compte-une-commande-par-artiste: review
+  7-2-panier-sans-compte-une-commande-par-artiste: done
   7-3-coordonnées-sans-compte-et-réservation-affichée-en-heure-fix: backlog
   7-4-récapitulatif-et-paiement-dans-une-zone-neutre: backlog
   7-5-encaissement-intégré-par-le-prestataire-retenu-bloqué-par-oq: backlog
