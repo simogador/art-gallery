@@ -423,6 +423,7 @@ enum UsageJeton {
   desinscription
   desinscription_alerte
   commande_assistee
+  commande_publique
 }
 
 model Jeton {

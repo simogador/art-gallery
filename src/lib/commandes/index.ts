@@ -22,11 +22,8 @@ export {
   preparerLienVenteAssistee,
   renvoyerLienVenteAssistee,
   reservationsDeLEquipe,
-  type CommandeRecapitulatif,
   type JournalDeLEquipe,
   type LienVenteAssistee,
-  type LigneRecapitulatif,
-  type Recapitulatif,
   type RefusVenteAssistee,
   type ResultatLiberationAssistee,
   type ResultatRenvoi,
@@ -34,6 +31,23 @@ export {
   type ResultatVenteAssistee,
   type SaisieVenteAssistee,
 } from './vente-assistee'
+export {
+  annulerPassagePublic,
+  completerCoordonneesDuLien,
+  completerCoordonneesDuPassage,
+  lirePassagePublic,
+  oublierPassagePublic,
+  poserPassagePublic,
+  reprendrePassagePublic,
+  type PassagePublic,
+  type RefusPassagePublic,
+  type ResultatAnnulationPassage,
+  type ResultatComplement,
+  type ResultatPassagePublic,
+  type ResultatReprise,
+  type SaisiePassagePublic,
+} from './passage-public'
+export { type CommandeRecapitulatif, type LigneRecapitulatif, type Recapitulatif } from './recapitulatif'
 export {
   commandesEnAttenteDeLEquipe,
   incidentsDeLEquipe,

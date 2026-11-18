@@ -53,4 +53,13 @@ describe('middleware : maintenance (story 3.8, règle partagée avec le sitemap)
     expect(reponse.headers.get('x-middleware-next')).toBe('1')
     expect(reponse.headers.get('location')).toBeNull()
   })
+
+  it.each(['/commande', '/commande/coordonnees', '/commande/un-jeton'])('story 7.3 : %s passe pendant la maintenance, sans session', async (chemin) => {
+    vi.stubEnv('MAINTENANCE_MODE', 'on')
+    const reponse = await appeler(requete(chemin))
+    expect(reponse.headers.get('x-middleware-rewrite')).toBeNull()
+    expect(reponse.headers.get('x-middleware-next')).toBe('1')
+    // Le reste du site reste en maintenance.
+    expect((await appeler(requete('/panier'))).headers.get('x-middleware-rewrite')).not.toBeNull()
+  })
 })

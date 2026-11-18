@@ -23,8 +23,17 @@ export function lireEntreeCoordonnees(brut: unknown): EntreeCoordonnees {
   return { email: texte(o.email), nom: texte(o.nom), adresse: texte(o.adresse), telephone: texte(o.telephone) }
 }
 
-/** Message d'erreur d'un champ, ou null s'il est correct (adresse et téléphone sont facultatifs). */
-export function erreurChampCoordonnees(champ: ChampCoordonnees, entree: EntreeCoordonnees): string | null {
+export type OptionsCoordonnees = {
+  /** Story 7.3 : le formulaire public exige l'adresse de livraison ; la vente assistée (6.3) ne la demande pas à la pose. */
+  adresseObligatoire?: boolean
+}
+
+/** Message d'erreur d'un champ, ou null s'il est correct (téléphone facultatif ; adresse facultative sauf option). */
+export function erreurChampCoordonnees(
+  champ: ChampCoordonnees,
+  entree: EntreeCoordonnees,
+  options: OptionsCoordonnees = {},
+): string | null {
   const e = fr.commandes.erreurs
   switch (champ) {
     case 'email':
@@ -35,6 +44,7 @@ export function erreurChampCoordonnees(champ: ChampCoordonnees, entree: EntreeCo
       return nom.length > LIMITES_COORDONNEES.nom ? e.nomTropLong(LIMITES_COORDONNEES.nom) : null
     }
     case 'adresse':
+      if (options.adresseObligatoire && entree.adresse.trim() === '') return e.adresseManquante
       return entree.adresse.trim().length > LIMITES_COORDONNEES.adresse ? e.adresseTropLongue(LIMITES_COORDONNEES.adresse) : null
     case 'telephone': {
       const t = entree.telephone.trim()
@@ -51,11 +61,11 @@ export type ResultatValidationCoordonnees =
   | { ok: true; valeur: ValeurCoordonnees }
   | { ok: false; erreurs: ErreursCoordonnees }
 
-export function validerCoordonnees(brut: unknown): ResultatValidationCoordonnees {
+export function validerCoordonnees(brut: unknown, options: OptionsCoordonnees = {}): ResultatValidationCoordonnees {
   const entree = lireEntreeCoordonnees(brut)
   const erreurs: ErreursCoordonnees = {}
   for (const champ of CHAMPS_COORDONNEES) {
-    const message = erreurChampCoordonnees(champ, entree)
+    const message = erreurChampCoordonnees(champ, entree, options)
     if (message) erreurs[champ] = message
   }
   if (Object.keys(erreurs).length > 0) return { ok: false, erreurs }

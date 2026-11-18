@@ -543,8 +543,70 @@ export type Dictionnaire = {
     readonly delai: (min: number, max: number) => string
     readonly droitsNonInclus: string
     readonly paiement: string
+    readonly coordonnees: string
     readonly panne: string
     readonly inactif: { readonly titre: string; readonly texte: string }
+  }
+  /** Coordonnées sans compte et réservation en heure fixe, `/commande/coordonnees` (story 7.3, FR-10, FR-12). */
+  readonly coordonnees: {
+    readonly titreDocument: string
+    readonly titre: string
+    readonly surtitre: string
+    readonly filAriane: string
+    readonly panier: string
+    readonly sansCompte: string
+    readonly ferme: { readonly titre: string; readonly texte: string; readonly retour: string }
+    readonly vide: { readonly titre: string; readonly aide: string; readonly parcourir: string }
+    readonly chargement: string
+    readonly erreur: string
+    readonly reessayer: string
+    readonly recalculEnCours: string
+    readonly nonLivreesBloque: string
+    readonly monnaiesMelees: string
+    readonly champs: {
+      readonly email: { readonly libelle: string }
+      readonly nom: { readonly libelle: string }
+      readonly adresse: { readonly libelle: string; readonly aide: string }
+      readonly telephone: { readonly libelle: string }
+    }
+    readonly resume: (n: number) => string
+    readonly envoyer: string
+    readonly envoiEnCours: string
+    readonly enregistrer: string
+    readonly refus: {
+      readonly oeuvreIndisponible: (titre: string) => string
+      readonly oeuvreSansTitre: string
+      readonly nonLivree: (titre: string) => string
+      readonly plafond: string
+      readonly panierTropGrand: (maximum: number) => string
+      readonly tropDeDemandes: string
+      readonly reservationEnCours: string
+      readonly prixChange: (titre: string) => string
+      readonly ferme: string
+      readonly indisponible: string
+    }
+    readonly modifier: {
+      readonly bouton: string
+      readonly confirmation: string
+      readonly confirmer: string
+      readonly garder: string
+      readonly enCours: string
+      readonly refus: string
+    }
+    readonly reservee: (heure: string) => string
+    readonly reserveeLeJour: (date: string, heure: string) => string
+    readonly terminee: (heure: string) => string
+    readonly termineeLeJour: (date: string, heure: string) => string
+    readonly reprendre: string
+    readonly repriseEnCours: string
+    readonly etapeSuivante: string
+    readonly livraison: (pays: string) => string
+    readonly enregistrees: string
+    readonly assistee: { readonly titre: string; readonly introduction: string; readonly retour: string }
+    readonly passage: { readonly titre: string }
+    readonly inactif: { readonly titre: string; readonly texte: string; readonly commande: string; readonly panier: string }
+    readonly panne: string
+    readonly conseilTitre: string
   }
   /** Annonce de l'ouverture, `/dashboard/admin/ouverture` (story 4.9, FR-35). */
   readonly ouverture: {
@@ -597,6 +659,7 @@ export type Dictionnaire = {
       readonly emailInvalide: string
       readonly nomManquant: string
       readonly nomTropLong: (max: number) => string
+      readonly adresseManquante: string
       readonly adresseTropLongue: (max: number) => string
       readonly telephoneInvalide: string
     }
@@ -1207,6 +1270,7 @@ export const fr = {
       emailInvalide: 'Indiquez une adresse e-mail valide.',
       nomManquant: 'Indiquez le nom de l’acheteur.',
       nomTropLong: (max: number) => `Le nom ne peut pas dépasser ${max} caractères.`,
+      adresseManquante: 'Indiquez l’adresse de livraison.',
       adresseTropLongue: (max: number) => `L’adresse ne peut pas dépasser ${max} caractères.`,
       telephoneInvalide: 'Indiquez un numéro de téléphone valide, ou laissez le champ vide.',
     },
@@ -1471,11 +1535,91 @@ export const fr = {
       min === max ? `Livrée sous ${min} jour${min > 1 ? 's' : ''}` : `Livrée sous ${min} à ${max} jours`,
     droitsNonInclus: 'Droits et taxes d’import éventuels non inclus',
     paiement: 'L’équipe Errancy vous transmet le moyen de paiement. Rien n’est à régler depuis cette page.',
+    coordonnees: 'Indiquer mon adresse de livraison',
     panne: 'Nous n’avons pas pu charger votre commande. Réessayez dans un instant.',
     inactif: {
       titre: 'Ce lien n’est plus actif',
       texte: 'La réservation est terminée ou ce lien n’est plus valable. Écrivez-nous : nous vous aidons à retrouver votre sélection.',
     },
+  },
+  // Story 7.3 : coordonnées sans compte, réservation affichée en heure fixe (jamais de décompte).
+  coordonnees: {
+    titreDocument: 'Vos coordonnées — Errancy',
+    titre: 'Vos coordonnées',
+    surtitre: 'Commande',
+    filAriane: 'Fil d’Ariane',
+    panier: 'Mon panier',
+    sansCompte: 'Pas besoin de créer un compte : vous suivrez vos commandes grâce au lien envoyé par e-mail.',
+    ferme: {
+      titre: 'L’achat en ligne ouvrira prochainement',
+      texte: 'En attendant, notre équipe vous accompagne pour toute acquisition.',
+      retour: 'Retour au panier',
+    },
+    vide: {
+      titre: 'Votre panier est vide.',
+      aide: 'Ajoutez des œuvres depuis la galerie pour continuer.',
+      parcourir: 'Parcourir la galerie',
+    },
+    chargement: 'Chargement de votre commande…',
+    erreur: 'Nous n’avons pas pu recalculer vos montants.',
+    reessayer: 'Réessayer',
+    recalculEnCours: 'Recalcul des montants…',
+    nonLivreesBloque: 'Retirez les œuvres non livrées depuis votre panier pour continuer.',
+    monnaiesMelees: 'Vos œuvres ne sont pas toutes vendues dans la même monnaie : écrivez-nous pour finaliser votre commande.',
+    champs: {
+      email: { libelle: 'E-mail' },
+      nom: { libelle: 'Nom complet' },
+      adresse: { libelle: 'Adresse de livraison', aide: 'Rue, code postal, ville.' },
+      telephone: { libelle: 'Téléphone (facultatif)' },
+    },
+    resume: (n: number) => (n > 1 ? `${n} champs sont à corriger.` : '1 champ est à corriger.'),
+    envoyer: 'Continuer',
+    envoiEnCours: 'Réservation…',
+    enregistrer: 'Enregistrer mes coordonnées',
+    refus: {
+      oeuvreIndisponible: (titre: string) => `« ${titre} » n’est plus disponible. Rien n’a été réservé.`,
+      oeuvreSansTitre: 'Une œuvre de votre commande n’est plus disponible. Rien n’a été réservé.',
+      nonLivree: (titre: string) => `« ${titre} » n’est pas livrée vers ce pays. Rien n’a été réservé.`,
+      plafond: 'Trop d’œuvres sont déjà réservées avec cette adresse e-mail. Réessayez à la fin d’une réservation en cours.',
+      panierTropGrand: (maximum: number) =>
+        `${['Zéro', 'Une', 'Deux', 'Trois', 'Quatre', 'Cinq'][maximum] ?? String(maximum)} œuvres au plus peuvent être réservées en même temps pour une adresse e-mail. Retirez-en pour continuer.`,
+      tropDeDemandes: 'Nous ne pouvons pas enregistrer votre demande pour le moment. Réessayez un peu plus tard.',
+      reservationEnCours: 'Votre réservation est déjà en cours. Réessayez dans 30 minutes si elle n’apparaît pas.',
+      prixChange: (titre: string) => `Le prix ou la livraison de « ${titre} » a changé : recommencez votre commande.`,
+      ferme: 'L’achat en ligne ouvrira prochainement.',
+      indisponible: 'Nous n’avons pas pu enregistrer votre demande. Réessayez dans un instant.',
+    },
+    modifier: {
+      bouton: 'Modifier ma commande',
+      confirmation: 'Votre réservation sera libérée et vous reviendrez à votre panier.',
+      confirmer: 'Libérer et revenir au panier',
+      garder: 'Garder ma réservation',
+      enCours: 'Libération…',
+      refus: 'Nous n’avons pas pu modifier votre commande. Écrivez-nous : nous vous aidons.',
+    },
+    reservee: (heure: string) => `Œuvres réservées pour vous jusqu’à ${heure}.`,
+    reserveeLeJour: (date: string, heure: string) => `Œuvres réservées pour vous jusqu’au ${date} à ${heure}.`,
+    terminee: (heure: string) => `Votre réservation a pris fin à ${heure}.`,
+    termineeLeJour: (date: string, heure: string) => `Votre réservation a pris fin le ${date} à ${heure}.`,
+    reprendre: 'Continuer',
+    repriseEnCours: 'Réservation…',
+    etapeSuivante: 'L’étape suivante, le paiement, ouvrira prochainement.',
+    livraison: (pays: string) => `Livraison vers ${pays}`,
+    enregistrees: 'Vos coordonnées de livraison sont enregistrées.',
+    assistee: {
+      titre: 'Vos coordonnées de livraison',
+      introduction: 'L’équipe Errancy a préparé cette commande pour vous. Indiquez l’adresse où nous devons livrer vos œuvres.',
+      retour: 'Revenir à ma commande',
+    },
+    passage: { titre: 'Votre commande' },
+    inactif: {
+      titre: 'Ce lien n’est plus actif',
+      texte: 'La réservation est terminée ou ce lien n’est plus valable. Écrivez-nous : nous vous aidons à retrouver votre sélection.',
+      commande: 'Revenir à ma commande',
+      panier: 'Retour au panier',
+    },
+    panne: 'Nous n’avons pas pu charger votre commande. Réessayez dans un instant.',
+    conseilTitre: 'Une question avant de commander ?',
   },
   ouverture: {
     titre: 'Annoncer l’ouverture',

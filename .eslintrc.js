@@ -50,6 +50,7 @@ const SURFACES_TEXTES = [
   'src/components/ui/PaysLivraison.tsx',
   'src/app/conseil/**/*.tsx',
   'src/app/panier/**/*.tsx',
+  'src/app/commande/coordonnees/**/*.tsx',
 ]
 
 module.exports = {
