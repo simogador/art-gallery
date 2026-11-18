@@ -11,7 +11,6 @@ module.exports = [
   'src/app/api/upload/route.ts',
   'src/app/api/webhooks/stripe/route.ts',
   'src/app/auth/actions.ts',
-  'src/app/confirmation/page.tsx',
   'src/app/dashboard/admin/artistes/page.tsx',
   'src/app/dashboard/admin/oeuvres/[slug]/page.tsx',
   'src/app/dashboard/admin/oeuvres/page.tsx',

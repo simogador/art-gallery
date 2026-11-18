@@ -288,9 +288,9 @@ describe('base : coordonnées et réservation publique', () => {
       expect(await envoyerCoordonnees(['o1', 42, 'o1'], COORD)).toEqual({ ok: true })
       expect(jar.poses).toHaveLength(1)
       const { nom, valeur, options } = jar.poses[0]
-      expect(nom).toBe('passage')
+      expect(nom).toBe('passage_acheteur')
       expect(valeur).toMatch(/^[A-Za-z0-9_-]{43}$/)
-      expect(options).toMatchObject({ httpOnly: true, path: '/commande', sameSite: 'lax' })
+      expect(options).toMatchObject({ httpOnly: true, path: '/', sameSite: 'lax' })
       expect((options.expires as Date).getTime()).toBeGreaterThan(Date.now() + 29 * MIN)
       expect(await envoyerCoordonnees(['o1'], COORD)).toEqual({ ok: true })
       expect(jar.poses).toHaveLength(1)
@@ -426,7 +426,7 @@ describe('base : coordonnées et réservation publique', () => {
       expect(await etat('o1')).toBe('reservee')
       expect(await compter('Jeton', `WHERE "revoqueLe" IS NULL AND cible = '${r.passageId}'`)).toBe(1)
       // L'action le dit sans détail technique.
-      jar.lus.passage = r.jeton
+      jar.lus.passage_acheteur = r.jeton
       const { reprendreReservation } = await import('@/app/commande/coordonnees/actions')
       expect(await reprendreReservation()).toEqual({ ok: false, code: 'oeuvre_indisponible', slug: 'o2' })
     })
@@ -556,7 +556,7 @@ describe('base : coordonnées et réservation publique', () => {
       expect(texteDe(await page())).toContain(fr.coordonnees.chargement)
       const r = await poser(['o1'])
       if (!r.ok) throw new Error('attendu')
-      jar.lus.passage = r.jeton
+      jar.lus.passage_acheteur = r.jeton
       const texte = texteDe(await page())
       expect(texte).toContain('Titre o1')
       expect(texte).toContain('1 040 €')
@@ -575,7 +575,7 @@ describe('base : coordonnées et réservation publique', () => {
       const t0 = new Date(Date.now() - 40 * MIN)
       const r = await poser(['o1'], {}, t0)
       if (!r.ok) throw new Error('attendu')
-      jar.lus.passage = r.jeton
+      jar.lus.passage_acheteur = r.jeton
       const { lirePassagePublic } = await import('@/lib/commandes')
       expect((await lirePassagePublic(r.jeton))?.echue).toBe(true)
       const texte = texteDe(await (await import('@/app/commande/coordonnees/page')).default())
@@ -627,10 +627,10 @@ describe('base : coordonnées et réservation publique', () => {
       const r = await poser(['o1'])
       if (!r.ok) throw new Error('attendu')
       vi.stubEnv('LOT2_OUVERT', '')
-      jar.lus.passage = r.jeton
+      jar.lus.passage_acheteur = r.jeton
       const { modifierMaCommande } = await import('@/app/commande/coordonnees/actions')
       expect(await modifierMaCommande()).toEqual({ ok: true })
-      expect(jar.poses.at(-1)).toMatchObject({ nom: 'passage', valeur: '', options: { maxAge: 0, path: '/commande' } })
+      expect(jar.poses.at(-1)).toMatchObject({ nom: 'passage_acheteur', valeur: '', options: { maxAge: 0, path: '/' } })
       expect(await etat('o1')).toBe('disponible')
       await db.query(`UPDATE "Commande" SET etat = 'confirmee'`)
       expect(await modifierMaCommande()).toEqual({ ok: true })
@@ -826,7 +826,7 @@ describe('base : coordonnées et réservation publique', () => {
       const { prisma } = await import('@/lib/prisma')
       vi.spyOn(prisma, '$transaction').mockRejectedValue(new Error('claire.martin@exemple.test 12 rue des Lilas'))
       const { envoyerCoordonnees, reprendreReservation } = await import('@/app/commande/coordonnees/actions')
-      jar.lus.passage = 'A'.repeat(43)
+      jar.lus.passage_acheteur = 'A'.repeat(43)
       expect(await envoyerCoordonnees(['o1'], COORD)).toEqual({ ok: false, code: 'indisponible' })
       expect(await reprendreReservation()).toEqual({ ok: false, code: 'indisponible' })
       expect(journal.length).toBeGreaterThan(0)
@@ -840,7 +840,7 @@ describe('base : coordonnées et réservation publique', () => {
       const r = await poser(['o1'])
       if (!r.ok) throw new Error('attendu')
       vi.stubEnv('LOT2_OUVERT', '')
-      jar.lus.passage = r.jeton
+      jar.lus.passage_acheteur = r.jeton
       const page = (await import('@/app/commande/coordonnees/page')).default
       const html = renderToStaticMarkup((await page()) as never)
       expect(texteDe(await page())).toContain(fr.coordonnees.ferme.titre)
@@ -858,7 +858,7 @@ describe('base : coordonnées et réservation publique', () => {
       const publique = await poser(['o2'], { coordonnees: { ...COORD, email: 'autre@exemple.test' } })
       if (!publique.ok) throw new Error('attendu')
       jar.lus.commande = /\/commande\/([A-Za-z0-9_-]{43})/.exec(envoi.envoyes[0]?.texte ?? '')?.[1]
-      jar.lus.passage = publique.jeton
+      jar.lus.passage_acheteur = publique.jeton
       const page = (await import('@/app/commande/coordonnees/page')).default
       const texte = texteDe(await page())
       expect(texte).toContain('Titre o1')
