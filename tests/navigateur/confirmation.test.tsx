@@ -8,7 +8,10 @@ import type { CommandeConfirmation } from '@/lib/commandes'
 // minuteur nettoyé), annonce et focus à la bascule, « Suivre mes commandes » inactif, panier vidé, aucun lien
 // de création de compte. Les états viennent du serveur : les composants ne décident de rien.
 const refresh = vi.fn()
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh, push: vi.fn() }) }))
+const push = vi.fn()
+const ouvrirSuivi = vi.fn()
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh, push }) }))
+vi.mock('@/app/confirmation/actions', () => ({ ouvrirSuivi: (...a: unknown[]) => ouvrirSuivi(...a) }))
 vi.mock('@/app/actions/pays', () => ({ choisirPaysLivraison: vi.fn() }))
 
 const { CartesConfirmation } = await import('@/app/confirmation/CartesConfirmation')
@@ -27,6 +30,8 @@ const commande = (numero: string, artiste: string, etat: CommandeConfirmation['e
 afterEach(() => {
   vi.useRealTimers()
   refresh.mockClear()
+  push.mockClear()
+  ouvrirSuivi.mockReset()
 })
 
 describe('Cartes de confirmation', () => {
@@ -159,17 +164,52 @@ describe('Mise à jour automatique', () => {
 })
 
 describe('Suivre mes commandes, panier et compte', () => {
-  it('« Suivre mes commandes » : inactif mais atteignable au clavier, expliqué, clic sans effet, aucun lien ni compte', async () => {
+  it('« Suivre mes commandes » : actif, l’action serveur est appelée puis /suivi s’ouvre ; aucun lien ni compte', async () => {
+    ouvrirSuivi.mockResolvedValue({ ok: true })
     const ecran = await render(<SuivreCommandes />)
     const bouton = ecran.getByRole('button', { name: t.suivre }).element() as HTMLButtonElement
-    expect(bouton.getAttribute('aria-disabled')).toBe('true')
+    expect(bouton.getAttribute('aria-disabled')).toBeNull()
     expect(bouton.disabled).toBe(false)
     bouton.focus()
     expect(document.activeElement).toBe(bouton)
     bouton.click()
-    expect(document.getElementById(bouton.getAttribute('aria-describedby') as string)?.textContent).toBe(t.suivreAide)
+    await vi.waitFor(() => expect(push).toHaveBeenCalledWith('/suivi'))
+    expect(ouvrirSuivi).toHaveBeenCalledTimes(1)
     expect(document.querySelectorAll('a')).toHaveLength(0)
     expect(document.body.textContent).not.toMatch(/compte|connexion|inscri/i)
+  })
+
+  it('« Suivre mes commandes » : un double appui n’appelle l’action qu’une fois', async () => {
+    let fin: (v: { ok: true }) => void = () => undefined
+    ouvrirSuivi.mockReturnValue(new Promise((r) => (fin = r)))
+    const ecran = await render(<SuivreCommandes />)
+    const bouton = ecran.getByRole('button').element() as HTMLButtonElement
+    bouton.click()
+    bouton.click()
+    expect(ouvrirSuivi).toHaveBeenCalledTimes(1)
+    fin({ ok: true })
+    await vi.waitFor(() => expect(push).toHaveBeenCalledTimes(1))
+  })
+
+  it('« Suivre mes commandes » : échec ou cookie absent, message neutre annoncé, aucune navigation, nouvel essai possible', async () => {
+    ouvrirSuivi.mockResolvedValue({ ok: false, code: 'invalide' })
+    const ecran = await render(<SuivreCommandes />)
+    const bouton = ecran.getByRole('button').element() as HTMLButtonElement
+    bouton.click()
+    await vi.waitFor(() => expect(ecran.getByRole('status').element().textContent).toBe(t.suivreErreur))
+    expect(push).not.toHaveBeenCalled()
+    ouvrirSuivi.mockResolvedValue({ ok: true })
+    bouton.click()
+    await vi.waitFor(() => expect(push).toHaveBeenCalledWith('/suivi'))
+    ouvrirSuivi.mockRejectedValue(new Error('x'))
+  })
+
+  it('« Suivre mes commandes » : plafond de liens atteint, message neutre distinct', async () => {
+    ouvrirSuivi.mockResolvedValue({ ok: false, code: 'trop_de_liens' })
+    const ecran = await render(<SuivreCommandes />)
+    ;(ecran.getByRole('button').element() as HTMLButtonElement).click()
+    await vi.waitFor(() => expect(ecran.getByRole('status').element().textContent).toBe(t.suivreTropDeLiens))
+    expect(push).not.toHaveBeenCalled()
   })
 
   it('CartClearer ne retire que les œuvres confirmées : une œuvre en attente ou d’un panier neuf reste', async () => {

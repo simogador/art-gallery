@@ -19,6 +19,8 @@ const nextConfig = {
       { source: '/auth/desinscription-alerte/:path*', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
       // Story 6.3 : le lien de la commande d'une vente assistée (`/commande` couvre aussi la page sans jeton).
       { source: '/commande/:path*', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
+      // Story 7.7 : le lien de suivi (`/suivi/<jeton>`, échange) ne se retrouve pas dans un référent (`:path*` couvre `/suivi`).
+      { source: '/suivi/:path*', headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }] },
     ]
   },
   experimental: {

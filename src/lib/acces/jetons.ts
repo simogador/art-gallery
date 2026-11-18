@@ -95,3 +95,12 @@ export async function revoquerJetons(tx: Tx, usage: UsageJeton, cibles: string[]
     data: { revoqueLe: maintenant },
   })
 }
+
+/** Révoque un seul jeton, désigné par sa valeur en clair (l'e-mail qui le portait n'est pas parti). */
+export async function revoquerJetonParValeur(tx: Tx, valeur: string, maintenant = new Date()): Promise<void> {
+  if (!FORMAT.test(valeur)) return
+  await tx.jeton.updateMany({
+    where: { empreinte: empreinteJeton(valeur), consommeLe: null, revoqueLe: null },
+    data: { revoqueLe: maintenant },
+  })
+}

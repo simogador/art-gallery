@@ -62,6 +62,16 @@ export {
   type EtatCommandeConfirmation,
   type EtatConfirmation,
 } from './confirmation'
+export {
+  abandonnerLienSuivi,
+  emettreLienSuiviDeCommande,
+  lireLienSuivi,
+  lireSuiviPassage,
+  ouvrirSuiviDuNavigateur,
+  type CommandeSuivie,
+  type Suivi,
+} from './suivi'
+export { ajouterJours, construireFrise, type CleEtape, type EtapeSuivi, type EtatCommandeSuivi } from './suivi-regles'
 export { type CommandeRecapitulatif, type LigneRecapitulatif, type Recapitulatif } from './recapitulatif'
 export {
   commandesEnAttenteDeLEquipe,

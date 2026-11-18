@@ -102,12 +102,15 @@ export const REPONSE_COURRIELS = CONTACT_EQUIPE
 // les admins voient tout ; les artistes seulement leur espace privé, pour déposer leurs œuvres
 // avant l'ouverture (décision du porteur du 2026-11-02, story 2.4). Les pages /auth restent ouvertes, ainsi
 // que /commande (lien de l'acheteur d'une vente assistée, décision du porteur du 2026-11-11, story 6.3 bis) :
-// la maintenance reste pilotée par `MAINTENANCE_MODE`, rien ici ne la lève. `/confirmation` (story 7.6) passe
-// aussi : l'acheteur qui a payé doit pouvoir y revenir.
+// la maintenance reste pilotée par `MAINTENANCE_MODE`, rien ici ne la lève. `/confirmation` (story 7.6) et
+// `/suivi` (story 7.7) passent aussi : l'acheteur qui a payé doit pouvoir y revenir (décision du porteur du
+// 2026-11-18).
 export function passeLaMaintenance(role: string | null, chemin: string): boolean {
   if (chemin === '/auth' || chemin.startsWith('/auth/')) return true
   if (chemin === '/commande' || chemin.startsWith('/commande/')) return true
   if (chemin === '/confirmation') return true
+  // Story 7.7 : le lien de suivi (`/suivi/<jeton>`, échange) et la page `/suivi` ; jamais un préfixe flou.
+  if (chemin === '/suivi' || chemin.startsWith('/suivi/')) return true
   if (role === 'admin') return true
   return role === 'artist' && (chemin === '/dashboard/artiste' || chemin.startsWith('/dashboard/artiste/'))
 }
@@ -140,6 +143,15 @@ export const LIMITES_RESERVATION_VENTE_ASSISTEE_HEURES = { min: 1, max: 336 } as
 // longue que la réservation. Passée, la commande est annulée au prochain constat qui la concerne ou par
 // l'équipe (sans balayage avant la story 6.7) ; l'expiration de la réservation n'annule jamais la commande.
 export const DUREE_ABANDON_COMMANDE_JOURS = 7
+
+// Lien de suivi des commandes d'un acheteur sans compte (story 7.7, décision 2A) : valable un an à compter
+// de son émission (réduisible plus tard) ; non consommé par l'échange.
+export const DUREE_SUIVI_JOURS = 365
+
+// Plafond de liens de suivi ACTIFS par passage pour « Suivre mes commandes » (story 7.7) : un cookie `suivi`
+// non renvoyé ne doit pas faire émettre des jetons sans fin. Les e-mails comptent dans le plafond mais ne
+// sont jamais refusés pour cette raison.
+export const PLAFOND_LIENS_SUIVI = 20
 
 // Format d'une œuvre sur la fiche (story 3.5, décision du porteur du 2026-11-07) : selon le plus
 // grand côté (hauteur ou largeur), petit < 40 cm, grand > 100 cm, moyen entre les deux (bornes
