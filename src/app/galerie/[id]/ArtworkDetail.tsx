@@ -40,6 +40,7 @@ interface Props {
 
 export function ArtworkDetail({ artwork, related, pays, conseil, lot2Ouvert = false }: Props) {
   const [addedToCart,  setAddedToCart]  = useState(false)
+  const [panierPlein,  setPanierPlein]  = useState(false)
 
   const { addItem, removeItem, hasItem } = useCartStore()
   const inCart = hasItem(artwork.id)
@@ -50,16 +51,12 @@ export function ArtworkDetail({ artwork, related, pays, conseil, lot2Ouvert = fa
   const photos = artwork.photos ?? photosDeFiche(undefined, artwork.imageUrl)
 
   function handleAddToCart() {
-    addItem({
-      id:          artwork.id,
-      title:       artwork.title,
-      artist:      artwork.artist,
-      artistId:    artwork.artistId,
-      price:       artwork.price,
-      imageUrl:    artwork.imageUrl,
-      gradient:    artwork.gradient,
-      accentColor: artwork.accentColor,
-    })
+    // Panier plein ou slug invalide : pas de « Ajouté ! », un message annoncé à la place.
+    if (!addItem(artwork.id)) {
+      setPanierPlein(true)
+      return
+    }
+    setPanierPlein(false)
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
   }
@@ -77,9 +74,14 @@ export function ArtworkDetail({ artwork, related, pays, conseil, lot2Ouvert = fa
       </Button>
     </div>
   ) : (
-    <Button variant="primary" size="lg" fullWidth onClick={handleAddToCart} rightIcon={addedToCart ? <CheckIcon /> : <CartIcon />}>
-      {addedToCart ? 'Ajouté !' : 'Ajouter au panier'}
-    </Button>
+    <div>
+      <Button variant="primary" size="lg" fullWidth onClick={handleAddToCart} rightIcon={addedToCart ? <CheckIcon /> : <CartIcon />}>
+        {addedToCart ? 'Ajouté !' : 'Ajouter au panier'}
+      </Button>
+      <p role="status" className="mt-2 font-sans text-sm text-foreground">
+        {panierPlein ? fr.panier.plafondAtteint : ''}
+      </p>
+    </div>
   )
 
   return (

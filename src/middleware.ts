@@ -5,7 +5,7 @@ import { maintenanceActive, passeLaMaintenance } from '@/lib/reglages'
 
 const { auth } = NextAuth(authConfig)
 
-const PROTECTED = ['/dashboard', '/wishlist', '/panier']
+const PROTECTED = ['/dashboard', '/wishlist']
 
 export default auth((req: any) => {
   const session  = req.auth

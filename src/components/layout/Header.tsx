@@ -61,7 +61,7 @@ export function Header({ session, lot2Ouvert = false }: HeaderProps) {
   const [scrolled,   setScrolled]   = useState(false)
   const [activeLink, setActiveLink] = useState('')
   const { scrollY } = useScroll()
-  const cartCount = useCartStore((s) => s.items.length)
+  const cartCount = useCartStore((s) => s.slugs.length)
 
   useMotionValueEvent(scrollY, 'change', (y) => {
     setScrolled(y > 40)

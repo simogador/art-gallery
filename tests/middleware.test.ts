@@ -46,4 +46,11 @@ describe('middleware : maintenance (story 3.8, règle partagée avec le sitemap)
     expect(reponse.status).toBe(307)
     expect(new URL(reponse.headers.get('location')!).pathname).toBe('/auth/connexion')
   })
+
+  it('story 7.2 : /panier est public (aucune redirection de connexion sans session)', async () => {
+    vi.stubEnv('MAINTENANCE_MODE', 'off')
+    const reponse = await appeler(requete('/panier'))
+    expect(reponse.headers.get('x-middleware-next')).toBe('1')
+    expect(reponse.headers.get('location')).toBeNull()
+  })
 })
