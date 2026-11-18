@@ -547,6 +547,40 @@ export type Dictionnaire = {
     readonly panne: string
     readonly inactif: { readonly titre: string; readonly texte: string }
   }
+  /** Récapitulatif et paiement de l'acheteur sans compte, `/commande/paiement` (story 7.4, FR-11, FR-14). */
+  readonly paiementAcheteur: {
+    readonly titreDocument: string
+    readonly titre: string
+    readonly surtitre: string
+    readonly filAriane: string
+    readonly retourCoordonnees: string
+    readonly livraison: (pays: string) => string
+    readonly commande: (numero: string) => string
+    readonly artiste: (nom: string) => string
+    readonly oeuvres: string
+    readonly livraisonLigne: string
+    readonly prixTotal: string
+    readonly delai: string
+    readonly delaiJours: (min: number, max: number) => string
+    readonly totalGeneral: string
+    readonly additionTotaux: (montants: readonly string[]) => string
+    readonly colis: (nombre: number, delais: readonly string[]) => string
+    readonly conditions: { readonly titre: string; readonly texte: string }
+    readonly zoneNeutre: {
+      readonly titre: string
+      readonly etiquette: string
+      readonly texte: string
+      readonly numeros: (numeros: readonly string[]) => string
+      readonly avantLaFin: string
+    }
+    readonly ferme: { readonly titre: string; readonly texte: string; readonly retour: string }
+    readonly inactif: { readonly titre: string; readonly texte: string; readonly retour: string; readonly commande: string }
+    readonly sansOeuvre: string
+    readonly echue: { readonly texte: string; readonly retenter: string }
+    readonly panne: string
+    readonly reessayer: string
+    readonly chargement: string
+  }
   /** Coordonnées sans compte et réservation en heure fixe, `/commande/coordonnees` (story 7.3, FR-10, FR-12). */
   readonly coordonnees: {
     readonly titreDocument: string
@@ -599,7 +633,7 @@ export type Dictionnaire = {
     readonly termineeLeJour: (date: string, heure: string) => string
     readonly reprendre: string
     readonly repriseEnCours: string
-    readonly etapeSuivante: string
+    readonly continuerPaiement: string
     readonly livraison: (pays: string) => string
     readonly enregistrees: string
     readonly assistee: { readonly titre: string; readonly introduction: string; readonly retour: string }
@@ -1542,6 +1576,57 @@ export const fr = {
       texte: 'La réservation est terminée ou ce lien n’est plus valable. Écrivez-nous : nous vous aidons à retrouver votre sélection.',
     },
   },
+  // Story 7.4 : récapitulatif et paiement de l'acheteur sans compte (zone neutre tant qu'OQ-1 est ouverte).
+  paiementAcheteur: {
+    titreDocument: 'Récapitulatif et paiement — Errancy',
+    titre: 'Récapitulatif et paiement',
+    surtitre: 'Acquisition',
+    filAriane: 'Fil d’Ariane',
+    retourCoordonnees: 'Vos coordonnées',
+    livraison: (pays: string) => `Livraison vers ${pays}`,
+    commande: (numero: string) => `Commande ${numero}`,
+    artiste: (nom: string) => `Artiste : ${nom}`,
+    oeuvres: 'Œuvres',
+    livraisonLigne: 'Livraison',
+    prixTotal: 'Prix total',
+    delai: 'Délai',
+    delaiJours: (min: number, max: number) =>
+      min === max ? `${min} jour${min > 1 ? 's' : ''}` : `${min} à ${max} jours`,
+    totalGeneral: 'Total général',
+    additionTotaux: (montants: readonly string[]) => montants.join(' + '),
+    colis: (nombre: number, delais: readonly string[]) => `${nombre} colis séparés, ${nombre} délais\u00a0: ${delais.join(' ; ')}`,
+    conditions: {
+      titre: 'Avant de payer',
+      texte:
+        'Chaque œuvre est vendue par son artiste. Errancy intervient comme intermédiaire : elle sélectionne les œuvres et met l’acheteur en relation avec l’artiste.',
+    },
+    zoneNeutre: {
+      titre: 'Paiement',
+      etiquette: 'Le moyen de paiement en ligne n’est pas encore ouvert',
+      texte: 'Pour finaliser votre commande, écrivez à l’équipe Errancy : elle vous indique comment régler et confirme votre commande après réception du règlement.',
+      numeros: (numeros: readonly string[]) => `Numéros à nous communiquer : ${numeros.join(', ')}`,
+      avantLaFin: 'Pensez à écrire à l’équipe avant la fin de la réservation.',
+    },
+    ferme: {
+      titre: 'L’achat en ligne ouvrira prochainement',
+      texte: 'Vous pouvez déjà parcourir la galerie et préparer votre panier.',
+      retour: 'Retour au panier',
+    },
+    inactif: {
+      titre: 'Aucune commande à payer',
+      texte: 'Votre commande n’est plus en cours : elle est peut-être déjà réglée ou annulée. Écrivez-nous si vous avez un doute.',
+      retour: 'Retour au panier',
+      commande: 'Voir ma commande préparée par l’équipe',
+    },
+    sansOeuvre: 'Aucune œuvre à afficher pour cette commande.',
+    echue: {
+      texte: 'Pour retenter la réservation de vos œuvres, revenez à vos coordonnées.',
+      retenter: 'Retenter ma réservation',
+    },
+    panne: 'Nous n’avons pas pu charger votre commande. Réessayez dans un instant.',
+    reessayer: 'Réessayer',
+    chargement: 'Chargement de votre commande…',
+  },
   // Story 7.3 : coordonnées sans compte, réservation affichée en heure fixe (jamais de décompte).
   coordonnees: {
     titreDocument: 'Vos coordonnées — Errancy',
@@ -1603,7 +1688,7 @@ export const fr = {
     termineeLeJour: (date: string, heure: string) => `Votre réservation a pris fin le ${date} à ${heure}.`,
     reprendre: 'Continuer',
     repriseEnCours: 'Réservation…',
-    etapeSuivante: 'L’étape suivante, le paiement, ouvrira prochainement.',
+    continuerPaiement: 'Continuer vers le paiement',
     livraison: (pays: string) => `Livraison vers ${pays}`,
     enregistrees: 'Vos coordonnées de livraison sont enregistrées.',
     assistee: {

@@ -18,10 +18,24 @@ export type FaitPaiementConstate = {
   constateLe: Date
 }
 
+/** Demande d'ouverture d'un paiement (story 7.4) : le montant est celui que `commandes` a lu par agrégat, jamais un autre. */
+export type DemandeOuverturePaiement = { passageId: string; montantCentimes: number; devise: string }
+
+/** Réponse de l'adaptateur : la référence qui l'identifie chez lui (avec `source`, elle est unique en base). */
+export type ReponseOuverturePaiement = { ok: true; referenceExterne: string } | { ok: false }
+
 /** Encaissement : produit des faits de paiement (constat manuel aujourd'hui, prestataire plus tard). */
 export interface Encaissement {
   readonly source: string
+  /**
+   * Ouvre un paiement chez le prestataire (story 7.4, point d'entrée appelé par `commandes`). Absent pour le
+   * constat manuel, qui n'ouvre rien : l'équipe constate après coup.
+   */
+  ouvrir?(demande: DemandeOuverturePaiement): Promise<ReponseOuverturePaiement>
 }
+
+/** Encaissement capable d'ouvrir un paiement : celui que le sélecteur renvoie quand un adaptateur est configuré. */
+export type EncaissementOuvrable = Encaissement & Required<Pick<Encaissement, 'ouvrir'>>
 
 /** Remboursement d'un paiement (story 6.5) : seule l'implémentation manuelle existe (`adaptateurs/constat-manuel.ts`). */
 export interface Remboursement {

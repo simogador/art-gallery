@@ -47,6 +47,13 @@ export {
   type ResultatReprise,
   type SaisiePassagePublic,
 } from './passage-public'
+export {
+  lireRecapitulatifPaiement,
+  ouvrirPaiement,
+  type CommandePaiement,
+  type RecapitulatifPaiement,
+  type ResultatOuverturePaiement,
+} from './paiement-acheteur'
 export { type CommandeRecapitulatif, type LigneRecapitulatif, type Recapitulatif } from './recapitulatif'
 export {
   commandesEnAttenteDeLEquipe,

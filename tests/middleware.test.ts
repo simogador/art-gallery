@@ -54,7 +54,7 @@ describe('middleware : maintenance (story 3.8, règle partagée avec le sitemap)
     expect(reponse.headers.get('location')).toBeNull()
   })
 
-  it.each(['/commande', '/commande/coordonnees', '/commande/un-jeton'])('story 7.3 : %s passe pendant la maintenance, sans session', async (chemin) => {
+  it.each(['/commande', '/commande/coordonnees', '/commande/paiement', '/commande/un-jeton'])('stories 7.3 et 7.4 : %s passe pendant la maintenance, sans session', async (chemin) => {
     vi.stubEnv('MAINTENANCE_MODE', 'on')
     const reponse = await appeler(requete(chemin))
     expect(reponse.headers.get('x-middleware-rewrite')).toBeNull()
