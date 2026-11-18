@@ -2,7 +2,7 @@
 title: 'Story 7.4 — Récapitulatif et paiement dans une zone neutre'
 type: 'feature'
 created: '2026-11-18'
-status: 'review'
+status: 'done'
 baseline_commit: 'cc4eb26'
 route: 'dispatch'
 review_loop_iteration: 0
