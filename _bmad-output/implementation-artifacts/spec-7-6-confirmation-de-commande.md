@@ -2,7 +2,7 @@
 title: 'Story 7.6 — Confirmation de commande'
 type: 'feature'
 created: '2026-11-18'
-status: 'review'
+status: 'done'
 baseline_commit: '7aade6f'
 route: 'dispatch'
 review_loop_iteration: 0
