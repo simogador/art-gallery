@@ -751,6 +751,47 @@ export type Dictionnaire = {
       readonly bouton: string
     }
   }
+  /** Panier public (FR-10, story 7.2). */
+  readonly panier: {
+    readonly titreDocument: string
+    readonly surtitre: string
+    readonly titre: string
+    readonly accueil: string
+    readonly filAriane: string
+    readonly chargement: string
+    readonly vide: string
+    readonly videAide: string
+    readonly parcourir: string
+    readonly continuerParcourir: string
+    readonly erreur: string
+    readonly reessayer: string
+    readonly colis: (nombre: number, delais: readonly string[]) => string
+    readonly delaiCourt: (min: number, max: number) => string
+    readonly commande: (numero: number) => string
+    readonly livraisonLigne: string
+    readonly monnaiesMelees: string
+    readonly plafondAtteint: string
+    readonly sousTotal: string
+    readonly delai: string
+    readonly prixOeuvre: string
+    readonly retirer: (titre: string) => string
+    readonly retire: (titre: string) => string
+    readonly nonLivree: (pays: string) => string
+    readonly nonLivreesComptees: (nombre: number) => string
+    readonly totalGeneral: string
+    readonly additionTotaux: (montants: readonly string[]) => string
+    readonly montantsMasques: string
+    readonly recalcule: (pays: string) => string
+    readonly recalculEnCours: string
+    readonly indisponible: string
+    readonly oeuvreSansTitre: string
+    readonly proches: (artiste: string | null) => string
+    readonly continuer: string
+    readonly sousLigneContinuer: (commandes: number) => string
+    readonly achatFerme: string
+    readonly corrigerAvantContinuer: string
+    readonly conseilTitre: string
+  }
 }
 
 export const fr = {
@@ -1605,5 +1646,46 @@ export const fr = {
       suite: 'Vous pouvez corriger votre dépôt, puis envoyer à nouveau l’œuvre à l’équipe.',
       bouton: 'Reprendre mon dépôt',
     },
+  },
+  panier: {
+    titreDocument: 'Mon panier',
+    surtitre: 'Acquisition',
+    titre: 'Mon panier',
+    accueil: 'Accueil',
+    filAriane: 'Fil d’Ariane',
+    chargement: 'Chargement de votre panier…',
+    vide: 'Votre panier est vide.',
+    videAide: 'Les œuvres que vous ajoutez depuis la galerie apparaissent ici, sans compte à créer.',
+    parcourir: 'Parcourir la galerie',
+    continuerParcourir: 'Continuer à parcourir',
+    erreur: 'Nous n’avons pas pu recalculer vos montants.',
+    reessayer: 'Réessayer',
+    colis: (nombre: number, delais: readonly string[]) => `${nombre} colis séparés, ${nombre} délais\u00a0: ${delais.join(' ; ')}`,
+    delaiCourt: (min: number, max: number) => (min === max ? `${min} jour${min > 1 ? 's' : ''}` : `${min} à ${max} jours`),
+    commande: (numero: number) => `Commande ${numero}`,
+    livraisonLigne: 'Livraison',
+    monnaiesMelees: 'Vos œuvres ne sont pas toutes vendues dans la même monnaie : le total ne peut pas être calculé. Écrivez-nous pour finaliser votre commande.',
+    plafondAtteint: 'Votre panier est plein : retirez une œuvre pour en ajouter une autre.',
+    sousTotal: 'Sous-total',
+    delai: 'Délai',
+    prixOeuvre: 'Œuvre',
+    retirer: (titre: string) => `Retirer ${titre} du panier`,
+    retire: (titre: string) => `${titre} retirée du panier`,
+    nonLivree: (pays: string) => `Pas de livraison vers ${pays}`,
+    nonLivreesComptees: (nombre: number) =>
+      nombre > 1 ? `${nombre} œuvres non livrées ne sont pas comptées.` : '1 œuvre non livrée n’est pas comptée.',
+    totalGeneral: 'Total général',
+    additionTotaux: (montants: readonly string[]) => montants.join(' + '),
+    montantsMasques: 'Montants en cours de recalcul',
+    recalcule: (pays: string) => `Panier recalculé pour ${pays}`,
+    recalculEnCours: 'Recalcul des montants…',
+    indisponible: 'Vendue entre-temps — retirée de votre commande.',
+    oeuvreSansTitre: 'Une œuvre de votre panier',
+    proches: (artiste: string | null) => (artiste ? `D’autres œuvres de ${artiste}` : 'D’autres œuvres à découvrir'),
+    continuer: 'Continuer',
+    sousLigneContinuer: (commandes: number) => (commandes > 1 ? `${commandes} commandes` : '1 commande'),
+    achatFerme: 'L’achat en ligne ouvrira prochainement. En attendant, notre équipe vous accompagne pour toute acquisition.',
+    corrigerAvantContinuer: 'Retirez les œuvres non livrées pour continuer.',
+    conseilTitre: 'Une question avant de commander ?',
   },
 } as const satisfies Dictionnaire

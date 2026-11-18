@@ -65,6 +65,49 @@ export function calculerPrixLivre(oeuvre: OeuvreAPrix, zoneTrouvee: boolean, off
   }
 }
 
+/* ── Sommes d'un panier (story 7.2, FR-10, FR-11) ───────────────────────── */
+
+/**
+ * Somme de prix livrés (carte d'un artiste, ou panier entier), seul endroit où les prix et les frais de
+ * plusieurs œuvres s'additionnent hors de `calculerPrixLivre` : aucun composant ni autre module ne le fait.
+ * Les œuvres non livrées ne sont pas comptées (`nonLivrees`) ; devises mêlées : `devise` nulle, montants
+ * masqués ; aucune œuvre livrée : `livrees` à 0. Délai d'un colis : du plus long minimum au plus long maximum.
+ */
+export type SommePrixLivres = {
+  livrees: number
+  nonLivrees: number
+  /** Devise commune des œuvres livrées ; null si aucune, ou si elles diffèrent (montants à masquer). */
+  devise: string | null
+  /** Prix des œuvres, sans les frais. */
+  prixCentimes: number
+  fraisCentimes: number
+  /** Prix + frais des œuvres livrées. */
+  totalCentimes: number
+  delaiMinJours: number
+  delaiMaxJours: number
+}
+
+/** Prix de l'œuvre seule (sans les frais) d'un prix livré, ou null si elle n'est pas livrée. */
+export function prixSansFrais(p: PrixLivre | undefined): number | null {
+  return p?.livree ? p.totalCentimes - p.fraisCentimes : null
+}
+
+export function sommerPrixLivres(prix: (PrixLivre | undefined)[]): SommePrixLivres {
+  const livrees = prix.filter((p): p is Extract<PrixLivre, { livree: true }> => p?.livree === true)
+  const devises = new Set(livrees.map((p) => p.devise))
+  const somme = (valeurs: number[]) => valeurs.reduce((a, b) => a + b, 0)
+  return {
+    livrees: livrees.length,
+    nonLivrees: prix.length - livrees.length,
+    devise: devises.size === 1 ? [...devises][0] : null,
+    prixCentimes: somme(livrees.map((p) => p.totalCentimes - p.fraisCentimes)),
+    fraisCentimes: somme(livrees.map((p) => p.fraisCentimes)),
+    totalCentimes: somme(livrees.map((p) => p.totalCentimes)),
+    delaiMinJours: Math.max(0, ...livrees.map((p) => p.delaiMinJours)),
+    delaiMaxJours: Math.max(0, ...livrees.map((p) => p.delaiMaxJours)),
+  }
+}
+
 /* ── Pays du visiteur (cookie `pays`) ───────────────────────────────────── */
 
 // Code ISO du pays de livraison choisi, mémorisé un an comme l'unité (story 3.2). Défaut France,
