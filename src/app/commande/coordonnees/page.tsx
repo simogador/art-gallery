@@ -147,7 +147,11 @@ export default async function CoordonneesPage() {
     return (
       <Cadre>
         <ReservationHeureFixe echeance={passage.echeance.toISOString()} echue={passage.echue} reprise={{ titres }}>
-          {!passage.echue && <p className="mt-3 font-sans text-sm text-neutral-600">{t.etapeSuivante}</p>}
+          {!passage.echue && (
+            <Link href="/commande/paiement" className="mt-4 inline-flex min-h-touch-target items-center rounded-sm border border-foreground bg-foreground px-8 py-3 font-sans text-sm font-medium text-background">
+              {t.continuerPaiement}
+            </Link>
+          )}
         </ReservationHeureFixe>
         <RecapitulatifFige recapitulatif={passage} />
         <p role="status" className="mt-8 font-sans text-sm text-foreground">{t.enregistrees}</p>

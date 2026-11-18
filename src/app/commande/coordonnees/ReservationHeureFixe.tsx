@@ -64,6 +64,14 @@ export function ReservationHeureFixe({ echeance, echue, reprise, consommerMarque
     }
   }, [echeance, consommerMarque])
 
+  // Bascule « terminée » reçue du serveur (même instance, `echue` passe de faux à vrai) : le focus vient sur la
+  // phrase, dont la région `role="status"` annonce « Votre réservation a pris fin… ».
+  const echuePrecedente = useRef(echue)
+  useEffect(() => {
+    if (!echuePrecedente.current && echue) zone.current?.focus()
+    echuePrecedente.current = echue
+  }, [echue])
+
   // Un seul minuteur, posé sur l'échéance : UN rafraîchissement pour demander son état au serveur. Les
   // dépendances sont des valeurs stables (chaîne, booléen) : aucun rendu ne le relance.
   useEffect(() => {

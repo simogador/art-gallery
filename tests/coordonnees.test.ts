@@ -560,7 +560,9 @@ describe('base : coordonnées et réservation publique', () => {
       const texte = texteDe(await page())
       expect(texte).toContain('Titre o1')
       expect(texte).toContain('1 040 €')
-      expect(texte).toContain(fr.coordonnees.etapeSuivante)
+      expect(texte).toContain(fr.coordonnees.continuerPaiement)
+      expect(renderToStaticMarkup((await page()) as never)).toContain('href="/commande/paiement"')
+      expect(texte).not.toContain('ouvrira prochainement')
       expect(texte).toContain(fr.coordonnees.enregistrees)
       expect(renderToStaticMarkup((await page()) as never)).not.toContain('<form')
       // Cookie d'un jeton révoqué : retour au panier.
@@ -578,7 +580,7 @@ describe('base : coordonnées et réservation publique', () => {
       expect((await lirePassagePublic(r.jeton))?.echue).toBe(true)
       const texte = texteDe(await (await import('@/app/commande/coordonnees/page')).default())
       expect(texte).toContain(fr.coordonnees.reprendre)
-      expect(texte).not.toContain(fr.coordonnees.etapeSuivante)
+      expect(texte).not.toContain(fr.coordonnees.continuerPaiement)
     })
   })
 
