@@ -2,7 +2,7 @@
 title: 'Story 7.3 — Coordonnées sans compte et réservation affichée en heure fixe'
 type: 'feature'
 created: '2026-11-18'
-status: 'review'
+status: 'done'
 baseline_commit: 'b10b28d'
 route: 'dispatch'
 review_loop_iteration: 0
