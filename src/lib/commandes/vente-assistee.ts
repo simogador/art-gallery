@@ -18,6 +18,7 @@ import { estEchue } from '@/lib/disponibilite/reservation-regles'
 import { ecrireEvenement, repartirApresValidation } from '@/lib/evenements'
 import { DUREE_RESERVATION_VENTE_ASSISTEE_HEURES, LIMITES_RESERVATION_VENTE_ASSISTEE_HEURES } from '@/lib/reglages'
 import { creerPassageEnCaisse, type CommandeCreee, type RefusPassage } from './passage'
+import { lireCommandesDuPassage, type Recapitulatif } from './recapitulatif'
 
 // Vente assistée (story 6.3, FR-12, FR-26, UJ-4) : l'équipe réserve des œuvres pour un acheteur
 // identifié (passage en caisse puis réservation `vente_assistee`, tout ou rien) ; un événement envoie
@@ -138,19 +139,6 @@ export async function abandonnerLienVenteAssistee(passageId: string, maintenant:
   await prisma.$transaction((tx) => revoquerJetonCommandeAssistee(tx, passageId, maintenant))
 }
 
-export type LigneRecapitulatif = {
-  slug: string
-  titre: string
-  prixCentimes: number
-  fraisCentimes: number
-  totalCentimes: number
-  devise: string
-  delaiMinJours: number
-  delaiMaxJours: number
-}
-export type CommandeRecapitulatif = { numero: string; devise: string; lignes: LigneRecapitulatif[] }
-export type Recapitulatif = { pays: string; devise: string; echeance: Date; commandes: CommandeRecapitulatif[] }
-
 /** Lien encore valable : jeton actif et réservation de vente assistée active et non échue, sinon null. */
 export async function lireLienVenteAssistee(jeton: string, maintenant: Date = new Date()): Promise<{ passageId: string; echeance: Date } | null> {
   const lien = await lirePassageDuLien(prisma, jeton, maintenant)
@@ -170,31 +158,10 @@ export async function lireLienVenteAssistee(jeton: string, maintenant: Date = ne
 export async function lireRecapitulatifAssiste(jeton: string, maintenant: Date = new Date()): Promise<Recapitulatif | null> {
   const lien = await lireLienVenteAssistee(jeton, maintenant)
   if (!lien) return null
-  const passage = await prisma.passageEnCaisse.findUnique({
-    where: { id: lien.passageId },
-    select: {
-      paysLivraison: true,
-      devise: true,
-      commandes: {
-        // Une commande annulée n'est jamais proposée au paiement.
-        where: { etat: { not: 'annulee' } },
-        orderBy: { createdAt: 'asc' },
-        select: {
-          numero: true,
-          devise: true,
-          lignes: {
-            orderBy: { createdAt: 'asc' },
-            select: {
-              slug: true, titre: true, prixCentimes: true, fraisCentimes: true, totalCentimes: true, devise: true,
-              delaiMinJours: true, delaiMaxJours: true,
-            },
-          },
-        },
-      },
-    },
-  })
-  if (!passage || passage.commandes.length === 0) return null
-  return { pays: passage.paysLivraison, devise: passage.devise, echeance: lien.echeance, commandes: passage.commandes }
+  const passage = await lireCommandesDuPassage(lien.passageId)
+  const commandes = passage?.commandes.map(({ etat: _etat, abandonneLe: _abandon, ...c }) => c) ?? []
+  if (!passage || commandes.length === 0) return null
+  return { pays: passage.pays, devise: passage.devise, echeance: lien.echeance, commandes, adresseRenseignee: passage.adresseRenseignee }
 }
 
 // ── Story 6.3 bis : voir, libérer et renvoyer (FR-12, FR-26) ─────────────────────────────────

@@ -125,6 +125,10 @@ export const DELAI_ANNULATION_DECLARATION_MINUTES = 15
 export const DUREE_RESERVATION_PAIEMENT_MINUTES = 30
 export const PLAFONDS_RESERVATION = { parEmail: 3, parAppareil: 3 } as const
 
+// Envoi des coordonnées de l'acheteur sans compte (story 7.3) : limite par IP, comme /conseil et /visite
+// (empreinte salée `passage-ip:`, saisie invalide ni enregistrée ni comptée). Pas d'empreinte d'appareil.
+export const LIMITES_PASSAGE_PUBLIC = { fenetreMinutes: 60, parIp: 10 } as const
+
 // Vente assistée (story 6.3, FR-12) : durée de la réservation posée par l'équipe (48 h par défaut,
 // réglable à la pose entre ces bornes) ; le lien envoyé à l'acheteur vit autant que la réservation.
 export const DUREE_RESERVATION_VENTE_ASSISTEE_HEURES = 48

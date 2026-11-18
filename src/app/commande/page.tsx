@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
+import Link from 'next/link'
 import { BoutonConseil } from '@/components/ui/BoutonConseil'
 import { lireRecapitulatifAssiste, type Recapitulatif } from '@/lib/commandes'
 import { fr, formaterDateHeure, formaterMontant } from '@/lib/i18n'
@@ -79,6 +80,15 @@ export default async function CommandePage() {
 
       <p className="mt-6 font-sans text-xs text-neutral-600">{t.droitsNonInclus}</p>
       <p className="mt-6 font-sans text-sm text-foreground">{t.paiement}</p>
+      {/* Story 7.3 (décision 3A) : l'acheteur complète son adresse de livraison ; sa réservation est reprise. */}
+      {!recapitulatif.adresseRenseignee && (
+        <Link
+          href="/commande/coordonnees"
+          className="mt-6 inline-flex min-h-touch-target items-center justify-center rounded-sm bg-foreground px-8 font-sans text-sm text-background"
+        >
+          {t.coordonnees}
+        </Link>
+      )}
       <BoutonConseil className="mt-8" />
     </div>
   )

@@ -344,6 +344,7 @@ export {
   interromprePourDeclaration,
   libererReservation,
   libererReservationsEchues,
+  passageReservantLOeuvre,
   reserverOeuvres,
   reservationsActivesDuPassage,
   reservationsPourAdmin,

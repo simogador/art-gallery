@@ -47,6 +47,28 @@ export async function lireJetonValide(
 }
 
 /**
+ * Comme `lireJetonValide`, mais tolère une échéance dépassée depuis moins de `toleranceMs` : le jeton
+ * reste lisible un moment après la fin de sa réservation (story 7.3 : l'acheteur retrouve son passage
+ * pour le retenter). Un jeton consommé ou révoqué n'est jamais lu.
+ */
+export async function lireJetonRecent(
+  tx: Tx,
+  valeur: string,
+  usage: UsageJeton,
+  toleranceMs: number,
+  maintenant = new Date(),
+): Promise<{ id: string; cible: string; echeance: Date } | null> {
+  if (!FORMAT.test(valeur)) return null
+  const jeton = await tx.jeton.findUnique({
+    where: { empreinte: empreinteJeton(valeur) },
+    select: { id: true, cible: true, echeance: true, usage: true, consommeLe: true, revoqueLe: true },
+  })
+  if (!jeton || jeton.usage !== usage || jeton.consommeLe || jeton.revoqueLe) return null
+  if (jeton.echeance.getTime() + toleranceMs <= maintenant.getTime()) return null
+  return { id: jeton.id, cible: jeton.cible, echeance: jeton.echeance }
+}
+
+/**
  * Consomme un jeton encore utilisable, par une seule mise à jour conditionnelle : de deux envois
  * simultanés, un seul obtient la cible. null si le jeton n'est plus utilisable.
  */

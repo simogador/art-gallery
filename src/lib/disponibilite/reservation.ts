@@ -270,6 +270,18 @@ export async function reservationsActivesDuPassage(
   })
 }
 
+/**
+ * Passage qui détient une réservation active et non échue de cette œuvre (par son slug), ou null (story 7.3 :
+ * dire à l'acheteur dont la réponse s'est perdue que sa réservation est déjà en cours). Lecture seule.
+ */
+export async function passageReservantLOeuvre(slug: string, maintenant: Date = new Date()): Promise<string | null> {
+  const r = await prisma.reservation.findFirst({
+    where: { issue: null, echeance: { gt: maintenant }, artwork: { slug } },
+    select: { passageId: true },
+  })
+  return r?.passageId ?? null
+}
+
 export type ReservationLue = {
   id: string
   passageId: string
