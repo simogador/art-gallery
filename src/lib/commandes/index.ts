@@ -54,6 +54,14 @@ export {
   type RecapitulatifPaiement,
   type ResultatOuverturePaiement,
 } from './paiement-acheteur'
+export {
+  etatGlobal,
+  lireConfirmationPassage,
+  type CommandeConfirmation,
+  type Confirmation,
+  type EtatCommandeConfirmation,
+  type EtatConfirmation,
+} from './confirmation'
 export { type CommandeRecapitulatif, type LigneRecapitulatif, type Recapitulatif } from './recapitulatif'
 export {
   commandesEnAttenteDeLEquipe,

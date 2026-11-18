@@ -1,241 +1,99 @@
-import { redirect, notFound } from 'next/navigation'
-import Link from 'next/link'
 import type { Metadata } from 'next'
-import { getStripe } from '@/lib/stripe'
-import { prisma } from '@/lib/prisma'
-import { gradient, accent } from '@/lib/catalogue/mappers'
-import { formaterMontant } from '@/lib/i18n'
-import { ArtworkImage } from '@/components/ui'
-import { CartClearer } from './CartClearer'
-import { cn } from '@/lib/utils/cn'
+import Link from 'next/link'
+import { cookies } from 'next/headers'
+import { BoutonConseil } from '@/components/ui/BoutonConseil'
+import { COOKIE_PASSAGE } from '@/app/commande/coordonnees/cookie'
+import { lireConfirmationPassage } from '@/lib/commandes'
+import { fr } from '@/lib/i18n'
 import { lot2Ouvert } from '@/lib/reglages'
+import { CartClearer } from './CartClearer'
+import { CartesConfirmation } from './CartesConfirmation'
+import { MiseAJourAuto } from './MiseAJourAuto'
+import { SuivreCommandes } from './SuivreCommandes'
 
-export const metadata: Metadata = { title: 'Acquisition confirmée' }
+// Confirmation de commande (story 7.6, FR-13, UJ-1) pour le passage de l'acheteur sans compte (cookie `passage`,
+// décision 1A). Relue en base à chaque requête : aucun prestataire n'est interrogé (l'ancien `?session_id=` du
+// flux Stripe est ignoré) et rien n'est écrit. « Confirmée » seulement pour une commande `confirmee` ; en
+// attente du constat : message d'attente et mise à jour automatique ; annulée : dite telle, sans promesse.
+// Lot 2 fermé ou aucun passage : message neutre. Hors mesure, `noindex`. Ni e-mail ni adresse dans les journaux.
 
-interface Props {
-  searchParams: Promise<{ session_id?: string }>
-}
+export const metadata: Metadata = { title: fr.confirmation.titreDocument, robots: { index: false, follow: false } }
+export const dynamic = 'force-dynamic'
 
-export default async function ConfirmationPage({ searchParams }: Props) {
-  // AD-17 : Lot 2 fermé, aucun appel au prestataire de paiement.
-  if (!lot2Ouvert()) redirect('/panier')
+const t = fr.confirmation
+const ID_TITRE = 'titre-confirmation'
+const LONGUEUR_NOM_MAX = 60
 
-  const { session_id } = await searchParams
-
-  if (!session_id) redirect('/')
-
-  let session
-  try {
-    session = await getStripe().checkout.sessions.retrieve(session_id)
-  } catch {
-    notFound()
-  }
-
-  if (session.payment_status !== 'paid') {
-    redirect('/panier')
-  }
-
-  const artworkIds = (session.metadata?.artworkIds ?? '').split(',').filter(Boolean)
-  const dbArtworks = await prisma.artwork.findMany({
-    where:   { slug: { in: artworkIds } },
-    include: { artist: { select: { name: true, slug: true } } },
-  })
-  // Preserve order from metadata
-  const artworks = artworkIds
-    .map((id) => dbArtworks.find((a) => a.slug === id))
-    .filter(Boolean) as typeof dbArtworks
-
-  // Montant absent (null) : « — », jamais « 0 € » ; devise de la session Stripe (« eur »).
-  const totalCentimes = session.amount_total
-  const reference = session_id.slice(-8).toUpperCase()
-
+function Cadre({ titre, children }: { titre: string; children: React.ReactNode }) {
   return (
-    <>
-      {/* Vide le panier côté client après paiement */}
-      <CartClearer />
-
-      <div className="min-h-screen bg-background pt-28 pb-24">
-        <div className="container-premium max-w-2xl">
-
-          {/* ── En-tête succès ── */}
-          <div className="text-center mb-14">
-            <div className="flex justify-center mb-8">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-full bg-gold/10 flex items-center justify-center">
-                  <CheckIcon />
-                </div>
-              </div>
-            </div>
-
-            <p className="font-sans text-xs uppercase tracking-[0.3em] text-neutral-600 mb-4">
-              Paiement accepté
-            </p>
-            <h1
-              className="font-serif font-light text-foreground"
-              style={{ fontSize: 'clamp(2rem, 4vw, 3rem)' }}
-            >
-              Acquisition confirmée
-            </h1>
-            <p className="font-sans text-sm text-neutral-500 mt-4 max-w-md mx-auto text-pretty">
-              Merci pour votre confiance. Notre équipe prendra contact avec vous dans les 24h ouvrées
-              pour organiser la livraison assurée de {artworks.length > 1 ? 'vos œuvres' : 'votre œuvre'}.
-            </p>
-
-            <div className="inline-flex items-center gap-2 mt-6 px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-sm">
-              <span className="font-sans text-[10px] uppercase tracking-widest text-neutral-600">Référence</span>
-              <span className="font-sans text-xs font-medium text-foreground tracking-widest">#{reference}</span>
-            </div>
-          </div>
-
-          <div className="divider mb-12" />
-
-          {/* ── Récapitulatif commande ── */}
-          <section className="mb-12">
-            <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-neutral-600 mb-6">
-              {artworks.length > 1 ? 'Œuvres acquises' : 'Œuvre acquise'}
-            </h2>
-
-            <div className="flex flex-col gap-4">
-              {artworks.map((artwork) => {
-                const g   = gradient(artwork.slug)
-                const col = accent(artwork.slug)
-
-                return (
-                  <div
-                    key={artwork.slug}
-                    className="flex items-center gap-4 p-4 border border-neutral-200 rounded-sm"
-                  >
-                    {/* Thumbnail */}
-                    <div className="relative w-14 flex-shrink-0 rounded-sm overflow-hidden" style={{ height: '4.5rem' }}>
-                      <ArtworkImage
-                        imageUrl={artwork.imageUrl}
-                        title={artwork.title}
-                        gradient={g}
-                        accentColor={col}
-                        sizes="56px"
-                      />
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-serif text-base font-light text-foreground truncate">{artwork.title}</p>
-                      <p className="font-sans text-xs text-neutral-600 uppercase tracking-widest mt-0.5 truncate">
-                        {artwork.artist.name} · {artwork.year}
-                      </p>
-                    </div>
-
-                    {/* Prix */}
-                    <p className="font-serif text-base font-light text-foreground flex-shrink-0">
-                      {formaterMontant(artwork.prixCentimes, artwork.devise)}
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Total */}
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-neutral-200">
-              <span className="font-sans text-xs uppercase tracking-widest text-neutral-500">Total payé</span>
-              <span className="font-serif text-xl font-light text-foreground">{formaterMontant(totalCentimes, session.currency ?? undefined)}</span>
-            </div>
-          </section>
-
-          {/* ── Informations livraison ── */}
-          <section className="mb-12 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              {
-                icon: <TruckIcon />,
-                title: 'Livraison assurée',
-                desc: 'Transport spécialisé œuvres d\'art, assuré à 100 % de la valeur.',
-              },
-              {
-                icon: <CertIcon />,
-                title: 'Certificat inclus',
-                desc: 'Certificat d\'authenticité numéroté et signé par l\'artiste.',
-              },
-              {
-                icon: <MailIcon />,
-                title: 'Confirmation par email',
-                desc: 'Un récapitulatif complet vous a été envoyé par email.',
-              },
-            ].map(({ icon, title, desc }) => (
-              <div key={title} className="flex flex-col gap-2 p-4 bg-neutral-50 border border-neutral-100 rounded-sm">
-                <span className="text-neutral-600">{icon}</span>
-                <p className="font-sans text-xs font-medium text-foreground uppercase tracking-widest">{title}</p>
-                <p className="font-sans text-xs text-neutral-500 leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </section>
-
-          {/* ── Actions ── */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/galerie"
-              className={cn(
-                'inline-flex items-center justify-center gap-2',
-                'px-8 py-4 rounded-sm',
-                'font-sans text-xs uppercase tracking-widest',
-                'bg-foreground text-background',
-                'hover:bg-neutral-700 transition-colors duration-300',
-              )}
-            >
-              Continuer à explorer
-            </Link>
-            <Link
-              href="/"
-              className={cn(
-                'inline-flex items-center justify-center gap-2',
-                'px-8 py-4 rounded-sm',
-                'font-sans text-xs uppercase tracking-widest',
-                'border border-neutral-200 text-foreground',
-                'hover:border-foreground transition-colors duration-300',
-              )}
-            >
-              Retour à l&apos;accueil
-            </Link>
-          </div>
-
-        </div>
+    <div className="min-h-screen bg-background pb-24 pt-28">
+      <div className="container-premium max-w-4xl">
+        <span className="mb-4 block font-sans text-xs uppercase tracking-[0.25em] text-neutral-600">{t.surtitre}</span>
+        <h1 id={ID_TITRE} tabIndex={-1} className="break-words font-serif text-display-md font-light text-foreground">
+          {titre}
+        </h1>
+        <div className="divider mt-4" />
+        <div className="mt-10">{children}</div>
       </div>
-    </>
+    </div>
   )
 }
 
-/* ─── Icons ───────────────────────────────────────────────────────────────── */
-
-function CheckIcon() {
+function Neutre({ titre, texte, lien }: { titre: string; texte: string; lien: string }) {
   return (
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
-      strokeLinecap="round" strokeLinejoin="round" className="text-neutral-600" aria-hidden="true">
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
+    <Cadre titre={titre}>
+      <p className="font-sans text-sm text-neutral-600">{texte}</p>
+      <Link href="/" className="mt-6 inline-flex min-h-touch-target items-center font-sans text-sm underline underline-offset-4">
+        {lien}
+      </Link>
+      <BoutonConseil className="mt-8" />
+    </Cadre>
   )
 }
 
-function TruckIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
-      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm11 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" />
-    </svg>
-  )
-}
+export default async function ConfirmationPage() {
+  // Lot 2 fermé : aucun passage public, rien n'est lu (AD-17).
+  if (!lot2Ouvert()) return <Neutre titre={t.ferme.titre} texte={t.ferme.texte} lien={t.ferme.accueil} />
 
-function CertIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
-      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 15l-2 5-3-3-5 2 2-5-3-3 5-2 2-5 3 3 5-2-2 5zM15 7a3 3 0 1 0 6 0 3 3 0 0 0-6 0z" />
-    </svg>
-  )
-}
+  const confirmation = await lireConfirmationPassage(cookies().get(COOKIE_PASSAGE)?.value)
+  if (!confirmation) return <Neutre titre={t.inactif.titre} texte={t.inactif.texte} lien={t.inactif.accueil} />
 
-function MailIcon() {
+  const { commandes, etat, nom, reservationEchue } = confirmation
+  const enAttente = commandes.some((c) => c.etat === 'en_attente_paiement')
+  const confirmees = commandes.filter((c) => c.etat === 'confirmee')
+  const annulee = commandes.some((c) => c.etat === 'annulee')
+  // Le rafraîchissement ne tourne que pour un passage en attente dont la réservation court.
+  const rafraichit = enAttente && !reservationEchue
+  const confirmee = confirmees.length > 0
+  const nomCourt = nom.trim().length > LONGUEUR_NOM_MAX ? `${nom.trim().slice(0, LONGUEUR_NOM_MAX)}…` : nom.trim()
+  // « Merci » seulement quand plus aucune commande n'attend ; sinon le titre dit que ce n'est pas encore confirmé.
+  const titre = enAttente
+    ? t.titreAttente
+    : confirmee
+      ? nomCourt === ''
+        ? t.merciSansNom
+        : t.merci(nomCourt)
+      : etat === 'annulee'
+        ? t.etats.annulee
+        : t.titreAttente
+
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
-      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-      <polyline points="22,6 12,13 2,6" />
-    </svg>
+    <Cadre titre={titre}>
+      {confirmee && <CartClearer slugs={confirmees.flatMap((c) => c.lignes.map((l) => l.slug))} />}
+      {rafraichit && <p className="font-sans text-sm text-foreground">{t.attente}</p>}
+      <MiseAJourAuto enAttente={rafraichit} confirmee={confirmee && !enAttente} annulee={annulee && !enAttente} idTitre={ID_TITRE} />
+      {enAttente && reservationEchue && (
+        <div className="mb-8">
+          <p className="font-sans text-sm text-foreground">{t.echue.texte}</p>
+          <Link href="/commande/coordonnees" className="mt-4 inline-flex min-h-touch-target items-center font-sans text-sm underline underline-offset-4">
+            {t.echue.retenter}
+          </Link>
+        </div>
+      )}
+      {annulee && <p className="mb-8 font-sans text-sm text-foreground">{t.annulee}</p>}
+      <CartesConfirmation commandes={commandes} />
+      {confirmee && <SuivreCommandes />}
+      <BoutonConseil className="mt-8" />
+    </Cadre>
   )
 }

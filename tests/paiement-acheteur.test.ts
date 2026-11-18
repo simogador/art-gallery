@@ -97,7 +97,7 @@ describe('base : récapitulatif et ouverture du paiement', () => {
     const { poserPassagePublic } = await import('@/lib/commandes')
     const r = await poserPassagePublic({ coordonnees: COORD, pays: 'FR', oeuvres } as never, maintenant)
     if (!r.ok) throw new Error('attendu')
-    jar.lus.passage = r.jeton
+    jar.lus.passage_acheteur = r.jeton
     return r as typeof r & { jeton: string; passageId: string }
   }
   function factice() {
@@ -359,7 +359,7 @@ describe('base : récapitulatif et ouverture du paiement', () => {
     it('Lot 2 fermé : message d’ouverture prochaine, lien vers le panier, rien d’autre', async () => {
       await oeuvre('o1')
       const r = await poser(['o1'])
-      jar.lus.passage = r.jeton
+      jar.lus.passage_acheteur = r.jeton
       vi.stubEnv('LOT2_OUVERT', '')
       const html = renderToStaticMarkup((await page()) as never)
       expect(texteDe(await page())).toContain(fr.paiementAcheteur.ferme.titre)
@@ -378,7 +378,7 @@ describe('base : récapitulatif et ouverture du paiement', () => {
       expect(equipe).toContain(fr.paiementAcheteur.inactif.commande)
       delete jar.lus.commande
       const r = await poser(['o1'])
-      jar.lus.passage = r.jeton
+      jar.lus.passage_acheteur = r.jeton
       await db.query(`UPDATE "Commande" SET etat = 'confirmee'`)
       const html = renderToStaticMarkup((await page()) as never)
       expect(html).toContain(fr.paiementAcheteur.inactif.titre)
@@ -419,7 +419,7 @@ describe('base : récapitulatif et ouverture du paiement', () => {
     it('lecture impossible (commande sans ligne) : état de panne, jamais « aucune commande à payer »', async () => {
       await oeuvre('o1')
       const r = await poser(['o1'])
-      jar.lus.passage = r.jeton
+      jar.lus.passage_acheteur = r.jeton
       await db.query(`DELETE FROM "LigneCommande"`)
       const texte = texteDe(await page())
       expect(texte).toContain(fr.paiementAcheteur.panne)
@@ -429,7 +429,7 @@ describe('base : récapitulatif et ouverture du paiement', () => {
     it('la page ne fait que lire : aucun Paiement créé même avec le Lot 2 ouvert et un passage valide', async () => {
       await oeuvre('o1')
       const r = await poser(['o1'])
-      jar.lus.passage = r.jeton
+      jar.lus.passage_acheteur = r.jeton
       await page()
       expect(await compter('Paiement')).toBe(0)
     })
@@ -437,7 +437,7 @@ describe('base : récapitulatif et ouverture du paiement', () => {
     it('réservation échue : « a pris fin » (client) et renvoi vers les coordonnées, pas de zone de paiement', async () => {
       await oeuvre('o1')
       const r = await poser(['o1'], new Date(Date.now() - 40 * MIN))
-      jar.lus.passage = r.jeton
+      jar.lus.passage_acheteur = r.jeton
       const html = renderToStaticMarkup((await page()) as never)
       expect(html).toContain('href="/commande/coordonnees"')
       expect(texteDe(await page())).toContain(fr.paiementAcheteur.echue.texte)

@@ -1,5 +1,7 @@
+import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { auth } from '@/auth'
+import { fr } from '@/lib/i18n'
 import { lot2Ouvert } from '@/lib/reglages'
 
 // Story 1.7 (AD-17) : l'interrupteur du Lot 2 ferme le chemin d'achat actuel.
@@ -31,6 +33,7 @@ vi.mock('@/lib/prisma', () => ({
     },
   },
 }))
+vi.mock('next/headers', () => ({ cookies: () => ({ get: () => undefined }) }))
 vi.mock('next/navigation', () => ({
   redirect: (url: string) => {
     throw new Error(`redirection:${url}`)
@@ -93,9 +96,9 @@ describe('chemin d’achat actuel', () => {
 
     it('la page de confirmation n’appelle pas le prestataire', async () => {
       const { default: Confirmation } = await import('@/app/confirmation/page')
-      await expect(Confirmation({ searchParams: Promise.resolve({ session_id: 'cs_1' }) })).rejects.toThrow(
-        'redirection:/panier',
-      )
+      // Story 7.6 : message neutre (plus de redirection), l'ancien `?session_id=` est ignoré.
+      const page = await (Confirmation as unknown as (p: unknown) => Promise<unknown>)({ searchParams: Promise.resolve({ session_id: 'cs_1' }) })
+      expect(renderToStaticMarkup(page as never)).toContain(fr.confirmation.ferme.titre)
       expect(recupererSession).not.toHaveBeenCalled()
     })
   })
@@ -129,10 +132,11 @@ describe('chemin d’achat actuel', () => {
       expect(creerSession).not.toHaveBeenCalled()
     })
 
-    it('la page de confirmation interroge le prestataire', async () => {
+    it('la page de confirmation n’interroge plus le prestataire (story 7.6)', async () => {
       const { default: Confirmation } = await import('@/app/confirmation/page')
-      await Confirmation({ searchParams: Promise.resolve({ session_id: 'cs_1' }) })
-      expect(recupererSession).toHaveBeenCalledWith('cs_1')
+      const page = await (Confirmation as unknown as (p: unknown) => Promise<unknown>)({ searchParams: Promise.resolve({ session_id: 'cs_1' }) })
+      expect(renderToStaticMarkup(page as never)).toContain(fr.confirmation.inactif.titre)
+      expect(recupererSession).not.toHaveBeenCalled()
     })
   })
 })

@@ -581,6 +581,29 @@ export type Dictionnaire = {
     readonly reessayer: string
     readonly chargement: string
   }
+  /** Confirmation de commande de l'acheteur sans compte, `/confirmation` (story 7.6, FR-13, UJ-1). */
+  readonly confirmation: {
+    readonly titreDocument: string
+    readonly surtitre: string
+    readonly merci: (nom: string) => string
+    readonly merciSansNom: string
+    readonly titreAttente: string
+    readonly attente: string
+    readonly majAuto: string
+    readonly rechargez: string
+    readonly echue: { readonly texte: string; readonly retenter: string }
+    readonly annulee: string
+    readonly etats: { readonly confirmee: string; readonly enAttente: string; readonly annulee: string }
+    readonly bascule: string
+    readonly basculeAnnulee: string
+    readonly suivre: string
+    readonly suivreAide: string
+    readonly inactif: { readonly titre: string; readonly texte: string; readonly accueil: string }
+    readonly ferme: { readonly titre: string; readonly texte: string; readonly accueil: string }
+    readonly panne: string
+    readonly reessayer: string
+    readonly chargement: string
+  }
   /** Coordonnées sans compte et réservation en heure fixe, `/commande/coordonnees` (story 7.3, FR-10, FR-12). */
   readonly coordonnees: {
     readonly titreDocument: string
@@ -1622,6 +1645,37 @@ export const fr = {
     echue: {
       texte: 'Pour retenter la réservation de vos œuvres, revenez à vos coordonnées.',
       retenter: 'Retenter ma réservation',
+    },
+    panne: 'Nous n’avons pas pu charger votre commande. Réessayez dans un instant.',
+    reessayer: 'Réessayer',
+    chargement: 'Chargement de votre commande…',
+  },
+  // Story 7.6 : confirmation de commande sans compte (jamais « Confirmée » avant le constat du paiement).
+  confirmation: {
+    titreDocument: 'Confirmation de commande — Errancy',
+    surtitre: 'Acquisition',
+    merci: (nom: string) => `Merci, ${nom}.`,
+    merciSansNom: 'Merci.',
+    titreAttente: 'Votre commande n’est pas encore confirmée.',
+    attente: 'Elle le sera quand l’équipe aura constaté votre paiement : un e-mail vous préviendra.',
+    majAuto: 'Cette page se met à jour d’elle-même.',
+    rechargez: 'Rechargez la page pour vérifier.',
+    echue: { texte: 'Votre réservation a pris fin.', retenter: 'Retenter ma réservation' },
+    annulee: 'Écrivez-nous : nous vous aidons.',
+    etats: { confirmee: 'Confirmée', enAttente: 'En attente de confirmation', annulee: 'Annulée' },
+    bascule: 'Votre paiement est constaté : votre commande est confirmée.',
+    basculeAnnulee: 'Une commande a été annulée.',
+    suivre: 'Suivre mes commandes',
+    suivreAide: 'Le suivi sera disponible bientôt.',
+    inactif: {
+      titre: 'Aucune commande à afficher',
+      texte: 'Cette page présente la confirmation de votre commande une fois celle-ci passée. Écrivez-nous si vous avez un doute.',
+      accueil: 'Retour à l’accueil',
+    },
+    ferme: {
+      titre: 'L’achat en ligne ouvrira prochainement',
+      texte: 'Vous pouvez déjà parcourir la galerie.',
+      accueil: 'Retour à l’accueil',
     },
     panne: 'Nous n’avons pas pu charger votre commande. Réessayez dans un instant.',
     reessayer: 'Réessayer',
