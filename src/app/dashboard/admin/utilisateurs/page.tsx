@@ -3,7 +3,6 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { RoleSelect } from '@/components/dashboard/RoleSelect'
-import { formatPrice } from '@/lib/utils/artworks'
 import { acteurCourant } from '@/lib/acces'
 
 export const metadata: Metadata = { title: 'Utilisateurs — Admin Errancy' }
@@ -16,7 +15,6 @@ export default async function AdminUsersPage() {
     select: {
       id: true, name: true, email: true, role: true, image: true,
       createdAt: true,
-      orders:  { select: { amount: true, createdAt: true }, orderBy: { createdAt: 'desc' } },
       artist:  { select: { name: true, slug: true } },
     },
   })
@@ -32,20 +30,17 @@ export default async function AdminUsersPage() {
       </div>
 
       {/* Column headers */}
-      <div className="hidden lg:grid grid-cols-[1fr_100px_90px_80px_24px] gap-4 px-4 mb-2">
-        {['Utilisateur', 'Rôle', 'Commandes', 'Total dépensé', ''].map((h) => (
+      <div className="hidden lg:grid grid-cols-[1fr_100px_24px] gap-4 px-4 mb-2">
+        {['Utilisateur', 'Rôle', ''].map((h) => (
           <span key={h} className="font-sans text-[10px] uppercase tracking-widest text-neutral-600">{h}</span>
         ))}
       </div>
 
       <div className="flex flex-col gap-2">
         {users.map((user) => {
-          const totalSpent  = user.orders.reduce((s, o) => s + o.amount, 0)
-          const orderCount  = user.orders.length
-
           return (
             <div key={user.id}
-              className="grid grid-cols-[1fr_auto] lg:grid-cols-[1fr_100px_90px_80px_24px] gap-4 items-center p-4 border border-neutral-200 rounded-sm hover:border-neutral-300 transition-colors duration-200">
+              className="grid grid-cols-[1fr_auto] lg:grid-cols-[1fr_100px_24px] gap-4 items-center p-4 border border-neutral-200 rounded-sm hover:border-neutral-300 transition-colors duration-200">
 
               {/* User info */}
               <div className="flex items-center gap-3 min-w-0">
@@ -72,16 +67,6 @@ export default async function AdminUsersPage() {
               <div>
                 <RoleSelect userId={user.id} currentRole={user.role as any} />
               </div>
-
-              {/* Orders */}
-              <p className="font-sans text-sm text-neutral-500 hidden lg:block">
-                {orderCount} {orderCount !== 1 ? 'commandes' : 'commande'}
-              </p>
-
-              {/* Total spent */}
-              <p className="font-serif text-sm font-light text-foreground hidden lg:block">
-                {totalSpent > 0 ? formatPrice(totalSpent) : '—'}
-              </p>
 
               {/* Detail link */}
               <Link

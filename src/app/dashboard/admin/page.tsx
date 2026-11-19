@@ -2,8 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
-import { formatPrice } from '@/lib/utils/artworks'
-import { formaterDate, fr } from '@/lib/i18n'
+import { fr } from '@/lib/i18n'
 import { acteurCourant } from '@/lib/acces'
 import { compterInscriptionsOuverture } from '@/lib/demandes'
 import { compterOeuvres } from '@/lib/disponibilite'
@@ -17,39 +16,25 @@ export default async function AdminPage() {
     oeuvres,
     artistsTotal,
     usersTotal,
-    ordersAgg,
-    recentOrders,
     inscritsOuverture,
   ] = await Promise.all([
     // Story 2.2 : comptages par le module disponibilite.
     compterOeuvres(),
     prisma.artist.count(),
     prisma.user.count(),
-    prisma.order.aggregate({ _sum: { amount: true } }),
-    prisma.order.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 6,
-      select: {
-        id: true, stripeSessionId: true, artworkIds: true,
-        amount: true, customerEmail: true, status: true, createdAt: true,
-      },
-    }),
     compterInscriptionsOuverture(),
   ])
-
-  const revenue = ordersAgg._sum.amount ?? 0
 
   const stats = [
     { label: 'Œuvres',        value: oeuvres.total,         sub: `${oeuvres.disponibles} dispo · ${oeuvres.vendues} vendues · ${oeuvres.nonPubliees} non publiées` },
     { label: 'Artistes',      value: artistsTotal,          sub: 'profils actifs' },
     { label: 'Utilisateurs',  value: usersTotal,            sub: 'comptes inscrits' },
-    { label: "Chiffre d'aff.", value: formatPrice(revenue), sub: `${recentOrders.length} commande${recentOrders.length > 1 ? 's' : ''}` },
   ]
 
   const quickLinks = [
     { href: '/dashboard/admin/artistes',     label: 'Gérer les artistes',    desc: 'Activer, désactiver, lier un compte' },
     { href: '/dashboard/admin/oeuvres',      label: 'Gérer les œuvres',      desc: 'Statut, modification, suppression' },
-    { href: '/dashboard/admin/utilisateurs', label: 'Gérer les utilisateurs', desc: 'Rôles, commandes, historique' },
+    { href: '/dashboard/admin/utilisateurs', label: 'Gérer les utilisateurs', desc: 'Rôles, comptes' },
   ]
 
   return (
@@ -62,7 +47,7 @@ export default async function AdminPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
         {stats.map(({ label, value, sub }) => (
           <div key={label} className="border border-neutral-200 rounded-sm p-5">
             <p className="font-sans text-[10px] uppercase tracking-widest text-neutral-600 mb-2">{label}</p>
@@ -109,36 +94,6 @@ export default async function AdminPage() {
           )}
         </div>
       </div>
-
-      {/* Recent orders */}
-      {recentOrders.length > 0 && (
-        <div>
-          <h2 className="font-sans text-xs uppercase tracking-[0.2em] text-neutral-500 mb-5">
-            Commandes récentes
-          </h2>
-          <div className="flex flex-col gap-2">
-            {recentOrders.map((order) => (
-              <div key={order.id}
-                className="grid grid-cols-[1fr_auto_auto] gap-4 items-center p-4 border border-neutral-200 rounded-sm">
-                <div className="min-w-0">
-                  <p className="font-sans text-xs text-foreground truncate">
-                    {order.customerEmail ?? '—'}
-                  </p>
-                  <p className="font-sans text-[10px] text-neutral-600 mt-0.5">
-                    {formaterDate(order.createdAt, { mois: 'court' })}
-                    {' · '}#{order.stripeSessionId.slice(-6).toUpperCase()}
-                  </p>
-                </div>
-                <span className="inline-flex items-center gap-1.5 font-sans text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-sm bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {order.status}
-                </span>
-                <p className="font-serif text-sm font-light text-foreground">{formatPrice(order.amount)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

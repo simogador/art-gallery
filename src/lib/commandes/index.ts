@@ -3,7 +3,7 @@ import type { Prisma } from '@/generated/prisma/client'
 
 // Module commandes (FR-10, AD-3, AD-9, AR-10, story 6.1) : seul propriétaire de PassageEnCaisse,
 // CoordonneesAcheteur, Commande, LigneCommande et Paiement. `creerPassageEnCaisse` ne contrôle aucun
-// acteur : l'appelant (6.3, 7.2) le fait. L'ancienne table Order reste lue et écrite par le code actuel.
+// acteur : l'appelant (6.3, 7.2) le fait.
 
 export {
   creerPassageEnCaisse,

@@ -11,8 +11,6 @@ import { creerBaseJetable, type BaseJetable } from './utils/base-jetable'
 
 const acteur = vi.hoisted(() => ({ courant: { type: 'visiteur' } as Record<string, unknown> }))
 vi.mock('@/lib/acces', () => ({ acteurCourant: async () => acteur.courant }))
-const stripe = vi.hoisted(() => ({ evenement: vi.fn() }))
-vi.mock('@/lib/stripe', () => ({ getStripe: () => ({ webhooks: { constructEvent: stripe.evenement } }) }))
 
 const ANCIENNES = ['available', 'price', 'dimensions'] as const
 const CLE = new RegExp(`\\b(${ANCIENNES.join('|')})\\b\\s*:`)
@@ -217,24 +215,10 @@ describe('base après la migration A : le nouveau code ignore les anciennes colo
     expect(remplacee).toEqual({ hauteurMm: 200, largeurMm: 300, profondeurMm: null })
   })
 
-  it('webhook de paiement : seule la disponibilité change', async () => {
+  it('vente d’une œuvre payée : seule la disponibilité change', async () => {
     await oeuvreDeLAncienCode('payee')
-    stripe.evenement.mockReturnValue({
-      type: 'checkout.session.completed',
-      data: {
-        object: {
-          id: 'cs_a', payment_intent: 'pi_a', amount_total: 10000, currency: 'eur',
-          metadata: { artworkIds: 'payee', userId: 'utilisateur-1' }, customer_details: null,
-        },
-      },
-    })
-    const { POST } = await import('@/app/api/webhooks/stripe/route')
-    const reponse = await POST(
-      new Request('http://localhost/api/webhooks/stripe', {
-        method: 'POST', headers: { 'stripe-signature': 'signature' }, body: '{}',
-      }) as never,
-    )
-    expect(reponse.status).toBe(200)
+    const { marquerVendues } = await import('@/lib/disponibilite')
+    expect(await marquerVendues(['payee'])).toBe(1)
     expect(await anciennes('payee')).toMatchObject({ available: true, price: 100, dimensions: '10 × 10 cm', disponibilite: 'vendue' })
   })
 })

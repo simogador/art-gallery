@@ -66,10 +66,10 @@ function estDeclaree(e: EtatOeuvre): boolean {
 }
 
 /**
- * Œuvres payées (webhook Stripe) : `vendue`, pour les seules œuvres `disponible`
+ * Œuvres payées : `vendue`, pour les seules œuvres `disponible`
  * ou `reservee` (le paiement est un fait). Idempotent. Une œuvre déclarée vendue ailleurs ou retirée
  * par l'artiste (session de paiement ouverte avant la déclaration, story 2.8) reste inchangée et est
- * signalée à l'équipe par console.error (slugs seulement : commande payée à traiter, remboursement).
+ * signalée à l'équipe par console.error (slugs seulement). Aucun appelant en production depuis la story 7.9 : le chemin de vente est `vendreOeuvresDuPassage` (paiement constaté) ; gardée pour les tests de la couche disponibilité.
  * Les autres œuvres qui n'étaient pas en vente sont journalisées (slugs seulement). Renvoie le nombre
  * d'œuvres trouvées.
  */
@@ -83,7 +83,7 @@ export async function marquerVendues(slugs: string[]): Promise<number> {
     const declarees = lignes.filter(estDeclaree).map((l) => l.slug)
     if (declarees.length > 0) {
       console.error(
-        '[disponibilite] œuvres payées alors que l’artiste les a déclarées vendues ailleurs ou retirées, laissées inchangées (commande à traiter par l’équipe) :',
+        '[disponibilite] œuvres payées alors que l’artiste les a déclarées vendues ailleurs ou retirées, laissées inchangées :',
         declarees,
       )
     }
