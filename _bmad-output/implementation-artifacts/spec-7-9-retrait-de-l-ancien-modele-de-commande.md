@@ -2,7 +2,7 @@
 title: 'Story 7.9 — Retrait de l''ancien modèle de commande'
 type: 'chore'
 created: '2026-11-19'
-status: 'review'
+status: 'done'
 baseline_commit: 'e7214fa30276030d78edc6dfd4bf2a8736761439'
 route: 'dispatch'
 review_loop_iteration: 0
