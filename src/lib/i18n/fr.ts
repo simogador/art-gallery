@@ -274,6 +274,7 @@ export type Dictionnaire = {
       readonly general: string
       readonly oeuvre: (titre: string, reference: string, lien: string) => string
       readonly artiste: (nom: string) => string
+      readonly commande: (numeros: readonly string[]) => string
     }
   }
   /** Choix de mesure de la fréquentation, bannière non bloquante et lien du pied de page (story 4.8, NFR-6). */
@@ -597,9 +598,39 @@ export type Dictionnaire = {
     readonly bascule: string
     readonly basculeAnnulee: string
     readonly suivre: string
-    readonly suivreAide: string
+    readonly suivreEnCours: string
+    readonly suivreErreur: string
+    readonly suivreTropDeLiens: string
     readonly inactif: { readonly titre: string; readonly texte: string; readonly accueil: string }
     readonly ferme: { readonly titre: string; readonly texte: string; readonly accueil: string }
+    readonly panne: string
+    readonly reessayer: string
+    readonly chargement: string
+  }
+  /** Suivi des commandes par lien, sans compte, `/suivi` (story 7.7, FR-15, AD-14). */
+  readonly suivi: {
+    readonly titreDocument: string
+    readonly titre: string
+    readonly surtitre: string
+    readonly commande: (numero: string) => string
+    readonly artiste: (nom: string) => string
+    readonly delai: (min: number, max: number) => string
+    readonly etats: { readonly confirmee: string; readonly enAttente: string; readonly annulee: string }
+    readonly attente: string
+    readonly frise: {
+      readonly titre: string
+      readonly etapes: { readonly recue: string; readonly paiement: string; readonly livraison: string; readonly annulee: string }
+      readonly faite: (date: string | null) => string
+      readonly aVenir: string
+      readonly prevue: (du: string, au: string | null) => string
+      readonly annulee: string
+      readonly annuleePayee: string
+      readonly auPlusTard: (date: string) => string
+      readonly estimation: string
+    }
+    readonly echange: { readonly titre: string; readonly texte: string; readonly reessayer: string }
+    readonly aide: string
+    readonly inactif: { readonly titre: string; readonly texte: string; readonly accueil: string }
     readonly panne: string
     readonly reessayer: string
     readonly chargement: string
@@ -822,6 +853,8 @@ export type Dictionnaire = {
     }
     /** E-mails de commande : confirmation et annulation à l'acheteur, avis à l'artiste, alertes à l'équipe. */
     readonly commande: {
+      /** Lien de suivi ajouté aux e-mails de confirmation et d'annulation à l'acheteur (story 7.7). */
+      readonly suivi: { readonly intro: string }
       readonly confirmee: {
         readonly sujet: (numero: string) => string
         readonly intro: (numero: string) => string
@@ -1268,6 +1301,10 @@ export const fr = {
       oeuvre: (titre: string, reference: string, lien: string) =>
         `Bonjour, je souhaiterais un conseil sur l’œuvre « ${titre} » (référence ${reference}) : ${lien}`,
       artiste: (nom: string) => `Bonjour, je souhaiterais un conseil au sujet de l’artiste ${nom}.`,
+      commande: (numeros: readonly string[]) =>
+        numeros.length === 1
+          ? `Bonjour, j’ai une question sur ma commande ${numeros[0]}.`
+          : `Bonjour, j’ai une question sur mes commandes ${numeros.slice(0, -1).join(', ')} et ${numeros[numeros.length - 1]}.`,
     },
   },
   mesure: {
@@ -1666,7 +1703,9 @@ export const fr = {
     bascule: 'Votre paiement est constaté : votre commande est confirmée.',
     basculeAnnulee: 'Une commande a été annulée.',
     suivre: 'Suivre mes commandes',
-    suivreAide: 'Le suivi sera disponible bientôt.',
+    suivreEnCours: 'Ouverture du suivi…',
+    suivreErreur: 'Nous n’avons pas pu ouvrir votre suivi. Réessayez dans un instant, ou écrivez-nous.',
+    suivreTropDeLiens: 'Trop de liens de suivi sont déjà ouverts. Utilisez le lien de l’un de nos e-mails, ou écrivez-nous.',
     inactif: {
       titre: 'Aucune commande à afficher',
       texte: 'Cette page présente la confirmation de votre commande une fois celle-ci passée. Écrivez-nous si vous avez un doute.',
@@ -1680,6 +1719,43 @@ export const fr = {
     panne: 'Nous n’avons pas pu charger votre commande. Réessayez dans un instant.',
     reessayer: 'Réessayer',
     chargement: 'Chargement de votre commande…',
+  },
+  // Story 7.7 : suivi des commandes par lien, sans compte (étapes connues seulement ; expédition : Epic 8).
+  suivi: {
+    titreDocument: 'Suivi de vos commandes — Errancy',
+    titre: 'Suivi de vos commandes',
+    surtitre: 'Acquisition',
+    commande: (numero: string) => `Commande ${numero}`,
+    artiste: (nom: string) => `Artiste : ${nom}`,
+    delai: (min: number, max: number) =>
+      min === max ? `Délai de livraison estimé : ${min} jour${min > 1 ? 's' : ''}` : `Délai de livraison estimé : ${min} à ${max} jours`,
+    etats: { confirmee: 'Confirmée', enAttente: 'En attente de confirmation', annulee: 'Annulée' },
+    attente: 'Votre paiement n’est pas encore constaté par l’équipe : un e-mail vous préviendra.',
+    frise: {
+      titre: 'Étapes de la commande',
+      etapes: { recue: 'Commande reçue', paiement: 'Paiement constaté', livraison: 'Livraison prévue', annulee: 'Commande annulée' },
+      faite: (date: string | null) => (date ? `Faite le ${date}` : 'Faite'),
+      aVenir: 'À venir',
+      prevue: (du: string, au: string | null) => (au && au !== du ? `Prévue du ${du} au ${au}` : `Prévue le ${du}`),
+      annulee: 'Cette commande a été annulée.',
+      annuleePayee: 'Cette commande a été annulée. Écrivez-nous au sujet du remboursement.',
+      auPlusTard: (date: string) => `Prévue au plus tard le ${date}`,
+      estimation: 'Dates indicatives : elles dépendent de l’artiste et du transporteur.',
+    },
+    echange: {
+      titre: 'Votre suivi n’a pas pu s’ouvrir',
+      texte: 'Nous n’avons pas pu ouvrir votre lien de suivi pour le moment. Rouvrez-le dans un instant depuis votre e-mail.',
+      reessayer: 'Réessayer',
+    },
+    aide: 'Une question sur une commande ? Écrivez-nous en indiquant son numéro.',
+    inactif: {
+      titre: 'Ce lien de suivi n’est plus actif',
+      texte: 'Ce lien de suivi n’est plus actif : la commande est close.',
+      accueil: 'Retour à l’accueil',
+    },
+    panne: 'Nous n’avons pas pu charger votre suivi. Réessayez dans un instant.',
+    reessayer: 'Réessayer',
+    chargement: 'Chargement de votre suivi…',
   },
   // Story 7.3 : coordonnées sans compte, réservation affichée en heure fixe (jamais de décompte).
   coordonnees: {
@@ -1881,6 +1957,7 @@ export const fr = {
       lienPersonnel: 'Ce lien est personnel : il donne accès au récapitulatif de votre commande jusqu’à la fin de la réservation.',
     },
     commande: {
+      suivi: { intro: 'Pour suivre vos commandes, ouvrez ce lien (il vous est personnel, ne le transmettez pas) :' },
       confirmee: {
         sujet: (numero: string) => `Commande ${numero} confirmée`,
         intro: (numero: string) => `Merci : nous avons bien reçu votre paiement, votre commande ${numero} est confirmée.`,
