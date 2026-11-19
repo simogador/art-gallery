@@ -2,7 +2,7 @@
 title: 'Story 7.7 — Suivi des commandes par lien, sans compte'
 type: 'feature'
 created: '2026-11-18'
-status: 'review'
+status: 'done'
 baseline_commit: '9b669f0'
 route: 'dispatch'
 review_loop_iteration: 0
