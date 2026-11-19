@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Encaissement au Maroc</title>
+<style>
+  :root { --fond:#faf8f4; --texte:#1a1a1a; --doux:#525252; --filet:#d9d4c7; --sceau:#7a1f1f; --carte:#ffffff; }
+  @media (prefers-color-scheme: dark) { :root { --fond:#141414; --texte:#f2f2f2; --doux:#c4c4c4; --filet:#3a3a3a; --sceau:#c25454; --carte:#1d1d1d; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fond); color:var(--texte); font:16px/1.6 Georgia, "Times New Roman", serif; }
+  main { max-width:820px; margin:0 auto; padding:32px 16px 64px; }
+  header { display:flex; gap:24px; align-items:center; flex-wrap:wrap; border-bottom:1px solid var(--filet); padding-bottom:24px; }
+  h1 { font-size:1.7rem; margin:0 0 6px; font-weight:normal; }
+  h2 { font-size:1.15rem; margin:32px 0 10px; font-weight:normal; letter-spacing:.04em; text-transform:uppercase; }
+  p.sous { margin:0; color:var(--doux); }
+  .sceau { flex:0 0 auto; }
+  ul { padding-inline-start:20px; margin:0; }
+  li { margin:6px 0; }
+  .carte { background:var(--carte); border:1px solid var(--filet); border-radius:4px; padding:16px 20px; }
+  table { width:100%; border-collapse:collapse; }
+  td { border-top:1px solid var(--filet); padding:8px 6px; vertical-align:top; }
+  td:first-child { color:var(--doux); width:38%; }
+  .voix { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+  .voix div { border:1px solid var(--filet); border-radius:4px; padding:10px 12px; }
+  .voix b { display:block; }
+  .voix span { color:var(--doux); font-size:.9rem; }
+  .note { color:var(--doux); font-size:.9rem; margin-top:28px; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <svg class="sceau" width="132" height="132" viewBox="0 0 132 132" role="img" aria-label="Sceau : idée renforcée">
+    <circle cx="66" cy="66" r="60" fill="var(--sceau)"/>
+    <circle cx="66" cy="66" r="50" fill="none" stroke="#f6e9e9" stroke-width="2" stroke-dasharray="4 3"/>
+    <text x="66" y="58" text-anchor="middle" fill="#f6e9e9" font-family="Georgia, serif" font-size="15" letter-spacing="2">IDÉE</text>
+    <text x="66" y="78" text-anchor="middle" fill="#f6e9e9" font-family="Georgia, serif" font-size="15" letter-spacing="2">RENFORCÉE</text>
+    <text x="66" y="96" text-anchor="middle" fill="#f6e9e9" font-family="Georgia, serif" font-size="9" letter-spacing="1">HARDENED · 2026-11-19</text>
+  </svg>
+  <div>
+    <h1>Encaisser au Maroc en attendant une filiale en Europe</h1>
+    <p class="sous">Errancy encaisse sur un compte marocain pour le compte d'artistes résidents au Maroc, et leur verse leur part en dirhams.</p>
+  </div>
+</header>
+
+<h2>Décisions verrouillées</h2>
+<div class="carte">
+<table>
+  <tr><td>Qui vend en ligne</td><td>Seuls les artistes résidents au Maroc, pour l'instant</td></tr>
+  <tr><td>Qui encaisse</td><td>Errancy, sur un compte marocain, pour le compte de l'artiste</td></tr>
+  <tr><td>Qui est le vendeur</td><td>L'artiste ; Errancy lui facture 30 %, toujours entiers</td></tr>
+  <tr><td>Prix affiché</td><td>Calculé à partir de ce que l'artiste veut recevoir, en dirhams, frais de paiement et marge de change compris ; même prix ailleurs</td></tr>
+  <tr><td>Payé en plus par l'acheteur</td><td>Livraison et taxes d'import</td></tr>
+  <tr><td>Versement à l'artiste</td><td>Après la livraison et 14 jours de délai de retour, date visible dans son espace</td></tr>
+</table>
+</div>
+
+<h2>Écarté, et pourquoi</h2>
+<ul>
+  <li>L'artiste encaisse lui-même : il devrait recevoir des euros d'un acheteur étranger, même blocage.</li>
+  <li>Achat-revente par Errancy : TVA, retours et litiges sur le prix total.</li>
+  <li>Ligne « frais de paiement » séparée : ressentie comme une taxe cachée.</li>
+  <li>Montant de l'artiste en euros : l'artiste porterait le risque de change.</li>
+  <li>Versement dès l'expédition : un retour obligerait à reprendre des dirhams déjà versés.</li>
+</ul>
+
+<h2>Points faibles qui restent</h2>
+<ul>
+  <li>Quelle banque ou quel prestataire marocain accepte les cartes étrangères pour une place de marché.</li>
+  <li>Le remboursement d'un acheteur étranger sort des devises : permis sur la même carte ? (banque, Office des Changes)</li>
+  <li>Statut juridique et fiscal d'Errancy : mandat d'encaissement, TVA, retenue éventuelle.</li>
+  <li>Formalités d'exportation d'œuvres d'art depuis le Maroc.</li>
+  <li>Une marge de change fixe peut ne pas suffire si le dirham bouge beaucoup avant le versement.</li>
+</ul>
+
+<h2>Les voix qui ont éprouvé l'idée</h2>
+<div class="voix">
+  <div><b>📊 Mary</b><span>Analyste : a exigé le trajet réel de l'argent</span></div>
+  <div><b>📋 John</b><span>Chef de produit : a posé le périmètre des artistes</span></div>
+  <div><b>🎨 Sally</b><span>Expérience utilisateur : contre les frais surprise</span></div>
+  <div><b>🏗️ Winston</b><span>Architecte : une seule règle de change</span></div>
+  <div><b>📏 Level</b><span>Vérificatrice : « net » sans vendeur ne veut rien dire</span></div>
+  <div><b>🪵 Splinter</b><span>Contradicteur : le remboursement sort des devises</span></div>
+  <div><b>🚢 Dana</b><span>Pragmatique : des chiffres, pas des principes</span></div>
+  <div><b>🛑 Killjoy</b><span>Arrête les boucles : clore sans les réponses externes</span></div>
+  <div><b>Nadia</b><span>Voix imaginée, comptable-conseil à Casablanca</span></div>
+  <div><b>Léa</b><span>Voix imaginée, peintre installée à Lisbonne</span></div>
+  <div><b>Maître Benali</b><span>Voix imaginée, juriste d'affaires à Rabat</span></div>
+  <div><b>Youssef</b><span>Voix imaginée, sculpteur à Marrakech</span></div>
+  <div><b>Claire</b><span>Voix imaginée, collectionneuse à Lyon</span></div>
+  <div><b>Hicham</b><span>Voix imaginée, trésorerie bancaire à Casablanca</span></div>
+</div>
+
+<p class="note">Les voix imaginées servent au débat et ne sont pas des avis professionnels. Le montage doit être validé par un expert-comptable ou un avocat marocain avant d'être inscrit dans les décisions du porteur.</p>
+</main>
+</body>
+</html>
