@@ -219,6 +219,8 @@ export function contenuCommandeConfirmee(p: {
   nom: string
   numero: string
   lignes: { titre: string; totalCentimes: number; devise: string; delaiMinJours: number; delaiMaxJours: number }[]
+  /** Lien de suivi absolu, émis à l'envoi (story 7.7) ; absent : pas de lien. */
+  lienSuivi?: string | null
 }): Contenu {
   const t = fr.courriels.commande.confirmee
   return assembler({
@@ -229,6 +231,7 @@ export function contenuCommandeConfirmee(p: {
       ...p.lignes.map((l) => `${t.ligne(l.titre, formaterMontant(l.totalCentimes, l.devise))}\n${t.delai(l.delaiMinJours, l.delaiMaxJours)}`),
     ],
     suite: [fr.livraison.droitsNonInclus, t.suite],
+    ...(p.lienSuivi ? { lienSecondaire: { intro: fr.courriels.commande.suivi.intro, lien: p.lienSuivi } } : {}),
   })
 }
 
@@ -238,6 +241,8 @@ export function contenuCommandeAnnulee(p: {
   numero: string
   titres: string[]
   remboursement: 'demande' | 'effectue' | null
+  /** Lien de suivi absolu, émis à l'envoi (story 7.7) ; absent : pas de lien. */
+  lienSuivi?: string | null
 }): Contenu {
   const t = fr.courriels.commande.annulee
   const etat =
@@ -251,6 +256,7 @@ export function contenuCommandeAnnulee(p: {
     nom: p.nom,
     intro: [t.intro(p.numero), ...p.titres.map((titre) => t.ligne(titre)), etat],
     suite: [t.suite],
+    ...(p.lienSuivi ? { lienSecondaire: { intro: fr.courriels.commande.suivi.intro, lien: p.lienSuivi } } : {}),
   })
 }
 

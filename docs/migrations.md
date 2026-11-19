@@ -467,3 +467,22 @@ Retour arrière :
 - Retour arrière : l'ancien code ignore la valeur ; PostgreSQL ne sait pas retirer une valeur d'énumération, on la laisse. Libérer des œuvres réservées par erreur : `libererReservation` (module `disponibilite`), jamais par SQL direct.
 - Préversion : avec `LOT2_OUVERT=oui` **dans la préversion seulement** (jamais en production), ajouter une œuvre au panier, passer par « Continuer », saisir des coordonnées : l'œuvre doit apparaître réservée jusqu'à l'heure indiquée ; la libérer ensuite depuis `libererReservation` ou attendre l'échéance puis « Continuer ».
 - Tolérance : le jeton garde pour échéance celle de la réservation (30 minutes) mais reste lisible par le code pendant 7 jours après (`DUREE_ABANDON_COMMANDE_JOURS`), pour retrouver un passage échu et retenter sa réservation ; aucun effet sur la base ni sur la migration.
+
+### Story 7.7 : suivi des commandes par lien, jeton `suivi`
+
+- Migration : `20261121090000_suivi` (empreinte SHA-256 : `78a706c7334ec586abf46663cef5db1ab3db1c6db5a573271f7d3ed8f67eb408`, à vérifier avec `sha256sum prisma/migrations/20261121090000_suivi/migration.sql`). Additive : une seule valeur, `suivi`, ajoutée à l'énumération `UsageJeton` (`ALTER TYPE … ADD VALUE`). Aucune table n'est modifiée, aucune donnée touchée.
+- Procédure : même procédure que la migration 7.3, depuis l'éditeur SQL de Neon : branche de sauvegarde datée (`sauvegarde-avant-7-7-…`) à partir de `main`, `preview`, puis production **avant la fusion**. Les tables des migrations 6.x et 7.3 (`PassageEnCaisse`, `Commande`, `Jeton`) doivent déjà être en place. Bloc à exécuter, en quatre étapes (BEGIN, ALTER, INSERT 1, COMMIT) :
+  ```sql
+  BEGIN;
+  -- AlterEnum
+  ALTER TYPE "UsageJeton" ADD VALUE 'suivi';
+  INSERT INTO "_prisma_migrations" (id, checksum, migration_name, started_at, finished_at, applied_steps_count)
+  VALUES (gen_random_uuid()::text, '78a706c7334ec586abf46663cef5db1ab3db1c6db5a573271f7d3ed8f67eb408',
+          '20261121090000_suivi', now(), now(), 1);
+  COMMIT;
+  ```
+  L'empreinte porte sur le fichier `migration.sql` entier, commentaire compris : si le fichier change, recalculez-la avant de l'enregistrer.
+- Le nouveau code émet ce jeton à l'envoi des e-mails de confirmation et d'annulation de commande à l'acheteur et au clic sur « Suivre mes commandes » de `/confirmation` : sans la valeur d'enum, l'émission échoue (journal d'ids, l'e-mail part sans lien ; le bouton répond par un message neutre). La constatation d'un paiement et l'annulation elles-mêmes ne sont pas touchées.
+- Contrôle (lecture seule) : `SELECT unnest(enum_range(NULL::"UsageJeton"));` liste `suivi` (en dernier) ; `SELECT migration_name FROM "_prisma_migrations" WHERE migration_name = '20261121090000_suivi';` renvoie une ligne.
+- Retour arrière : l'ancien code ignore la valeur ; PostgreSQL ne sait pas retirer une valeur d'énumération, on la laisse. Pour invalider les liens émis : `UPDATE "Jeton" SET "revoqueLe" = now() WHERE usage = 'suivi' AND "revoqueLe" IS NULL;` (le suivi affiche alors la page « close »).
+- Préversion : avec `LOT2_OUVERT=oui` **dans la préversion seulement** (jamais en production), ou avec une vente assistée posée par l'équipe, faire constater un paiement par l'équipe : l'e-mail de confirmation (journal en préversion, aucun vrai envoi) porte un lien `/suivi/<jeton>` ; ouvrir ce lien d'un navigateur neuf : redirection vers `/suivi`, frise des commandes, bouton Conseil ; vérifier SQL en lecture seule que `SELECT count(*), count("consommeLe") FROM "Jeton" WHERE usage = 'suivi';` montre `consommeLe` vide (lien réutilisable). Hors production, la valeur du lien n'est lue nulle part : le journal ne la contient pas, la lire par un test ou ouvrir `/confirmation` puis « Suivre mes commandes ».

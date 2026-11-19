@@ -9,6 +9,7 @@ import { CONSEIL_HORAIRES, DELAI_CONSEIL_HEURES, DELAI_REPONSE_DEMANDE_HEURES, u
 export type ContexteConseil =
   | { type: 'oeuvre'; slug: string; titre: string }
   | { type: 'artiste'; nom: string }
+  | { type: 'commande'; numeros: string[] }
   | { type: 'general' }
 
 /** Message prérempli ; titre ou nom absent (vide) : message général. */
@@ -18,6 +19,11 @@ export function messageConseil(contexte: ContexteConseil): string {
     return t.oeuvre(contexte.titre.trim(), contexte.slug.trim(), urlAbsolue(`/galerie/${encodeURIComponent(contexte.slug.trim())}`))
   }
   if (contexte.type === 'artiste' && contexte.nom.trim()) return t.artiste(contexte.nom.trim())
+  // Suivi (story 7.7) : les numéros de commande suffisent à l'équipe pour retrouver la commande.
+  if (contexte.type === 'commande') {
+    const numeros = contexte.numeros.map((n) => n.trim()).filter(Boolean)
+    if (numeros.length > 0) return t.commande(numeros)
+  }
   return t.general
 }
 

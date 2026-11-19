@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { abandonnerConfirmationPrevenir, preparerConfirmationPrevenir, retirerInscriptionsPrevenirSiSortie } from '@/lib/demandes'
 import { lireDonneesCourrielCommande, lireNumeroCommandeAvecPassage } from '@/lib/commandes/courriels'
+import { abandonnerLienSuivi, emettreLienSuiviDeCommande } from '@/lib/commandes/suivi'
 import { abandonnerLienVenteAssistee, preparerLienVenteAssistee } from '@/lib/commandes/vente-assistee'
 import { emettreLienInvitation, noterEnvoiInvitation } from '@/lib/acces/lien-invitation'
 import type { EvenementLuA } from '@/lib/evenements/catalogue'
@@ -281,7 +282,9 @@ async function envoyerCommande(
   evenement: EvenementCommande,
   nom: string,
   etatAttendu: 'confirmee' | 'annulee',
-  composer: (d: DonneesCommande) => { a: string; contenu: Contenu } | null,
+  composer: (d: DonneesCommande, lienSuivi: string | null) => { a: string; contenu: Contenu } | null,
+  // `suivi` : e-mail à l'acheteur, qui porte un lien de suivi émis à l'envoi (story 7.7, AD-14).
+  options: { suivi?: boolean; lienSeulementSiCommandeVivante?: boolean } = {},
 ): Promise<void> {
   const { commandeId } = evenement.charge
   const donnees = await lireDonneesCourrielCommande(commandeId)
@@ -289,12 +292,35 @@ async function envoyerCommande(
     console.info('[notifications] commande sans objet, aucun e-mail', { evenement: evenement.id, commande: commandeId, gestionnaire: nom })
     return
   }
-  const message = composer(donnees)
-  if (!message) {
-    console.info('[notifications] aucun destinataire, aucun e-mail', { evenement: evenement.id, commande: commandeId, gestionnaire: nom })
-    return
+  // Le lien de suivi est émis ici, au moment de l'envoi : sa valeur en clair n'existe que dans l'e-mail. Une
+  // panne d'émission n'empêche pas l'e-mail (la confirmation prime) : il part sans lien, journal d'ids.
+  let jetonSuivi: string | null = null
+  if (options.suivi) {
+    try {
+      jetonSuivi = await emettreLienSuiviDeCommande(commandeId, { exigerCommandeVivante: options.lienSeulementSiCommandeVivante })
+    } catch {
+      console.error('[notifications] lien de suivi non émis', { evenement: evenement.id, commande: commandeId, gestionnaire: nom })
+    }
   }
-  const resultat = await envoyer({ a: message.a, ...message.contenu, cle: `${evenement.id}:${nom}` })
+  let resultat: ResultatEnvoi = { ok: false, code: 'indisponible' }
+  try {
+    const message = composer(donnees, jetonSuivi ? urlAbsolue(`/suivi/${jetonSuivi}`) : null)
+    if (!message) {
+      console.info('[notifications] aucun destinataire, aucun e-mail', { evenement: evenement.id, commande: commandeId, gestionnaire: nom })
+      return
+    }
+    resultat = await envoyer({ a: message.a, ...message.contenu, cle: `${evenement.id}:${nom}` })
+  } finally {
+    // Pas d'e-mail parti (échec, ou rien à envoyer) : le lien émis ne reste pas valable sans e-mail. Pas de
+    // nouvel essai (AQ-2 ouverte).
+    if (jetonSuivi && !resultat.ok) {
+      try {
+        await abandonnerLienSuivi(jetonSuivi)
+      } catch {
+        console.error('[notifications] lien de suivi non révoqué', { evenement: evenement.id, commande: commandeId })
+      }
+    }
+  }
   if (!resultat.ok) {
     console.error('[notifications] e-mail de commande non envoyé', { evenement: evenement.id, commande: commandeId, gestionnaire: nom, code: resultat.code })
   }
@@ -302,10 +328,16 @@ async function envoyerCommande(
 
 /** Commande confirmée : e-mail à l'acheteur (lignes figées de la commande). */
 export async function envoyerConfirmationCommande(evenement: EvenementLuA<'CommandeConfirmee'>): Promise<void> {
-  await envoyerCommande(evenement, 'envoyerConfirmationCommande', 'confirmee', (d) => ({
-    a: d.acheteur.email,
-    contenu: contenuCommandeConfirmee({ nom: d.acheteur.nom, numero: d.numero, lignes: d.lignes }),
-  }))
+  await envoyerCommande(
+    evenement,
+    'envoyerConfirmationCommande',
+    'confirmee',
+    (d, lienSuivi) => ({
+      a: d.acheteur.email,
+      contenu: contenuCommandeConfirmee({ nom: d.acheteur.nom, numero: d.numero, lignes: d.lignes, lienSuivi }),
+    }),
+    { suivi: true },
+  )
 }
 
 /** Commande confirmée : avis sobre à l'artiste (numéro et titres, aucune coordonnée de l'acheteur). Sans compte : rien. */
@@ -319,10 +351,17 @@ export async function envoyerAvisCommandeArtiste(evenement: EvenementLuA<'Comman
 
 /** Commande annulée : e-mail à l'acheteur, avec l'état du remboursement s'il existe. */
 export async function envoyerAnnulationCommande(evenement: EvenementLuA<'CommandeAnnulee'>): Promise<void> {
-  await envoyerCommande(evenement, 'envoyerAnnulationCommande', 'annulee', (d) => ({
-    a: d.acheteur.email,
-    contenu: contenuCommandeAnnulee({ nom: d.acheteur.nom, numero: d.numero, titres: d.lignes.map((l) => l.titre), remboursement: d.remboursement }),
-  }))
+  await envoyerCommande(
+    evenement,
+    'envoyerAnnulationCommande',
+    'annulee',
+    (d, lienSuivi) => ({
+      a: d.acheteur.email,
+      contenu: contenuCommandeAnnulee({ nom: d.acheteur.nom, numero: d.numero, titres: d.lignes.map((l) => l.titre), remboursement: d.remboursement, lienSuivi }),
+    }),
+    // Passage clos (toutes les commandes annulées) : le lien n'ouvrirait que la page « close », il n'est ni émis ni écrit.
+    { suivi: true, lienSeulementSiCommandeVivante: true },
+  )
 }
 
 /** Commande confirmée ou annulée : alerte à l'équipe, numéro et lien seulement. */

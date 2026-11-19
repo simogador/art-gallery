@@ -53,6 +53,7 @@ const SURFACES_TEXTES = [
   'src/app/commande/coordonnees/**/*.tsx',
   'src/app/commande/paiement/**/*.tsx',
   'src/app/confirmation/**/*.tsx',
+  'src/app/suivi/**/*.tsx',
 ]
 
 module.exports = {
