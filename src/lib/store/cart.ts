@@ -6,11 +6,6 @@ import { PLAFOND_PANIER, nettoyerSlugs } from '@/lib/panier/regles'
 // Aucun prix, titre ni image n'est gardé : le serveur recompose le panier (module panier). Nouvelle
 // clé de stockage : l'ancienne (`errancy-cart`, qui portait des prix) n'est plus lue.
 
-/** Ancien type d'article, réduit à l'identifiant (slug) : il ne sert plus qu'à l'ancien /api/checkout. */
-export interface CartItem {
-  id: string
-}
-
 interface CartStore {
   slugs:      string[]
   /** Ajoute un slug ; faux si le panier est plein (plafond) ou si le slug est invalide. */

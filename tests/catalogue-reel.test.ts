@@ -17,8 +17,6 @@ import { creerBaseJetable, type BaseJetable } from './utils/base-jetable'
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn(), unstable_cache: <T extends (...a: never[]) => unknown>(f: T) => f }))
 vi.mock('@/auth', () => ({ auth: vi.fn(async () => ({ user: { id: 'acheteur', email: 'a@exemple.test' } })) }))
 vi.mock('@/lib/acces', () => ({ acteurCourant: async () => ({ type: 'visiteur' }) }))
-const stripe = vi.hoisted(() => ({ creerSession: vi.fn() }))
-vi.mock('@/lib/stripe', () => ({ getStripe: () => ({ checkout: { sessions: { create: stripe.creerSession } } }) }))
 // Story 3.3 : la galerie et la fiche lisent le cookie `pays` (absent ici : France).
 vi.mock('next/headers', () => ({ cookies: () => ({ get: () => undefined }), headers: () => new Headers() }))
 vi.mock('next/navigation', () => ({
@@ -360,35 +358,5 @@ describe('base : règle de visibilité « accord signé requis »', () => {
     const hero = enfants.find((e) => e.type === Hero)!
     expect(hero.props.chiffres).toEqual({ oeuvres: 1, artistes: 1, expositions: 1 })
     expect(hero.props.expositionEnCours).toBe(false)
-  })
-
-  describe('panier : œuvre devenue invisible', () => {
-    beforeEach(() => {
-      vi.stubEnv('LOT2_OUVERT', 'oui')
-      stripe.creerSession.mockReset().mockResolvedValue({ url: 'https://paiement.exemple.test/s' })
-    })
-    afterEach(() => vi.unstubAllEnvs())
-
-    const payer = async (slug: string) => {
-      const { POST } = await import('@/app/api/checkout/route')
-      return POST(new Request('http://localhost/api/checkout', {
-        method: 'POST',
-        body: JSON.stringify({ items: [{ id: slug }] }),
-      }) as never)
-    }
-
-    it('refus au paiement avec le message existant, pour la démonstration comme pour un accord effacé', async () => {
-      await catalogueMixte()
-      const demo = await payer('no-61-rust-and-blue')
-      expect(demo.status).toBe(400)
-      expect((await demo.json()).error).toContain("n'est plus disponible")
-
-      expect((await payer('aube')).status).toBe(200)
-      await db.query(`UPDATE "Artist" SET "accordSigneLe" = NULL WHERE slug = 'mustapha-timija'`)
-      const efface = await payer('aube')
-      expect(efface.status).toBe(400)
-      expect((await efface.json()).error).toContain("n'est plus disponible")
-      expect(stripe.creerSession).toHaveBeenCalledOnce()
-    })
   })
 })

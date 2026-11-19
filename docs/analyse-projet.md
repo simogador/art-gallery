@@ -6,7 +6,7 @@
 ## 1. Résumé
 
 Plateforme de galerie d'art contemporain « Errancy » : catalogue d'œuvres, artistes, expositions,
-vente en ligne (Stripe), espaces artiste et administrateur. Le site est **actuellement en mode
+vente en ligne, espaces artiste et administrateur. Le site est **actuellement en mode
 maintenance** en production (voir §5).
 
 ## 2. Stack technique
@@ -17,7 +17,7 @@ maintenance** en production (voir §5).
 | UI | Tailwind CSS 3 + `@tailwindcss/typography`, framer-motion, polices Cormorant Garamond / Inter |
 | Base de données | PostgreSQL (Neon) via **Prisma 7.8** + `@prisma/adapter-pg` ; client généré dans `src/generated/prisma` (ignoré par git, généré au `postinstall`) |
 | Auth | NextAuth **v5 beta** (`src/auth.ts`, `src/auth.config.ts`), stratégie JWT, Google + identifiants (bcryptjs), PrismaAdapter |
-| Paiement | Stripe Checkout (`/api/checkout`) + webhook (`/api/webhooks/stripe`) |
+| Paiement | Aucun encaissement en ligne (ancien chemin Stripe supprimé, story 7.9) ; constat manuel, adaptateur en story 7.5 (OQ-1) |
 | Images | Cloudinary (`src/lib/cloudinary.ts`, `/api/upload`), domaines autorisés dans `next.config.mjs` |
 | État client | Zustand (`src/lib/store/cart.ts`) pour le panier |
 | Hébergement | Vercel |
@@ -30,7 +30,7 @@ Commandes : `npm run dev | build | start | lint`. Prisma : `prisma.config.ts` li
 src/app/                 Routes (App Router, URLs en français)
   page.tsx               Accueil — remplacé par une page de maintenance
   galerie/, artistes/, expositions/   Catalogue public (+ pages détail [id])
-  panier/, confirmation/ Panier Zustand → Stripe → confirmation (vide le panier)
+  panier/, confirmation/ Panier de slugs → commande sans compte → confirmation
   wishlist/              Placeholder (état vide uniquement, pas de modèle en base)
   auth/connexion|inscription   Formulaires + server actions (auth/actions.ts)
   dashboard/             Espace utilisateur ; /artiste (CRUD œuvres) ; /admin (artistes, œuvres, utilisateurs)
@@ -45,16 +45,13 @@ src/middleware.ts        Maintenance + protège /dashboard, /wishlist, /panier ;
 
 Modèles Prisma : `Artist` (lié optionnellement à un `User`), `Artwork`, `Exhibition`,
 `ArtworkExhibition`, `User` (rôle texte : `user` | `artist` | `admin`), `Account`, `Session`,
-`VerificationToken`, `Order` (slugs d'œuvres séparés par des virgules, montant en euros).
+`VerificationToken` (l'ancienne table `Order` est supprimée, story 7.9 ; commandes : `PassageEnCaisse`, `Commande`, `LigneCommande`, `Paiement`).
 
 Rôles : `admin` → /dashboard/admin ; `artist` ou `admin` → /dashboard/artiste.
 
 ## 4. Flux principaux
 
-- **Achat** : panier (Zustand, persistant) → `POST /api/checkout` (auth requise, prix revalidés
-  côté serveur depuis la DB) → Stripe Checkout → webhook `checkout.session.completed` qui marque
-  les œuvres `vendue` (colonne `disponibilite`, story 2.2 ; `available` supprimée en 2.10) et crée l'`Order` (upsert idempotent) ; `payment_intent.succeeded`
-  sert de secours.
+- **Achat** (stories 6 et 7) : panier de slugs → `/commande/coordonnees` (passage et réservation) → `/commande/paiement` → constat de paiement par l'équipe (`traiterPaiementConstate`, les œuvres passent `vendue`) → `/confirmation` et `/suivi`. L'ancien chemin `POST /api/checkout` + webhook Stripe + table `Order` a été supprimé par la story 7.9.
 - **Auth** : Google OAuth ou email/mot de passe ; le rôle est placé dans le JWT puis la session.
 
 ## 5. Constats et points d'attention (à traiter en priorité)
@@ -77,8 +74,7 @@ Rôles : `admin` → /dashboard/admin ; `artist` ou `admin` → /dashboard/artis
    `components/sections/*` et `lib/utils/*` alors que les pages utilisent Prisma : risque
    d'incohérence entre accueil et catalogue.
 5. **Wishlist** non implémentée (pas de modèle en base).
-6. **Commerce** — prix en `Float` (préférer des centimes entiers ou `Decimal`) ; `Order.artworkIds`
-   en chaîne CSV plutôt qu'une table de liaison ; pas de contrôle de double vente si deux
+6. **Commerce** — prix en `Float` (préférer des centimes entiers ou `Decimal`) ; *(`Order` supprimée, story 7.9)* ; pas de contrôle de double vente si deux
    paiements concurrents portent sur la même œuvre.
 7. **Qualité** — aucun test automatisé ni CI ; README minimal ; nombreux `as any`.
 8. **Next.js 14.2.5** — version ancienne, à mettre à jour (correctifs de sécurité).

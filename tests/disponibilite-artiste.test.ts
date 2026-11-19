@@ -19,20 +19,15 @@ import { creerBaseJetable, type BaseJetable } from './utils/base-jetable'
 
 // Story 2.8 (FR-21) : l'artiste tient la disponibilité de ses œuvres publiées — vendue ailleurs,
 // retirée, annulation dans le délai, remise en vente (retour en curation), propriété, concurrence
-// avec la curation, refus du checkout, fiche publique.
+// avec la curation, refus de la réservation, fiche publique.
 
 const acteur = vi.hoisted(() => ({ courant: { type: 'visiteur' } as Record<string, unknown> }))
-const stripe = vi.hoisted(() => ({ creerSession: vi.fn() }))
 
-// Le checkout exige une session (acheteur connecté).
 vi.mock('@/auth', () => ({ auth: vi.fn(async () => ({ user: { id: 'acheteur-1', email: 'acheteur@exemple.test' } })) }))
 vi.mock('next-auth', () => ({ AuthError: class AuthError extends Error {} }))
 vi.mock('@/lib/acces', async (original) => ({
   ...(await original<typeof import('@/lib/acces')>()),
   acteurCourant: async () => acteur.courant,
-}))
-vi.mock('@/lib/stripe', () => ({
-  getStripe: () => ({ checkout: { sessions: { create: stripe.creerSession } } }),
 }))
 // Story 3.4 : unstable_cache en passe-plat (pas de cache dans les tests), revalidateTag espionné.
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn(), unstable_cache: <T extends (...a: never[]) => unknown>(f: T) => f }))
@@ -400,27 +395,22 @@ describe('base : disponibilité tenue par l’artiste', () => {
   describe('site public et paiement', () => {
     beforeEach(() => {
       vi.stubEnv('LOT2_OUVERT', 'oui')
-      stripe.creerSession.mockReset().mockResolvedValue({ url: 'https://paiement.exemple.test/s' })
     })
     afterEach(() => vi.unstubAllEnvs())
 
-    const payer = async (slug: string) => {
-      const { POST } = await import('@/app/api/checkout/route')
-      return POST(
-        new Request('http://localhost/api/checkout', { method: 'POST', body: JSON.stringify({ items: [{ id: slug }] }) }) as never,
-      )
+    // Story 7.9 : l'ancien checkout n'existe plus ; le refus passe par la réservation en bloc (6.2).
+    const reserver = async (passageId: string, slug: string) => {
+      const { reserverOeuvres } = await import('@/lib/disponibilite/reservation')
+      return reserverOeuvres({ passageId, slugs: [slug], origine: 'paiement' })
     }
 
-    it.each(['vendue_ailleurs', 'retiree'])('après « %s », le checkout refuse l’œuvre', async (type) => {
-      const { declarerDisponibilite } = await dispo()
+    it.each(['vendue_ailleurs', 'retiree'])('après « %s », la réservation refuse l’œuvre', async (type) => {
+      const { declarerDisponibilite, libererReservation } = await dispo()
       await oeuvre('payable', 'publiee', 'disponible')
-      expect((await payer('payable')).status).toBe(200)
-      stripe.creerSession.mockClear()
+      expect(await reserver('passage-a', 'payable')).toMatchObject({ ok: true })
+      await libererReservation('passage-a', {})
       await declarerDisponibilite(ARTISTE as never, 'payable', type)
-      const reponse = await payer('payable')
-      expect(reponse.status).toBe(400)
-      expect((await reponse.json()).error).toContain("n'est plus disponible")
-      expect(stripe.creerSession).not.toHaveBeenCalled()
+      expect(await reserver('passage-b', 'payable')).toMatchObject({ ok: false, code: 'oeuvre_indisponible' })
     })
 
     it('vendue ailleurs : la fiche reste affichée, marquée vendue (pas de panier)', async () => {

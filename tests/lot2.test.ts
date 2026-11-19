@@ -1,38 +1,13 @@
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { auth } from '@/auth'
 import { fr } from '@/lib/i18n'
 import { lot2Ouvert } from '@/lib/reglages'
 
-// Story 1.7 (AD-17) : l'interrupteur du Lot 2 ferme le chemin d'achat actuel.
+// Story 1.7 (AD-17) : l'interrupteur du Lot 2. Story 7.9 : l'ancien chemin d'achat n'existe plus.
 
-const creerSession = vi.fn()
-const recupererSession = vi.fn()
-
-vi.mock('@/auth', () => ({ auth: vi.fn(async () => ({ user: { id: 'u1', email: 'a@exemple.test' } })) }))
-vi.mock('@/lib/stripe', () => ({
-  getStripe: () => ({ checkout: { sessions: { create: creerSession, retrieve: recupererSession } } }),
-}))
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    artwork: {
-      findMany: vi.fn(async () => [
-        {
-          slug: 'oeuvre-1',
-          title: 'Œuvre 1',
-          publication: 'publiee',
-          disponibilite: 'disponible',
-          prixCentimes: 125050,
-          devise: 'EUR',
-          year: 2020,
-          medium: 'Huile',
-          // Story 2.9 : accord signé, sinon l'œuvre n'est pas visible et le paiement la refuse.
-          artist: { name: 'Artiste', accordSigneLe: new Date('2026-11-01'), active: true },
-        },
-      ]),
-    },
-  },
-}))
+vi.mock('@/lib/prisma', () => ({ prisma: {} }))
 vi.mock('next/headers', () => ({ cookies: () => ({ get: () => undefined }) }))
 vi.mock('next/navigation', () => ({
   redirect: (url: string) => {
@@ -42,13 +17,6 @@ vi.mock('next/navigation', () => ({
     throw new Error('introuvable')
   },
 }))
-
-function requetePanier() {
-  return new Request('http://localhost/api/checkout', {
-    method: 'POST',
-    body: JSON.stringify({ items: [{ id: 'oeuvre-1' }] }),
-  })
-}
 
 describe('lot2Ouvert', () => {
   it('n’ouvre le Lot 2 que si LOT2_OUVERT vaut « oui »', () => {
@@ -61,82 +29,21 @@ describe('lot2Ouvert', () => {
   })
 })
 
-describe('chemin d’achat actuel', () => {
-  beforeEach(() => {
-    vi.mocked(auth).mockReset().mockResolvedValue({ user: { id: 'u1', email: 'a@exemple.test' } } as never)
-    creerSession.mockReset().mockResolvedValue({ url: 'https://paiement.exemple.test/s' })
-    recupererSession.mockReset().mockResolvedValue({ payment_status: 'paid', metadata: {}, amount_total: 0 })
-  })
+describe('ancien chemin d’achat retiré (story 7.9)', () => {
   afterEach(() => vi.unstubAllEnvs())
 
-  describe('Lot 2 fermé', () => {
-    beforeEach(() => vi.stubEnv('LOT2_OUVERT', ''))
-
-    it('POST /api/checkout refuse aussi quand LOT2_OUVERT est absente (défaut de production)', async () => {
-      vi.stubEnv('LOT2_OUVERT', undefined)
-      const { POST } = await import('@/app/api/checkout/route')
-      const reponse = await POST(requetePanier() as never)
-      expect(reponse.status).toBe(403)
-      expect(creerSession).not.toHaveBeenCalled()
-    })
-
-    it('refuse avant même de vérifier la connexion', async () => {
-      vi.mocked(auth).mockResolvedValue(null as never)
-      const { POST } = await import('@/app/api/checkout/route')
-      expect((await POST(requetePanier() as never)).status).toBe(403)
-    })
-
-    it('POST /api/checkout refuse sans créer de session de paiement', async () => {
-      const { POST } = await import('@/app/api/checkout/route')
-      const reponse = await POST(requetePanier() as never)
-      expect(reponse.status).toBe(403)
-      expect(await reponse.json()).toMatchObject({ code: 'lot2_ferme' })
-      expect(creerSession).not.toHaveBeenCalled()
-    })
-
-    it('la page de confirmation n’appelle pas le prestataire', async () => {
-      const { default: Confirmation } = await import('@/app/confirmation/page')
-      // Story 7.6 : message neutre (plus de redirection), l'ancien `?session_id=` est ignoré.
-      const page = await (Confirmation as unknown as (p: unknown) => Promise<unknown>)({ searchParams: Promise.resolve({ session_id: 'cs_1' }) })
-      expect(renderToStaticMarkup(page as never)).toContain(fr.confirmation.ferme.titre)
-      expect(recupererSession).not.toHaveBeenCalled()
-    })
+  it('/api/checkout, le webhook de paiement et le client du prestataire n’existent plus', () => {
+    for (const chemin of ['src/app/api/checkout/route.ts', 'src/app/api/webhooks/stripe/route.ts', 'src/lib/stripe.ts']) {
+      expect(existsSync(path.resolve(chemin)), chemin).toBe(false)
+    }
   })
 
-  describe('Lot 2 ouvert (comportement actuel inchangé)', () => {
-    beforeEach(() => vi.stubEnv('LOT2_OUVERT', 'oui'))
-
-    it('POST /api/checkout crée la session de paiement', async () => {
-      const { POST } = await import('@/app/api/checkout/route')
-      const reponse = await POST(requetePanier() as never)
-      expect(reponse.status).toBe(200)
-      expect(await reponse.json()).toEqual({ url: 'https://paiement.exemple.test/s' })
-      expect(creerSession).toHaveBeenCalledOnce()
-      // Story 2.1 : le montant Stripe vaut exactement prixCentimes, sans arrondi.
-      expect(creerSession.mock.calls[0][0].line_items[0].price_data).toMatchObject({
-        currency: 'eur',
-        unit_amount: 125050,
-      })
-    })
-
-    it('POST /api/checkout refuse une œuvre dont le prix n’est pas recopié en centimes', async () => {
-      const { prisma } = await import('@/lib/prisma')
-      vi.mocked(prisma.artwork.findMany).mockResolvedValueOnce([
-        { slug: 'oeuvre-1', title: 'Œuvre 1', publication: 'publiee', disponibilite: 'disponible', prixCentimes: null, devise: 'EUR',
-          year: 2020, medium: 'Huile', artist: { name: 'Artiste', accordSigneLe: new Date('2026-11-01'), active: true } },
-      ] as never)
-      const { POST } = await import('@/app/api/checkout/route')
-      const reponse = await POST(requetePanier() as never)
-      expect(reponse.status).toBe(400)
-      expect((await reponse.json()).error).toContain('n\'a pas de prix défini')
-      expect(creerSession).not.toHaveBeenCalled()
-    })
-
-    it('la page de confirmation n’interroge plus le prestataire (story 7.6)', async () => {
-      const { default: Confirmation } = await import('@/app/confirmation/page')
-      const page = await (Confirmation as unknown as (p: unknown) => Promise<unknown>)({ searchParams: Promise.resolve({ session_id: 'cs_1' }) })
-      expect(renderToStaticMarkup(page as never)).toContain(fr.confirmation.inactif.titre)
-      expect(recupererSession).not.toHaveBeenCalled()
-    })
+  it.each(['', 'oui'])('la page de confirmation n’appelle aucun prestataire (LOT2_OUVERT=%j)', async (valeur) => {
+    vi.stubEnv('LOT2_OUVERT', valeur)
+    const { default: Confirmation } = await import('@/app/confirmation/page')
+    // Un ancien `?session_id=` est ignoré.
+    const page = await (Confirmation as unknown as (p: unknown) => Promise<unknown>)({ searchParams: Promise.resolve({ session_id: 'cs_1' }) })
+    const html = renderToStaticMarkup(page as never)
+    expect(html).toContain(valeur === 'oui' ? fr.confirmation.inactif.titre : fr.confirmation.ferme.titre)
   })
 })

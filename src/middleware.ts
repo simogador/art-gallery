@@ -35,6 +35,6 @@ export default auth((req: any) => {
 })
 
 export const config = {
-  // Every page, but not API routes (Stripe webhook, auth), Next internals or static files
+  // Every page, but not API routes (auth), Next internals or static files
   matcher: ['/((?!api|_next/static|_next/image|.*\\.[a-zA-Z0-9]+$).*)'],
 }

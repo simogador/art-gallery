@@ -22,13 +22,6 @@ vi.mock('@/auth', () => ({ auth: vi.fn(async () => ({ user: { id: UTILISATEUR, e
 const acteur = vi.hoisted(() => ({ courant: { type: 'visiteur' } as Record<string, unknown> }))
 vi.mock('@/lib/acces', () => ({ acteurCourant: async () => acteur.courant }))
 
-const stripe = vi.hoisted(() => ({ creerSession: vi.fn(), evenement: vi.fn() }))
-vi.mock('@/lib/stripe', () => ({
-  getStripe: () => ({
-    checkout: { sessions: { create: stripe.creerSession } },
-    webhooks: { constructEvent: stripe.evenement },
-  }),
-}))
 // Story 3.3 : la galerie et la fiche lisent le cookie `pays` (absent ici : France).
 vi.mock('next/headers', () => ({ cookies: () => ({ get: () => undefined }), headers: () => new Headers() }))
 vi.mock('next/navigation', () => ({
@@ -43,7 +36,6 @@ vi.mock('next/navigation', () => ({
   },
 }))
 
-const SQL_VENDUES_SANS_COMMANDE = readFileSync(path.resolve('scripts/sql/vendues-sans-commande.sql'), 'utf8')
 
 const PUBLICATIONS: (Publication | null)[] = ['brouillon', 'en_curation', 'publiee', null]
 const DISPONIBILITES: (Disponibilite | null)[] = ['disponible', 'reservee', 'vendue', 'vendue_ailleurs', 'retiree', null]
@@ -177,22 +169,8 @@ describe('base : lectures et écritures', () => {
 
   beforeEach(async () => {
     acteur.courant = { type: 'visiteur' }
-    await db.query('DELETE FROM "Order"')
     await db.query('DELETE FROM "ArtworkExhibition"')
     await db.query('DELETE FROM "Artwork"')
-  })
-
-  it('liste les œuvres publiées et vendues qu’aucune commande ne contient', async () => {
-    await oeuvre('vendue-commandee', 'publiee', 'vendue')
-    await oeuvre('vendue-commandee-2', 'publiee', 'vendue')
-    await oeuvre('masquee', 'publiee', 'vendue')
-    await oeuvre('brouillon-vendu', 'brouillon', 'vendue')
-    await oeuvre('dispo', 'publiee', 'disponible')
-    await db.query(
-      `INSERT INTO "Order" (id, "stripeSessionId", "artworkIds", amount, "updatedAt")
-       VALUES ('o1', 'cs_x', 'autre,vendue-commandee,vendue-commandee-2', 100, now())`,
-    )
-    expect((await db.query(SQL_VENDUES_SANS_COMMANDE)).rows.map((r) => r.slug)).toEqual(['masquee'])
   })
 
   it('la galerie ne liste que les œuvres visibles, la vendue marquée vendue', async () => {
@@ -287,21 +265,10 @@ describe('base : lectures et écritures', () => {
     })
   })
 
-  describe('paiement (Lot 2 ouvert)', () => {
-    beforeEach(() => {
-      vi.stubEnv('LOT2_OUVERT', 'oui')
-      stripe.creerSession.mockReset().mockResolvedValue({ url: 'https://paiement.exemple.test/s' })
-    })
-    afterEach(() => vi.unstubAllEnvs())
-
-    const payer = async (slug: string) => {
-      const { POST } = await import('@/app/api/checkout/route')
-      return POST(
-        new Request('http://localhost/api/checkout', {
-          method: 'POST',
-          body: JSON.stringify({ items: [{ id: slug }] }),
-        }) as never,
-      )
+  describe('réservation pour paiement (story 7.9 : l’ancien checkout n’existe plus)', () => {
+    const reserver = async (slug: string) => {
+      const { reserverOeuvres } = await import('@/lib/disponibilite/reservation')
+      return reserverOeuvres({ passageId: `passage-${slug}`, slugs: [slug], origine: 'paiement' })
     }
 
     it.each([
@@ -310,54 +277,30 @@ describe('base : lectures et écritures', () => {
       ['publiee' as const, 'retiree' as const],
       ['publiee' as const, 'vendue_ailleurs' as const],
       ['brouillon' as const, 'disponible' as const],
-    ])('refuse une œuvre %s / %s : « n’est plus disponible »', async (publication, disponibilite) => {
+    ])('refuse une œuvre %s / %s : oeuvre_indisponible', async (publication, disponibilite) => {
       await oeuvre('refusee', publication, disponibilite)
-      const reponse = await payer('refusee')
-      expect(reponse.status).toBe(400)
-      expect((await reponse.json()).error).toContain("n'est plus disponible")
-      expect(stripe.creerSession).not.toHaveBeenCalled()
+      expect(await reserver('refusee')).toMatchObject({ ok: false, code: 'oeuvre_indisponible' })
     })
 
     it('accepte une œuvre publiée et disponible', async () => {
       await oeuvre('payable', 'publiee', 'disponible')
-      expect((await payer('payable')).status).toBe(200)
-      expect(stripe.creerSession).toHaveBeenCalledOnce()
+      expect(await reserver('payable')).toMatchObject({ ok: true })
+      expect(await etat('payable')).toMatchObject({ disponibilite: 'reservee' })
     })
   })
 
-  describe('webhook de paiement', () => {
-    const recevoir = async (evenement: unknown) => {
-      stripe.evenement.mockReset().mockReturnValue(evenement)
-      const { POST } = await import('@/app/api/webhooks/stripe/route')
-      return POST(
-        new Request('http://localhost/api/webhooks/stripe', {
-          method: 'POST',
-          headers: { 'stripe-signature': 'signature' },
-          body: '{}',
-        }) as never,
-      )
-    }
-
-    it('session payée : vendue, idempotent', async () => {
+  describe('vente d’œuvres payées (marquerVendues)', () => {
+    it('œuvres payées : vendues, idempotent', async () => {
       await oeuvre('payee-1', 'publiee', 'disponible')
       await oeuvre('payee-2', 'publiee', 'disponible')
       await oeuvre('autre', 'publiee', 'disponible')
-      const evenement = {
-        type: 'checkout.session.completed',
-        data: {
-          object: {
-            id: 'cs_1', payment_intent: 'pi_1', amount_total: 20000, currency: 'eur',
-            metadata: { artworkIds: 'payee-1,payee-2', userId: UTILISATEUR }, customer_details: null,
-          },
-        },
-      }
-      expect((await recevoir(evenement)).status).toBe(200)
-      expect((await recevoir(evenement)).status).toBe(200)
+      const { marquerVendues } = await import('@/lib/disponibilite')
+      expect(await marquerVendues(['payee-1', 'payee-2'])).toBe(2)
+      expect(await marquerVendues(['payee-1', 'payee-2'])).toBe(2)
       for (const slug of ['payee-1', 'payee-2']) {
         expect(await etat(slug)).toEqual({ publication: 'publiee', disponibilite: 'vendue' })
       }
       expect(await etat('autre')).toMatchObject({ disponibilite: 'disponible' })
-      expect((await db.query('SELECT count(*)::int AS n FROM "Order"')).rows[0].n).toBe(1)
     })
 
     it('payée alors qu’elle n’était pas en vente : vendue si disponible ou réservée, déclarée laissée inchangée, slugs journalisés', async () => {
@@ -390,21 +333,6 @@ describe('base : lectures et écritures', () => {
       }
       expect(await etat('p-retiree')).toMatchObject({ disponibilite: 'retiree' })
       expect(await etat('p-ailleurs')).toMatchObject({ disponibilite: 'vendue_ailleurs' })
-    })
-
-    it('paiement de secours (payment_intent) : vendue', async () => {
-      await oeuvre('secours', 'publiee', 'disponible')
-      const evenement = {
-        type: 'payment_intent.succeeded',
-        data: {
-          object: {
-            id: 'pi_2', amount_received: 10000, currency: 'eur', receipt_email: null,
-            metadata: { artworkIds: 'secours', userId: UTILISATEUR },
-          },
-        },
-      }
-      expect((await recevoir(evenement)).status).toBe(200)
-      expect(await etat('secours')).toEqual({ publication: 'publiee', disponibilite: 'vendue' })
     })
   })
 

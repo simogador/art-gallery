@@ -1,11 +1,10 @@
-import { readFileSync } from 'node:fs'
 import { Client } from 'pg'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fr } from '@/lib/i18n'
 import { creerBaseJetable, type BaseJetable } from './utils/base-jetable'
 
 // Story 6.1 (FR-10, AD-12, AR-10) : passage en caisse, commandes par artiste aux montants figés,
-// numéro lisible, coordonnées de l'acheteur, recopie idempotente de l'ancienne table Order. Base réelle.
+// numéro lisible, coordonnées de l'acheteur, base réelle.
 
 describe('règles pures', () => {
   it('numéro lisible : forme ERR-XXXX-XXXX, alphabet sans caractères ambigus', async () => {
@@ -83,7 +82,7 @@ describe('base : passage en caisse et commandes', () => {
   })
 
   beforeEach(async () => {
-    for (const table of ['Paiement', 'LigneCommande', 'Commande', 'CoordonneesAcheteur', 'PassageEnCaisse', 'Order', 'OffreLivraison', 'ZonePays', 'Zone', 'Artwork', 'Artist']) {
+    for (const table of ['Paiement', 'LigneCommande', 'Commande', 'CoordonneesAcheteur', 'PassageEnCaisse', 'OffreLivraison', 'ZonePays', 'Zone', 'Artwork', 'Artist']) {
       await db.query(`DELETE FROM "${table}"`)
     }
     for (const [id, accord] of [['art-a', 'now()'], ['art-b', 'now()'], ['art-sans-accord', 'NULL']]) {
@@ -288,50 +287,5 @@ describe('base : passage en caisse et commandes', () => {
     await creerPassageEnCaisse({ pays: 'FR', oeuvres: ['a-1'], coordonnees: ACHETEUR })
     await creerPassageEnCaisse({ pays: 'FR', oeuvres: ['a-1'], coordonnees: { ...ACHETEUR, email: 'mauvais' } })
     expect(JSON.stringify(bruit.map((b) => b.mock.calls))).not.toMatch(/exemple\.test|Claire/i)
-  })
-
-  describe('recopie des anciennes commandes (script SQL)', () => {
-    const script = readFileSync('scripts/sql/recopier-anciennes-commandes.sql', 'utf8')
-    const lancer = async () => {
-      const resultats = (await db.query(script)) as unknown as { rows: { moment: string; commandes: string; centimes: string }[] }[]
-      return resultats.filter((r) => r.rows.length).map((r) => r.rows[0])
-    }
-    const ancien = (id: string, montant: number, devise: string, slugs: string, email: string | null) =>
-      db.query(
-        `INSERT INTO "Order" (id, "stripeSessionId", "stripePaymentIntentId", "artworkIds", amount, currency, "customerEmail", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, '2026-09-01T10:00:00Z', now())`,
-        [id, `cs_${id}`, `pi_${id}`, slugs, montant, devise, email],
-      )
-
-    it('chaque Order devient une commande historique ; rejouée, aucun doublon et même contrôle', async () => {
-      await ancien('o1', 1450.5, 'eur', 'nuit-bleue,aube', 'a@exemple.test')
-      await ancien('o2', 320, 'eur', 'cap', null)
-      await ancien('o3', 0.1, 'usd', 'x', 'c@exemple.test')
-
-      const premier = await lancer()
-      expect(premier).toEqual([
-        { moment: 'avant', commandes: '3', centimes: '177060' },
-        { moment: 'apres', commandes: '3', centimes: '177060' },
-      ])
-      const commande = (await db.query(`SELECT * FROM "Commande" WHERE "ordreHistoriqueId" = 'o1'`)).rows[0]
-      expect(commande).toMatchObject({
-        etat: 'historique', devise: 'EUR', montantHistoriqueCentimes: 145050, slugsHistoriques: 'nuit-bleue,aube',
-        emailHistorique: 'a@exemple.test', stripeSessionId: 'cs_o1', stripePaymentIntentId: 'pi_o1', passageId: null, artistId: null,
-      })
-      expect(commande.createdAt.toISOString()).toBe('2026-09-01T10:00:00.000Z')
-      const { FORME_NUMERO } = await import('@/lib/commandes/numero')
-      for (const { numero } of (await db.query(`SELECT numero FROM "Commande"`)).rows) expect(numero).toMatch(FORME_NUMERO)
-      expect(await compter('LigneCommande')).toBe(0)
-
-      const second = await lancer()
-      expect(second).toEqual(premier)
-      expect(await compter('Commande')).toBe(3)
-      // Un nouvel Order n'ajoute que lui-même.
-      await ancien('o4', 10, 'eur', 'y', null)
-      expect((await lancer())[1]).toEqual({ moment: 'apres', commandes: '4', centimes: '178060' })
-      expect(await compter('Commande')).toBe(4)
-      // L'ancienne table n'a pas bougé.
-      expect(await compter('Order')).toBe(4)
-    })
   })
 })
