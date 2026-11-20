@@ -64,6 +64,12 @@ export default async function AdminCommandesPage() {
               motif: c.annulation?.motif ?? null,
               alertes: c.alertes,
               annulable: c.annulable,
+              livrable: c.livrable,
+              preuveRequise: c.preuveRequise,
+              livreeLe: c.livraison ? quand(c.livraison.le) : null,
+              livraisonSource: c.livraison?.source ? ce.livraison.sourcesConstat[c.livraison.source] : null,
+              preuveLivraison: c.livraison?.preuve ?? null,
+              retourAvant: c.livraison ? quand(c.livraison.retourAvant) : null,
             }))}
           />
         ) : (

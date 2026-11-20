@@ -10,9 +10,10 @@ import { HeureFixe } from '../HeureFixe'
 import { PriseEnCharge } from '../PriseEnCharge'
 
 // Une commande de l'artiste (story 8.1, FR-22, AD-15, AD-16, UJ-2). Accès décidé par `commandes` à partir de
-// l'acteur relu en base : commande d'un autre artiste, inconnue ou hors des états `confirmee`/`prise_en_charge`/`expediee` :
+// l'acteur relu en base : commande d'un autre artiste, inconnue ou hors des états `confirmee`/`prise_en_charge`/`expediee`/`livree` :
 // 404, sans dire si elle existe. Avant la prise en charge : œuvres, prénom et pays, échéance en heure fixe et zone
-// neutre à la place de l'adresse ; après : adresse, téléphone et rappel du guide d'emballage. Aucun montant.
+// neutre à la place de l'adresse ; après : adresse, téléphone et rappel du guide d'emballage. Commande `livree` (story 8.4) : lecture seule, sans
+// adresse ni téléphone. Aucun montant.
 
 export const dynamic = 'force-dynamic'
 
@@ -45,8 +46,10 @@ export default async function CommandeArtistePage({ params }: Props) {
   const lu = await commandeDeLArtiste(acteur, numero)
   if (!lu.ok) notFound()
   const commande = lu.commande
+  const livree = commande.etat === 'livree'
   const expediee = commande.etat === 'expediee'
-  // Adresse et téléphone : prise en charge et expédition (AD-16), jusqu'à la livraison (8.4).
+  // Adresse et téléphone : prise en charge et expédition seulement (AD-16) ; une commande livrée (8.4) reste lisible,
+  // sans adresse ni téléphone.
   const prise = commande.etat === 'prise_en_charge' || expediee
   const exp = commande.expedition
 
@@ -62,7 +65,7 @@ export default async function CommandeArtistePage({ params }: Props) {
         <h1 className="mt-2 font-serif font-light text-foreground" style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)' }}>
           {t.commande(commande.numero)}
         </h1>
-        <p className="mt-2 font-sans text-sm text-foreground">{expediee ? t.etats.expediee : prise ? t.etats.prise : t.etats.aPrendre}</p>
+        <p className="mt-2 font-sans text-sm text-foreground">{livree ? t.etats.livree : expediee ? t.etats.expediee : prise ? t.etats.prise : t.etats.aPrendre}</p>
       </div>
 
       <section aria-labelledby="oeuvres" className="mb-8">
@@ -94,7 +97,11 @@ export default async function CommandeArtistePage({ params }: Props) {
         <h2 id="echeance" className="font-sans text-xs uppercase tracking-[0.2em] text-neutral-600">
           {t.echeanceTitre}
         </h2>
-        {expediee ? (
+        {livree ? (
+          <p className="mt-3 font-sans text-sm text-foreground">
+            {t.livreeLe} {commande.livreeLe && <HeureFixe iso={commande.livreeLe.toISOString()} />}
+          </p>
+        ) : expediee ? (
           <p className="mt-3 font-sans text-sm text-foreground">
             {t.expedieeLe} {commande.expedieeLe && <HeureFixe iso={commande.expedieeLe.toISOString()} />}
           </p>
@@ -112,9 +119,11 @@ export default async function CommandeArtistePage({ params }: Props) {
         {commande.echeanceDepassee && <p className="mt-2 font-sans text-sm font-medium text-foreground">{t.depassee}</p>}
       </section>
 
-      <div className="mb-8">
-        <PriseEnCharge numero={commande.numero} prise={prise} />
-      </div>
+      {!livree && (
+        <div className="mb-8">
+          <PriseEnCharge numero={commande.numero} prise={prise} />
+        </div>
+      )}
       {prise && (
         <div className="mb-8">
           <FormulaireExpedition
@@ -163,6 +172,10 @@ export default async function CommandeArtistePage({ params }: Props) {
             <dd className="break-words text-foreground">{commande.telephone ?? t.livraison.nonRenseigne}</dd>
           </dl>
         </section>
+      ) : livree ? (
+        <p data-livraison-masquee className="mb-8 font-sans text-sm text-neutral-600">
+          {t.livraisonMasquee}
+        </p>
       ) : (
         <section aria-labelledby="zone-adresse" className="mb-8">
           <h2 id="zone-adresse" className="font-sans text-xs uppercase tracking-[0.2em] text-neutral-600">

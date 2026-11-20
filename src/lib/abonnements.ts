@@ -96,6 +96,8 @@ export const ABONNEMENTS: { [N in NomEvenement]: Abonnement<N>[] } = {
   CommandePriseEnCharge: [{ nom: 'envoyerPriseEnChargeCommande', gestionnaire: via('envoyerPriseEnChargeCommande') }],
   // Story 8.2 : l'acheteur apprend que l'œuvre est expédiée (transporteur, numéro, lien de suivi émis à l'envoi).
   CommandeExpediee: [{ nom: 'envoyerExpeditionCommande', gestionnaire: via('envoyerExpeditionCommande') }],
+  // Story 8.4 : l'acheteur apprend que la livraison est constatée (lien de suivi émis à l'envoi).
+  CommandeLivree: [{ nom: 'envoyerLivraisonCommande', gestionnaire: via('envoyerLivraisonCommande') }],
   // Story 6.6 : la commande en attente de la réservation interrompue est annulée (état relu en base, incident écrit).
   ReservationAnnulee: [{ nom: 'annulerSuiteReservationAnnulee', gestionnaire: viaCommandes('annulerSuiteReservationAnnulee') }],
 }

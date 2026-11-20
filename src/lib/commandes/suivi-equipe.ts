@@ -1,6 +1,9 @@
 import { prisma } from '@/lib/prisma'
 import type { Acteur } from '@/lib/acces'
 import type { EtatCommande } from './etats'
+import { assuranceRequise } from './expedition-regles'
+import type { SourceLivraison } from './livraison-regles'
+import { SEUIL_ASSURANCE } from '@/lib/reglages'
 import { alertesDeRetard, type AlerteRetard } from './suivi-equipe-regles'
 
 // Commandes payées vues par l'équipe (story 8.3, FR-26, AD-10, AD-15, UJ-3) : lecture seule, admin seulement
@@ -8,7 +11,7 @@ import { alertesDeRetard, type AlerteRetard } from './suivi-equipe-regles'
 // e-mail, ni nom : l'équipe l'identifie par le numéro de commande) ; aucun montant additionné (le remboursement
 // est lu tel qu'enregistré). Les retards sont calculés à la lecture à partir des échéances stockées.
 
-export type EtatCommandeEquipe = Extract<EtatCommande, 'confirmee' | 'prise_en_charge' | 'expediee' | 'annulee'>
+export type EtatCommandeEquipe = Extract<EtatCommande, 'confirmee' | 'prise_en_charge' | 'expediee' | 'livree' | 'annulee'>
 
 export type CommandeDeLEquipe = {
   id: string
@@ -29,6 +32,12 @@ export type CommandeDeLEquipe = {
   alertes: AlerteRetard[]
   /** Annulable par l'équipe : `confirmee` ou `prise_en_charge`. */
   annulable: boolean
+  /** Livraison constatée (story 8.4) : date, source, preuve saisie par l'équipe et fin du délai de retour ; null avant. */
+  livraison: { le: Date | null; source: SourceLivraison | null; preuve: string | null; retourAvant: Date | null } | null
+  /** `expediee` : l'équipe peut enregistrer la livraison (« Enregistrer la livraison »). */
+  livrable: boolean
+  /** `expediee` : le prix des œuvres dépasse le seuil d'assurance, la preuve de livraison est obligatoire. */
+  preuveRequise: boolean
 }
 
 export type CommandesDeLEquipe = {
@@ -42,6 +51,7 @@ export type CommandesDeLEquipe = {
 /** Plafond des commandes à expédier (`confirmee`, `prise_en_charge`), les plus anciennes d'abord. */
 export const LIMITE_A_EXPEDIER = 300
 const LIMITE_EXPEDIEES = 50
+const LIMITE_LIVREES = 50
 const LIMITE_ANNULEES = 50
 
 /**
@@ -64,11 +74,16 @@ export async function commandesDeLEquipe(acteur: Acteur, maintenant: Date = new 
     referenceAssurance: true,
     annuleeLe: true,
     motifAnnulation: true,
+    devise: true,
+    livreeLe: true,
+    livraisonSource: true,
+    preuveLivraison: true,
+    retourAvant: true,
     artist: { select: { name: true } },
     lignes: { orderBy: { createdAt: 'asc' as const }, select: { titre: true } },
     remboursement: { select: { etat: true, montantCentimes: true, devise: true } },
   }
-  const [aExpedier, expediees, annulees] = await Promise.all([
+  const [aExpedier, expediees, livrees, annulees] = await Promise.all([
     // À expédier : alertes calculées sur celles-ci ; les expédiées (qui s'accumulent jusqu'à la 8.4) ne les évincent pas.
     prisma.commande.findMany({
       where: { passageId: { not: null }, etat: { in: ['confirmee', 'prise_en_charge'] } },
@@ -83,6 +98,12 @@ export async function commandesDeLEquipe(acteur: Acteur, maintenant: Date = new 
       select,
     }),
     prisma.commande.findMany({
+      where: { passageId: { not: null }, etat: 'livree' },
+      orderBy: [{ livreeLe: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }],
+      take: LIMITE_LIVREES,
+      select,
+    }),
+    prisma.commande.findMany({
       // Annulée après paiement : un remboursement existe ou l'équipe l'a annulée (jamais une simple attente abandonnée).
       where: { passageId: { not: null }, etat: 'annulee', OR: [{ remboursement: { isNot: null } }, { annuleeLe: { not: null } }] },
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
@@ -91,7 +112,13 @@ export async function commandesDeLEquipe(acteur: Acteur, maintenant: Date = new 
     }),
   ])
   const tronque = aExpedier.length > limiteAExpedier
-  const commandes = [...aExpedier.slice(0, limiteAExpedier), ...expediees, ...annulees].map((c): CommandeDeLEquipe => {
+  // Prix des œuvres des commandes expédiées, par agrégat de la base (seuil d'assurance de la 8.2) : jamais additionné ici.
+  const prixExpediees = await prisma.ligneCommande.groupBy({
+    by: ['commandeId'],
+    where: { commandeId: { in: expediees.map((c) => c.id) } },
+    _sum: { prixCentimes: true },
+  })
+  const commandes = [...aExpedier.slice(0, limiteAExpedier), ...expediees, ...livrees, ...annulees].map((c): CommandeDeLEquipe => {
     const etat = c.etat as EtatCommandeEquipe
     return {
       id: c.id,
@@ -111,6 +138,12 @@ export async function commandesDeLEquipe(acteur: Acteur, maintenant: Date = new 
       annulation: etat === 'annulee' ? { le: c.annuleeLe, motif: c.motifAnnulation } : null,
       alertes: alertesDeRetard({ etat, priseEnChargeAvant: c.priseEnChargeAvant, expedieAvant: c.expedieAvant }, maintenant),
       annulable: etat === 'confirmee' || etat === 'prise_en_charge',
+      livraison:
+        etat === 'livree'
+          ? { le: c.livreeLe, source: (c.livraisonSource as SourceLivraison | null) ?? null, preuve: c.preuveLivraison, retourAvant: c.retourAvant }
+          : null,
+      livrable: etat === 'expediee',
+      preuveRequise: etat === 'expediee' && assuranceRequise(prixExpediees.find((g) => g.commandeId === c.id)?._sum.prixCentimes, c.devise, SEUIL_ASSURANCE),
     }
   })
   return {

@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { lirePassageDuNavigateur } from '@/lib/acces/commande-publique'
 import { emettreJetonSuivi, lirePassageDuSuivi, nombreLiensSuiviActifs, revoquerJetonSuivi } from '@/lib/acces/suivi'
-import { PLAFOND_LIENS_SUIVI } from '@/lib/reglages'
+import { PLAFOND_LIENS_SUIVI, SEUIL_ASSURANCE } from '@/lib/reglages'
+import { assuranceRequise } from './expedition-regles'
 import { construireFrise, type EtapeSuivi, type EtatCommandeSuivi } from './suivi-regles'
 
 // Suivi des commandes d'un acheteur sans compte (FR-15, AD-14, story 7.7). Lecture seule, sauf l'émission et
@@ -9,7 +10,8 @@ import { construireFrise, type EtapeSuivi, type EtatCommandeSuivi } from './suiv
 // après l'échange `/suivi/[jeton]`), jamais par un identifiant du navigateur. Étapes faites : dates réelles
 // lues en base (création de la commande, constat du paiement) ; date de livraison PRÉVUE : délai figé sur
 // les lignes (agrégat de la base, plus long minimum et maximum) appliqué à la date du constat. Aucun montant
-// n'est lu ni additionné ici. Jamais d'adresse, de téléphone, d'e-mail ni de coordonnées d'artiste dans le
+// n'est rendu ni additionné ici (le prix des œuvres, lu par agrégat, ne sert qu'à décider si l'acheteur peut
+// constater la réception, story 8.4). Jamais d'adresse, de téléphone, d'e-mail ni de coordonnées d'artiste dans le
 // résultat ; jamais d'e-mail ni de lien dans les journaux (ids seulement).
 
 export type CommandeSuivie = {
@@ -21,6 +23,11 @@ export type CommandeSuivie = {
   delaiMinJours: number
   delaiMaxJours: number
   etapes: EtapeSuivi[]
+  /**
+   * L'acheteur peut constater la réception (story 8.4) : commande `expediee` sous le seuil d'assurance. Calculé
+   * côté serveur ; au-dessus du seuil, seule l'équipe constate la livraison (sur preuve).
+   */
+  peutConfirmerReception: boolean
 }
 
 export type Suivi = {
@@ -44,12 +51,14 @@ export async function lireSuiviPassage(jeton: string | undefined, maintenant: Da
       where: { id: lien.passageId },
       select: {
         commandes: {
-          where: { etat: { in: ['confirmee', 'prise_en_charge', 'expediee', 'en_attente_paiement', 'annulee'] } },
+          where: { etat: { in: ['confirmee', 'prise_en_charge', 'expediee', 'livree', 'en_attente_paiement', 'annulee'] } },
           orderBy: { createdAt: 'asc' },
           select: {
             id: true,
             numero: true,
             etat: true,
+            devise: true,
+            livreeLe: true,
             createdAt: true,
             priseEnChargeLe: true,
             expedieeLe: true,
@@ -70,6 +79,8 @@ export async function lireSuiviPassage(jeton: string | undefined, maintenant: Da
       by: ['commandeId'],
       where: { commandeId: { in: passage?.commandes.map((c) => c.id) ?? [] } },
       _max: { delaiMinJours: true, delaiMaxJours: true },
+      // Seulement pour décider si le bouton « J'ai reçu l'œuvre » est proposé : jamais rendu ni additionné ici.
+      _sum: { prixCentimes: true },
     })
     return { passage, paiement, parCommande }
   })
@@ -91,8 +102,9 @@ export async function lireSuiviPassage(jeton: string | undefined, maintenant: Da
       delaiMaxJours,
       etapes: construireFrise({
         etat, creeeLe: c.createdAt, constateLe: paiement?.constateLe ?? null, delaiMinJours, delaiMaxJours, priseEnChargeLe: c.priseEnChargeLe,
-        expedieeLe: c.expedieeLe, transporteur: c.transporteur, numeroSuivi: c.numeroSuivi,
+        expedieeLe: c.expedieeLe, transporteur: c.transporteur, numeroSuivi: c.numeroSuivi, livreeLe: c.livreeLe,
       }),
+      peutConfirmerReception: etat === 'expediee' && !assuranceRequise(agregat._sum.prixCentimes, c.devise, SEUIL_ASSURANCE),
     }
   })
   return { fermee: false, commandes }
@@ -121,7 +133,7 @@ export async function emettreLienSuiviDeCommande(
     const commande = await tx.commande.findUnique({ where: { id: commandeId }, select: { passageId: true } })
     if (!commande?.passageId) return null
     if (options.exigerCommandeVivante) {
-      const vivantes = await tx.commande.count({ where: { passageId: commande.passageId, etat: { in: ['confirmee', 'prise_en_charge', 'expediee', 'en_attente_paiement'] } } })
+      const vivantes = await tx.commande.count({ where: { passageId: commande.passageId, etat: { in: ['confirmee', 'prise_en_charge', 'expediee', 'livree', 'en_attente_paiement'] } } })
       if (vivantes === 0) return null
     }
     return (await emettreJetonSuivi(tx, commande.passageId, maintenant)).jeton
@@ -142,7 +154,7 @@ export async function ouvrirSuiviDuNavigateur(
   return prisma.$transaction(async (tx) => {
     const lien = await lirePassageDuNavigateur(tx, jetonPassage, maintenant)
     if (!lien) return null
-    const nombre = await tx.commande.count({ where: { passageId: lien.passageId, etat: { in: ['confirmee', 'prise_en_charge', 'expediee', 'en_attente_paiement', 'annulee'] } } })
+    const nombre = await tx.commande.count({ where: { passageId: lien.passageId, etat: { in: ['confirmee', 'prise_en_charge', 'expediee', 'livree', 'en_attente_paiement', 'annulee'] } } })
     if (nombre === 0) return null
     const existant = await lirePassageDuSuivi(tx, jetonSuiviExistant, maintenant)
     if (existant && existant.passageId === lien.passageId && typeof jetonSuiviExistant === 'string') {

@@ -3,10 +3,10 @@
 // commande, constat du paiement) ; la date de livraison n'est jamais qu'une date PRÉVUE, calculée à partir du
 // délai figé sur les lignes (plus long minimum et plus long maximum) appliqué à la date du constat. Calcul de
 // dates seulement, jamais de montant. Story 8.1 : étape « Prise en charge par l'artiste », faite et datée (date
-// lue en base) entre le paiement et la livraison. Story 8.2 : étape « Expédiée » (date, transporteur, numéro de suivi) ; livraison constatée : story 8.4.
+// lue en base) entre le paiement et la livraison. Story 8.2 : étape « Expédiée » (date, transporteur, numéro de suivi) ; story 8.4 : étape « Livrée » (date de la livraison constatée) à la place de la livraison prévue.
 
-export type EtatCommandeSuivi = 'confirmee' | 'prise_en_charge' | 'expediee' | 'en_attente_paiement' | 'annulee'
-export type CleEtape = 'recue' | 'paiement' | 'prise_en_charge' | 'expediee' | 'livraison' | 'annulee'
+export type EtatCommandeSuivi = 'confirmee' | 'prise_en_charge' | 'expediee' | 'livree' | 'en_attente_paiement' | 'annulee'
+export type CleEtape = 'recue' | 'paiement' | 'prise_en_charge' | 'expediee' | 'livraison' | 'livree' | 'annulee'
 
 export type EtapeSuivi = {
   cle: CleEtape
@@ -48,18 +48,30 @@ export function construireFrise(p: {
   expedieeLe?: Date | null
   transporteur?: string | null
   numeroSuivi?: string | null
+  /** Livraison constatée (8.4), lue en base ; absente sauf pour `livree`. */
+  livreeLe?: Date | null
 }): EtapeSuivi[] {
   const recue: EtapeSuivi = { cle: 'recue', faite: true, date: p.creeeLe, fin: null }
   if (p.etat === 'annulee') {
     const annulee: EtapeSuivi = { cle: 'annulee', faite: true, date: null, fin: null }
     return p.constateLe ? [recue, { cle: 'paiement', faite: true, date: p.constateLe, fin: null }, annulee] : [recue, annulee]
   }
-  const expediee = p.etat === 'expediee'
+  const livree = p.etat === 'livree'
+  const expediee = p.etat === 'expediee' || livree
   const priseEnCharge = p.etat === 'prise_en_charge' || expediee
   const confirmee = p.etat === 'confirmee' || priseEnCharge
   const min = typeof p.delaiMinJours === 'number' && p.delaiMinJours > 0 ? p.delaiMinJours : null
   const max = typeof p.delaiMaxJours === 'number' && p.delaiMaxJours > 0 ? p.delaiMaxJours : min
   const connu = confirmee && max !== null
+  // Livrée (8.4) : l'étape « Livrée », faite et datée par la livraison constatée, remplace la livraison prévue.
+  const etapeLivraison: EtapeSuivi = livree
+    ? { cle: 'livree', faite: true, date: p.livreeLe ?? null, fin: null }
+    : {
+        cle: 'livraison',
+        faite: false,
+        date: connu && min !== null ? ajouterJours(p.constateLe, min) : null,
+        fin: connu ? ajouterJours(p.constateLe, max) : null,
+      }
   return [
     recue,
     { cle: 'paiement', faite: confirmee, date: confirmee ? p.constateLe : null, fin: null },
@@ -73,11 +85,6 @@ export function construireFrise(p: {
           expedition: { transporteur: p.transporteur ?? '', numeroSuivi: p.numeroSuivi ?? '' },
         }]
       : []),
-    {
-      cle: 'livraison',
-      faite: false,
-      date: connu && min !== null ? ajouterJours(p.constateLe, min) : null,
-      fin: connu ? ajouterJours(p.constateLe, max) : null,
-    },
+    etapeLivraison,
   ]
 }

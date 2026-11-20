@@ -9,6 +9,7 @@ import type { CommandeSuivie, EtapeSuivi } from '@/lib/commandes'
 const refresh = vi.fn()
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh, push: vi.fn() }) }))
 vi.mock('@/app/actions/pays', () => ({ choisirPaysLivraison: vi.fn() }))
+vi.mock('@/app/suivi/actions', () => ({ confirmerReception: vi.fn() }))
 
 const { FriseCommande } = await import('@/app/suivi/FriseCommande')
 const { ListeSuivi } = await import('@/app/suivi/ListeSuivi')
@@ -18,7 +19,7 @@ const t = fr.suivi
 const etapes = (...e: EtapeSuivi[]): EtapeSuivi[] => e
 const recue: EtapeSuivi = { cle: 'recue', faite: true, date: new Date('2026-11-02T10:00:00Z'), fin: null }
 const commande = (numero: string, artiste: string, etat: CommandeSuivie['etat'], liste: EtapeSuivi[]): CommandeSuivie => ({
-  numero, artiste, etat, oeuvres: [`Titre ${numero}`], delaiMinJours: 8, delaiMaxJours: 12, etapes: liste,
+  numero, artiste, etat, oeuvres: [`Titre ${numero}`], delaiMinJours: 8, delaiMaxJours: 12, etapes: liste, peutConfirmerReception: false,
 })
 const confirmee = etapes(
   recue,

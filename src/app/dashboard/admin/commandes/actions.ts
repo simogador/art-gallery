@@ -5,6 +5,7 @@ import { champsPrix } from '@/lib/catalogue/conversions'
 import {
   annulerCommande,
   annulerParLEquipe,
+  enregistrerLivraison,
   heuresValides,
   marquerRemboursementEffectue,
   libererVenteAssistee,
@@ -148,6 +149,28 @@ export async function actionAnnulerParLEquipe(numero: string, motif: string): Pr
     const r = await annulerParLEquipe(await acteurCourant(), String(numero ?? ''), String(motif ?? ''))
     if (r.ok) return { ok: true, message: r.dejaAnnulee ? t.dejaAnnulee : t.succes }
     if (r.code === 'motif_invalide') return { ok: false, message: t.erreurs[r.erreur], champ: 'motif' }
+    return { ok: false, message: t.refus[r.code] }
+  } catch {
+    return { ok: false, message: t.refus.indisponible }
+  }
+}
+
+// Story 8.4 : livraison constatée par l'équipe (suivi du transporteur ou preuve). Droits vérifiés par le module
+// commandes (admin seulement, rôle relu en base) ; aucun détail technique dans les réponses, la preuve n'est jamais
+// journalisée.
+export type ResultatActionLivraison = { ok: true; message: string } | { ok: false; message: string; champ?: 'source' | 'preuve' }
+
+export async function actionEnregistrerLivraison(numero: string, source: string, preuve: string): Promise<ResultatActionLivraison> {
+  const t = fr.commandesEquipe.livraison
+  try {
+    const r = await enregistrerLivraison(await acteurCourant(), String(numero ?? ''), { source: String(source ?? ''), preuve: String(preuve ?? '') })
+    if (r.ok) return { ok: true, message: r.dejaLivree ? t.deja : t.succes }
+    if (r.code === 'preuve_requise' || r.code === 'invalide') {
+      const e = r.erreurs
+      if (e?.preuve) return { ok: false, message: t.erreurs[e.preuve], champ: 'preuve' }
+      if (e?.source) return { ok: false, message: e.source === 'preuve_requise' ? t.erreurs.preuve_requise : t.erreurs.source, champ: 'source' }
+      return { ok: false, message: t.refus[r.code] }
+    }
     return { ok: false, message: t.refus[r.code] }
   } catch {
     return { ok: false, message: t.refus.indisponible }

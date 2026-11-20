@@ -22,7 +22,11 @@ export function ListeCommandes({ commandes }: { commandes: CommandeDeLArtiste[] 
             <p className="mt-1 font-serif text-base text-foreground">{c.oeuvres.join(', ')}</p>
             <p className="mt-1 font-sans text-sm text-neutral-600">{t.acheteur(c.prenom, c.pays.nom)}</p>
             <p data-etat={c.etat} className="mt-2 font-sans text-sm text-foreground">
-              {c.etat === 'expediee' ? (
+              {c.etat === 'livree' ? (
+                <>
+                  {t.livreeLe} {c.livreeLe && <HeureFixe iso={c.livreeLe.toISOString()} />}
+                </>
+              ) : c.etat === 'expediee' ? (
                 <>
                   {t.expedieeLe} {c.expedieeLe && <HeureFixe iso={c.expedieeLe.toISOString()} />}
                 </>

@@ -488,6 +488,8 @@ enum EtatCommande {
   prise_en_charge
   // Story 8.2 : l'artiste a expédié (transporteur et numéro de suivi saisis).
   expediee
+  // Story 8.4 : livraison constatée (par l'acheteur ou par l'équipe).
+  livree
   annulee
   // Ancienne commande (table Order) recopiée : sans ligne figée, hors des sommes dues.
   historique
@@ -553,6 +555,15 @@ model Commande {
   annuleeLe                 DateTime?              @db.Timestamptz(3)
   annuleePar                String?
   motifAnnulation           String?
+  // Story 8.4 (AD-10, FR-29) : livraison constatée. `livraisonSource` = `acheteur` | `equipe_suivi` | `equipe_preuve` ;
+  // `livraisonPar` = id de l'utilisateur de l'équipe (vide si l'acheteur), sans clé étrangère ; `preuveLivraison` =
+  // référence saisie par l'équipe ; `retourAvant` = fin du délai de retour (livraison + `DUREE_RETOUR_JOURS`),
+  // « échu » calculé à la lecture.
+  livreeLe                  DateTime?              @db.Timestamptz(3)
+  livraisonSource           String?
+  livraisonPar              String?
+  preuveLivraison           String?
+  retourAvant               DateTime?              @db.Timestamptz(3)
   // Commande historique seulement (recopie de l'ancienne table Order, supprimée par la story 7.9 ; le script de
   // recopie n'est plus que dans l'historique git, voir docs/migrations.md).
   ordreHistoriqueId         String?          @unique

@@ -16,9 +16,11 @@ import { echeanceDepassee, prenom } from './prise-en-charge-regles'
 // conditionnelle sous le verrou du passage, auteur et date, événement `CommandePriseEnCharge` dans la
 // transaction, répartition attendue après. Journaux : ids seulement.
 
-export type EtatCommandeArtiste = 'confirmee' | 'prise_en_charge' | 'expediee'
+export type EtatCommandeArtiste = 'confirmee' | 'prise_en_charge' | 'expediee' | 'livree'
 
-const ETATS_ARTISTE: EtatCommandeArtiste[] = ['confirmee', 'prise_en_charge', 'expediee']
+const ETATS_ARTISTE: EtatCommandeArtiste[] = ['confirmee', 'prise_en_charge', 'expediee', 'livree']
+/** Nombre de commandes livrées montrées à l'artiste, en lecture seule (story 8.4). */
+const LIMITE_LIVREES = 50
 const LONGUEUR_NUMERO_MAX = 64
 
 export type CommandeDeLArtiste = {
@@ -37,11 +39,13 @@ export type CommandeDeLArtiste = {
   priseEnChargeLe: Date | null
   /** Date d'expédition (story 8.2) ; null avant. */
   expedieeLe: Date | null
+  /** Date de livraison constatée (story 8.4) ; null avant. */
+  livreeLe: Date | null
 }
 
 /**
  * Détail d'une commande : `adresse` et `telephone` n'existent que pour une commande `prise_en_charge` ou
- * `expediee` (AD-16) ; transporteur, numéro de suivi et assurance seulement pour `expediee` (story 8.2).
+ * `expediee` (AD-16) : jamais pour `livree` (story 8.4) ; transporteur, numéro de suivi et assurance seulement pour `expediee` (story 8.2).
  */
 export type DetailCommandeArtiste = CommandeDeLArtiste &
   ({ adresse?: never; telephone?: never } | { adresse: string | null; telephone: string | null }) & {
@@ -63,6 +67,7 @@ type CommandeLue = {
   priseEnChargeAvant: Date | null
   priseEnChargeLe: Date | null
   expedieeLe: Date | null
+  livreeLe: Date | null
   lignes: { titre: string }[]
   passage: { paysLivraison: string; coordonnees: { nom: string } | null } | null
 }
@@ -80,6 +85,7 @@ function resume(c: CommandeLue, maintenant: Date): CommandeDeLArtiste {
     echeanceDepassee: etat === 'confirmee' && echeanceDepassee(c.priseEnChargeAvant, maintenant),
     priseEnChargeLe: c.priseEnChargeLe,
     expedieeLe: c.expedieeLe,
+    livreeLe: c.livreeLe,
   }
 }
 
@@ -90,6 +96,7 @@ const SELECTION = {
   priseEnChargeAvant: true,
   priseEnChargeLe: true,
   expedieeLe: true,
+  livreeLe: true,
   lignes: { orderBy: { createdAt: 'asc' as const }, select: { titre: true } },
   passage: { select: { paysLivraison: true, coordonnees: { select: { nom: true } } } },
 }
@@ -101,14 +108,14 @@ function artisteDe(acteur: Acteur): { refuse: true } | { refuse: false; artistId
 }
 
 /**
- * Commandes `confirmee`, `prise_en_charge` et `expediee` des œuvres de l'artiste : à prendre en charge d'abord
- * (échéance la plus proche en tête), puis les prises en charge, puis les expédiées (les plus récentes en tête). Non artiste : `acces_refuse`.
+ * Commandes `confirmee`, `prise_en_charge`, `expediee` et `livree` des œuvres de l'artiste : à prendre en charge d'abord
+ * (échéance la plus proche en tête), puis les prises en charge, puis les expédiées, puis les 50 dernières livrées (les plus récentes en tête). Non artiste : `acces_refuse`.
  */
 export async function commandesDeLArtiste(acteur: Acteur, maintenant: Date = new Date()): Promise<ResultatCommandesArtiste> {
   const lu = artisteDe(acteur)
   if (lu.refuse) return { ok: false, code: 'acces_refuse' }
   if (!lu.artistId) return { ok: true, commandes: [] }
-  const [aPrendre, prises, expediees] = await Promise.all([
+  const [aPrendre, prises, expediees, livrees] = await Promise.all([
     prisma.commande.findMany({
       where: { artistId: lu.artistId, etat: 'confirmee', passageId: { not: null } },
       orderBy: [{ priseEnChargeAvant: { sort: 'asc', nulls: 'last' } }, { createdAt: 'asc' }, { id: 'asc' }],
@@ -124,8 +131,15 @@ export async function commandesDeLArtiste(acteur: Acteur, maintenant: Date = new
       orderBy: [{ expedieeLe: { sort: 'desc', nulls: 'last' } }, { id: 'asc' }],
       select: SELECTION,
     }),
+    // Livrées (8.4) : lecture seule, les plus récentes d'abord, bornées.
+    prisma.commande.findMany({
+      where: { artistId: lu.artistId, etat: 'livree', passageId: { not: null } },
+      orderBy: [{ livreeLe: { sort: 'desc', nulls: 'last' } }, { id: 'asc' }],
+      take: LIMITE_LIVREES,
+      select: SELECTION,
+    }),
   ])
-  return { ok: true, commandes: [...aPrendre, ...prises, ...expediees].map((c) => resume(c, maintenant)) }
+  return { ok: true, commandes: [...aPrendre, ...prises, ...expediees, ...livrees].map((c) => resume(c, maintenant)) }
 }
 
 /** Nombre de commandes `confirmee` de l'artiste, à prendre en charge. Non artiste : `acces_refuse`. */

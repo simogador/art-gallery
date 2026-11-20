@@ -1,14 +1,15 @@
 import { fr } from '@/lib/i18n'
 import type { CommandeSuivie } from '@/lib/commandes'
 import { Cadre } from './Cadre'
+import { ConfirmerReception } from './ConfirmerReception'
 import { FriseCommande } from './FriseCommande'
 
 // Commandes d'un passage avec leur frise (story 7.7) : numéro, artiste, état, œuvres (titre figé), délai estimé,
 // étapes. Aucun montant, aucune adresse ni coordonnée. Le bouton Conseil (avec les numéros de commande) est reçu
-// en propriété. Composant serveur.
+// en propriété. « J'ai reçu l'œuvre » (story 8.4) n'est proposé que si le serveur l'a calculé (`peutConfirmerReception`). Composant serveur.
 
 const t = fr.suivi
-const LIBELLE = { confirmee: t.etats.confirmee, prise_en_charge: t.etats.priseEnCharge, expediee: t.etats.expediee, en_attente_paiement: t.etats.enAttente, annulee: t.etats.annulee } as const
+const LIBELLE = { confirmee: t.etats.confirmee, prise_en_charge: t.etats.priseEnCharge, expediee: t.etats.expediee, livree: t.etats.livree, en_attente_paiement: t.etats.enAttente, annulee: t.etats.annulee } as const
 
 export function ListeSuivi({ commandes, conseil }: { commandes: CommandeSuivie[]; conseil: React.ReactNode }) {
   const enAttente = commandes.some((c) => c.etat === 'en_attente_paiement')
@@ -17,7 +18,7 @@ export function ListeSuivi({ commandes, conseil }: { commandes: CommandeSuivie[]
       {enAttente && <p className="mb-8 font-sans text-sm text-foreground">{t.attente}</p>}
       <ul className="flex flex-col gap-6">
         {commandes.map((commande) => {
-          const avecDelai = commande.etat !== 'annulee' && commande.delaiMinJours > 0 && commande.delaiMaxJours > 0
+          const avecDelai = commande.etat !== 'annulee' && commande.etat !== 'livree' && commande.delaiMinJours > 0 && commande.delaiMaxJours > 0
           return (
             <li key={commande.numero}>
               <section aria-labelledby={`commande-${commande.numero}`} className="rounded-sm border border-neutral-200">
@@ -42,6 +43,8 @@ export function ListeSuivi({ commandes, conseil }: { commandes: CommandeSuivie[]
                 <div className="flex flex-col gap-4 border-t border-neutral-200 px-4 py-4 sm:px-6">
                   {avecDelai && <p className="font-sans text-sm text-foreground">{t.delai(commande.delaiMinJours, commande.delaiMaxJours)}</p>}
                   <FriseCommande commande={commande} />
+                  {(commande.peutConfirmerReception || commande.etat === 'livree') && <ConfirmerReception numero={commande.numero} proposer={commande.peutConfirmerReception} />}
+                  {commande.etat === 'expediee' && !commande.peutConfirmerReception && <p className="font-sans text-sm text-neutral-600">{t.reception.parLEquipe}</p>}
                 </div>
               </section>
             </li>
