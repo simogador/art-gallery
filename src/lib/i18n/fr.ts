@@ -459,6 +459,61 @@ export type Dictionnaire = {
       }
     }
   }
+  /** Commandes payées vues par l'équipe, `/dashboard/admin/commandes` (story 8.3, FR-26). */
+  readonly commandesEquipe: {
+    readonly titre: string
+    readonly introduction: string
+    readonly vide: string
+    readonly panne: string
+    readonly absent: string
+    readonly tronque: string
+    readonly alertes: {
+      readonly titre: string
+      readonly aucune: string
+      readonly priseEnCharge: string
+      readonly expedition: string
+      readonly enRetard: { readonly prise_en_charge_en_retard: string; readonly expedition_en_retard: string }
+    }
+    readonly etats: { readonly confirmee: string; readonly prise_en_charge: string; readonly expediee: string; readonly annulee: string }
+    readonly champs: {
+      readonly artiste: string
+      readonly oeuvres: string
+      readonly priseEnChargeAvant: string
+      readonly priseEnChargeLe: string
+      readonly expedieAvant: string
+      readonly expedieeLe: string
+      readonly transporteur: string
+      readonly numeroSuivi: string
+      readonly envoiAssure: string
+      readonly referenceAssurance: string
+      readonly remboursement: string
+      readonly annuleeLe: string
+      readonly motif: string
+    }
+    readonly oui: string
+    readonly non: string
+    readonly remboursements: { readonly demande: (montant: string) => string; readonly effectue: (montant: string) => string }
+    readonly annulation: {
+      readonly bouton: string
+      readonly motifLibelle: string
+      readonly motifAide: string
+      readonly continuer: string
+      readonly confirmer: (numero: string) => string
+      readonly oui: string
+      readonly non: string
+      readonly enCours: string
+      readonly succes: string
+      readonly dejaAnnulee: string
+      readonly erreurs: { readonly obligatoire: string; readonly trop_court: string; readonly trop_long: string }
+      readonly refus: {
+        readonly acces_refuse: string
+        readonly introuvable: string
+        readonly etat_invalide: string
+        readonly motif_invalide: string
+        readonly indisponible: string
+      }
+    }
+  }
   /** Bandeau de l'artiste après une déclaration sur une œuvre réservée (story 6.6, FR-21). */
   readonly declarationReservee: { readonly bandeau: string }
   /** Vente assistée de l'équipe, `/dashboard/admin/commandes` (story 6.3, FR-12). */
@@ -945,8 +1000,17 @@ export type Dictionnaire = {
         readonly intro: (numero: string) => string
         readonly ligne: (titre: string) => string
         readonly aucunPaiement: string
+        readonly paiementRecu: (numero: string) => string
         readonly remboursementDemande: (numero: string) => string
         readonly remboursementEffectue: (numero: string) => string
+        readonly suite: string
+      }
+      /** Annulation par l'équipe d'une commande payée, e-mail à l'artiste (story 8.3). */
+      readonly annuleeArtiste: {
+        readonly sujet: (numero: string) => string
+        readonly intro: (numero: string) => string
+        readonly ligne: (titre: string) => string
+        readonly motif: (motif: string) => string
         readonly suite: string
       }
       readonly artiste: {
@@ -1735,6 +1799,69 @@ export const fr = {
       },
     },
   },
+  commandesEquipe: {
+    titre: 'Commandes',
+    introduction:
+      'Les commandes payées, de la prise en charge par l’artiste à l’expédition. Les retards se calculent à l’ouverture de la page : aucun e-mail ne part. Vous reconnaissez l’acheteur à son numéro de commande.',
+    vide: 'Aucune commande payée pour le moment.',
+    panne: 'Les commandes ne se sont pas chargées. Rechargez la page dans un instant.',
+    absent: '—',
+    tronque: 'La liste est limitée aux 300 commandes les plus anciennes.',
+    alertes: {
+      titre: 'Alertes de retard',
+      aucune: 'Aucun retard.',
+      priseEnCharge: 'Prise en charge en retard',
+      expedition: 'Expédition en retard',
+      enRetard: { prise_en_charge_en_retard: 'Prise en charge en retard', expedition_en_retard: 'Expédition en retard' },
+    },
+    etats: { confirmee: 'Confirmée, à prendre en charge', prise_en_charge: 'Prise en charge', expediee: 'Expédiée', annulee: 'Annulée' },
+    champs: {
+      artiste: 'Artiste',
+      oeuvres: 'Œuvres',
+      priseEnChargeAvant: 'Prise en charge avant',
+      priseEnChargeLe: 'Prise en charge le',
+      expedieAvant: 'Expédition avant',
+      expedieeLe: 'Expédiée le',
+      transporteur: 'Transporteur',
+      numeroSuivi: 'Numéro de suivi',
+      envoiAssure: 'Envoi assuré',
+      referenceAssurance: 'Référence d’assurance',
+      remboursement: 'Remboursement',
+      annuleeLe: 'Annulée le',
+      motif: 'Motif',
+    },
+    oui: 'Oui',
+    non: 'Non',
+    remboursements: {
+      demande: (montant: string) => `Demandé, ${montant}`,
+      effectue: (montant: string) => `Effectué, ${montant}`,
+    },
+    annulation: {
+      bouton: 'Annuler la commande',
+      motifLibelle: 'Motif de l’annulation',
+      motifAide: 'De 10 à 500 caractères. L’artiste le lit dans son e-mail ; l’acheteur ne le lit pas.',
+      continuer: 'Continuer',
+      confirmer: (numero: string) =>
+        `Annuler la commande ${numero} ? Le remboursement de l’acheteur sera demandé, l’artiste et l’acheteur seront prévenus par e-mail. L’œuvre reste vendue tant que vous n’en décidez pas autrement.`,
+      oui: 'Oui, annuler la commande',
+      non: 'Garder la commande',
+      enCours: 'Annulation…',
+      succes: 'La commande est annulée et le remboursement est demandé.',
+      dejaAnnulee: 'Cette commande était déjà annulée : rien n’a changé.',
+      erreurs: {
+        obligatoire: 'Indiquez le motif de l’annulation.',
+        trop_court: 'Le motif doit faire au moins 10 caractères.',
+        trop_long: 'Le motif doit faire 500 caractères au plus.',
+      },
+      refus: {
+        acces_refuse: 'Seule l’équipe peut annuler une commande.',
+        introuvable: 'Cette commande n’existe pas.',
+        etat_invalide: 'Cette commande ne peut pas être annulée ici : elle est expédiée, sans paiement constaté ou déjà traitée.',
+        motif_invalide: 'Le motif de l’annulation n’est pas valable.',
+        indisponible: 'L’annulation n’a pas pu être enregistrée. Réessayez dans un instant.',
+      },
+    },
+  },
   declarationReservee: {
     bandeau: 'Un acheteur avait réservé cette œuvre. L’équipe Errancy le prévient et s’occupe d’un éventuel remboursement. Vous n’avez rien à faire.',
   },
@@ -2173,9 +2300,17 @@ export const fr = {
         intro: (numero: string) => `Votre commande ${numero} a été annulée. Nous en sommes désolés.`,
         ligne: (titre: string) => `– « ${titre} »`,
         aucunPaiement: 'À ce jour, nous n’avons reçu aucun paiement pour cette commande.',
+        paiementRecu: (numero: string) => `Nous avons bien reçu le paiement de la commande ${numero} : l’équipe Errancy vous écrit au sujet du remboursement.`,
         remboursementDemande: (numero: string) => `Le remboursement de la commande ${numero} a été demandé : l’équipe Errancy s’en occupe et vous écrit.`,
         remboursementEffectue: (numero: string) => `La commande ${numero} a été remboursée par l’équipe Errancy.`,
         suite: 'Vous pouvez répondre à ce message pour toute question.',
+      },
+      annuleeArtiste: {
+        sujet: (numero: string) => `Commande ${numero} annulée par l’équipe`,
+        intro: (numero: string) => `L’équipe Errancy a annulé la commande ${numero}, qui portait sur :`,
+        ligne: (titre: string) => `– « ${titre} »`,
+        motif: (motif: string) => `Motif : ${motif}`,
+        suite: 'Merci de ne pas expédier cette commande. L’équipe Errancy reste à votre disposition pour toute question.',
       },
       artiste: {
         sujet: (numero: string) => `Nouvelle commande ${numero}`,

@@ -55,6 +55,7 @@ const SURFACES_TEXTES = [
   'src/app/confirmation/**/*.tsx',
   'src/app/suivi/**/*.tsx',
   'src/app/dashboard/artiste/commandes/**/*.tsx',
+  'src/app/dashboard/admin/commandes/CommandesEquipe.tsx',
 ]
 
 module.exports = {

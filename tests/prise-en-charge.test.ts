@@ -82,7 +82,7 @@ describe('sans base : règles et table de transitions', () => {
       expect(transitionPermise(de, 'prise_en_charge'), de).toBe(false)
     }
     expect(transitionPermise('prise_en_charge', 'confirmee')).toBe(false)
-    expect(transitionPermise('prise_en_charge', 'annulee')).toBe(false)
+    expect(transitionPermise('prise_en_charge', 'annulee')).toBe(true) // 8.3 : annulation par l'équipe
   })
 
   it('événement CommandePriseEnCharge : charge = commandeId seulement ; relié à l’e-mail de l’acheteur', async () => {

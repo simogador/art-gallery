@@ -4,6 +4,7 @@ import { acteurCourant } from '@/lib/acces'
 import { champsPrix } from '@/lib/catalogue/conversions'
 import {
   annulerCommande,
+  annulerParLEquipe,
   heuresValides,
   marquerRemboursementEffectue,
   libererVenteAssistee,
@@ -132,6 +133,22 @@ export async function actionMarquerRemboursementEffectue(remboursementId: string
     const r = await marquerRemboursementEffectue(await acteurCourant(), String(remboursementId ?? ''))
     if (!r.ok) return { ok: false, message: t.refus[r.code] }
     return { ok: true, message: r.dejaEffectue ? t.dejaEffectue : t.succes }
+  } catch {
+    return { ok: false, message: t.refus.indisponible }
+  }
+}
+
+// Story 8.3 : annulation d'une commande payée par l'équipe, avec motif. Droits vérifiés par le module commandes
+// (admin seulement, rôle relu en base) ; aucun détail technique dans les réponses.
+export type ResultatActionAnnulationEquipe = { ok: true; message: string } | { ok: false; message: string; champ?: 'motif' }
+
+export async function actionAnnulerParLEquipe(numero: string, motif: string): Promise<ResultatActionAnnulationEquipe> {
+  const t = fr.commandesEquipe.annulation
+  try {
+    const r = await annulerParLEquipe(await acteurCourant(), String(numero ?? ''), String(motif ?? ''))
+    if (r.ok) return { ok: true, message: r.dejaAnnulee ? t.dejaAnnulee : t.succes }
+    if (r.code === 'motif_invalide') return { ok: false, message: t.erreurs[r.erreur], champ: 'motif' }
+    return { ok: false, message: t.refus[r.code] }
   } catch {
     return { ok: false, message: t.refus.indisponible }
   }

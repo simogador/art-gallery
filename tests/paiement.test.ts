@@ -65,7 +65,7 @@ describe('module paiement (pur)', () => {
     expect(ABONNEMENTS.CommandeConfirmee.map((a) => a.nom)).toEqual(['envoyerConfirmationCommande', 'envoyerAvisCommandeArtiste', 'alerterEquipeCommande'])
     expect(evenementValide({ nom: 'CommandeAnnulee', charge: { commandeId: 'x' } })).toBe(true)
     expect(evenementValide({ nom: 'CommandeAnnulee', charge: { commandeId: 'x', email: 'a@b.c' } })).toBe(false)
-    expect(ABONNEMENTS.CommandeAnnulee.map((a) => a.nom)).toEqual(['envoyerAnnulationCommande', 'alerterEquipeCommande'])
+    expect(ABONNEMENTS.CommandeAnnulee.map((a) => a.nom)).toEqual(['envoyerAnnulationCommande', 'envoyerAnnulationCommandeArtiste', 'alerterEquipeCommande'])
   })
 
   it('remboursement manuel : aucun appel externe, demande acceptée sans référence', async () => {

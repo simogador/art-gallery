@@ -169,6 +169,7 @@ async function ecrirePassage(
             zoneNom: prix.zoneNom,
             delaiMinJours: prix.delaiMinJours,
             delaiMaxJours: prix.delaiMaxJours,
+            preparationJours: prix.preparationJours,
           })),
         },
       },

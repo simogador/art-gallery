@@ -8,6 +8,7 @@ export {
   alerterEquipeVisite,
   envoyerAccuseDemande,
   envoyerAnnulationCommande,
+  envoyerAnnulationCommandeArtiste,
   envoyerAvisCommandeArtiste,
   envoyerConfirmationCommande,
   envoyerAccuseVisite,

@@ -4,6 +4,7 @@ import type { Acteur } from '@/lib/acces'
 import { libererReservation } from '@/lib/disponibilite'
 import { ecrireEvenement, repartirApresValidation } from '@/lib/evenements'
 import { transitionPermise } from './etats'
+import { validerMotif, type ErreurMotif } from './suivi-equipe-regles'
 
 // Annulation, remboursement et incidents (story 6.5, FR-13, FR-31, NFR-4). Une commande annulée n'est
 // jamais confirmée (table de transitions, `etats.ts`). Un remboursement est demandé pour une commande
@@ -94,6 +95,61 @@ export async function annulerCommande(acteur: Acteur, commandeId: string): Promi
       )
       if (evenements === null) return { resultat: { ok: false, code: 'etat_invalide' }, evenements: [] }
       return { resultat: { ok: true, dejaAnnulee: false }, evenements }
+    },
+    { maxWait: 5000, timeout: 20000 },
+  )
+  await repartirApresValidation(interne.evenements)
+  return interne.resultat
+}
+
+export type ResultatAnnulationEquipe =
+  | { ok: true; dejaAnnulee: boolean }
+  | { ok: false; code: 'acces_refuse' | 'introuvable' | 'etat_invalide' }
+  | { ok: false; code: 'motif_invalide'; erreur: ErreurMotif }
+
+const LONGUEUR_NUMERO_MAX = 64
+
+/**
+ * Annulation par l'équipe d'une commande payée (story 8.3, FR-26, AD-9, AD-10) : `confirmee` ou `prise_en_charge`
+ * → `annulee` par la table de transitions, sous le verrou du passage, par mise à jour conditionnelle. Le motif
+ * (10 à 500 caractères) est obligatoire ; qui, quand et pourquoi sont conservés sur la commande. Le remboursement
+ * de l'allocation (agrégat de la base) est demandé, rattaché au paiement constaté du passage : une commande sans
+ * paiement constaté n'est pas annulable ici (`etat_invalide`). L'œuvre reste `vendue` (décision de l'équipe : 8.7).
+ * Rejouée : succès sans effet, un seul remboursement et un seul événement. Admin seulement, vérifié ici.
+ */
+export async function annulerParLEquipe(acteur: Acteur, numero: string, motif: string, maintenant: Date = new Date()): Promise<ResultatAnnulationEquipe> {
+  if (acteur.type !== 'admin') return { ok: false, code: 'acces_refuse' }
+  const valide = validerMotif(motif)
+  if (!valide.ok) return { ok: false, code: 'motif_invalide', erreur: valide.erreur }
+  if (typeof numero !== 'string' || numero.trim() === '' || numero.length > LONGUEUR_NUMERO_MAX) return { ok: false, code: 'introuvable' }
+
+  const interne = await prisma.$transaction(
+    async (tx): Promise<{ resultat: ResultatAnnulationEquipe; evenements: string[] }> => {
+      const fin = (resultat: ResultatAnnulationEquipe, evenements: string[] = []) => ({ resultat, evenements })
+      const trouvee = await tx.commande.findUnique({ where: { numero: numero.trim() }, select: { id: true, passageId: true } })
+      if (!trouvee) return fin({ ok: false, code: 'introuvable' })
+      // Commande historique : sans passage, ni paiement ni remboursement possibles ici.
+      if (!trouvee.passageId) return fin({ ok: false, code: 'etat_invalide' })
+      // Même verrou que le constat, l'annulation en attente et la prise en charge : les gestes se suivent.
+      await tx.$queryRaw`SELECT "id" FROM "PassageEnCaisse" WHERE "id" = ${trouvee.passageId} FOR UPDATE`
+      const commande = await tx.commande.findUnique({ where: { id: trouvee.id }, select: { id: true, etat: true, devise: true, annuleeLe: true } })
+      if (!commande) return fin({ ok: false, code: 'introuvable' })
+      // Rejeu seulement si l'équipe l'a annulée ; une annulée sans trace (abandon, vente ailleurs) n'est pas son geste.
+      if (commande.etat === 'annulee') return commande.annuleeLe ? fin({ ok: true, dejaAnnulee: true }) : fin({ ok: false, code: 'etat_invalide' })
+      if (commande.etat !== 'confirmee' && commande.etat !== 'prise_en_charge') return fin({ ok: false, code: 'etat_invalide' })
+      if (!transitionPermise(commande.etat, 'annulee')) throw new Error('transition_interdite')
+      const paiement = await tx.paiement.findFirst({ where: { passageId: trouvee.passageId, etat: 'constate' }, select: { id: true } })
+      if (!paiement) return fin({ ok: false, code: 'etat_invalide' })
+
+      const maj = await tx.commande.updateMany({
+        where: { id: commande.id, etat: commande.etat },
+        data: { etat: 'annulee', annuleeLe: maintenant, annuleePar: acteur.userId, motifAnnulation: valide.motif },
+      })
+      // Filet : jamais atteint sous le verrou du passage.
+      if (maj.count !== 1) return fin({ ok: true, dejaAnnulee: true })
+      await demanderRemboursement(tx, commande, paiement.id, commande.devise)
+      const evenement = await ecrireEvenement(tx, { nom: 'CommandeAnnulee', charge: { commandeId: commande.id } })
+      return fin({ ok: true, dejaAnnulee: false }, [evenement])
     },
     { maxWait: 5000, timeout: 20000 },
   )

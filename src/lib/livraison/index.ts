@@ -287,6 +287,8 @@ export type PrixLivreFige =
       zoneNom: string
       delaiMinJours: number
       delaiMaxJours: number
+      /** Délai de préparation seul, figé sur la ligne (story 8.3, échéance d'expédition). */
+      preparationJours: number
     }
   | { livree: false; raison: RaisonNonLivree }
 
@@ -295,8 +297,8 @@ export async function prixLivreFige(
   oeuvre: OeuvreAPrix & { id: string },
   codePays: string,
 ): Promise<PrixLivreFige> {
-  const { prix, zone } = await prixLivreAvecZone(oeuvre, codePays, tx)
-  if (!prix.livree || !zone || oeuvre.prixCentimes === null) {
+  const { prix, zone, preparationJours } = await prixLivreAvecZone(oeuvre, codePays, tx)
+  if (!prix.livree || !zone || oeuvre.prixCentimes === null || preparationJours === null) {
     return { livree: false, raison: prix.livree ? 'pas_de_zone' : prix.raison }
   }
   return {
@@ -309,6 +311,7 @@ export async function prixLivreFige(
     zoneNom: zone.nom,
     delaiMinJours: prix.delaiMinJours,
     delaiMaxJours: prix.delaiMaxJours,
+    preparationJours,
   }
 }
 
@@ -316,20 +319,20 @@ async function prixLivreAvecZone(
   oeuvre: OeuvreAPrix & { id: string },
   codePays: string,
   tx: Prisma.TransactionClient,
-): Promise<{ prix: PrixLivre; zone: { id: string; nom: string } | null }> {
-  if (oeuvre.prixCentimes === null) return { prix: calculerPrixLivre(oeuvre, false, null), zone: null }
+): Promise<{ prix: PrixLivre; zone: { id: string; nom: string } | null; preparationJours: number | null }> {
+  if (oeuvre.prixCentimes === null) return { prix: calculerPrixLivre(oeuvre, false, null), zone: null, preparationJours: null }
   const lien = await tx.zonePays.findUnique({
     where: { codePays },
     select: { zoneId: true, zone: { select: { nom: true } } },
   })
-  if (!lien) return { prix: calculerPrixLivre(oeuvre, false, null), zone: null }
+  if (!lien) return { prix: calculerPrixLivre(oeuvre, false, null), zone: null, preparationJours: null }
   const offre = await tx.offreLivraison.findUnique({
     where: { artworkId_zoneId: { artworkId: oeuvre.id, zoneId: lien.zoneId } },
     select: {
       livree: true, fraisCentimes: true, devise: true, preparationJours: true, transportMinJours: true, transportMaxJours: true,
     },
   })
-  return { prix: calculerPrixLivre(oeuvre, true, offre), zone: { id: lien.zoneId, nom: lien.zone.nom } }
+  return { prix: calculerPrixLivre(oeuvre, true, offre), zone: { id: lien.zoneId, nom: lien.zone.nom }, preparationJours: offre?.preparationJours ?? null }
 }
 
 /**

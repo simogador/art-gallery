@@ -546,6 +546,13 @@ model Commande {
   expedieePar               String?
   envoiAssure               Boolean                @default(false)
   referenceAssurance        String?
+  // Story 8.3 (AD-10) : échéance d'expédition stockée (constat + plus long délai de préparation des lignes) ;
+  // « en retard » se calcule à la lecture. Annulation par l'équipe : qui (id de l'utilisateur, sans clé
+  // étrangère), quand et pourquoi.
+  expedieAvant              DateTime?              @db.Timestamptz(3)
+  annuleeLe                 DateTime?              @db.Timestamptz(3)
+  annuleePar                String?
+  motifAnnulation           String?
   // Commande historique seulement (recopie de l'ancienne table Order, supprimée par la story 7.9 ; le script de
   // recopie n'est plus que dans l'historique git, voir docs/migrations.md).
   ordreHistoriqueId         String?          @unique
@@ -579,6 +586,8 @@ model LigneCommande {
   zoneNom       String
   delaiMinJours Int
   delaiMaxJours Int
+  // Story 8.3 : délai de préparation seul, figé à la création (vide pour les lignes d'avant).
+  preparationJours Int?
   createdAt     DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([commandeId])
