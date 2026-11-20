@@ -295,3 +295,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-8-1-l-artiste-prend-en-charge-ses-commandes.md`
   summary: Tester le rattrapage de l'échéance de prise en charge de la migration 20261123090000 sur des commandes déjà confirmées (et l'absence d'effet sur les autres états).
   evidence: Les bases jetables sont migrées à vide (`tests/utils/base-jetable.ts`), le test ne lit que le texte SQL ; il faudrait migrer jusqu'à la migration précédente, insérer des lignes puis appliquer celle-ci. Contrôle manuel du porteur dans `docs/migrations.md` en attendant.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-8-2-l-artiste-expedie-et-saisit-le-suivi.md`
+  summary: Montrer à l'équipe (lecture seule) le transporteur, le numéro de suivi, l'envoi assuré et sa référence d'une commande expédiée, pour vérifier l'obligation d'assurance au-delà du seuil.
+  evidence: Ces données ne sont lues que par l'artiste (et le numéro par l'acheteur sur `/suivi`) ; la story 8.3 (commandes et alertes de l'équipe) doit les afficher sur `/dashboard/admin/commandes`.

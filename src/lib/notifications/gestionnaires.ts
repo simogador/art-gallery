@@ -16,6 +16,7 @@ import {
   contenuCommandeArtiste,
   contenuCommandeConfirmee,
   contenuCommandePriseEnCharge,
+  contenuCommandeExpediee,
   contenuAlerteDemande,
   contenuAlerteVisite,
   contenuConfirmationPrevenir,
@@ -271,9 +272,9 @@ export async function envoyerLienVenteAssistee(evenement: EvenementLuA<'VenteAss
   }
 }
 
-type EvenementCommande = EvenementLuA<'CommandeConfirmee'> | EvenementLuA<'CommandeAnnulee'> | EvenementLuA<'CommandePriseEnCharge'>
+type EvenementCommande = EvenementLuA<'CommandeConfirmee'> | EvenementLuA<'CommandeAnnulee'> | EvenementLuA<'CommandePriseEnCharge'> | EvenementLuA<'CommandeExpediee'>
 /** Une commande confirmée reste « confirmée » pour ses e-mails si l'artiste l'a déjà prise en charge (8.1). */
-const CONFIRMEE_OU_PRISE = ['confirmee', 'prise_en_charge'] as const
+const CONFIRMEE_OU_PRISE = ['confirmee', 'prise_en_charge', 'expediee'] as const
 
 type DonneesCommande = NonNullable<Awaited<ReturnType<typeof lireDonneesCourrielCommande>>>
 
@@ -287,7 +288,7 @@ async function envoyerCommande(
   evenement: EvenementCommande,
   nom: string,
   // États acceptés : une commande confirmée peut déjà être prise en charge par l'artiste à l'envoi (story 8.1).
-  etatsAcceptes: readonly ('confirmee' | 'annulee' | 'prise_en_charge')[],
+  etatsAcceptes: readonly ('confirmee' | 'annulee' | 'prise_en_charge' | 'expediee')[],
   composer: (d: DonneesCommande, lienSuivi: string | null) => { a: string; contenu: Contenu } | null,
   // `suivi` : e-mail à l'acheteur, qui porte un lien de suivi émis à l'envoi (story 7.7, AD-14).
   options: { suivi?: boolean; lienSeulementSiCommandeVivante?: boolean } = {},
@@ -373,10 +374,24 @@ export async function envoyerPriseEnChargeCommande(evenement: EvenementLuA<'Comm
   await envoyerCommande(
     evenement,
     'envoyerPriseEnChargeCommande',
-    ['prise_en_charge'],
+    ['prise_en_charge', 'expediee'],
     (d, lienSuivi) => ({
       a: d.acheteur.email,
       contenu: contenuCommandePriseEnCharge({ nom: d.acheteur.nom, numero: d.numero, artiste: d.artiste?.nom ?? null, lignes: d.lignes, lienSuivi }),
+    }),
+    { suivi: true },
+  )
+}
+
+/** Commande expédiée par l'artiste (story 8.2) : e-mail à l'acheteur (transporteur, numéro de suivi, lien de suivi émis à l'envoi). */
+export async function envoyerExpeditionCommande(evenement: EvenementLuA<'CommandeExpediee'>): Promise<void> {
+  await envoyerCommande(
+    evenement,
+    'envoyerExpeditionCommande',
+    ['expediee'],
+    (d, lienSuivi) => ({
+      a: d.acheteur.email,
+      contenu: contenuCommandeExpediee({ nom: d.acheteur.nom, numero: d.numero, artiste: d.artiste?.nom ?? null, titres: d.lignes.map((l) => l.titre), expedition: d.expedition, lienSuivi }),
     }),
     { suivi: true },
   )

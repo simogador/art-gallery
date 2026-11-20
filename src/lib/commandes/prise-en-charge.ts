@@ -2,7 +2,9 @@ import { prisma } from '@/lib/prisma'
 import type { Acteur } from '@/lib/acces'
 import { ecrireEvenement, repartirApresValidation } from '@/lib/evenements'
 import { nomPays } from '@/lib/livraison/pays'
+import { SEUIL_ASSURANCE } from '@/lib/reglages'
 import { transitionPermise } from './etats'
+import { assuranceRequise } from './expedition-regles'
 import { echeanceDepassee, prenom } from './prise-en-charge-regles'
 
 // Prise en charge des commandes par l'artiste (story 8.1, FR-22, AD-9, AD-10, AD-15, AD-16, UJ-2). L'accès est
@@ -14,9 +16,9 @@ import { echeanceDepassee, prenom } from './prise-en-charge-regles'
 // conditionnelle sous le verrou du passage, auteur et date, événement `CommandePriseEnCharge` dans la
 // transaction, répartition attendue après. Journaux : ids seulement.
 
-export type EtatCommandeArtiste = 'confirmee' | 'prise_en_charge'
+export type EtatCommandeArtiste = 'confirmee' | 'prise_en_charge' | 'expediee'
 
-const ETATS_ARTISTE: EtatCommandeArtiste[] = ['confirmee', 'prise_en_charge']
+const ETATS_ARTISTE: EtatCommandeArtiste[] = ['confirmee', 'prise_en_charge', 'expediee']
 const LONGUEUR_NUMERO_MAX = 64
 
 export type CommandeDeLArtiste = {
@@ -33,10 +35,20 @@ export type CommandeDeLArtiste = {
   /** Échéance passée et commande pas encore prise en charge (calculé à la lecture). */
   echeanceDepassee: boolean
   priseEnChargeLe: Date | null
+  /** Date d'expédition (story 8.2) ; null avant. */
+  expedieeLe: Date | null
 }
 
-/** Détail d'une commande : `adresse` et `telephone` n'existent que pour une commande `prise_en_charge`. */
-export type DetailCommandeArtiste = CommandeDeLArtiste & ({ adresse?: never; telephone?: never } | { adresse: string | null; telephone: string | null })
+/**
+ * Détail d'une commande : `adresse` et `telephone` n'existent que pour une commande `prise_en_charge` ou
+ * `expediee` (AD-16) ; transporteur, numéro de suivi et assurance seulement pour `expediee` (story 8.2).
+ */
+export type DetailCommandeArtiste = CommandeDeLArtiste &
+  ({ adresse?: never; telephone?: never } | { adresse: string | null; telephone: string | null }) & {
+    /** Commande `prise_en_charge` seulement (story 8.2) : le prix des œuvres dépasse le seuil d'assurance. */
+    assuranceRequise?: boolean
+    expedition?: { transporteur: string; numeroSuivi: string; envoiAssure: boolean; referenceAssurance: string | null }
+  }
 
 export type ResultatCommandesArtiste = { ok: true; commandes: CommandeDeLArtiste[] } | { ok: false; code: 'acces_refuse' }
 export type ResultatNombre = { ok: true; nombre: number } | { ok: false; code: 'acces_refuse' }
@@ -50,6 +62,7 @@ type CommandeLue = {
   etat: string
   priseEnChargeAvant: Date | null
   priseEnChargeLe: Date | null
+  expedieeLe: Date | null
   lignes: { titre: string }[]
   passage: { paysLivraison: string; coordonnees: { nom: string } | null } | null
 }
@@ -66,6 +79,7 @@ function resume(c: CommandeLue, maintenant: Date): CommandeDeLArtiste {
     priseEnChargeAvant: c.priseEnChargeAvant,
     echeanceDepassee: etat === 'confirmee' && echeanceDepassee(c.priseEnChargeAvant, maintenant),
     priseEnChargeLe: c.priseEnChargeLe,
+    expedieeLe: c.expedieeLe,
   }
 }
 
@@ -75,6 +89,7 @@ const SELECTION = {
   etat: true,
   priseEnChargeAvant: true,
   priseEnChargeLe: true,
+  expedieeLe: true,
   lignes: { orderBy: { createdAt: 'asc' as const }, select: { titre: true } },
   passage: { select: { paysLivraison: true, coordonnees: { select: { nom: true } } } },
 }
@@ -86,14 +101,14 @@ function artisteDe(acteur: Acteur): { refuse: true } | { refuse: false; artistId
 }
 
 /**
- * Commandes `confirmee` et `prise_en_charge` des œuvres de l'artiste : à prendre en charge d'abord (échéance la
- * plus proche en tête), puis les prises en charge (les plus récentes en tête). Non artiste : `acces_refuse`.
+ * Commandes `confirmee`, `prise_en_charge` et `expediee` des œuvres de l'artiste : à prendre en charge d'abord
+ * (échéance la plus proche en tête), puis les prises en charge, puis les expédiées (les plus récentes en tête). Non artiste : `acces_refuse`.
  */
 export async function commandesDeLArtiste(acteur: Acteur, maintenant: Date = new Date()): Promise<ResultatCommandesArtiste> {
   const lu = artisteDe(acteur)
   if (lu.refuse) return { ok: false, code: 'acces_refuse' }
   if (!lu.artistId) return { ok: true, commandes: [] }
-  const [aPrendre, prises] = await Promise.all([
+  const [aPrendre, prises, expediees] = await Promise.all([
     prisma.commande.findMany({
       where: { artistId: lu.artistId, etat: 'confirmee', passageId: { not: null } },
       orderBy: [{ priseEnChargeAvant: { sort: 'asc', nulls: 'last' } }, { createdAt: 'asc' }, { id: 'asc' }],
@@ -104,8 +119,13 @@ export async function commandesDeLArtiste(acteur: Acteur, maintenant: Date = new
       orderBy: [{ priseEnChargeLe: { sort: 'desc', nulls: 'last' } }, { id: 'asc' }],
       select: SELECTION,
     }),
+    prisma.commande.findMany({
+      where: { artistId: lu.artistId, etat: 'expediee', passageId: { not: null } },
+      orderBy: [{ expedieeLe: { sort: 'desc', nulls: 'last' } }, { id: 'asc' }],
+      select: SELECTION,
+    }),
   ])
-  return { ok: true, commandes: [...aPrendre, ...prises].map((c) => resume(c, maintenant)) }
+  return { ok: true, commandes: [...aPrendre, ...prises, ...expediees].map((c) => resume(c, maintenant)) }
 }
 
 /** Nombre de commandes `confirmee` de l'artiste, à prendre en charge. Non artiste : `acces_refuse`. */
@@ -132,19 +152,36 @@ export async function commandeDeLArtiste(acteur: Acteur, numero: string, mainten
   if (!lu.artistId || !numeroLisible(numero)) return { ok: false, code: 'introuvable' }
   const commande = await prisma.commande.findFirst({
     where: { numero: numero.trim(), artistId: lu.artistId, etat: { in: ETATS_ARTISTE }, passageId: { not: null } },
-    select: { id: true, passageId: true, ...SELECTION },
+    select: { id: true, passageId: true, devise: true, transporteur: true, numeroSuivi: true, envoiAssure: true, referenceAssurance: true, ...SELECTION },
   })
   if (!commande) return { ok: false, code: 'introuvable' }
   const base = resume(commande, maintenant)
-  if (commande.etat !== 'prise_en_charge') return { ok: true, commande: base }
-  // Prise en charge : seules l'adresse et le téléphone de l'acheteur sont lus en plus, jamais son e-mail.
+  if (commande.etat !== 'prise_en_charge' && commande.etat !== 'expediee') return { ok: true, commande: base }
+  // Prise en charge et expédition : seules l'adresse et le téléphone de l'acheteur sont lus en plus, jamais son e-mail.
   const coordonnees = await prisma.coordonneesAcheteur.findUnique({
     where: { passageId: commande.passageId as string },
     select: { adresse: true, telephone: true },
   })
   // Une vente assistée enregistre '' pour un champ non saisi : vide ou blanc = non renseigné (null).
   const renseigne = (v: string | null | undefined) => (typeof v === 'string' && v.trim() !== '' ? v : null)
-  return { ok: true, commande: { ...base, adresse: renseigne(coordonnees?.adresse), telephone: renseigne(coordonnees?.telephone) } }
+  const avecCoordonnees = { ...base, adresse: renseigne(coordonnees?.adresse), telephone: renseigne(coordonnees?.telephone) }
+  if (commande.etat !== 'expediee') {
+    // Prix des œuvres par agrégat de la base (jamais additionné ici) : décide si l'assurance est exigée.
+    const somme = await prisma.ligneCommande.aggregate({ where: { commandeId: commande.id }, _sum: { prixCentimes: true } })
+    return { ok: true, commande: { ...avecCoordonnees, assuranceRequise: assuranceRequise(somme._sum.prixCentimes, commande.devise, SEUIL_ASSURANCE) } }
+  }
+  return {
+    ok: true,
+    commande: {
+      ...avecCoordonnees,
+      expedition: {
+        transporteur: commande.transporteur ?? '',
+        numeroSuivi: commande.numeroSuivi ?? '',
+        envoiAssure: commande.envoiAssure,
+        referenceAssurance: commande.referenceAssurance,
+      },
+    },
+  }
 }
 
 /**

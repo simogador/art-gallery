@@ -11,10 +11,11 @@ import { ListeCommandes } from './ListeCommandes'
 const t = fr.commandesArtiste.bloc
 
 export function BlocAExpedier({ commandes }: { commandes: CommandeDeLArtiste[] }) {
-  if (commandes.length === 0) return null
-  // Compteur et liste tirés de la même lecture.
-  const aPrendre = commandes.filter((c) => c.etat === 'confirmee')
-  const nombre = aPrendre.length
+  // Compteur et liste tirés de la même lecture. Le bloc liste ce qu'il reste à faire : commandes à prendre en
+  // charge, puis prises en charge à expédier (story 8.2) ; le compteur reste celui des prises en charge à faire (8.1).
+  const aExpedier = commandes.filter((c) => c.etat === 'confirmee' || c.etat === 'prise_en_charge')
+  if (aExpedier.length === 0) return null
+  const nombre = aExpedier.filter((c) => c.etat === 'confirmee').length
   return (
     <section aria-labelledby="a-expedier" className="mb-10">
       <div className="mb-2 flex items-center justify-between">
@@ -40,7 +41,7 @@ export function BlocAExpedier({ commandes }: { commandes: CommandeDeLArtiste[] }
         </Link>
       </div>
       <p className="mb-4 font-sans text-sm text-neutral-600">{nombre > 0 ? t.aPrendre(nombre) : t.aucuneAPrendre}</p>
-      {aPrendre.length > 0 && <ListeCommandes commandes={aPrendre} />}
+      <ListeCommandes commandes={aExpedier} />
     </section>
   )
 }

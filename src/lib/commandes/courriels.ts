@@ -26,6 +26,8 @@ export type DonneesCourrielCommande = {
   priseEnChargeAvant: Date | null
   /** Code ISO du pays de livraison du passage. */
   pays: string | null
+  /** Transporteur et numéro de suivi saisis à l'expédition (story 8.2) ; jamais la référence d'assurance. */
+  expedition: { transporteur: string; numeroSuivi: string } | null
 }
 
 export async function lireDonneesCourrielCommande(commandeId: string): Promise<DonneesCourrielCommande | null> {
@@ -36,6 +38,8 @@ export async function lireDonneesCourrielCommande(commandeId: string): Promise<D
       etat: true,
       passageId: true,
       priseEnChargeAvant: true,
+      transporteur: true,
+      numeroSuivi: true,
       passage: { select: { paysLivraison: true, coordonnees: { select: { email: true, nom: true } } } },
       artist: { select: { name: true, user: { select: { email: true } } } },
       remboursement: { select: { etat: true } },
@@ -56,6 +60,7 @@ export async function lireDonneesCourrielCommande(commandeId: string): Promise<D
     remboursement: commande.remboursement ? (commande.remboursement.etat === 'effectue' ? 'effectue' : 'demande') : null,
     priseEnChargeAvant: commande.priseEnChargeAvant,
     pays: commande.passage?.paysLivraison ?? null,
+    expedition: commande.transporteur && commande.numeroSuivi ? { transporteur: commande.transporteur, numeroSuivi: commande.numeroSuivi } : null,
   }
 }
 
