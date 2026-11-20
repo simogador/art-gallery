@@ -44,13 +44,14 @@ export async function lireSuiviPassage(jeton: string | undefined, maintenant: Da
       where: { id: lien.passageId },
       select: {
         commandes: {
-          where: { etat: { in: ['confirmee', 'en_attente_paiement', 'annulee'] } },
+          where: { etat: { in: ['confirmee', 'prise_en_charge', 'en_attente_paiement', 'annulee'] } },
           orderBy: { createdAt: 'asc' },
           select: {
             id: true,
             numero: true,
             etat: true,
             createdAt: true,
+            priseEnChargeLe: true,
             artist: { select: { name: true } },
             lignes: { orderBy: { createdAt: 'asc' }, select: { titre: true } },
           },
@@ -85,7 +86,9 @@ export async function lireSuiviPassage(jeton: string | undefined, maintenant: Da
       oeuvres: c.lignes.map((l) => l.titre),
       delaiMinJours,
       delaiMaxJours,
-      etapes: construireFrise({ etat, creeeLe: c.createdAt, constateLe: paiement?.constateLe ?? null, delaiMinJours, delaiMaxJours }),
+      etapes: construireFrise({
+        etat, creeeLe: c.createdAt, constateLe: paiement?.constateLe ?? null, delaiMinJours, delaiMaxJours, priseEnChargeLe: c.priseEnChargeLe,
+      }),
     }
   })
   return { fermee: false, commandes }
@@ -114,7 +117,7 @@ export async function emettreLienSuiviDeCommande(
     const commande = await tx.commande.findUnique({ where: { id: commandeId }, select: { passageId: true } })
     if (!commande?.passageId) return null
     if (options.exigerCommandeVivante) {
-      const vivantes = await tx.commande.count({ where: { passageId: commande.passageId, etat: { in: ['confirmee', 'en_attente_paiement'] } } })
+      const vivantes = await tx.commande.count({ where: { passageId: commande.passageId, etat: { in: ['confirmee', 'prise_en_charge', 'en_attente_paiement'] } } })
       if (vivantes === 0) return null
     }
     return (await emettreJetonSuivi(tx, commande.passageId, maintenant)).jeton
@@ -135,7 +138,7 @@ export async function ouvrirSuiviDuNavigateur(
   return prisma.$transaction(async (tx) => {
     const lien = await lirePassageDuNavigateur(tx, jetonPassage, maintenant)
     if (!lien) return null
-    const nombre = await tx.commande.count({ where: { passageId: lien.passageId, etat: { in: ['confirmee', 'en_attente_paiement', 'annulee'] } } })
+    const nombre = await tx.commande.count({ where: { passageId: lien.passageId, etat: { in: ['confirmee', 'prise_en_charge', 'en_attente_paiement', 'annulee'] } } })
     if (nombre === 0) return null
     const existant = await lirePassageDuSuivi(tx, jetonSuiviExistant, maintenant)
     if (existant && existant.passageId === lien.passageId && typeof jetonSuiviExistant === 'string') {

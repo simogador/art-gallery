@@ -91,6 +91,20 @@ export {
   type ResultatRemboursementEffectue,
 } from './annulation'
 export { annulerSuiteReservationAnnulee } from './reservation-annulee'
+export {
+  commandeDeLArtiste,
+  commandesDeLArtiste,
+  nombreAPrendreEnCharge,
+  prendreEnCharge,
+  type CommandeDeLArtiste,
+  type DetailCommandeArtiste,
+  type EtatCommandeArtiste,
+  type ResultatCommandeArtiste,
+  type ResultatCommandesArtiste,
+  type ResultatNombre,
+  type ResultatPriseEnCharge,
+} from './prise-en-charge'
+export { echeanceDepassee, prenom, PRENOM_ABSENT } from './prise-en-charge-regles'
 export { ETAT_INITIAL, ETATS_COMMANDE, TRANSITIONS, transitionPermise, type EtatCommande } from './etats'
 export { ALPHABET_NUMERO, FORME_NUMERO, PREFIXE_NUMERO, genererNumero } from './numero'
 export {

@@ -14,6 +14,7 @@ export {
   envoyerConfirmationPrevenir,
   envoyerInvitation,
   envoyerLienVenteAssistee,
+  envoyerPriseEnChargeCommande,
   envoyerResultatCuration,
   retirerInscriptionsPrevenir,
 } from './gestionnaires'

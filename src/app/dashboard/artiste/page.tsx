@@ -6,6 +6,8 @@ import { ArtworkImage } from '@/components/ui'
 import { accueilArtiste, gradient, accent } from '@/lib/catalogue'
 import { acteurCourant } from '@/lib/acces'
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
+import { commandesDeLArtiste } from '@/lib/commandes'
+import { BlocAExpedier } from './commandes/BlocAExpedier'
 
 export const metadata: Metadata = { title: 'Espace artiste — Errancy' }
 
@@ -15,7 +17,7 @@ export default async function ArtisteDashboardPage() {
   if (acteur.type === 'visiteur') redirect('/auth/connexion')
   if (acteur.type !== 'artist') redirect('/dashboard')
 
-  const accueil = await accueilArtiste(acteur.userId)
+  const [accueil, commandes] = await Promise.all([accueilArtiste(acteur.userId), commandesDeLArtiste(acteur)])
 
   if (!accueil) {
     return (
@@ -42,7 +44,10 @@ export default async function ArtisteDashboardPage() {
         </h1>
       </div>
 
-      {/* Bloc « Mes œuvres » (story 2.4) ; « À expédier » et « Ce qu'on vous doit » viendront au Lot 2. */}
+      {/* Story 8.1 : « À expédier » en premier (absent sans commande confirmée ni prise en charge). */}
+      <BlocAExpedier commandes={commandes.ok ? commandes.commandes : []} />
+
+      {/* Bloc « Mes œuvres » (story 2.4) ; « Ce qu'on vous doit » viendra avec la story 8.8. */}
       <section aria-labelledby="mes-oeuvres" className="mb-10">
         <div className="flex items-center justify-between mb-2">
           <h2 id="mes-oeuvres" className="font-sans text-xs uppercase tracking-[0.2em] text-neutral-500">

@@ -8,7 +8,7 @@ import { FriseCommande } from './FriseCommande'
 // en propriété. Composant serveur.
 
 const t = fr.suivi
-const LIBELLE = { confirmee: t.etats.confirmee, en_attente_paiement: t.etats.enAttente, annulee: t.etats.annulee } as const
+const LIBELLE = { confirmee: t.etats.confirmee, prise_en_charge: t.etats.priseEnCharge, en_attente_paiement: t.etats.enAttente, annulee: t.etats.annulee } as const
 
 export function ListeSuivi({ commandes, conseil }: { commandes: CommandeSuivie[]; conseil: React.ReactNode }) {
   const enAttente = commandes.some((c) => c.etat === 'en_attente_paiement')

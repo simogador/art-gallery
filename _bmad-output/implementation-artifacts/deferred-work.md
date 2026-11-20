@@ -291,3 +291,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-emails-de-commande.md`
   summary: Rendre visible à l'équipe un e-mail de commande qui n'est pas parti (échec d'envoi ou gestionnaire en échec), avec le rejeu d'AQ-2.
   evidence: revue des e-mails de commande : l'échec est seulement journalisé (ids) et la réclamation de l'événement est consommée.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-8-1-l-artiste-prend-en-charge-ses-commandes.md`
+  summary: Tester le rattrapage de l'échéance de prise en charge de la migration 20261123090000 sur des commandes déjà confirmées (et l'absence d'effet sur les autres états).
+  evidence: Les bases jetables sont migrées à vide (`tests/utils/base-jetable.ts`), le test ne lit que le texte SQL ; il faudrait migrer jusqu'à la migration précédente, insérer des lignes puis appliquer celle-ci. Contrôle manuel du porteur dans `docs/migrations.md` en attendant.

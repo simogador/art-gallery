@@ -484,6 +484,8 @@ model CompteurChoixMesure {
 enum EtatCommande {
   en_attente_paiement
   confirmee
+  // Story 8.1 : l'artiste a pris la commande en charge (adresse et téléphone de l'acheteur visibles par lui).
+  prise_en_charge
   annulee
   // Ancienne commande (table Order) recopiée : sans ligne figée, hors des sommes dues.
   historique
@@ -529,6 +531,12 @@ model Commande {
   // alors que son paiement est arrivé.
   abandonneLe               DateTime?              @db.Timestamptz(3)
   remboursement             RemboursementCommande?
+  // Story 8.1 (AD-10, AD-16) : échéance de prise en charge posée à la confirmation (constat + 48 h,
+  // `DUREE_PRISE_EN_CHARGE_HEURES`) ; « dépassée » se calcule à la lecture. Date et auteur de la prise en charge
+  // (id de l'utilisateur, sans clé étrangère, comme `Reservation.issuePar`).
+  priseEnChargeAvant        DateTime?              @db.Timestamptz(3)
+  priseEnChargeLe           DateTime?              @db.Timestamptz(3)
+  priseEnChargePar          String?
   // Commande historique seulement (recopie de l'ancienne table Order, supprimée par la story 7.9 ; le script de
   // recopie n'est plus que dans l'historique git, voir docs/migrations.md).
   ordreHistoriqueId         String?          @unique

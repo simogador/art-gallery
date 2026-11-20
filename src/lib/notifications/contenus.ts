@@ -1,4 +1,4 @@
-import { fr, formaterDateHeure, formaterMontant } from '@/lib/i18n'
+import { DATE_ABSENTE, fr, formaterDateHeure, formaterMontant } from '@/lib/i18n'
 import type { TypeVisite } from '@/lib/demandes/visite-regles'
 import { lienWhatsApp, messageConseil } from '@/lib/conseil'
 import { CONTACT_EQUIPE, DELAI_REPONSE_DEMANDE_HEURES, DUREE_INVITATION_JOURS, numeroWhatsApp } from '@/lib/reglages'
@@ -260,14 +260,52 @@ export function contenuCommandeAnnulee(p: {
   })
 }
 
-/** Avis à l'artiste : numéro et titres seulement, ni coordonnées de l'acheteur ni échéance. */
-export function contenuCommandeArtiste(p: { artiste: string; numero: string; titres: string[] }): Contenu {
+/**
+ * Avis à l'artiste : numéro, titres, échéance de prise en charge écrite en heure de Paris et bouton vers sa
+ * commande (story 8.1, décision 3A) ; jamais de coordonnées de l'acheteur ni de compte à rebours.
+ */
+export function contenuCommandeArtiste(p: {
+  artiste: string
+  numero: string
+  titres: string[]
+  /** Échéance de prise en charge ; absente (commande d'avant la story 8.1) : la phrase est omise. */
+  priseEnChargeAvant?: Date | null
+  /** Nom du pays de livraison ; absent : ligne omise. */
+  pays?: string | null
+  /** Adresse absolue de la commande dans l'espace artiste ; absente : pas de bouton. */
+  lien?: string | null
+}): Contenu {
   const t = fr.courriels.commande.artiste
+  const echeance = p.priseEnChargeAvant ? formaterDateHeure(p.priseEnChargeAvant) : null
   return assembler({
     sujet: t.sujet(p.numero),
     nom: p.artiste,
-    intro: [t.intro(p.numero), ...p.titres.map((titre) => t.ligne(titre))],
+    intro: [t.intro(p.numero), ...p.titres.map((titre) => t.ligne(titre)), ...(p.pays ? [t.pays(p.pays)] : []), ...(echeance && echeance !== DATE_ABSENTE ? [t.echeance(echeance)] : [])],
+    ...(p.lien ? { bouton: { libelle: t.bouton, lien: p.lien } } : {}),
     suite: [t.suite],
+  })
+}
+
+/** Prise en charge par l'artiste (story 8.1) : l'artiste prépare l'œuvre, délai figé rappelé ; aucun montant. */
+export function contenuCommandePriseEnCharge(p: {
+  nom: string
+  numero: string
+  artiste: string | null
+  lignes: { titre: string; delaiMinJours: number; delaiMaxJours: number }[]
+  /** Lien de suivi absolu, émis à l'envoi ; absent : pas de lien. */
+  lienSuivi?: string | null
+}): Contenu {
+  const t = fr.courriels.commande.priseEnCharge
+  const artiste = p.artiste && p.artiste.trim() !== '' ? p.artiste.trim() : null
+  return assembler({
+    sujet: t.sujet(p.numero),
+    nom: p.nom,
+    intro: [
+      artiste ? t.intro(p.numero, artiste) : t.introSansArtiste(p.numero),
+      ...p.lignes.map((l) => `${t.ligne(l.titre)}${l.delaiMinJours > 0 && l.delaiMaxJours > 0 ? `\n${fr.courriels.commande.confirmee.delai(l.delaiMinJours, l.delaiMaxJours)}` : ''}`),
+    ],
+    suite: [t.suite],
+    ...(p.lienSuivi ? { lienSecondaire: { intro: fr.courriels.commande.suivi.intro, lien: p.lienSuivi } } : {}),
   })
 }
 
