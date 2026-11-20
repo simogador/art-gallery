@@ -486,6 +486,8 @@ enum EtatCommande {
   confirmee
   // Story 8.1 : l'artiste a pris la commande en charge (adresse et téléphone de l'acheteur visibles par lui).
   prise_en_charge
+  // Story 8.2 : l'artiste a expédié (transporteur et numéro de suivi saisis).
+  expediee
   annulee
   // Ancienne commande (table Order) recopiée : sans ligne figée, hors des sommes dues.
   historique
@@ -537,6 +539,13 @@ model Commande {
   priseEnChargeAvant        DateTime?              @db.Timestamptz(3)
   priseEnChargeLe           DateTime?              @db.Timestamptz(3)
   priseEnChargePar          String?
+  // Story 8.2 : expédition par l'artiste. `expedieePar` = id de l'utilisateur, sans clé étrangère.
+  transporteur              String?
+  numeroSuivi               String?
+  expedieeLe                DateTime?              @db.Timestamptz(3)
+  expedieePar               String?
+  envoiAssure               Boolean                @default(false)
+  referenceAssurance        String?
   // Commande historique seulement (recopie de l'ancienne table Order, supprimée par la story 7.9 ; le script de
   // recopie n'est plus que dans l'historique git, voir docs/migrations.md).
   ordreHistoriqueId         String?          @unique

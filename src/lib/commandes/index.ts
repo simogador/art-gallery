@@ -104,6 +104,15 @@ export {
   type ResultatNombre,
   type ResultatPriseEnCharge,
 } from './prise-en-charge'
+export { marquerExpediee, type ResultatExpedition } from './expedition'
+export {
+  assuranceRequise,
+  validerExpedition,
+  type ChampExpedition,
+  type ErreurChamp as ErreurChampExpedition,
+  type ErreursExpedition,
+  type SaisieExpedition,
+} from './expedition-regles'
 export { echeanceDepassee, prenom, PRENOM_ABSENT } from './prise-en-charge-regles'
 export { ETAT_INITIAL, ETATS_COMMANDE, TRANSITIONS, transitionPermise, type EtatCommande } from './etats'
 export { ALPHABET_NUMERO, FORME_NUMERO, PREFIXE_NUMERO, genererNumero } from './numero'

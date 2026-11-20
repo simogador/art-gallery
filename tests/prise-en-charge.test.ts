@@ -94,7 +94,9 @@ describe('sans base : règles et table de transitions', () => {
   })
 
   it('dictionnaire : ni promesse d’assurance, de casse ou de garantie, ni compte à rebours, ni montant', () => {
-    const json = JSON.stringify([fr.commandesArtiste, fr.courriels.commande.priseEnCharge, fr.courriels.commande.artiste])
+    // Le formulaire d'expédition (story 8.2) parle d'assurance, exigée par le porteur : testé dans expedition.test.ts.
+    const { expedition: _expedition, ...commandesArtiste } = fr.commandesArtiste
+    const json = JSON.stringify([commandesArtiste, fr.courriels.commande.priseEnCharge, fr.courriels.commande.artiste])
     expect(json).not.toMatch(/garanti|assur|cass|compte à rebours|rembours|€|devise|r[ée]servation|disponibilit/i)
   })
 

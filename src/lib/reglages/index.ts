@@ -148,6 +148,12 @@ export const DUREE_ABANDON_COMMANDE_JOURS = 7
 // confirmation (date du constat + cette durée), stockée sur la commande ; « dépassée » se calcule à la lecture.
 export const DUREE_PRISE_EN_CHARGE_HEURES = 48
 
+// Seuil d'assurance de l'expédition (story 8.2, OQ-5, décision 1A du porteur du 2026-11-20) : au-dessus de ce
+// prix d'œuvres (sans frais de livraison, décision 4A), l'artiste coche « envoi assuré avec preuve de
+// livraison » et saisit la référence d'assurance. Une commande dans une autre devise est traitée comme
+// au-dessus du seuil (prudence). Modifiable par une PR.
+export const SEUIL_ASSURANCE = { devise: 'EUR', centimes: 100_000 } as const
+
 // Lien de suivi des commandes d'un acheteur sans compte (story 7.7, décision 2A) : valable un an à compter
 // de son émission (réduisible plus tard) ; non consommé par l'échange.
 export const DUREE_SUIVI_JOURS = 365

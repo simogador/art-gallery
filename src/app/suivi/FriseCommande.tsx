@@ -43,6 +43,11 @@ export function FriseCommande({ commande }: { commande: CommandeSuivie }) {
               <p className="font-sans text-sm text-neutral-600">
                 <Statut etape={etape} payee={payee} />
               </p>
+              {etape.expedition && (
+                <p data-expedition className="break-words font-sans text-sm text-neutral-600">
+                  {t.expedition(etape.expedition.transporteur, etape.expedition.numeroSuivi)}
+                </p>
+              )}
             </div>
           </li>
         ))}

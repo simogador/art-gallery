@@ -3,10 +3,10 @@
 // commande, constat du paiement) ; la date de livraison n'est jamais qu'une date PRÉVUE, calculée à partir du
 // délai figé sur les lignes (plus long minimum et plus long maximum) appliqué à la date du constat. Calcul de
 // dates seulement, jamais de montant. Story 8.1 : étape « Prise en charge par l'artiste », faite et datée (date
-// lue en base) entre le paiement et la livraison. Transporteur, numéro de suivi et expédition : stories 8.2 et 8.4.
+// lue en base) entre le paiement et la livraison. Story 8.2 : étape « Expédiée » (date, transporteur, numéro de suivi) ; livraison constatée : story 8.4.
 
-export type EtatCommandeSuivi = 'confirmee' | 'prise_en_charge' | 'en_attente_paiement' | 'annulee'
-export type CleEtape = 'recue' | 'paiement' | 'prise_en_charge' | 'livraison' | 'annulee'
+export type EtatCommandeSuivi = 'confirmee' | 'prise_en_charge' | 'expediee' | 'en_attente_paiement' | 'annulee'
+export type CleEtape = 'recue' | 'paiement' | 'prise_en_charge' | 'expediee' | 'livraison' | 'annulee'
 
 export type EtapeSuivi = {
   cle: CleEtape
@@ -15,6 +15,8 @@ export type EtapeSuivi = {
   date: Date | null
   /** Fin de la fenêtre de livraison prévue (livraison seulement), sinon null. */
   fin: Date | null
+  /** Étape `expediee` seulement (story 8.2) : transporteur et numéro de suivi saisis par l'artiste (jamais la référence d'assurance). */
+  expedition?: { transporteur: string; numeroSuivi: string }
 }
 
 /** Date `jours` jours plus tard (jours calendaires, heure UTC conservée). Entrée illisible : null. */
@@ -32,7 +34,7 @@ export function ajouterJours(date: Date | null | undefined, jours: number): Date
  * remboursement à traiter). Un délai à 0 ou absent est INCONNU : pas de date de livraison ; `min` à 0 avec
  * `max` positif : seule la borne utile (fin) est donnée. La livraison prévue n'a de date que si le constat est
  * connu. Une commande prise en charge (8.1) a en plus l'étape `prise_en_charge`, faite à `priseEnChargeLe`, entre
- * le paiement et la livraison ; une commande confirmée non encore prise en charge n'a pas cette étape.
+ * le paiement et la livraison ; une commande confirmée non encore prise en charge n'a pas cette étape. Une commande expédiée (8.2) a en plus l'étape `expediee` (date, transporteur et numéro de suivi).
  */
 export function construireFrise(p: {
   etat: EtatCommandeSuivi
@@ -42,13 +44,18 @@ export function construireFrise(p: {
   delaiMaxJours: number | null
   /** Date de la prise en charge par l'artiste (8.1), lue en base ; absente sauf pour `prise_en_charge`. */
   priseEnChargeLe?: Date | null
+  /** Expédition par l'artiste (8.2), lue en base ; absente sauf pour `expediee`. */
+  expedieeLe?: Date | null
+  transporteur?: string | null
+  numeroSuivi?: string | null
 }): EtapeSuivi[] {
   const recue: EtapeSuivi = { cle: 'recue', faite: true, date: p.creeeLe, fin: null }
   if (p.etat === 'annulee') {
     const annulee: EtapeSuivi = { cle: 'annulee', faite: true, date: null, fin: null }
     return p.constateLe ? [recue, { cle: 'paiement', faite: true, date: p.constateLe, fin: null }, annulee] : [recue, annulee]
   }
-  const priseEnCharge = p.etat === 'prise_en_charge'
+  const expediee = p.etat === 'expediee'
+  const priseEnCharge = p.etat === 'prise_en_charge' || expediee
   const confirmee = p.etat === 'confirmee' || priseEnCharge
   const min = typeof p.delaiMinJours === 'number' && p.delaiMinJours > 0 ? p.delaiMinJours : null
   const max = typeof p.delaiMaxJours === 'number' && p.delaiMaxJours > 0 ? p.delaiMaxJours : min
@@ -57,6 +64,15 @@ export function construireFrise(p: {
     recue,
     { cle: 'paiement', faite: confirmee, date: confirmee ? p.constateLe : null, fin: null },
     ...(priseEnCharge ? [{ cle: 'prise_en_charge' as const, faite: true, date: p.priseEnChargeLe ?? null, fin: null }] : []),
+    ...(expediee
+      ? [{
+          cle: 'expediee' as const,
+          faite: true,
+          date: p.expedieeLe ?? null,
+          fin: null,
+          expedition: { transporteur: p.transporteur ?? '', numeroSuivi: p.numeroSuivi ?? '' },
+        }]
+      : []),
     {
       cle: 'livraison',
       faite: false,

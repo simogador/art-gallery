@@ -46,6 +46,7 @@ export const VERSIONS_EVENEMENTS = {
   CommandeAnnulee: 1,
   ReservationAnnulee: 1,
   CommandePriseEnCharge: 1,
+  CommandeExpediee: 1,
 } as const
 
 export type NomEvenement = keyof typeof VERSIONS_EVENEMENTS
@@ -74,6 +75,8 @@ export type ChargesEvenements = {
   ReservationAnnulee: ChargeReservationAnnulee
   /** Commande prise en charge par son artiste (story 8.1) : déclenche l'e-mail « Prise en charge » à l'acheteur. */
   CommandePriseEnCharge: ChargeCommande
+  /** Commande expédiée par son artiste (story 8.2) : déclenche l'e-mail « Expédition » à l'acheteur. */
+  CommandeExpediee: ChargeCommande
 }
 
 export type EvenementA<N extends NomEvenement> = { nom: N; charge: ChargesEvenements[N] }
@@ -107,6 +110,7 @@ const CLES_CHARGES: { [N in NomEvenement]: readonly (keyof ChargesEvenements[N])
   CommandeAnnulee: ['commandeId'],
   ReservationAnnulee: ['passageId', 'artworkId'],
   CommandePriseEnCharge: ['commandeId'],
+  CommandeExpediee: ['commandeId'],
 }
 
 function chargeConforme(nom: NomEvenement, charge: unknown): boolean {

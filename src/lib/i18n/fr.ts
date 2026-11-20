@@ -615,7 +615,7 @@ export type Dictionnaire = {
     readonly commande: (numero: string) => string
     readonly artiste: (nom: string) => string
     readonly delai: (min: number, max: number) => string
-    readonly etats: { readonly confirmee: string; readonly priseEnCharge: string; readonly enAttente: string; readonly annulee: string }
+    readonly etats: { readonly confirmee: string; readonly priseEnCharge: string; readonly expediee: string; readonly enAttente: string; readonly annulee: string }
     readonly attente: string
     readonly frise: {
       readonly titre: string
@@ -623,10 +623,12 @@ export type Dictionnaire = {
         readonly recue: string
         readonly paiement: string
         readonly prise_en_charge: string
+        readonly expediee: string
         readonly livraison: string
         readonly annulee: string
       }
       readonly faite: (date: string | null) => string
+      readonly expedition: (transporteur: string, numeroSuivi: string) => string
       readonly aVenir: string
       readonly prevue: (du: string, au: string | null) => string
       readonly annulee: string
@@ -767,11 +769,12 @@ export type Dictionnaire = {
     readonly vide: string
     readonly commande: (numero: string) => string
     readonly acheteur: (prenom: string, pays: string) => string
-    readonly etats: { readonly aPrendre: string; readonly prise: string }
+    readonly etats: { readonly aPrendre: string; readonly prise: string; readonly expediee: string }
     readonly avant: string
     readonly sansEcheance: string
     readonly depassee: string
     readonly priseLe: string
+    readonly expedieeLe: string
     readonly retour: string
     readonly oeuvres: string
     readonly acheteurTitre: string
@@ -791,6 +794,34 @@ export type Dictionnaire = {
       readonly erreurs: { readonly introuvable: string; readonly etatInvalide: string; readonly accesRefuse: string; readonly indisponible: string }
     }
     readonly guide: { readonly titre: string; readonly points: readonly string[] }
+    /** Expédition (story 8.2, FR-22, OQ-5) : formulaire « Marquer comme expédiée » et récapitulatif. */
+    readonly expedition: {
+      readonly titre: string
+      readonly intro: string
+      readonly transporteur: string
+      readonly numeroSuivi: string
+      readonly assuranceIntro: (seuil: string) => string
+      readonly assuranceCase: string
+      readonly reference: string
+      readonly marquer: string
+      readonly definitif: string
+      readonly enCours: string
+      readonly reussi: string
+      readonly deja: string
+      readonly resume: (n: number) => string
+      readonly erreurs: {
+        readonly requis: string
+        readonly tropCourt: (min: number) => string
+        readonly tropLong: (max: number) => string
+        readonly assuranceCase: string
+        readonly assuranceReference: string
+        readonly introuvable: string
+        readonly etatInvalide: string
+        readonly accesRefuse: string
+        readonly indisponible: string
+      }
+      readonly fait: { readonly titre: string; readonly transporteur: string; readonly numeroSuivi: string; readonly date: string; readonly assure: string; readonly reference: string; readonly oui: string }
+    }
     readonly bloc: {
       readonly titre: string
       readonly badge: (n: number) => string
@@ -934,6 +965,16 @@ export type Dictionnaire = {
         readonly intro: (numero: string, artiste: string) => string
         readonly introSansArtiste: (numero: string) => string
         readonly ligne: (titre: string) => string
+        readonly suite: string
+      }
+      /** E-mail « Expédition » à l'acheteur (story 8.2) : transporteur et numéro de suivi, jamais la référence d'assurance. */
+      readonly expedition: {
+        readonly sujet: (numero: string) => string
+        readonly intro: (numero: string, artiste: string) => string
+        readonly introSansArtiste: (numero: string) => string
+        readonly ligne: (titre: string) => string
+        readonly transporteur: (nom: string) => string
+        readonly numeroSuivi: (numero: string) => string
         readonly suite: string
       }
       readonly alerteConfirmee: {
@@ -1438,11 +1479,12 @@ export const fr = {
     vide: 'Aucune commande à préparer pour le moment. Les commandes de vos œuvres apparaîtront ici dès leur confirmation.',
     commande: (numero: string) => `Commande ${numero}`,
     acheteur: (prenom: string, pays: string) => (pays ? `Pour ${prenom}, livraison : ${pays}` : `Pour ${prenom}`),
-    etats: { aPrendre: 'À prendre en charge', prise: 'Prise en charge' },
+    etats: { aPrendre: 'À prendre en charge', prise: 'Prise en charge, à expédier', expediee: 'Expédiée' },
     avant: 'À prendre en charge avant le',
     sansEcheance: 'À prendre en charge dès que possible.',
     depassee: 'Échéance dépassée : vous pouvez encore la prendre en charge.',
     priseLe: 'Prise en charge le',
+    expedieeLe: 'Expédiée le',
     retour: 'Toutes les commandes',
     oeuvres: 'Œuvres',
     acheteurTitre: 'Acheteur',
@@ -1478,6 +1520,41 @@ export const fr = {
         'Gardez une photo de l’œuvre emballée avant de fermer le colis.',
         'Une question sur l’emballage ou l’expédition ? Écrivez à l’équipe Errancy.',
       ],
+    },
+    expedition: {
+      titre: 'Expédition',
+      intro: 'Une fois le colis remis au transporteur, saisissez son nom et le numéro de suivi : l’acheteur en est prévenu par e-mail.',
+      transporteur: 'Transporteur',
+      numeroSuivi: 'Numéro de suivi',
+      assuranceIntro: (seuil: string) => `Cette commande dépasse ${seuil} : l’envoi doit être assuré avec preuve de livraison.`,
+      assuranceCase: 'Envoi assuré avec preuve de livraison',
+      reference: 'Référence d’assurance',
+      marquer: 'Marquer comme expédiée',
+      definitif: 'Une fois enregistrée, la saisie ne peut plus être modifiée.',
+      enCours: 'Enregistrement…',
+      reussi: 'Commande marquée comme expédiée : l’acheteur est prévenu.',
+      deja: 'Cette commande est déjà expédiée.',
+      resume: (n: number) => (n > 1 ? `${n} champs sont à corriger avant d’enregistrer.` : 'Un champ est à corriger avant d’enregistrer.'),
+      erreurs: {
+        requis: 'Ce champ est requis.',
+        tropCourt: (min: number) => `Saisissez au moins ${min} caractères.`,
+        tropLong: (max: number) => `Ne dépassez pas ${max} caractères.`,
+        assuranceCase: 'Cochez l’envoi assuré avec preuve de livraison.',
+        assuranceReference: 'Saisissez la référence d’assurance.',
+        introuvable: 'Cette commande n’est pas accessible.',
+        etatInvalide: 'Cette commande ne peut pas être marquée comme expédiée.',
+        accesRefuse: 'Cette action est réservée à l’artiste de la commande.',
+        indisponible: 'L’expédition n’a pas pu être enregistrée. Réessayez dans un instant.',
+      },
+      fait: {
+        titre: 'Expédition',
+        transporteur: 'Transporteur',
+        numeroSuivi: 'Numéro de suivi',
+        date: 'Expédiée le',
+        assure: 'Envoi assuré',
+        reference: 'Référence d’assurance',
+        oui: 'Oui, avec preuve de livraison',
+      },
     },
     bloc: {
       titre: 'À expédier',
@@ -1847,7 +1924,7 @@ export const fr = {
     artiste: (nom: string) => `Artiste : ${nom}`,
     delai: (min: number, max: number) =>
       min === max ? `Délai de livraison estimé : ${min} jour${min > 1 ? 's' : ''}` : `Délai de livraison estimé : ${min} à ${max} jours`,
-    etats: { confirmee: 'Confirmée', priseEnCharge: 'Prise en charge par l’artiste', enAttente: 'En attente de confirmation', annulee: 'Annulée' },
+    etats: { confirmee: 'Confirmée', priseEnCharge: 'Prise en charge par l’artiste', expediee: 'Expédiée', enAttente: 'En attente de confirmation', annulee: 'Annulée' },
     attente: 'Votre paiement n’est pas encore constaté par l’équipe : un e-mail vous préviendra.',
     frise: {
       titre: 'Étapes de la commande',
@@ -1855,10 +1932,12 @@ export const fr = {
         recue: 'Commande reçue',
         paiement: 'Paiement constaté',
         prise_en_charge: 'Prise en charge par l’artiste',
+        expediee: 'Expédiée',
         livraison: 'Livraison prévue',
         annulee: 'Commande annulée',
       },
       faite: (date: string | null) => (date ? `Faite le ${date}` : 'Faite'),
+      expedition: (transporteur: string, numeroSuivi: string) => `Transporteur : ${transporteur} · n° de suivi : ${numeroSuivi}`,
       aVenir: 'À venir',
       prevue: (du: string, au: string | null) => (au && au !== du ? `Prévue du ${du} au ${au}` : `Prévue le ${du}`),
       annulee: 'Cette commande a été annulée.',
@@ -2112,6 +2191,15 @@ export const fr = {
         intro: (numero: string, artiste: string) => `Bonne nouvelle : ${artiste} a pris en charge votre commande ${numero} et prépare votre œuvre.`,
         introSansArtiste: (numero: string) => `Bonne nouvelle : l’artiste a pris en charge votre commande ${numero} et prépare votre œuvre.`,
         ligne: (titre: string) => `– « ${titre} »`,
+        suite: 'Vous pouvez suivre l’avancement de votre commande à tout moment.',
+      },
+      expedition: {
+        sujet: (numero: string) => `Commande ${numero} expédiée`,
+        intro: (numero: string, artiste: string) => `Bonne nouvelle : ${artiste} a expédié votre commande ${numero}.`,
+        introSansArtiste: (numero: string) => `Bonne nouvelle : l’artiste a expédié votre commande ${numero}.`,
+        ligne: (titre: string) => `– « ${titre} »`,
+        transporteur: (nom: string) => `Transporteur : ${nom}`,
+        numeroSuivi: (numero: string) => `Numéro de suivi : ${numero}`,
         suite: 'Vous pouvez suivre l’avancement de votre commande à tout moment.',
       },
       alerteConfirmee: {

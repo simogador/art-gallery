@@ -309,6 +309,33 @@ export function contenuCommandePriseEnCharge(p: {
   })
 }
 
+/**
+ * Expédition par l'artiste (story 8.2) : transporteur et numéro de suivi, lien de suivi du site ; jamais la
+ * référence d'assurance, aucun montant.
+ */
+export function contenuCommandeExpediee(p: {
+  nom: string
+  numero: string
+  artiste: string | null
+  titres: string[]
+  expedition: { transporteur: string; numeroSuivi: string } | null
+  lienSuivi?: string | null
+}): Contenu {
+  const t = fr.courriels.commande.expedition
+  const artiste = p.artiste && p.artiste.trim() !== '' ? p.artiste.trim() : null
+  return assembler({
+    sujet: t.sujet(p.numero),
+    nom: p.nom,
+    intro: [
+      artiste ? t.intro(p.numero, artiste) : t.introSansArtiste(p.numero),
+      ...p.titres.map((titre) => t.ligne(titre)),
+      ...(p.expedition ? [t.transporteur(p.expedition.transporteur), t.numeroSuivi(p.expedition.numeroSuivi)] : []),
+    ],
+    suite: [t.suite],
+    ...(p.lienSuivi ? { lienSecondaire: { intro: fr.courriels.commande.suivi.intro, lien: p.lienSuivi } } : {}),
+  })
+}
+
 /** Alerte à l'équipe pour une commande confirmée ou annulée : numéro et lien, aucune donnée de l'acheteur. */
 export function contenuAlerteCommande(p: { numero: string; lien: string; annulee: boolean }): Contenu {
   const t = p.annulee ? fr.courriels.commande.alerteAnnulee : fr.courriels.commande.alerteConfirmee
