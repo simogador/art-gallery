@@ -271,6 +271,15 @@ describe('Réclamations de l’équipe (navigateur)', () => {
     expect(actionRetourRecu).toHaveBeenCalledTimes(2)
   })
 
+  it('réclamation acceptée : l’e-mail de l’acheteur et son aide sont affichés ; ouverte : rien', async () => {
+    const accepte = vue({ retournable: true, montantCommande: '640 €', reclamation: { ...vue().reclamation, etat: 'acceptee' as const, emailAcheteur: 'claire@exemple.test' } })
+    let ecran = await render(<CommandesEquipe commandes={[accepte]} alertes={AUCUNE} />)
+    expect(ecran.container.textContent).toContain(`${te.reclamation.champs.emailAcheteur} claire@exemple.test`)
+    expect(ecran.container.textContent).toContain(te.reclamation.emailAcheteurAide)
+    ecran = await render(<CommandesEquipe commandes={[vue()]} alertes={AUCUNE} />)
+    expect(ecran.container.querySelector('[data-email-acheteur]')).toBeNull()
+  })
+
   it('une réclamation refusée reste dans la liste générale avec son motif, sans geste', async () => {
     const refusee = vue({ reclamation: { ...vue().reclamation, etat: 'refusee' as const, motifRefus: MOTIF, decideLe: '21 novembre 2026' } })
     const ecran = await render(<CommandesEquipe commandes={[refusee]} alertes={AUCUNE} />)

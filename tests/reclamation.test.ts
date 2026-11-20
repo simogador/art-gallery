@@ -685,6 +685,27 @@ describe('base : réclamation et retour', () => {
     expect(JSON.stringify(vue)).not.toMatch(/Lilas|6 12 34|exemple\.test|Claire/)
   })
 
+  it('décision 6A : l’e-mail de l’acheteur n’est lu que pour une réclamation acceptée d’une commande livrée, par l’admin seulement', async () => {
+    const p = await livree()
+    const { commandesDeLEquipe, accepterReclamation, enregistrerRetourRecu, refuserReclamation } = await import('@/lib/commandes')
+    const lire = async () => (await commandesDeLEquipe(ADMIN))?.commandes ?? []
+    const rec = async () => (await lire()).find((x) => x.numero === p.numero)?.reclamation
+    await signaler(p)
+    expect(await rec()).not.toHaveProperty('emailAcheteur')
+    await accepterReclamation(ADMIN, p.numero)
+    expect(await rec()).toMatchObject({ emailAcheteur: EMAIL_ACHETEUR })
+    const autre = (await lire()).find((x) => x.numero !== p.numero)
+    expect(autre?.reclamation ?? null).toBeNull()
+    expect(JSON.stringify(await lire())).not.toMatch(/Claire|Lilas|6 12 34/)
+    expect(await commandesDeLEquipe(ARTISTE_A)).toBeNull()
+    await enregistrerRetourRecu(ADMIN, p.numero)
+    expect(await rec()).not.toHaveProperty('emailAcheteur')
+    await db.query(`UPDATE "Commande" SET etat = 'livree' WHERE numero = $1`, [p.numero])
+    await db.query(`UPDATE "Reclamation" SET etat = 'refusee'`)
+    expect(await rec()).not.toHaveProperty('emailAcheteur')
+    void refuserReclamation
+  })
+
   it('actions de l’acheteur : cookie `suivi`, photo signée, signalement, messages sans détail technique', async () => {
     const { preparerPhotoReclamation, signalerUnProbleme } = await import('@/app/suivi/actions')
     const t = fr.suivi.reclamation.erreurs

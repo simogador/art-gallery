@@ -78,6 +78,7 @@ export default async function AdminCommandesPage() {
                     motifRefus: c.reclamation.motifRefus,
                     decideLe: c.reclamation.decideLe ? quand(c.reclamation.decideLe) : null,
                     photos: c.reclamation.photos,
+                    emailAcheteur: c.reclamation.emailAcheteur,
                   }
                 : null,
               retournable: c.retournable,

@@ -43,7 +43,7 @@ export type CommandeDeLEquipe = {
    * Réclamation de l'acheteur (story 8.5) : motif, description et photos, lus de l'équipe seulement (jamais de
    * l'artiste ni d'un journal) ; décision et motif de refus. null sans réclamation.
    */
-  reclamation: { motif: MotifReclamation; description: string; etat: EtatReclamation; motifRefus: string | null; decideLe: Date | null; photos: string[] } | null
+  reclamation: { motif: MotifReclamation; description: string; etat: EtatReclamation; motifRefus: string | null; decideLe: Date | null; photos: string[]; emailAcheteur?: string } | null
   /** `livree` avec une réclamation acceptée : « Retour reçu » proposé. */
   retournable: boolean
   /** Réception du retour (`retournee`) ; null avant. */
@@ -77,6 +77,7 @@ export async function commandesDeLEquipe(acteur: Acteur, maintenant: Date = new 
   if (acteur.type !== 'admin') return null
   const select = {
     id: true,
+    passageId: true,
     numero: true,
     etat: true,
     priseEnChargeAvant: true,
@@ -167,6 +168,11 @@ export async function commandesDeLEquipe(acteur: Acteur, maintenant: Date = new 
     where: { commandeId: { in: retournables.map((c) => c.id) } },
     _sum: { totalCentimes: true },
   })
+  // Décision 6A : seule coordonnée de l'acheteur montrée à l'équipe, l'e-mail, pour une réclamation acceptée d'une commande livrée.
+  const emails = await prisma.coordonneesAcheteur.findMany({
+    where: { passageId: { in: retournables.flatMap((c) => (c.passageId ? [c.passageId] : [])) } },
+    select: { passageId: true, email: true },
+  })
   const commandes = toutes.map((c): CommandeDeLEquipe => {
     const etat = c.etat as EtatCommandeEquipe
     return {
@@ -200,6 +206,7 @@ export async function commandesDeLEquipe(acteur: Acteur, maintenant: Date = new 
             motifRefus: c.reclamation.motifRefus,
             decideLe: c.reclamation.decideLe,
             photos: c.reclamation.photos.map((p) => p.url),
+            ...(etat === 'livree' && c.reclamation.etat === 'acceptee' ? { emailAcheteur: emails.find((e) => e.passageId === c.passageId)?.email ?? '' } : {}),
           }
         : null,
       retournable: etat === 'livree' && c.reclamation?.etat === 'acceptee',

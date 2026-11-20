@@ -529,7 +529,8 @@ export type Dictionnaire = {
       readonly titre: string
       readonly ouvertes: string
       readonly aucune: string
-      readonly champs: { readonly motif: string; readonly description: string; readonly photos: string; readonly etat: string; readonly motifRefus: string; readonly decideLe: string; readonly retourRecuLe: string; readonly montantCommande: string }
+      readonly champs: { readonly motif: string; readonly description: string; readonly photos: string; readonly etat: string; readonly motifRefus: string; readonly decideLe: string; readonly retourRecuLe: string; readonly montantCommande: string; readonly emailAcheteur: string }
+      readonly emailAcheteurAide: string
       readonly motifs: { readonly abimee: string; readonly non_conforme: string; readonly changement_avis: string }
       readonly etats: { readonly ouverte: string; readonly acceptee: string; readonly refusee: string }
       readonly photo: (n: number) => string
@@ -2046,7 +2047,9 @@ export const fr = {
         decideLe: 'Décidée le',
         retourRecuLe: 'Retour reçu le',
         montantCommande: 'Montant de la commande',
+        emailAcheteur: 'E-mail de l’acheteur :',
       },
+      emailAcheteurAide: 'Écrivez à l’acheteur pour organiser le retour. Cette adresse n’est montrée que pour une réclamation acceptée.',
       motifs: { abimee: 'Œuvre arrivée abîmée', non_conforme: 'Œuvre non conforme à l’annonce', changement_avis: 'Changement d’avis' },
       etats: { ouverte: 'Ouverte', acceptee: 'Acceptée, retour attendu', refusee: 'Refusée' },
       photo: (n: number) => `Photo ${n}`,

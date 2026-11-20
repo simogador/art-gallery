@@ -53,6 +53,8 @@ export type VueCommandeEquipe = {
     motifRefus: string | null
     decideLe: string | null
     photos: string[]
+    /** Réclamation acceptée d'une commande livrée seulement (décision 6A) : e-mail de l'acheteur. */
+    emailAcheteur?: string
   } | null
   /** « Retour reçu » proposé (réclamation acceptée) et montant de la commande, déjà formaté. */
   retournable: boolean
@@ -530,6 +532,12 @@ export function CommandesEquipe({
                 </a>
               ))}
             </p>
+          )}
+          {c.reclamation.emailAcheteur !== undefined && (
+            <div data-email-acheteur>
+              {ligne(t.reclamation.champs.emailAcheteur, c.reclamation.emailAcheteur)}
+              <p className="text-neutral-600">{t.reclamation.emailAcheteurAide}</p>
+            </div>
           )}
           {c.reclamation.etat === 'refusee' && ligne(t.reclamation.champs.motifRefus, c.reclamation.motifRefus)}
           {c.reclamation.etat !== 'ouverte' && ligne(t.reclamation.champs.decideLe, c.reclamation.decideLe)}

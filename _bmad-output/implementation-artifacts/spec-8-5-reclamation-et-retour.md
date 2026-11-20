@@ -54,6 +54,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-8-context.m
 - 3B : le remboursement est demandé à la réception du retour, pas à l'acceptation ; montant saisi par l'équipe (total par défaut, partiel possible).
 - 4A : une seule réclamation par commande ; un refus est définitif, le Conseil WhatsApp reste disponible.
 - 5A : e-mail à l'artiste à l'acceptation d'un retour (numéro et titres, jamais de coordonnées ni de photos de l'acheteur).
+- 6A : sur une réclamation acceptée (commande encore `livree`), l'administrateur voit l'e-mail de l'acheteur pour lui écrire et organiser le retour (seule coordonnée montrée à l'équipe, exception à la 8.3 ; ni nom, adresse ni téléphone).
 
 </frozen-after-approval>
 
@@ -94,6 +95,7 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-8-context.m
 - Photos : signature par commande (`signerEnvoiPhoto`), revérification des réponses de Cloudinary à l'enregistrement (`verifierPhotos`) ; `commandes` n'importe pas `curation` (mécanique reprise dans `photos-reclamation.ts`).
 - Le montant du retour est saisi au geste « Retour reçu » (décision 3B), pas à l'acceptation ; `demanderRemboursement` accepte un montant et refuse `montant_depasse` avant toute écriture.
 - `tests/suivi.test.ts` adapté : le formulaire de réclamation (composant client) est le seul à porter des champs de saisie dans `src/app/suivi`, et l'état d'un remboursement demandé ou effectué est la seule mention du remboursement autorisée en plus de la phrase d'annulation.
+- [x] Décision 6A intégrée : `emailAcheteur` rendu à l'admin seulement pour une réclamation acceptée d'une commande livrée, affiché sur la carte.
 - Vérifié : `npx eslint .` (0 erreur), trois contrôles d'exceptions (aucun ajout), `npm test` (base réelle), `npm run test:navigateur` (233 réussis), `npm run build`.
 
 ## Spec Change Log
