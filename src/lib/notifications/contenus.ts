@@ -354,6 +354,28 @@ export function contenuCommandeExpediee(p: {
   })
 }
 
+/**
+ * Livraison constatée (story 8.4) : l'acheteur est prévenu, lien de suivi émis à l'envoi. Jamais de durée ni de
+ * date de retour, de gratuité ni de promesse (OQ-2, OQ-4, décision 2A) ; aucun montant ni coordonnée.
+ */
+export function contenuCommandeLivree(p: {
+  nom: string
+  numero: string
+  artiste: string | null
+  titres: string[]
+  lienSuivi?: string | null
+}): Contenu {
+  const t = fr.courriels.commande.livraison
+  const artiste = p.artiste && p.artiste.trim() !== '' ? p.artiste.trim() : null
+  return assembler({
+    sujet: t.sujet(p.numero),
+    nom: p.nom,
+    intro: [artiste ? t.intro(p.numero, artiste) : t.introSansArtiste(p.numero), ...p.titres.map((titre) => t.ligne(titre))],
+    suite: [t.suite],
+    ...(p.lienSuivi ? { lienSecondaire: { intro: fr.courriels.commande.suivi.intro, lien: p.lienSuivi } } : {}),
+  })
+}
+
 /** Alerte à l'équipe pour une commande confirmée ou annulée : numéro et lien, aucune donnée de l'acheteur. */
 export function contenuAlerteCommande(p: { numero: string; lien: string; annulee: boolean }): Contenu {
   const t = p.annulee ? fr.courriels.commande.alerteAnnulee : fr.courriels.commande.alerteConfirmee

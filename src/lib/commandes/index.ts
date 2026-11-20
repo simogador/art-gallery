@@ -117,6 +117,18 @@ export {
   type ErreursExpedition,
   type SaisieExpedition,
 } from './expedition-regles'
+export { constaterLivraisonAcheteur, enregistrerLivraison, type ResultatLivraison } from './livraison'
+export {
+  PREUVE,
+  SOURCES_LIVRAISON,
+  retourAvant,
+  sourcesPermises,
+  validerLivraison,
+  type ErreurPreuve,
+  type ErreursLivraison,
+  type SourceEquipe,
+  type SourceLivraison,
+} from './livraison-regles'
 export { echeanceDepassee, prenom, PRENOM_ABSENT } from './prise-en-charge-regles'
 export { ETAT_INITIAL, ETATS_COMMANDE, TRANSITIONS, transitionPermise, type EtatCommande } from './etats'
 export { ALPHABET_NUMERO, FORME_NUMERO, PREFIXE_NUMERO, genererNumero } from './numero'

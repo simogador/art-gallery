@@ -65,7 +65,7 @@ export async function lireConfirmationPassage(jeton: string | undefined, mainten
         coordonnees: { select: { nom: true } },
         commandes: {
           // Story 8.1 : une commande prise en charge par l'artiste reste une commande confirmée pour l'acheteur.
-          where: { etat: { in: ['confirmee', 'prise_en_charge', 'expediee', 'en_attente_paiement', 'annulee'] } },
+          where: { etat: { in: ['confirmee', 'prise_en_charge', 'expediee', 'livree', 'en_attente_paiement', 'annulee'] } },
           orderBy: { createdAt: 'asc' },
           select: {
             id: true,
@@ -100,7 +100,7 @@ export async function lireConfirmationPassage(jeton: string | undefined, mainten
     if (!agregat || c.lignes.length === 0) throw new Error('confirmation_incoherente')
     return {
       numero: c.numero,
-      etat: (c.etat === 'prise_en_charge' || c.etat === 'expediee' ? 'confirmee' : c.etat) as EtatCommandeConfirmation,
+      etat: (c.etat === 'prise_en_charge' || c.etat === 'expediee' || c.etat === 'livree' ? 'confirmee' : c.etat) as EtatCommandeConfirmation,
       artiste: c.artist?.name ?? '',
       devise: c.devise,
       lignes: c.lignes,

@@ -154,6 +154,11 @@ export const DUREE_PRISE_EN_CHARGE_HEURES = 48
 // au-dessus du seuil (prudence). Modifiable par une PR.
 export const SEUIL_ASSURANCE = { devise: 'EUR', centimes: 100_000 } as const
 
+// Délai de retour (story 8.4, OQ-4, décision 1A du porteur du 2026-11-20) : `retourAvant` = date de livraison
+// constatée + cette durée (jours calendaires), stockée sur la commande. Aucun texte n'annonce cette durée tant
+// que les pages de confiance (7.1, OQ-2, OQ-4) ne sont pas publiées. Modifiable par une PR.
+export const DUREE_RETOUR_JOURS = 14
+
 // Lien de suivi des commandes d'un acheteur sans compte (story 7.7, décision 2A) : valable un an à compter
 // de son émission (réduisible plus tard) ; non consommé par l'échange.
 export const DUREE_SUIVI_JOURS = 365

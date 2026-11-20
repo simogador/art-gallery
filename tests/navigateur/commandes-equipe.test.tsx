@@ -10,6 +10,7 @@ const refresh = vi.fn()
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => refresh(), push: () => {} }) }))
 vi.mock('@/app/dashboard/admin/commandes/actions', () => ({
   actionAnnulerParLEquipe: (...a: unknown[]) => actionAnnulerParLEquipe(...a),
+  actionEnregistrerLivraison: vi.fn(),
 }))
 
 const { CommandesEquipe } = await import('@/app/dashboard/admin/commandes/CommandesEquipe')
@@ -33,6 +34,12 @@ const vue = (surcharge = {}) => ({
   motif: null,
   alertes: [],
   annulable: true,
+  livrable: false,
+  preuveRequise: false,
+  livreeLe: null,
+  livraisonSource: null,
+  preuveLivraison: null,
+  retourAvant: null,
   ...surcharge,
 })
 const AUCUNE = { priseEnCharge: [], expedition: [] }
