@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { acteurCourant } from '@/lib/acces'
-import { commandesEnAttenteDeLEquipe, incidentsDeLEquipe, remboursementsDeLEquipe, reservationsDeLEquipe } from '@/lib/commandes'
+import { commandesDeLEquipe, commandesEnAttenteDeLEquipe, incidentsDeLEquipe, remboursementsDeLEquipe, reservationsDeLEquipe } from '@/lib/commandes'
 import { fr, formaterDateHeure, formaterMontant, SEPARATEUR } from '@/lib/i18n'
 import { DUREE_RESERVATION_VENTE_ASSISTEE_HEURES } from '@/lib/reglages'
+import { CommandesEquipe } from './CommandesEquipe'
 import { FormulaireVenteAssistee } from './FormulaireVenteAssistee'
 import { PaiementsEnAttente } from './PaiementsEnAttente'
 import { RemboursementsEquipe } from './RemboursementsEquipe'
@@ -26,6 +27,8 @@ export default async function AdminCommandesPage() {
   const enAttente = await commandesEnAttenteDeLEquipe(acteur).catch(() => undefined)
   const incidents = await incidentsDeLEquipe(acteur).catch(() => undefined)
   const remboursements = await remboursementsDeLEquipe(acteur).catch(() => undefined)
+  const suivi = await commandesDeLEquipe(acteur).catch(() => undefined)
+  const ce = fr.commandesEquipe
   const quand = (d: Date | null) => (d ? formaterDateHeure(d) : '—')
   const beneficiaire = (b: { nom: string; email: string } | null) => (b ? `${b.nom} (${b.email})` : t.beneficiaireInconnu)
 
@@ -34,6 +37,39 @@ export default async function AdminCommandesPage() {
       <h1 className="font-serif text-3xl text-foreground">{fr.venteAssistee.titre}</h1>
       <p className="mt-2 max-w-prose font-sans text-sm text-neutral-600">{fr.venteAssistee.introduction}</p>
       <FormulaireVenteAssistee heuresParDefaut={DUREE_RESERVATION_VENTE_ASSISTEE_HEURES} />
+      <section aria-labelledby="commandes-payees" className="mt-12">
+        <h2 id="commandes-payees" className="font-serif text-2xl text-foreground">{ce.titre}</h2>
+        <p className="mt-2 max-w-prose font-sans text-sm text-neutral-600">{ce.introduction}</p>
+        {suivi ? (
+          <CommandesEquipe
+            alertes={suivi.alertes}
+            tronque={suivi.tronque}
+            commandes={suivi.commandes.map((c) => ({
+              numero: c.numero,
+              etat: c.etat,
+              artiste: c.artiste,
+              oeuvres: c.oeuvres,
+              priseEnChargeAvant: quand(c.priseEnChargeAvant),
+              priseEnChargeLe: quand(c.priseEnChargeLe),
+              expedieAvant: quand(c.expedieAvant),
+              expedieeLe: quand(c.expedieeLe),
+              transporteur: c.transporteur,
+              numeroSuivi: c.numeroSuivi,
+              envoiAssure: c.envoiAssure,
+              referenceAssurance: c.referenceAssurance,
+              remboursement: c.remboursement
+                ? ce.remboursements[c.remboursement.etat](formaterMontant(c.remboursement.montantCentimes, c.remboursement.devise))
+                : null,
+              annuleeLe: c.annulation ? quand(c.annulation.le) : null,
+              motif: c.annulation?.motif ?? null,
+              alertes: c.alertes,
+              annulable: c.annulable,
+            }))}
+          />
+        ) : (
+          <p role="alert" className="mt-3 font-sans text-sm text-foreground">{ce.panne}</p>
+        )}
+      </section>
       <section aria-labelledby="paiements-a-constater" className="mt-12">
         <h2 id="paiements-a-constater" className="font-serif text-2xl text-foreground">{p.titre}</h2>
         <p className="mt-2 max-w-prose font-sans text-sm text-neutral-600">{p.introduction}</p>

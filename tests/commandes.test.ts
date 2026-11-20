@@ -22,7 +22,8 @@ describe('règles pures', () => {
     expect(transitionPermise('en_attente_paiement', 'confirmee')).toBe(true)
     expect(transitionPermise('en_attente_paiement', 'annulee')).toBe(true)
     expect(transitionPermise('annulee', 'confirmee')).toBe(false)
-    expect(transitionPermise('confirmee', 'annulee')).toBe(false)
+    expect(transitionPermise('confirmee', 'annulee')).toBe(true) // 8.3 : annulation par l'équipe
+    expect(transitionPermise('expediee', 'annulee')).toBe(false)
     expect(transitionPermise('historique', 'confirmee')).toBe(false)
   })
 

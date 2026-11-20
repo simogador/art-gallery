@@ -14,6 +14,7 @@ import {
   contenuAlerteCommande,
   contenuCommandeAnnulee,
   contenuCommandeArtiste,
+  contenuCommandeAnnuleeArtiste,
   contenuCommandeConfirmee,
   contenuCommandePriseEnCharge,
   contenuCommandeExpediee,
@@ -405,10 +406,26 @@ export async function envoyerAnnulationCommande(evenement: EvenementLuA<'Command
     ['annulee'],
     (d, lienSuivi) => ({
       a: d.acheteur.email,
-      contenu: contenuCommandeAnnulee({ nom: d.acheteur.nom, numero: d.numero, titres: d.lignes.map((l) => l.titre), remboursement: d.remboursement, lienSuivi }),
+      contenu: contenuCommandeAnnulee({ nom: d.acheteur.nom, numero: d.numero, titres: d.lignes.map((l) => l.titre), remboursement: d.remboursement, paiementRecu: d.paiementConstate, lienSuivi }),
     }),
     // Passage clos (toutes les commandes annulées) : le lien n'ouvrirait que la page « close », il n'est ni émis ni écrit.
     { suivi: true, lienSeulementSiCommandeVivante: true },
+  )
+}
+
+/**
+ * Commande payée annulée par l'équipe (story 8.3, décision 3A) : e-mail à l'artiste avec numéro, titres et motif.
+ * Seulement si le motif existe (une annulation d'une commande en attente ou par vente ailleurs n'a jamais été vue
+ * par l'artiste) ; sans compte artiste : rien. Aucune coordonnée de l'acheteur.
+ */
+export async function envoyerAnnulationCommandeArtiste(evenement: EvenementLuA<'CommandeAnnulee'>): Promise<void> {
+  await envoyerCommande(evenement, 'envoyerAnnulationCommandeArtiste', ['annulee'], (d) =>
+    d.artiste?.email && d.motifAnnulation
+      ? {
+          a: d.artiste.email,
+          contenu: contenuCommandeAnnuleeArtiste({ artiste: d.artiste.nom, numero: d.numero, titres: d.lignes.map((l) => l.titre), motif: d.motifAnnulation }),
+        }
+      : null,
   )
 }
 

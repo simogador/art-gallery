@@ -241,6 +241,8 @@ export function contenuCommandeAnnulee(p: {
   numero: string
   titres: string[]
   remboursement: 'demande' | 'effectue' | null
+  /** Un paiement a été constaté (story 8.3) : on ne dit jamais « aucun paiement reçu » dans ce cas. */
+  paiementRecu?: boolean
   /** Lien de suivi absolu, émis à l'envoi (story 7.7) ; absent : pas de lien. */
   lienSuivi?: string | null
 }): Contenu {
@@ -250,13 +252,29 @@ export function contenuCommandeAnnulee(p: {
       ? t.remboursementDemande(p.numero)
       : p.remboursement === 'effectue'
         ? t.remboursementEffectue(p.numero)
-        : t.aucunPaiement
+        : p.paiementRecu
+          ? t.paiementRecu(p.numero)
+          : t.aucunPaiement
   return assembler({
     sujet: t.sujet(p.numero),
     nom: p.nom,
     intro: [t.intro(p.numero), ...p.titres.map((titre) => t.ligne(titre)), etat],
     suite: [t.suite],
     ...(p.lienSuivi ? { lienSecondaire: { intro: fr.courriels.commande.suivi.intro, lien: p.lienSuivi } } : {}),
+  })
+}
+
+/**
+ * Annulation par l'équipe d'une commande payée, à l'artiste (story 8.3, décision 3A) : numéro, titres et motif
+ * saisi par l'équipe ; jamais de coordonnées de l'acheteur ni de montant.
+ */
+export function contenuCommandeAnnuleeArtiste(p: { artiste: string; numero: string; titres: string[]; motif: string }): Contenu {
+  const t = fr.courriels.commande.annuleeArtiste
+  return assembler({
+    sujet: t.sujet(p.numero),
+    nom: p.artiste,
+    intro: [t.intro(p.numero), ...p.titres.map((titre) => t.ligne(titre)), t.motif(p.motif)],
+    suite: [t.suite],
   })
 }
 

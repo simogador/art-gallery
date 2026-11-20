@@ -84,10 +84,12 @@ export {
 } from './paiement'
 export {
   annulerCommande,
+  annulerParLEquipe,
   marquerRemboursementEffectue,
   remboursementsDeLEquipe,
   type RemboursementDeLEquipe,
   type ResultatAnnulation,
+  type ResultatAnnulationEquipe,
   type ResultatRemboursementEffectue,
 } from './annulation'
 export { annulerSuiteReservationAnnulee } from './reservation-annulee'
@@ -104,6 +106,8 @@ export {
   type ResultatNombre,
   type ResultatPriseEnCharge,
 } from './prise-en-charge'
+export { commandesDeLEquipe, type CommandeDeLEquipe, type CommandesDeLEquipe, type EtatCommandeEquipe } from './suivi-equipe'
+export { MOTIF_ANNULATION, alertesDeRetard, validerMotif, type AlerteRetard, type ErreurMotif } from './suivi-equipe-regles'
 export { marquerExpediee, type ResultatExpedition } from './expedition'
 export {
   assuranceRequise,

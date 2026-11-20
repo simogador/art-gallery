@@ -299,3 +299,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-8-2-l-artiste-expedie-et-saisit-le-suivi.md`
   summary: Montrer à l'équipe (lecture seule) le transporteur, le numéro de suivi, l'envoi assuré et sa référence d'une commande expédiée, pour vérifier l'obligation d'assurance au-delà du seuil.
   evidence: Ces données ne sont lues que par l'artiste (et le numéro par l'acheteur sur `/suivi`) ; la story 8.3 (commandes et alertes de l'équipe) doit les afficher sur `/dashboard/admin/commandes`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-8-3-commandes-et-alertes-de-l-equipe.md`
+  summary: Envoyer à l'équipe une seule alerte par e-mail pour chaque retard de prise en charge ou d'expédition, par le balayage `api/balayage`.
+  evidence: Le balayage n'existe pas (story 6.7, bloquée par AQ-2 : plan Vercel ou déclencheur externe, décision du porteur) ; la 8.3 ne livre que les alertes calculées à la lecture de `/dashboard/admin/commandes`.

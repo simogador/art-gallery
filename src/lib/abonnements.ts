@@ -89,6 +89,7 @@ export const ABONNEMENTS: { [N in NomEvenement]: Abonnement<N>[] } = {
   // Commande annulée : acheteur (avec l'état du remboursement s'il existe) et équipe.
   CommandeAnnulee: [
     { nom: 'envoyerAnnulationCommande', gestionnaire: via('envoyerAnnulationCommande') },
+    { nom: 'envoyerAnnulationCommandeArtiste', gestionnaire: via('envoyerAnnulationCommandeArtiste') },
     { nom: 'alerterEquipeCommande', gestionnaire: via('alerterEquipeCommande') },
   ],
   // Story 8.1 : l'acheteur apprend que l'artiste prépare son œuvre (lien de suivi émis à l'envoi).

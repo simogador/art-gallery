@@ -7,6 +7,7 @@ import { MONTANT_MAX_CENTIMES, type FaitPaiementConstate } from '@/lib/paiement'
 import { DUREE_PRISE_EN_CHARGE_HEURES } from '@/lib/reglages'
 import { annulerEnAttente, demanderRemboursement } from './annulation'
 import { transitionPermise } from './etats'
+import { ajouterJours } from './suivi-regles'
 
 // Paiement constaté (story 6.4, FR-13, AD-4, AD-8) : point d'entrée unique du module commandes pour
 // un paiement reçu, quelle qu'en soit la source (aujourd'hui, le constat manuel de l'équipe). Une seule
@@ -162,7 +163,13 @@ export async function traiterPaiementConstate(acteur: Acteur, fait: FaitPaiement
           if (vente.ok) {
             // Story 8.1 : l'échéance de prise en charge par l'artiste part du constat (stockée, AD-10).
             const priseEnChargeAvant = new Date(constateLe.getTime() + DUREE_PRISE_EN_CHARGE_HEURES * 3_600_000)
-            const maj = await tx.commande.updateMany({ where: { id: c.id, etat: 'en_attente_paiement' }, data: { etat: 'confirmee', priseEnChargeAvant } })
+            // Story 8.3 (AD-10, décision 2A) : échéance d'expédition = constat + plus long délai de préparation figé
+            // sur les lignes (agrégat de la base) ; sans délai figé (lignes d'avant), pas d'échéance.
+            const prepa = await tx.ligneCommande.aggregate({ where: { commandeId: c.id }, _max: { preparationJours: true } })
+            const jours = prepa._max.preparationJours
+            // Délai nul ou absent : pas d'échéance (sinon « Expédition en retard » dès le constat).
+            const expedieAvant = jours === null || jours <= 0 ? null : ajouterJours(constateLe, jours)
+            const maj = await tx.commande.updateMany({ where: { id: c.id, etat: 'en_attente_paiement' }, data: { etat: 'confirmee', priseEnChargeAvant, expedieAvant } })
             if (maj.count !== 1) throw new Error('commande_conflit')
             evenements.push(...vente.evenements, await ecrireEvenement(tx, { nom: 'CommandeConfirmee', charge: { commandeId: c.id } }))
             confirmees += 1
