@@ -3,6 +3,7 @@ import type { Acteur } from '@/lib/acces'
 import type { EtatCommande } from './etats'
 import { assuranceRequise } from './expedition-regles'
 import type { SourceLivraison } from './livraison-regles'
+import type { EtatReclamation, MotifReclamation } from './reclamation-regles'
 import { SEUIL_ASSURANCE } from '@/lib/reglages'
 import { alertesDeRetard, type AlerteRetard } from './suivi-equipe-regles'
 
@@ -11,7 +12,7 @@ import { alertesDeRetard, type AlerteRetard } from './suivi-equipe-regles'
 // e-mail, ni nom : l'équipe l'identifie par le numéro de commande) ; aucun montant additionné (le remboursement
 // est lu tel qu'enregistré). Les retards sont calculés à la lecture à partir des échéances stockées.
 
-export type EtatCommandeEquipe = Extract<EtatCommande, 'confirmee' | 'prise_en_charge' | 'expediee' | 'livree' | 'annulee'>
+export type EtatCommandeEquipe = Extract<EtatCommande, 'confirmee' | 'prise_en_charge' | 'expediee' | 'livree' | 'retournee' | 'annulee'>
 
 export type CommandeDeLEquipe = {
   id: string
@@ -38,6 +39,18 @@ export type CommandeDeLEquipe = {
   livrable: boolean
   /** `expediee` : le prix des œuvres dépasse le seuil d'assurance, la preuve de livraison est obligatoire. */
   preuveRequise: boolean
+  /**
+   * Réclamation de l'acheteur (story 8.5) : motif, description et photos, lus de l'équipe seulement (jamais de
+   * l'artiste ni d'un journal) ; décision et motif de refus. null sans réclamation.
+   */
+  reclamation: { motif: MotifReclamation; description: string; etat: EtatReclamation; motifRefus: string | null; decideLe: Date | null; photos: string[] } | null
+  /** `livree` avec une réclamation acceptée : « Retour reçu » proposé. */
+  retournable: boolean
+  /** Réception du retour (`retournee`) ; null avant. */
+  retourRecuLe: Date | null
+  /** Montant de la commande (agrégat de la base des lignes figées), seulement pour une commande `retournable` ; borne du remboursement. */
+  allocationCentimes: number | null
+  devise: string
 }
 
 export type CommandesDeLEquipe = {
@@ -53,6 +66,8 @@ export const LIMITE_A_EXPEDIER = 300
 const LIMITE_EXPEDIEES = 50
 const LIMITE_LIVREES = 50
 const LIMITE_ANNULEES = 50
+const LIMITE_RETOURNEES = 50
+const LIMITE_RECLAMATIONS = 200
 
 /**
  * Commandes payées : `confirmee`, `prise_en_charge`, `expediee` (les plus anciennes en tête) puis les dernières
@@ -79,11 +94,22 @@ export async function commandesDeLEquipe(acteur: Acteur, maintenant: Date = new 
     livraisonSource: true,
     preuveLivraison: true,
     retourAvant: true,
+    retourRecuLe: true,
+    reclamation: {
+      select: {
+        motif: true,
+        description: true,
+        etat: true,
+        motifRefus: true,
+        decideLe: true,
+        photos: { orderBy: [{ createdAt: 'asc' as const }, { id: 'asc' as const }], select: { url: true } },
+      },
+    },
     artist: { select: { name: true } },
     lignes: { orderBy: { createdAt: 'asc' as const }, select: { titre: true } },
     remboursement: { select: { etat: true, montantCentimes: true, devise: true } },
   }
-  const [aExpedier, expediees, livrees, annulees] = await Promise.all([
+  const [aExpedier, expediees, livrees, aTraiter, retournees, annulees] = await Promise.all([
     // À expédier : alertes calculées sur celles-ci ; les expédiées (qui s'accumulent jusqu'à la 8.4) ne les évincent pas.
     prisma.commande.findMany({
       where: { passageId: { not: null }, etat: { in: ['confirmee', 'prise_en_charge'] } },
@@ -103,6 +129,19 @@ export async function commandesDeLEquipe(acteur: Acteur, maintenant: Date = new 
       take: LIMITE_LIVREES,
       select,
     }),
+    // Réclamations à traiter (ouvertes, ou acceptées dont le retour n'est pas encore reçu) : jamais évincées par la limite des livrées.
+    prisma.commande.findMany({
+      where: { passageId: { not: null }, etat: 'livree', reclamation: { is: { etat: { in: ['ouverte', 'acceptee'] } } } },
+      orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+      take: LIMITE_RECLAMATIONS,
+      select,
+    }),
+    prisma.commande.findMany({
+      where: { passageId: { not: null }, etat: 'retournee' },
+      orderBy: [{ retourRecuLe: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }],
+      take: LIMITE_RETOURNEES,
+      select,
+    }),
     prisma.commande.findMany({
       // Annulée après paiement : un remboursement existe ou l'équipe l'a annulée (jamais une simple attente abandonnée).
       where: { passageId: { not: null }, etat: 'annulee', OR: [{ remboursement: { isNot: null } }, { annuleeLe: { not: null } }] },
@@ -118,7 +157,17 @@ export async function commandesDeLEquipe(acteur: Acteur, maintenant: Date = new 
     where: { commandeId: { in: expediees.map((c) => c.id) } },
     _sum: { prixCentimes: true },
   })
-  const commandes = [...aExpedier.slice(0, limiteAExpedier), ...expediees, ...livrees, ...annulees].map((c): CommandeDeLEquipe => {
+  // Les réclamations à traiter d'abord ; une livrée déjà lue plus haut n'est pas répétée.
+  const dejaLues = new Set(aTraiter.map((c) => c.id))
+  const toutes = [...aExpedier.slice(0, limiteAExpedier), ...expediees, ...aTraiter, ...livrees.filter((c) => !dejaLues.has(c.id)), ...retournees, ...annulees]
+  // Montant de la commande (agrégat de la base) pour borner le remboursement d'un retour : jamais additionné ici.
+  const retournables = toutes.filter((c) => c.etat === 'livree' && c.reclamation?.etat === 'acceptee')
+  const allocations = await prisma.ligneCommande.groupBy({
+    by: ['commandeId'],
+    where: { commandeId: { in: retournables.map((c) => c.id) } },
+    _sum: { totalCentimes: true },
+  })
+  const commandes = toutes.map((c): CommandeDeLEquipe => {
     const etat = c.etat as EtatCommandeEquipe
     return {
       id: c.id,
@@ -139,10 +188,24 @@ export async function commandesDeLEquipe(acteur: Acteur, maintenant: Date = new 
       alertes: alertesDeRetard({ etat, priseEnChargeAvant: c.priseEnChargeAvant, expedieAvant: c.expedieAvant }, maintenant),
       annulable: etat === 'confirmee' || etat === 'prise_en_charge',
       livraison:
-        etat === 'livree'
+        etat === 'livree' || etat === 'retournee'
           ? { le: c.livreeLe, source: (c.livraisonSource as SourceLivraison | null) ?? null, preuve: c.preuveLivraison, retourAvant: c.retourAvant }
           : null,
       livrable: etat === 'expediee',
+      reclamation: c.reclamation
+        ? {
+            motif: c.reclamation.motif,
+            description: c.reclamation.description,
+            etat: c.reclamation.etat,
+            motifRefus: c.reclamation.motifRefus,
+            decideLe: c.reclamation.decideLe,
+            photos: c.reclamation.photos.map((p) => p.url),
+          }
+        : null,
+      retournable: etat === 'livree' && c.reclamation?.etat === 'acceptee',
+      retourRecuLe: c.retourRecuLe,
+      allocationCentimes: etat === 'livree' && c.reclamation?.etat === 'acceptee' ? (allocations.find((g) => g.commandeId === c.id)?._sum.totalCentimes ?? 0) : null,
+      devise: c.devise,
       preuveRequise: etat === 'expediee' && assuranceRequise(prixExpediees.find((g) => g.commandeId === c.id)?._sum.prixCentimes, c.devise, SEUIL_ASSURANCE),
     }
   })

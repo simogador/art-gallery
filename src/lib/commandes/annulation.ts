@@ -4,6 +4,7 @@ import type { Acteur } from '@/lib/acces'
 import { libererReservation } from '@/lib/disponibilite'
 import { ecrireEvenement, repartirApresValidation } from '@/lib/evenements'
 import { transitionPermise } from './etats'
+import { montantRemboursable } from './reclamation-regles'
 import { validerMotif, type ErreurMotif } from './suivi-equipe-regles'
 
 // Annulation, remboursement et incidents (story 6.5, FR-13, FR-31, NFR-4). Une commande annulée n'est
@@ -17,25 +18,30 @@ import { validerMotif, type ErreurMotif } from './suivi-equipe-regles'
 
 /**
  * Demande le remboursement d'une commande, une seule fois : relue si elle existe déjà (aucun second
- * remboursement). Le montant est l'allocation de la commande, agrégat de la base.
+ * remboursement). Le montant est l'allocation de la commande, agrégat de la base ; `montantCentimes` (retour reçu,
+ * story 8.5) demande un montant partiel, jamais nul ni au-delà de l'allocation : sinon `refus: 'montant_depasse'` et
+ * rien n'est écrit.
  */
 export async function demanderRemboursement(
   tx: Prisma.TransactionClient,
   commande: { id: string },
   paiementId: string,
   devise: string,
-): Promise<{ id: string | null; montantCentimes: number; nouveau: boolean }> {
+  montantCentimes?: number,
+): Promise<{ id: string | null; montantCentimes: number; nouveau: boolean; refus?: 'montant_depasse' }> {
   const existant = await tx.remboursementCommande.findUnique({ where: { commandeId: commande.id }, select: { id: true, montantCentimes: true } })
   if (existant) return { ...existant, nouveau: false }
   const somme = await tx.ligneCommande.aggregate({ where: { commandeId: commande.id }, _sum: { totalCentimes: true } })
-  const montantCentimes = somme._sum.totalCentimes ?? 0
+  const allocation = somme._sum.totalCentimes ?? 0
+  if (montantCentimes !== undefined && !montantRemboursable(montantCentimes, allocation)) return { id: null, montantCentimes: allocation, nouveau: false, refus: 'montant_depasse' }
+  const montant = montantCentimes ?? allocation
   // Jamais de remboursement de 0 centime (contrainte en base) : l'incident seul en garde la trace.
-  if (montantCentimes <= 0) return { id: null, montantCentimes, nouveau: false }
+  if (montant <= 0) return { id: null, montantCentimes: montant, nouveau: false }
   const cree = await tx.remboursementCommande.create({
-    data: { commandeId: commande.id, paiementId, montantCentimes, devise: devise.toUpperCase() },
+    data: { commandeId: commande.id, paiementId, montantCentimes: montant, devise: devise.toUpperCase() },
     select: { id: true },
   })
-  return { id: cree.id, montantCentimes, nouveau: true }
+  return { id: cree.id, montantCentimes: montant, nouveau: true }
 }
 
 /**

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { abandonnerConfirmationPrevenir, preparerConfirmationPrevenir, retirerInscriptionsPrevenirSiSortie } from '@/lib/demandes'
-import { lireDonneesCourrielCommande, lireNumeroCommandeAvecPassage } from '@/lib/commandes/courriels'
+import { lireDonneesCourrielCommande, lireNumeroCommandeAvecPassage, lireReclamationPourCourriel } from '@/lib/commandes/courriels'
 import { abandonnerLienSuivi, emettreLienSuiviDeCommande } from '@/lib/commandes/suivi'
 import { abandonnerLienVenteAssistee, preparerLienVenteAssistee } from '@/lib/commandes/vente-assistee'
 import { emettreLienInvitation, noterEnvoiInvitation } from '@/lib/acces/lien-invitation'
@@ -21,6 +21,10 @@ import {
   contenuCommandeLivree,
   contenuAlerteDemande,
   contenuAlerteVisite,
+  contenuAlerteReclamation,
+  contenuReclamationAcceptee,
+  contenuReclamationRefusee,
+  contenuRetourAccepteArtiste,
   contenuConfirmationPrevenir,
   contenuInvitation,
   contenuOeuvreRenvoyee,
@@ -274,9 +278,9 @@ export async function envoyerLienVenteAssistee(evenement: EvenementLuA<'VenteAss
   }
 }
 
-type EvenementCommande = EvenementLuA<'CommandeConfirmee'> | EvenementLuA<'CommandeAnnulee'> | EvenementLuA<'CommandePriseEnCharge'> | EvenementLuA<'CommandeExpediee'> | EvenementLuA<'CommandeLivree'>
+type EvenementCommande = { id: string; charge: { commandeId: string } }
 /** Une commande confirmée reste « confirmée » pour ses e-mails si l'artiste l'a déjà prise en charge (8.1). */
-const CONFIRMEE_OU_PRISE = ['confirmee', 'prise_en_charge', 'expediee', 'livree'] as const
+const CONFIRMEE_OU_PRISE = ['confirmee', 'prise_en_charge', 'expediee', 'livree', 'retournee'] as const
 
 type DonneesCommande = NonNullable<Awaited<ReturnType<typeof lireDonneesCourrielCommande>>>
 
@@ -290,7 +294,7 @@ async function envoyerCommande(
   evenement: EvenementCommande,
   nom: string,
   // États acceptés : une commande confirmée peut déjà être prise en charge par l'artiste à l'envoi (story 8.1).
-  etatsAcceptes: readonly ('confirmee' | 'annulee' | 'prise_en_charge' | 'expediee' | 'livree')[],
+  etatsAcceptes: readonly ('confirmee' | 'annulee' | 'prise_en_charge' | 'expediee' | 'livree' | 'retournee')[],
   composer: (d: DonneesCommande, lienSuivi: string | null) => { a: string; contenu: Contenu } | null,
   // `suivi` : e-mail à l'acheteur, qui porte un lien de suivi émis à l'envoi (story 7.7, AD-14).
   options: { suivi?: boolean; lienSeulementSiCommandeVivante?: boolean } = {},
@@ -376,7 +380,7 @@ export async function envoyerPriseEnChargeCommande(evenement: EvenementLuA<'Comm
   await envoyerCommande(
     evenement,
     'envoyerPriseEnChargeCommande',
-    ['prise_en_charge', 'expediee', 'livree'],
+    ['prise_en_charge', 'expediee', 'livree', 'retournee'],
     (d, lienSuivi) => ({
       a: d.acheteur.email,
       contenu: contenuCommandePriseEnCharge({ nom: d.acheteur.nom, numero: d.numero, artiste: d.artiste?.nom ?? null, lignes: d.lignes, lienSuivi }),
@@ -390,7 +394,7 @@ export async function envoyerExpeditionCommande(evenement: EvenementLuA<'Command
   await envoyerCommande(
     evenement,
     'envoyerExpeditionCommande',
-    ['expediee', 'livree'],
+    ['expediee', 'livree', 'retournee'],
     (d, lienSuivi) => ({
       a: d.acheteur.email,
       contenu: contenuCommandeExpediee({ nom: d.acheteur.nom, numero: d.numero, artiste: d.artiste?.nom ?? null, titres: d.lignes.map((l) => l.titre), expedition: d.expedition, lienSuivi }),
@@ -404,7 +408,7 @@ export async function envoyerLivraisonCommande(evenement: EvenementLuA<'Commande
   await envoyerCommande(
     evenement,
     'envoyerLivraisonCommande',
-    ['livree'],
+    ['livree', 'retournee'],
     (d, lienSuivi) => ({
       a: d.acheteur.email,
       contenu: contenuCommandeLivree({ nom: d.acheteur.nom, numero: d.numero, artiste: d.artiste?.nom ?? null, titres: d.lignes.map((l) => l.titre), lienSuivi }),
@@ -459,4 +463,59 @@ export async function alerterEquipeCommande(evenement: EvenementLuA<'CommandeCon
   if (!resultat.ok) {
     console.error('[notifications] alerte de commande non envoyée', { evenement: evenement.id, commande: commandeId, code: resultat.code })
   }
+}
+
+/** Réclamation déposée (story 8.5) : alerte à l'équipe, numéro et lien seulement (ni nom, ni description, ni photo). */
+export async function alerterEquipeReclamation(evenement: EvenementLuA<'ReclamationOuverte'>): Promise<void> {
+  const reclamation = await lireReclamationPourCourriel(evenement.charge.reclamationId)
+  if (!reclamation) {
+    console.info('[notifications] réclamation sans objet, aucune alerte', { evenement: evenement.id, reclamation: evenement.charge.reclamationId })
+    return
+  }
+  const contenu = contenuAlerteReclamation({ numero: reclamation.numero, lien: urlAbsolue('/dashboard/admin/commandes') })
+  const resultat = await envoyer({ a: CONTACT_EQUIPE, ...contenu, cle: `${evenement.id}:alerterEquipeReclamation` })
+  if (!resultat.ok) {
+    console.error('[notifications] alerte de réclamation non envoyée', { evenement: evenement.id, reclamation: evenement.charge.reclamationId, code: resultat.code })
+  }
+}
+
+/**
+ * Réclamation décidée (story 8.5) : e-mail à l'acheteur, état relu en base à l'envoi (une réclamation encore ouverte
+ * n'envoie rien). Acceptée : l'équipe écrira pour la suite, sans remboursement, délai ni frais promis (OQ-2, OQ-4).
+ * Refusée : le motif de l'équipe, qu'il lit aussi sur `/suivi`. Lien de suivi émis à l'envoi.
+ */
+export async function envoyerDecisionReclamation(evenement: EvenementLuA<'ReclamationTraitee'>): Promise<void> {
+  const reclamation = await lireReclamationPourCourriel(evenement.charge.reclamationId)
+  if (!reclamation || reclamation.etat === 'ouverte') {
+    console.info('[notifications] réclamation sans objet, aucun e-mail', { evenement: evenement.id, reclamation: evenement.charge.reclamationId })
+    return
+  }
+  await envoyerCommande(
+    { id: evenement.id, charge: { commandeId: reclamation.commandeId } },
+    'envoyerDecisionReclamation',
+    ['livree', 'retournee'],
+    (d, lienSuivi) => ({
+      a: d.acheteur.email,
+      contenu:
+        reclamation.etat === 'acceptee'
+          ? contenuReclamationAcceptee({ nom: d.acheteur.nom, numero: d.numero, titres: d.lignes.map((l) => l.titre), lienSuivi })
+          : contenuReclamationRefusee({ nom: d.acheteur.nom, numero: d.numero, titres: d.lignes.map((l) => l.titre), motif: reclamation.motifRefus ?? '', lienSuivi }),
+    }),
+    { suivi: true },
+  )
+}
+
+/** Retour accepté (story 8.5, décision 5A) : e-mail à l'artiste, numéro et titres seulement (ni coordonnées ni photos de l'acheteur). */
+export async function envoyerRetourAccepteArtiste(evenement: EvenementLuA<'ReclamationTraitee'>): Promise<void> {
+  const reclamation = await lireReclamationPourCourriel(evenement.charge.reclamationId)
+  if (!reclamation || reclamation.etat !== 'acceptee') {
+    console.info('[notifications] aucun retour accepté, aucun e-mail à l\'artiste', { evenement: evenement.id, reclamation: evenement.charge.reclamationId })
+    return
+  }
+  await envoyerCommande(
+    { id: evenement.id, charge: { commandeId: reclamation.commandeId } },
+    'envoyerRetourAccepteArtiste',
+    ['livree', 'retournee'],
+    (d) => (d.artiste?.email ? { a: d.artiste.email, contenu: contenuRetourAccepteArtiste({ artiste: d.artiste.nom, numero: d.numero, titres: d.lignes.map((l) => l.titre) }) } : null),
+  )
 }

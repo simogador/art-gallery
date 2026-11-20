@@ -4,6 +4,9 @@
 
 export {
   alerterEquipeCommande,
+  alerterEquipeReclamation,
+  envoyerDecisionReclamation,
+  envoyerRetourAccepteArtiste,
   alerterEquipeDemande,
   alerterEquipeVisite,
   envoyerAccuseDemande,

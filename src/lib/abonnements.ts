@@ -98,6 +98,14 @@ export const ABONNEMENTS: { [N in NomEvenement]: Abonnement<N>[] } = {
   CommandeExpediee: [{ nom: 'envoyerExpeditionCommande', gestionnaire: via('envoyerExpeditionCommande') }],
   // Story 8.4 : l'acheteur apprend que la livraison est constatée (lien de suivi émis à l'envoi).
   CommandeLivree: [{ nom: 'envoyerLivraisonCommande', gestionnaire: via('envoyerLivraisonCommande') }],
+  // Story 8.5 : l'équipe est alertée d'une réclamation ; l'acheteur (et l'artiste si le retour est accepté) apprend la décision.
+  ReclamationOuverte: [{ nom: 'alerterEquipeReclamation', gestionnaire: via('alerterEquipeReclamation') }],
+  ReclamationTraitee: [
+    { nom: 'envoyerDecisionReclamation', gestionnaire: via('envoyerDecisionReclamation') },
+    { nom: 'envoyerRetourAccepteArtiste', gestionnaire: via('envoyerRetourAccepteArtiste') },
+  ],
+  // Story 8.5 : le retour reçu est seulement relaté au journal (le remboursement est tracé par la 8.6).
+  CommandeRetournee: [],
   // Story 6.6 : la commande en attente de la réservation interrompue est annulée (état relu en base, incident écrit).
   ReservationAnnulee: [{ nom: 'annulerSuiteReservationAnnulee', gestionnaire: viaCommandes('annulerSuiteReservationAnnulee') }],
 }

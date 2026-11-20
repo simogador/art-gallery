@@ -5,8 +5,8 @@
 // dates seulement, jamais de montant. Story 8.1 : étape « Prise en charge par l'artiste », faite et datée (date
 // lue en base) entre le paiement et la livraison. Story 8.2 : étape « Expédiée » (date, transporteur, numéro de suivi) ; story 8.4 : étape « Livrée » (date de la livraison constatée) à la place de la livraison prévue.
 
-export type EtatCommandeSuivi = 'confirmee' | 'prise_en_charge' | 'expediee' | 'livree' | 'en_attente_paiement' | 'annulee'
-export type CleEtape = 'recue' | 'paiement' | 'prise_en_charge' | 'expediee' | 'livraison' | 'livree' | 'annulee'
+export type EtatCommandeSuivi = 'confirmee' | 'prise_en_charge' | 'expediee' | 'livree' | 'retournee' | 'en_attente_paiement' | 'annulee'
+export type CleEtape = 'recue' | 'paiement' | 'prise_en_charge' | 'expediee' | 'livraison' | 'livree' | 'retournee' | 'annulee'
 
 export type EtapeSuivi = {
   cle: CleEtape
@@ -50,13 +50,16 @@ export function construireFrise(p: {
   numeroSuivi?: string | null
   /** Livraison constatée (8.4), lue en base ; absente sauf pour `livree`. */
   livreeLe?: Date | null
+  /** Réception du retour par l'équipe (8.5), lue en base ; absente sauf pour `retournee`. */
+  retourRecuLe?: Date | null
 }): EtapeSuivi[] {
   const recue: EtapeSuivi = { cle: 'recue', faite: true, date: p.creeeLe, fin: null }
   if (p.etat === 'annulee') {
     const annulee: EtapeSuivi = { cle: 'annulee', faite: true, date: null, fin: null }
     return p.constateLe ? [recue, { cle: 'paiement', faite: true, date: p.constateLe, fin: null }, annulee] : [recue, annulee]
   }
-  const livree = p.etat === 'livree'
+  const retournee = p.etat === 'retournee'
+  const livree = p.etat === 'livree' || retournee
   const expediee = p.etat === 'expediee' || livree
   const priseEnCharge = p.etat === 'prise_en_charge' || expediee
   const confirmee = p.etat === 'confirmee' || priseEnCharge
@@ -86,5 +89,7 @@ export function construireFrise(p: {
         }]
       : []),
     etapeLivraison,
+    // Retournée (8.5) : l'œuvre est revenue, étape faite et datée par la réception du retour.
+    ...(retournee ? [{ cle: 'retournee' as const, faite: true, date: p.retourRecuLe ?? null, fin: null }] : []),
   ]
 }

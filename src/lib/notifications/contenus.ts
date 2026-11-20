@@ -371,8 +371,58 @@ export function contenuCommandeLivree(p: {
     sujet: t.sujet(p.numero),
     nom: p.nom,
     intro: [artiste ? t.intro(p.numero, artiste) : t.introSansArtiste(p.numero), ...p.titres.map((titre) => t.ligne(titre))],
+    // Levée de la décision 4A de la story 8.4 : « Signaler un problème » mène à la page de suivi (lien émis à l'envoi).
+    suite: p.lienSuivi ? [t.suite, t.signaler] : [t.suite],
+    ...(p.lienSuivi ? { bouton: { libelle: t.boutonSignaler, lien: p.lienSuivi } } : {}),
+    ...(p.lienSuivi ? { lienSecondaire: { intro: fr.courriels.commande.suivi.intro, lien: p.lienSuivi } } : {}),
+  })
+}
+
+/** Réclamation acceptée (story 8.5) : l'équipe écrira pour la suite ; aucun remboursement, délai ni frais promis. */
+export function contenuReclamationAcceptee(p: { nom: string; numero: string; titres: string[]; lienSuivi?: string | null }): Contenu {
+  const t = fr.courriels.commande.reclamationAcceptee
+  return assembler({
+    sujet: t.sujet(p.numero),
+    nom: p.nom,
+    intro: [t.intro(p.numero), ...p.titres.map((titre) => t.ligne(titre))],
     suite: [t.suite],
     ...(p.lienSuivi ? { lienSecondaire: { intro: fr.courriels.commande.suivi.intro, lien: p.lienSuivi } } : {}),
+  })
+}
+
+/** Réclamation refusée (story 8.5) : le motif écrit par l'équipe, que l'acheteur lit aussi sur sa page de suivi. */
+export function contenuReclamationRefusee(p: { nom: string; numero: string; titres: string[]; motif: string; lienSuivi?: string | null }): Contenu {
+  const t = fr.courriels.commande.reclamationRefusee
+  return assembler({
+    sujet: t.sujet(p.numero),
+    nom: p.nom,
+    intro: [t.intro(p.numero), ...p.titres.map((titre) => t.ligne(titre))],
+    ...(p.motif.trim() !== '' ? { citation: { titre: t.messageEquipe, texte: p.motif } } : {}),
+    suite: [t.suite],
+    ...(p.lienSuivi ? { lienSecondaire: { intro: fr.courriels.commande.suivi.intro, lien: p.lienSuivi } } : {}),
+  })
+}
+
+/** Retour accepté, à l'artiste (story 8.5, décision 5A) : numéro et titres, jamais de coordonnées ni de photos de l'acheteur. */
+export function contenuRetourAccepteArtiste(p: { artiste: string; numero: string; titres: string[] }): Contenu {
+  const t = fr.courriels.commande.retourArtiste
+  return assembler({
+    sujet: t.sujet(p.numero),
+    nom: p.artiste,
+    intro: [t.intro(p.numero), ...p.titres.map((titre) => t.ligne(titre))],
+    suite: [t.suite],
+  })
+}
+
+/** Alerte à l'équipe pour une réclamation déposée (story 8.5) : numéro et lien, aucune donnée de l'acheteur. */
+export function contenuAlerteReclamation(p: { numero: string; lien: string }): Contenu {
+  const t = fr.courriels.commande.alerteReclamation
+  return assembler({
+    sujet: t.sujet(p.numero),
+    intro: [t.intro(p.numero)],
+    bouton: { libelle: t.bouton, lien: p.lien },
+    suite: [t.suite],
+    sansConseil: true,
   })
 }
 

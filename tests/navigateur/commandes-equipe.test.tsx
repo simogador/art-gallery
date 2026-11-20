@@ -11,6 +11,9 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => refresh()
 vi.mock('@/app/dashboard/admin/commandes/actions', () => ({
   actionAnnulerParLEquipe: (...a: unknown[]) => actionAnnulerParLEquipe(...a),
   actionEnregistrerLivraison: vi.fn(),
+  actionAccepterReclamation: vi.fn(),
+  actionRefuserReclamation: vi.fn(),
+  actionRetourRecu: vi.fn(),
 }))
 
 const { CommandesEquipe } = await import('@/app/dashboard/admin/commandes/CommandesEquipe')
@@ -40,6 +43,10 @@ const vue = (surcharge = {}) => ({
   livraisonSource: null,
   preuveLivraison: null,
   retourAvant: null,
+  reclamation: null,
+  retournable: false,
+  montantCommande: null,
+  retourRecuLe: null,
   ...surcharge,
 })
 const AUCUNE = { priseEnCharge: [], expedition: [] }

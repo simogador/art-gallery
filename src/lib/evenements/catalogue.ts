@@ -27,6 +27,9 @@ export type ChargePaiement = { paiementId: string }
 /** Commande confirmée (story 6.4) : ids seulement. */
 export type ChargeCommande = { commandeId: string }
 
+/** Réclamation d'un acheteur (story 8.5) : motif, description et décision lus en base à l'envoi, jamais portés ici. */
+export type ChargeReclamation = { reclamationId: string }
+
 /** Réservation annulée par la déclaration de l'artiste (story 6.6) : ids seulement. */
 export type ChargeReservationAnnulee = { passageId: string; artworkId: string }
 
@@ -48,6 +51,9 @@ export const VERSIONS_EVENEMENTS = {
   CommandePriseEnCharge: 1,
   CommandeExpediee: 1,
   CommandeLivree: 1,
+  ReclamationOuverte: 1,
+  ReclamationTraitee: 1,
+  CommandeRetournee: 1,
 } as const
 
 export type NomEvenement = keyof typeof VERSIONS_EVENEMENTS
@@ -80,6 +86,12 @@ export type ChargesEvenements = {
   CommandeExpediee: ChargeCommande
   /** Livraison constatée (story 8.4) : déclenche l'e-mail « Livraison » à l'acheteur. */
   CommandeLivree: ChargeCommande
+  /** Réclamation déposée par l'acheteur (story 8.5) : alerte l'équipe (numéro et lien seulement). */
+  ReclamationOuverte: ChargeReclamation
+  /** Réclamation acceptée ou refusée par l'équipe (story 8.5) : l'acheteur est prévenu, l'artiste si le retour est accepté. */
+  ReclamationTraitee: ChargeReclamation
+  /** Retour de l'œuvre reçu par l'équipe (story 8.5) : relate seulement (remboursement : story 8.6). */
+  CommandeRetournee: ChargeCommande
 }
 
 export type EvenementA<N extends NomEvenement> = { nom: N; charge: ChargesEvenements[N] }
@@ -115,6 +127,9 @@ const CLES_CHARGES: { [N in NomEvenement]: readonly (keyof ChargesEvenements[N])
   CommandePriseEnCharge: ['commandeId'],
   CommandeExpediee: ['commandeId'],
   CommandeLivree: ['commandeId'],
+  ReclamationOuverte: ['reclamationId'],
+  ReclamationTraitee: ['reclamationId'],
+  CommandeRetournee: ['commandeId'],
 }
 
 function chargeConforme(nom: NomEvenement, charge: unknown): boolean {

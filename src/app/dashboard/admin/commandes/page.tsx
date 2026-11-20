@@ -70,6 +70,19 @@ export default async function AdminCommandesPage() {
               livraisonSource: c.livraison?.source ? ce.livraison.sourcesConstat[c.livraison.source] : null,
               preuveLivraison: c.livraison?.preuve ?? null,
               retourAvant: c.livraison ? quand(c.livraison.retourAvant) : null,
+              reclamation: c.reclamation
+                ? {
+                    motif: ce.reclamation.motifs[c.reclamation.motif],
+                    description: c.reclamation.description,
+                    etat: c.reclamation.etat,
+                    motifRefus: c.reclamation.motifRefus,
+                    decideLe: c.reclamation.decideLe ? quand(c.reclamation.decideLe) : null,
+                    photos: c.reclamation.photos,
+                  }
+                : null,
+              retournable: c.retournable,
+              montantCommande: c.allocationCentimes === null ? null : formaterMontant(c.allocationCentimes, c.devise),
+              retourRecuLe: c.retourRecuLe ? quand(c.retourRecuLe) : null,
             }))}
           />
         ) : (

@@ -181,9 +181,11 @@ describe('sans base : règles, dictionnaire, code', () => {
     expect(cibles.length).toBeGreaterThan(6)
     const addition = /\.reduce\(|\bsum\(|\+=|\b(prix|frais|total)\w*\s*\+|\+\s*\w*\.?(prix|frais|total)/i
     const prestataire = /stripe|paypal|mollie|adyen|payplug|square|braintree|lemonway|session_id|<form|<input|<iframe/i
+    // Story 8.5 : le formulaire « Signaler un problème » (composant client) est le seul à porter des champs de saisie.
+    const sansChamps = /stripe|paypal|mollie|adyen|payplug|square|braintree|lemonway|session_id|<iframe/i
     for (const f of cibles) {
       const lignes = readFileSync(f, 'utf8').split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
-      expect(lignes.filter((l) => prestataire.test(l)), f).toEqual([])
+      expect(lignes.filter((l) => (f.endsWith('SignalerProbleme.tsx') ? sansChamps : prestataire).test(l)), f).toEqual([])
       expect(lignes.filter((l) => addition.test(l)), f).toEqual([])
       if (f.includes(`${path.sep}app${path.sep}`)) expect(lignes.filter((l) => /@\/lib\/prisma|@\/generated|@prisma/.test(l)), f).toEqual([])
     }
@@ -203,10 +205,14 @@ describe('sans base : règles, dictionnaire, code', () => {
 
   it('dictionnaire : aucune promesse de délai de retour ou de remboursement, aucun compte, pas de mots interdits', () => {
     const json = JSON.stringify(fr.suivi)
+    // Story 8.5 : l'état d'un remboursement demandé ou effectué (sans montant ni délai) est dit après un retour ; hors de ce bloc, une seule mention.
+    const { remboursement: _etatRemboursement, ...reclamationSansRemboursement } = fr.suivi.reclamation
+    const sansEtatRemboursement = JSON.stringify({ ...fr.suivi, reclamation: reclamationSansRemboursement })
+    expect(JSON.stringify(fr.suivi.reclamation.remboursement)).not.toMatch(/\d|jours|gratuit|garantie|sous /i)
     expect(json).not.toMatch(/garantie|gratuit|compte à rebours|créer un compte|inscri|devise|langue|r[ée]servation|disponibilit/i)
     // Le remboursement n'est évoqué que pour renvoyer vers l'équipe, sans délai ni promesse.
     expect(fr.suivi.frise.annuleePayee).toBe('Cette commande a été annulée. Écrivez-nous au sujet du remboursement.')
-    expect(json.match(/rembours/gi)).toHaveLength(1)
+    expect(sansEtatRemboursement.match(/rembours/gi)).toHaveLength(1)
     expect(fr.suivi.inactif.texte).toBe('Ce lien de suivi n’est plus actif : la commande est close.')
     expect(JSON.stringify(fr.courriels.commande.suivi)).not.toMatch(/rembours|garantie|jours/i)
   })
