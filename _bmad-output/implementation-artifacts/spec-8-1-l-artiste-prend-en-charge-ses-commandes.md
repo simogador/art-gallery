@@ -2,7 +2,7 @@
 title: 'Story 8.1 — L''artiste prend en charge ses commandes'
 type: 'feature'
 created: '2026-11-19'
-status: 'in-review'
+status: 'done'
 baseline_commit: '132faa619ba5731238e7bda3f435116608a49826'
 route: 'dispatch'
 review_loop_iteration: 0
