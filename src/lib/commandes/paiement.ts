@@ -4,6 +4,7 @@ import type { Acteur } from '@/lib/acces'
 import { vendreOeuvresDuPassage } from '@/lib/disponibilite'
 import { ecrireEvenement, repartirApresValidation } from '@/lib/evenements'
 import { MONTANT_MAX_CENTIMES, type FaitPaiementConstate } from '@/lib/paiement'
+import { DUREE_PRISE_EN_CHARGE_HEURES } from '@/lib/reglages'
 import { annulerEnAttente, demanderRemboursement } from './annulation'
 import { transitionPermise } from './etats'
 
@@ -159,7 +160,9 @@ export async function traiterPaiementConstate(acteur: Acteur, fait: FaitPaiement
         else {
           const vente = await vendreOeuvresDuPassage(fait.passageId, artworkIds, tx, constateLe)
           if (vente.ok) {
-            const maj = await tx.commande.updateMany({ where: { id: c.id, etat: 'en_attente_paiement' }, data: { etat: 'confirmee' } })
+            // Story 8.1 : l'échéance de prise en charge par l'artiste part du constat (stockée, AD-10).
+            const priseEnChargeAvant = new Date(constateLe.getTime() + DUREE_PRISE_EN_CHARGE_HEURES * 3_600_000)
+            const maj = await tx.commande.updateMany({ where: { id: c.id, etat: 'en_attente_paiement' }, data: { etat: 'confirmee', priseEnChargeAvant } })
             if (maj.count !== 1) throw new Error('commande_conflit')
             evenements.push(...vente.evenements, await ecrireEvenement(tx, { nom: 'CommandeConfirmee', charge: { commandeId: c.id } }))
             confirmees += 1

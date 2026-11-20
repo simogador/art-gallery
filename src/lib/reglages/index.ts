@@ -144,6 +144,10 @@ export const LIMITES_RESERVATION_VENTE_ASSISTEE_HEURES = { min: 1, max: 336 } as
 // l'équipe (sans balayage avant la story 6.7) ; l'expiration de la réservation n'annule jamais la commande.
 export const DUREE_ABANDON_COMMANDE_JOURS = 7
 
+// Prise en charge d'une commande par l'artiste (story 8.1, FR-22, hypothèse du PRD) : échéance posée à la
+// confirmation (date du constat + cette durée), stockée sur la commande ; « dépassée » se calcule à la lecture.
+export const DUREE_PRISE_EN_CHARGE_HEURES = 48
+
 // Lien de suivi des commandes d'un acheteur sans compte (story 7.7, décision 2A) : valable un an à compter
 // de son émission (réduisible plus tard) ; non consommé par l'échange.
 export const DUREE_SUIVI_JOURS = 365

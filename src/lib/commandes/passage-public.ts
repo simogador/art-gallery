@@ -80,7 +80,8 @@ async function annulerPassageDansTx(
 ): Promise<{ ok: true; evenements: string[]; effet: boolean } | { ok: false; code: 'etat_invalide' }> {
   await tx.$queryRaw`SELECT "id" FROM "PassageEnCaisse" WHERE "id" = ${passageId} FOR UPDATE`
   const commandes = await tx.commande.findMany({ where: { passageId }, select: { etat: true } })
-  if (commandes.some((c) => c.etat === 'confirmee' || c.etat === 'historique')) return { ok: false, code: 'etat_invalide' }
+  // Confirmée, prise en charge (8.1) ou historique : rien n'est annulé.
+  if (commandes.some((c) => c.etat !== 'en_attente_paiement' && c.etat !== 'annulee')) return { ok: false, code: 'etat_invalide' }
   if (!transitionPermise('en_attente_paiement', 'annulee')) throw new Error('transition_interdite')
   const maj = await tx.commande.updateMany({ where: { passageId, etat: 'en_attente_paiement' }, data: { etat: 'annulee' } })
   const liberation = await libererReservation(passageId, { issue: 'liberee', maintenant }, tx)

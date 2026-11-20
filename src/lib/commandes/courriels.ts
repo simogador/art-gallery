@@ -22,6 +22,10 @@ export type DonneesCourrielCommande = {
   artiste: { nom: string; email: string | null } | null
   /** État du remboursement demandé, absent si aucun (annulation sans paiement reçu). */
   remboursement: 'demande' | 'effectue' | null
+  /** Échéance de prise en charge par l'artiste (story 8.1), posée à la confirmation ; null avant. */
+  priseEnChargeAvant: Date | null
+  /** Code ISO du pays de livraison du passage. */
+  pays: string | null
 }
 
 export async function lireDonneesCourrielCommande(commandeId: string): Promise<DonneesCourrielCommande | null> {
@@ -31,7 +35,8 @@ export async function lireDonneesCourrielCommande(commandeId: string): Promise<D
       numero: true,
       etat: true,
       passageId: true,
-      passage: { select: { coordonnees: { select: { email: true, nom: true } } } },
+      priseEnChargeAvant: true,
+      passage: { select: { paysLivraison: true, coordonnees: { select: { email: true, nom: true } } } },
       artist: { select: { name: true, user: { select: { email: true } } } },
       remboursement: { select: { etat: true } },
       lignes: {
@@ -49,6 +54,8 @@ export async function lireDonneesCourrielCommande(commandeId: string): Promise<D
     acheteur: { email: coordonnees.email, nom: coordonnees.nom },
     artiste: commande.artist ? { nom: commande.artist.name, email: commande.artist.user?.email ?? null } : null,
     remboursement: commande.remboursement ? (commande.remboursement.etat === 'effectue' ? 'effectue' : 'demande') : null,
+    priseEnChargeAvant: commande.priseEnChargeAvant,
+    pays: commande.passage?.paysLivraison ?? null,
   }
 }
 

@@ -615,11 +615,17 @@ export type Dictionnaire = {
     readonly commande: (numero: string) => string
     readonly artiste: (nom: string) => string
     readonly delai: (min: number, max: number) => string
-    readonly etats: { readonly confirmee: string; readonly enAttente: string; readonly annulee: string }
+    readonly etats: { readonly confirmee: string; readonly priseEnCharge: string; readonly enAttente: string; readonly annulee: string }
     readonly attente: string
     readonly frise: {
       readonly titre: string
-      readonly etapes: { readonly recue: string; readonly paiement: string; readonly livraison: string; readonly annulee: string }
+      readonly etapes: {
+        readonly recue: string
+        readonly paiement: string
+        readonly prise_en_charge: string
+        readonly livraison: string
+        readonly annulee: string
+      }
       readonly faite: (date: string | null) => string
       readonly aVenir: string
       readonly prevue: (du: string, au: string | null) => string
@@ -752,6 +758,47 @@ export type Dictionnaire = {
       readonly telephoneInvalide: string
     }
   }
+  /** Commandes de l'espace artiste (story 8.1, FR-22, AD-16) : accueil, liste et page d'une commande. */
+  readonly commandesArtiste: {
+    readonly titreDocument: string
+    readonly titreDocumentCommande: (numero: string) => string
+    readonly surtitre: string
+    readonly titre: string
+    readonly vide: string
+    readonly commande: (numero: string) => string
+    readonly acheteur: (prenom: string, pays: string) => string
+    readonly etats: { readonly aPrendre: string; readonly prise: string }
+    readonly avant: string
+    readonly sansEcheance: string
+    readonly depassee: string
+    readonly priseLe: string
+    readonly retour: string
+    readonly oeuvres: string
+    readonly acheteurTitre: string
+    readonly prenom: string
+    readonly pays: string
+    readonly echeanceTitre: string
+    readonly zoneNeutre: { readonly titre: string; readonly etiquette: string; readonly texte: string }
+    readonly livraison: { readonly titre: string; readonly adresse: string; readonly telephone: string; readonly nonRenseigne: string; readonly adresseAttendue: string }
+    readonly action: {
+      readonly prendre: string
+      readonly question: string
+      readonly confirmer: string
+      readonly annuler: string
+      readonly enCours: string
+      readonly reussi: string
+      readonly deja: string
+      readonly erreurs: { readonly introuvable: string; readonly etatInvalide: string; readonly accesRefuse: string; readonly indisponible: string }
+    }
+    readonly guide: { readonly titre: string; readonly points: readonly string[] }
+    readonly bloc: {
+      readonly titre: string
+      readonly badge: (n: number) => string
+      readonly aPrendre: (n: number) => string
+      readonly aucuneAPrendre: string
+      readonly toutVoir: string
+    }
+  }
   /** Page `/galerie/[id]/prevenir` : « Me prévenir » sur une œuvre réservée (story 4.5, FR-9). */
   readonly prevenir: {
     readonly titre: string
@@ -874,6 +921,18 @@ export type Dictionnaire = {
       readonly artiste: {
         readonly sujet: (numero: string) => string
         readonly intro: (numero: string) => string
+        readonly ligne: (titre: string) => string
+        readonly pays: (pays: string) => string
+        /** Échéance de prise en charge, écrite en heure de Paris (story 8.1, décision 3A). */
+        readonly echeance: (date: string) => string
+        readonly bouton: string
+        readonly suite: string
+      }
+      /** E-mail « Prise en charge » à l'acheteur (story 8.1) : l'artiste prépare l'œuvre, délai rappelé. */
+      readonly priseEnCharge: {
+        readonly sujet: (numero: string) => string
+        readonly intro: (numero: string, artiste: string) => string
+        readonly introSansArtiste: (numero: string) => string
         readonly ligne: (titre: string) => string
         readonly suite: string
       }
@@ -1369,6 +1428,65 @@ export const fr = {
       telephoneInvalide: 'Indiquez un numéro de téléphone valide, ou laissez le champ vide.',
     },
   },
+  // Story 8.1 : commandes de l'espace artiste. Adresse et téléphone de l'acheteur seulement après la prise en
+  // charge (AD-16) ; échéance en heure fixe, sans décompte. Guide d'emballage : décision 2A, à relire.
+  commandesArtiste: {
+    titreDocument: 'Commandes — Espace artiste Errancy',
+    titreDocumentCommande: (numero: string) => `Commande ${numero} — Espace artiste Errancy`,
+    surtitre: 'Espace artiste',
+    titre: 'Commandes',
+    vide: 'Aucune commande à préparer pour le moment. Les commandes de vos œuvres apparaîtront ici dès leur confirmation.',
+    commande: (numero: string) => `Commande ${numero}`,
+    acheteur: (prenom: string, pays: string) => (pays ? `Pour ${prenom}, livraison : ${pays}` : `Pour ${prenom}`),
+    etats: { aPrendre: 'À prendre en charge', prise: 'Prise en charge' },
+    avant: 'À prendre en charge avant le',
+    sansEcheance: 'À prendre en charge dès que possible.',
+    depassee: 'Échéance dépassée : vous pouvez encore la prendre en charge.',
+    priseLe: 'Prise en charge le',
+    retour: 'Toutes les commandes',
+    oeuvres: 'Œuvres',
+    acheteurTitre: 'Acheteur',
+    prenom: 'Prénom',
+    pays: 'Pays de livraison',
+    echeanceTitre: 'Échéance',
+    zoneNeutre: {
+      titre: 'Adresse de livraison',
+      etiquette: 'Adresse et téléphone masqués',
+      texte: 'L’adresse de livraison et le téléphone de l’acheteur s’affichent ici dès que vous prenez la commande en charge.',
+    },
+    livraison: { titre: 'Adresse de livraison', adresse: 'Adresse', telephone: 'Téléphone', nonRenseigne: 'Non renseigné', adresseAttendue: 'Adresse non encore transmise : l’équipe Errancy vous la communique.' },
+    action: {
+      prendre: 'Je prends en charge',
+      question: 'En prenant cette commande en charge, vous vous engagez à préparer et expédier l’œuvre dans le délai de préparation que vous avez déclaré. Confirmer ?',
+      confirmer: 'Confirmer la prise en charge',
+      annuler: 'Annuler',
+      enCours: 'Enregistrement…',
+      reussi: 'Commande prise en charge : l’adresse de livraison s’affiche ci-dessous.',
+      deja: 'Cette commande est déjà prise en charge.',
+      erreurs: {
+        introuvable: 'Cette commande n’est pas accessible.',
+        etatInvalide: 'Cette commande ne peut pas être prise en charge.',
+        accesRefuse: 'Cette action est réservée à l’artiste de la commande.',
+        indisponible: 'La prise en charge n’a pas pu être enregistrée. Réessayez dans un instant.',
+      },
+    },
+    guide: {
+      titre: 'Avant d’emballer',
+      points: [
+        'Emballez l’œuvre avec soin, conformément à votre engagement au dépôt.',
+        'Protégez les angles et la surface, calez l’œuvre pour qu’elle ne bouge pas dans le colis.',
+        'Gardez une photo de l’œuvre emballée avant de fermer le colis.',
+        'Une question sur l’emballage ou l’expédition ? Écrivez à l’équipe Errancy.',
+      ],
+    },
+    bloc: {
+      titre: 'À expédier',
+      badge: (n: number) => `${n} commande${n > 1 ? 's' : ''} à prendre en charge`,
+      aPrendre: (n: number) => `${n} commande${n > 1 ? 's' : ''} à prendre en charge.`,
+      aucuneAPrendre: 'Toutes vos commandes sont prises en charge.',
+      toutVoir: 'Voir les commandes',
+    },
+  },
   // Story 4.5 : « Me prévenir » sur une œuvre réservée (FR-9). Jamais d'heure de fin de réservation.
   prevenir: {
     titre: 'Me prévenir',
@@ -1729,11 +1847,17 @@ export const fr = {
     artiste: (nom: string) => `Artiste : ${nom}`,
     delai: (min: number, max: number) =>
       min === max ? `Délai de livraison estimé : ${min} jour${min > 1 ? 's' : ''}` : `Délai de livraison estimé : ${min} à ${max} jours`,
-    etats: { confirmee: 'Confirmée', enAttente: 'En attente de confirmation', annulee: 'Annulée' },
+    etats: { confirmee: 'Confirmée', priseEnCharge: 'Prise en charge par l’artiste', enAttente: 'En attente de confirmation', annulee: 'Annulée' },
     attente: 'Votre paiement n’est pas encore constaté par l’équipe : un e-mail vous préviendra.',
     frise: {
       titre: 'Étapes de la commande',
-      etapes: { recue: 'Commande reçue', paiement: 'Paiement constaté', livraison: 'Livraison prévue', annulee: 'Commande annulée' },
+      etapes: {
+        recue: 'Commande reçue',
+        paiement: 'Paiement constaté',
+        prise_en_charge: 'Prise en charge par l’artiste',
+        livraison: 'Livraison prévue',
+        annulee: 'Commande annulée',
+      },
       faite: (date: string | null) => (date ? `Faite le ${date}` : 'Faite'),
       aVenir: 'À venir',
       prevue: (du: string, au: string | null) => (au && au !== du ? `Prévue du ${du} au ${au}` : `Prévue le ${du}`),
@@ -1978,7 +2102,17 @@ export const fr = {
         sujet: (numero: string) => `Nouvelle commande ${numero}`,
         intro: (numero: string) => `Une commande vient d’être confirmée (numéro ${numero}) pour :`,
         ligne: (titre: string) => `– « ${titre} »`,
-        suite: 'L’équipe Errancy vous écrira pour l’expédition.',
+        pays: (pays: string) => `Livraison : ${pays}`,
+        echeance: (date: string) => `Merci de la prendre en charge depuis votre espace artiste avant le ${date} (heure de Paris).`,
+        bouton: 'Voir la commande',
+        suite: 'L’adresse de livraison s’affiche dans votre espace dès la prise en charge. L’équipe Errancy reste à votre disposition pour l’expédition.',
+      },
+      priseEnCharge: {
+        sujet: (numero: string) => `Commande ${numero} prise en charge`,
+        intro: (numero: string, artiste: string) => `Bonne nouvelle : ${artiste} a pris en charge votre commande ${numero} et prépare votre œuvre.`,
+        introSansArtiste: (numero: string) => `Bonne nouvelle : l’artiste a pris en charge votre commande ${numero} et prépare votre œuvre.`,
+        ligne: (titre: string) => `– « ${titre} »`,
+        suite: 'Vous pouvez suivre l’avancement de votre commande à tout moment.',
       },
       alerteConfirmee: {
         sujet: (numero: string) => `Commande ${numero} confirmée`,

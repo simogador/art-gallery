@@ -6,6 +6,7 @@ import { abandonnerLienVenteAssistee, preparerLienVenteAssistee } from '@/lib/co
 import { emettreLienInvitation, noterEnvoiInvitation } from '@/lib/acces/lien-invitation'
 import type { EvenementLuA } from '@/lib/evenements/catalogue'
 import { CONTACT_EQUIPE, urlAbsolue } from '@/lib/reglages'
+import { nomPays } from '@/lib/livraison/pays'
 import { envoiActif } from './choix'
 import {
   contenuAccuseDemande,
@@ -14,6 +15,7 @@ import {
   contenuCommandeAnnulee,
   contenuCommandeArtiste,
   contenuCommandeConfirmee,
+  contenuCommandePriseEnCharge,
   contenuAlerteDemande,
   contenuAlerteVisite,
   contenuConfirmationPrevenir,
@@ -269,7 +271,10 @@ export async function envoyerLienVenteAssistee(evenement: EvenementLuA<'VenteAss
   }
 }
 
-type EvenementCommande = EvenementLuA<'CommandeConfirmee'> | EvenementLuA<'CommandeAnnulee'>
+type EvenementCommande = EvenementLuA<'CommandeConfirmee'> | EvenementLuA<'CommandeAnnulee'> | EvenementLuA<'CommandePriseEnCharge'>
+/** Une commande confirmée reste « confirmée » pour ses e-mails si l'artiste l'a déjà prise en charge (8.1). */
+const CONFIRMEE_OU_PRISE = ['confirmee', 'prise_en_charge'] as const
+
 type DonneesCommande = NonNullable<Awaited<ReturnType<typeof lireDonneesCourrielCommande>>>
 
 /**
@@ -281,14 +286,15 @@ type DonneesCommande = NonNullable<Awaited<ReturnType<typeof lireDonneesCourriel
 async function envoyerCommande(
   evenement: EvenementCommande,
   nom: string,
-  etatAttendu: 'confirmee' | 'annulee',
+  // États acceptés : une commande confirmée peut déjà être prise en charge par l'artiste à l'envoi (story 8.1).
+  etatsAcceptes: readonly ('confirmee' | 'annulee' | 'prise_en_charge')[],
   composer: (d: DonneesCommande, lienSuivi: string | null) => { a: string; contenu: Contenu } | null,
   // `suivi` : e-mail à l'acheteur, qui porte un lien de suivi émis à l'envoi (story 7.7, AD-14).
   options: { suivi?: boolean; lienSeulementSiCommandeVivante?: boolean } = {},
 ): Promise<void> {
   const { commandeId } = evenement.charge
   const donnees = await lireDonneesCourrielCommande(commandeId)
-  if (!donnees || donnees.etat !== etatAttendu) {
+  if (!donnees || !(etatsAcceptes as readonly string[]).includes(donnees.etat)) {
     console.info('[notifications] commande sans objet, aucun e-mail', { evenement: evenement.id, commande: commandeId, gestionnaire: nom })
     return
   }
@@ -331,7 +337,7 @@ export async function envoyerConfirmationCommande(evenement: EvenementLuA<'Comma
   await envoyerCommande(
     evenement,
     'envoyerConfirmationCommande',
-    'confirmee',
+    CONFIRMEE_OU_PRISE,
     (d, lienSuivi) => ({
       a: d.acheteur.email,
       contenu: contenuCommandeConfirmee({ nom: d.acheteur.nom, numero: d.numero, lignes: d.lignes, lienSuivi }),
@@ -340,12 +346,39 @@ export async function envoyerConfirmationCommande(evenement: EvenementLuA<'Comma
   )
 }
 
-/** Commande confirmée : avis sobre à l'artiste (numéro et titres, aucune coordonnée de l'acheteur). Sans compte : rien. */
+/**
+ * Commande confirmée : avis à l'artiste (numéro, titres, échéance de prise en charge en heure de Paris et
+ * bouton vers sa commande, décision 3A de la story 8.1 ; aucune coordonnée de l'acheteur). Sans compte : rien.
+ */
 export async function envoyerAvisCommandeArtiste(evenement: EvenementLuA<'CommandeConfirmee'>): Promise<void> {
-  await envoyerCommande(evenement, 'envoyerAvisCommandeArtiste', 'confirmee', (d) =>
+  await envoyerCommande(evenement, 'envoyerAvisCommandeArtiste', CONFIRMEE_OU_PRISE, (d) =>
     d.artiste?.email
-      ? { a: d.artiste.email, contenu: contenuCommandeArtiste({ artiste: d.artiste.nom, numero: d.numero, titres: d.lignes.map((l) => l.titre) }) }
+      ? {
+          a: d.artiste.email,
+          contenu: contenuCommandeArtiste({
+            artiste: d.artiste.nom,
+            numero: d.numero,
+            titres: d.lignes.map((l) => l.titre),
+            priseEnChargeAvant: d.priseEnChargeAvant,
+            pays: d.pays ? nomPays(d.pays) : null,
+            lien: urlAbsolue(`/dashboard/artiste/commandes/${encodeURIComponent(d.numero)}`),
+          }),
+        }
       : null,
+  )
+}
+
+/** Commande prise en charge par l'artiste (story 8.1) : e-mail à l'acheteur (délai rappelé, lien de suivi émis à l'envoi). */
+export async function envoyerPriseEnChargeCommande(evenement: EvenementLuA<'CommandePriseEnCharge'>): Promise<void> {
+  await envoyerCommande(
+    evenement,
+    'envoyerPriseEnChargeCommande',
+    ['prise_en_charge'],
+    (d, lienSuivi) => ({
+      a: d.acheteur.email,
+      contenu: contenuCommandePriseEnCharge({ nom: d.acheteur.nom, numero: d.numero, artiste: d.artiste?.nom ?? null, lignes: d.lignes, lienSuivi }),
+    }),
+    { suivi: true },
   )
 }
 
@@ -354,7 +387,7 @@ export async function envoyerAnnulationCommande(evenement: EvenementLuA<'Command
   await envoyerCommande(
     evenement,
     'envoyerAnnulationCommande',
-    'annulee',
+    ['annulee'],
     (d, lienSuivi) => ({
       a: d.acheteur.email,
       contenu: contenuCommandeAnnulee({ nom: d.acheteur.nom, numero: d.numero, titres: d.lignes.map((l) => l.titre), remboursement: d.remboursement, lienSuivi }),
@@ -365,11 +398,12 @@ export async function envoyerAnnulationCommande(evenement: EvenementLuA<'Command
 }
 
 /** Commande confirmée ou annulée : alerte à l'équipe, numéro et lien seulement. */
-export async function alerterEquipeCommande(evenement: EvenementCommande): Promise<void> {
+export async function alerterEquipeCommande(evenement: EvenementLuA<'CommandeConfirmee'> | EvenementLuA<'CommandeAnnulee'>): Promise<void> {
   const { commandeId } = evenement.charge
   const annulee = evenement.nom === 'CommandeAnnulee'
   const commande = await lireNumeroCommandeAvecPassage(commandeId)
-  if (!commande || commande.etat !== (annulee ? 'annulee' : 'confirmee')) {
+  const acceptes: readonly string[] = annulee ? ['annulee'] : CONFIRMEE_OU_PRISE
+  if (!commande || !acceptes.includes(commande.etat)) {
     console.info('[notifications] commande sans objet, aucune alerte', { evenement: evenement.id, commande: commandeId })
     return
   }

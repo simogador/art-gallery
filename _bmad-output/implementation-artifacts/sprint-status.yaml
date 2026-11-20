@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-27-2026 09:35
-last_updated: 19-11-2026 15:00
+last_updated: 20-11-2026 09:00
 project: art-gallery
 project_key: NOKEY
 tracking_system: file-system
@@ -114,8 +114,8 @@ development_status:
   7-9-retrait-de-l-ancien-modèle-de-commande: done
   epic-7-retrospective: optional
 
-  epic-8: backlog
-  8-1-l-artiste-prend-en-charge-ses-commandes: backlog
+  epic-8: in-progress
+  8-1-l-artiste-prend-en-charge-ses-commandes: review
   8-2-l-artiste-expédie-et-saisit-le-suivi: backlog
   8-3-commandes-et-alertes-de-l-équipe: backlog
   8-4-livraison-constatée: backlog

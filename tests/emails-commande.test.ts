@@ -115,6 +115,13 @@ describe('base : e-mails de commande', () => {
     expect(artiste[0].texte).toContain('Titre o1')
     expect(artiste[0].texte).not.toContain('Titre o2')
     expect(artiste[0].texte).toContain(fr.courriels.commande.artiste.suite)
+    // Story 8.1, décision 3A : échéance de prise en charge écrite en heure de Paris et bouton vers la commande.
+    const { formaterDateHeure } = await import('@/lib/i18n')
+    const lueA = (await db.query(`SELECT numero, "priseEnChargeAvant" FROM "Commande" WHERE "artistId" = 'art-a'`)).rows[0]
+    expect(artiste[0].texte).toContain(fr.courriels.commande.artiste.echeance(formaterDateHeure(new Date(lueA.priseEnChargeAvant))))
+    expect(artiste[0].texte).toContain(`${fr.courriels.commande.artiste.bouton} : https://www.errancy.art/dashboard/artiste/commandes/${lueA.numero}`)
+    expect(artiste[0].html).toContain(`/dashboard/artiste/commandes/${lueA.numero}`)
+    expect(artiste[0].texte).toContain(fr.courriels.commande.artiste.pays('France'))
 
     const equipe = a('contact@errancy.art')
     expect(equipe).toHaveLength(2)

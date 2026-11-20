@@ -123,6 +123,13 @@ describe('sans base : règles, dictionnaire, code', () => {
     expect(construireFrise({ etat: 'confirmee', creeeLe: creee, constateLe: constate, delaiMinJours: 0, delaiMaxJours: 5 })[2]).toMatchObject({ date: null, fin: new Date('2026-11-09T09:30:00Z') })
     // Minimum positif, maximum absent : le minimum sert de borne unique.
     expect(construireFrise({ etat: 'confirmee', creeeLe: creee, constateLe: constate, delaiMinJours: 3, delaiMaxJours: 0 })[2]).toMatchObject({ date: new Date('2026-11-07T09:30:00Z'), fin: new Date('2026-11-07T09:30:00Z') })
+    // Story 8.1 : prise en charge par l'artiste, étape faite et datée entre le paiement et la livraison.
+    const priseLe = new Date('2026-11-05T08:00:00Z')
+    const prise = construireFrise({ etat: 'prise_en_charge', creeeLe: creee, constateLe: constate, delaiMinJours: 8, delaiMaxJours: 12, priseEnChargeLe: priseLe })
+    expect(prise.map((e) => e.cle)).toEqual(['recue', 'paiement', 'prise_en_charge', 'livraison'])
+    expect(prise[1]).toMatchObject({ faite: true, date: constate })
+    expect(prise[2]).toMatchObject({ faite: true, date: priseLe, fin: null })
+    expect(prise[3]).toMatchObject({ faite: false, date: new Date('2026-11-12T09:30:00Z'), fin: new Date('2026-11-16T09:30:00Z') })
     expect(ajouterJours(creee, -1)).toBeNull()
     expect(ajouterJours(null, 3)).toBeNull()
     expect(ajouterJours(new Date('x'), 3)).toBeNull()
@@ -356,6 +363,24 @@ describe('base : jeton, lecture, page, e-mails, route, action', () => {
     }
     const json = JSON.stringify(suivi)
     for (const secret of ['Lilas', '75011', TELEPHONE, '6 12 34', 'exemple.test', 'Claire', 'Martin']) expect(json).not.toContain(secret)
+  })
+
+  it('story 8.1 : commande prise en charge, étape « Prise en charge par l’artiste » faite et datée, l’autre inchangée', async () => {
+    await oeuvre('o1')
+    await oeuvre('o2', 'art-b')
+    const r = await poser(['o1', 'o2'])
+    await constater(r.passageId)
+    const { prendreEnCharge } = await import('@/lib/commandes')
+    const numero = (await commandeDe('o1')).numero
+    expect(await prendreEnCharge({ type: 'artist', userId: 'user-a', artiste: { id: 'art-a', slug: 'art-a', name: 'Atelier A' } }, numero)).toMatchObject({ ok: true })
+    jar.lus.suivi = await emettre(r.passageId)
+    const texte = await page()
+    const priseLe = new Date((await db.query(`SELECT "priseEnChargeLe" FROM "Commande" WHERE numero = $1`, [numero])).rows[0].priseEnChargeLe)
+    expect(texte.match(new RegExp(fr.suivi.frise.etapes.prise_en_charge, 'g'))).toHaveLength(2) // libellé d'état + étape
+    expect(texte).toContain(fr.suivi.etats.priseEnCharge)
+    expect(texte).toContain(fr.suivi.frise.faite(formaterDate(priseLe)))
+    expect(texte.match(new RegExp(fr.suivi.etats.confirmee, 'g'))).toHaveLength(1)
+    expect(texte).not.toMatch(/Lilas|75011|6 12 34|exemple\.test|Claire|Martin/)
   })
 
   it('page : une frise accessible par commande, dates lisibles, Conseil avec le numéro, aucune adresse', async () => {
@@ -685,6 +710,17 @@ describe('base : jeton, lecture, page, e-mails, route, action', () => {
     expect(efface.headers.get('set-cookie') ?? '').toMatch(/suivi=;|suivi=\s*;|Max-Age=0|expires=Thu, 01 Jan 1970/i)
     const garde = await GET(new NextRequest(`https://exemple.test/suivi/${inconnu}`, { headers: { cookie: `suivi=${jeton}` } }), { params: { jeton: inconnu } })
     expect(garde.headers.get('set-cookie') ?? '').not.toContain('suivi=')
+  })
+
+  it('« Suivre mes commandes » : passage dont toutes les commandes sont prises en charge (8.1) → ok, un cookie suivi', async () => {
+    await oeuvre('o1')
+    await oeuvre('o2', 'art-b')
+    const r = await poser(['o1', 'o2'])
+    await constater(r.passageId)
+    await db.query(`UPDATE "Commande" SET etat = 'prise_en_charge', "priseEnChargeLe" = now() WHERE "passageId" = $1`, [r.passageId])
+    const { ouvrirSuivi } = await import('@/app/confirmation/actions')
+    expect(await ouvrirSuivi()).toEqual({ ok: true })
+    expect(jar.poses.filter((c) => c.nom === 'suivi')).toHaveLength(1)
   })
 
   it('« Suivre mes commandes » : jeton suivi émis pour le passage du navigateur, cookie posé, réutilisé à l’appui suivant', async () => {
