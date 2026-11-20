@@ -108,6 +108,32 @@ export {
 } from './prise-en-charge'
 export { commandesDeLEquipe, type CommandeDeLEquipe, type CommandesDeLEquipe, type EtatCommandeEquipe } from './suivi-equipe'
 export { MOTIF_ANNULATION, alertesDeRetard, validerMotif, type AlerteRetard, type ErreurMotif } from './suivi-equipe-regles'
+export {
+  accepterReclamation,
+  enregistrerRetourRecu,
+  preparerEnvoiPhotoReclamation,
+  refuserReclamation,
+  signalerProbleme,
+  type ResultatDecision,
+  type ResultatEnvoiPhoto,
+  type ResultatRefus,
+  type ResultatRetour,
+  type ResultatSignalement,
+} from './reclamation'
+export {
+  DESCRIPTION_RECLAMATION,
+  ETATS_RECLAMATION,
+  FORMATS_PHOTO_RECLAMATION,
+  MOTIFS_RECLAMATION,
+  PHOTOS_RECLAMATION,
+  delaiRetourEchu,
+  montantRemboursable,
+  peutSignalerProbleme,
+  validerReclamation,
+  type ErreursReclamation,
+  type EtatReclamation,
+  type MotifReclamation,
+} from './reclamation-regles'
 export { marquerExpediee, type ResultatExpedition } from './expedition'
 export {
   assuranceRequise,

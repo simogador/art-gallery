@@ -11,10 +11,13 @@ const actionEnregistrerLivraison = vi.fn()
 const actionAnnulerParLEquipe = vi.fn()
 const refresh = vi.fn()
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => refresh(), push: () => {} }) }))
-vi.mock('@/app/suivi/actions', () => ({ confirmerReception: (...a: unknown[]) => confirmerReception(...a) }))
+vi.mock('@/app/suivi/actions', () => ({ confirmerReception: (...a: unknown[]) => confirmerReception(...a), preparerPhotoReclamation: vi.fn(), signalerUnProbleme: vi.fn() }))
 vi.mock('@/app/dashboard/admin/commandes/actions', () => ({
   actionAnnulerParLEquipe: (...a: unknown[]) => actionAnnulerParLEquipe(...a),
   actionEnregistrerLivraison: (...a: unknown[]) => actionEnregistrerLivraison(...a),
+  actionAccepterReclamation: vi.fn(),
+  actionRefuserReclamation: vi.fn(),
+  actionRetourRecu: vi.fn(),
 }))
 
 const { ConfirmerReception } = await import('@/app/suivi/ConfirmerReception')
@@ -116,6 +119,10 @@ const vue = (surcharge = {}) => ({
   livraisonSource: null,
   preuveLivraison: null,
   retourAvant: null,
+  reclamation: null,
+  retournable: false,
+  montantCommande: null,
+  retourRecuLe: null,
   ...surcharge,
 })
 const AUCUNE = { priseEnCharge: [], expedition: [] }

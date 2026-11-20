@@ -3,9 +3,12 @@
 import { acteurCourant } from '@/lib/acces'
 import { champsPrix } from '@/lib/catalogue/conversions'
 import {
+  accepterReclamation,
   annulerCommande,
   annulerParLEquipe,
   enregistrerLivraison,
+  enregistrerRetourRecu,
+  refuserReclamation,
   heuresValides,
   marquerRemboursementEffectue,
   libererVenteAssistee,
@@ -171,6 +174,53 @@ export async function actionEnregistrerLivraison(numero: string, source: string,
       if (e?.source) return { ok: false, message: e.source === 'preuve_requise' ? t.erreurs.preuve_requise : t.erreurs.source, champ: 'source' }
       return { ok: false, message: t.refus[r.code] }
     }
+    return { ok: false, message: t.refus[r.code] }
+  } catch {
+    return { ok: false, message: t.refus.indisponible }
+  }
+}
+
+// Story 8.5 : réclamations des acheteurs. Droits vérifiés par le module commandes (admin seulement, rôle relu en
+// base) ; aucun détail technique dans les réponses ; ni description, ni motif, ni montant journalisés.
+export type ResultatActionReclamation = { ok: true; message: string } | { ok: false; message: string; champ?: 'motif' | 'montant' }
+
+export async function actionAccepterReclamation(numero: string): Promise<ResultatActionReclamation> {
+  const t = fr.commandesEquipe.reclamation
+  try {
+    const r = await accepterReclamation(await acteurCourant(), String(numero ?? ''))
+    if (r.ok) return { ok: true, message: r.dejaTraitee ? t.deja : t.succes.acceptee }
+    return { ok: false, message: t.refus[r.code] }
+  } catch {
+    return { ok: false, message: t.refus.indisponible }
+  }
+}
+
+export async function actionRefuserReclamation(numero: string, motif: string): Promise<ResultatActionReclamation> {
+  const t = fr.commandesEquipe.reclamation
+  try {
+    const r = await refuserReclamation(await acteurCourant(), String(numero ?? ''), String(motif ?? ''))
+    if (r.ok) return { ok: true, message: r.dejaTraitee ? t.deja : t.succes.refusee }
+    if (r.code === 'motif_invalide') return { ok: false, message: t.erreurs[r.erreur], champ: 'motif' }
+    return { ok: false, message: t.refus[r.code] }
+  } catch {
+    return { ok: false, message: t.refus.indisponible }
+  }
+}
+
+/** « Retour reçu » : `montant` en euros (vide : le montant de la commande). */
+export async function actionRetourRecu(numero: string, montant: string): Promise<ResultatActionReclamation> {
+  const t = fr.commandesEquipe.reclamation
+  const brut = typeof montant === 'string' ? montant.trim() : ''
+  let montantCentimes: number | undefined
+  if (brut !== '') {
+    const prix = champsPrix(brut)
+    if (!prix.ok || prix.champs.prixCentimes === null) return { ok: false, message: t.erreurs.montant, champ: 'montant' }
+    montantCentimes = prix.champs.prixCentimes
+  }
+  try {
+    const r = await enregistrerRetourRecu(await acteurCourant(), String(numero ?? ''), { montantCentimes })
+    if (r.ok) return { ok: true, message: r.dejaRetournee ? t.deja : t.succes.retour }
+    if (r.code === 'montant_depasse') return { ok: false, message: t.erreurs.montant_depasse, champ: 'montant' }
     return { ok: false, message: t.refus[r.code] }
   } catch {
     return { ok: false, message: t.refus.indisponible }

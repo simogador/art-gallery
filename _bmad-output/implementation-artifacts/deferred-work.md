@@ -303,3 +303,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-8-3-commandes-et-alertes-de-l-equipe.md`
   summary: Envoyer à l'équipe une seule alerte par e-mail pour chaque retard de prise en charge ou d'expédition, par le balayage `api/balayage`.
   evidence: Le balayage n'existe pas (story 6.7, bloquée par AQ-2 : plan Vercel ou déclencheur externe, décision du porteur) ; la 8.3 ne livre que les alertes calculées à la lecture de `/dashboard/admin/commandes`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-8-5-reclamation-et-retour.md`
+  summary: Prévenir l'acheteur (et l'artiste) par e-mail quand le retour est reçu et le remboursement demandé (`CommandeRetournee`, aujourd'hui sans gestionnaire).
+  evidence: l'acheteur ne le voit que s'il rouvre `/suivi` ; à traiter avec les e-mails de remboursement de la story 8.6.

@@ -474,7 +474,7 @@ export type Dictionnaire = {
       readonly expedition: string
       readonly enRetard: { readonly prise_en_charge_en_retard: string; readonly expedition_en_retard: string }
     }
-    readonly etats: { readonly confirmee: string; readonly prise_en_charge: string; readonly expediee: string; readonly livree: string; readonly annulee: string }
+    readonly etats: { readonly confirmee: string; readonly prise_en_charge: string; readonly expediee: string; readonly livree: string; readonly retournee: string; readonly annulee: string }
     readonly champs: {
       readonly livreeLe: string
       readonly livraisonSource: string
@@ -524,6 +524,43 @@ export type Dictionnaire = {
       }
     }
     readonly remboursements: { readonly demande: (montant: string) => string; readonly effectue: (montant: string) => string }
+    /** Réclamations des acheteurs (story 8.5, FR-30) : lues, acceptées, refusées par l'équipe ; retour reçu et remboursement demandé. */
+    readonly reclamation: {
+      readonly titre: string
+      readonly ouvertes: string
+      readonly aucune: string
+      readonly champs: { readonly motif: string; readonly description: string; readonly photos: string; readonly etat: string; readonly motifRefus: string; readonly decideLe: string; readonly retourRecuLe: string; readonly montantCommande: string; readonly emailAcheteur: string }
+      readonly emailAcheteurAide: string
+      readonly motifs: { readonly abimee: string; readonly non_conforme: string; readonly changement_avis: string }
+      readonly etats: { readonly ouverte: string; readonly acceptee: string; readonly refusee: string }
+      readonly photo: (n: number) => string
+      readonly accepter: string
+      readonly accepterConfirmer: (numero: string) => string
+      readonly refuser: string
+      readonly motifLibelle: string
+      readonly motifAide: string
+      readonly retourBouton: string
+      readonly retourIntro: string
+      readonly montantLibelle: string
+      readonly montantAide: (total: string) => string
+      readonly continuer: string
+      readonly confirmerRetour: (numero: string) => string
+      readonly confirmerRefus: (numero: string) => string
+      readonly oui: string
+      readonly non: string
+      readonly enCours: string
+      readonly succes: { readonly acceptee: string; readonly refusee: string; readonly retour: string }
+      readonly deja: string
+      readonly erreurs: { readonly obligatoire: string; readonly trop_court: string; readonly trop_long: string; readonly montant: string; readonly montant_depasse: string }
+      readonly refus: {
+        readonly acces_refuse: string
+        readonly introuvable: string
+        readonly etat_invalide: string
+        readonly motif_invalide: string
+        readonly montant_depasse: string
+        readonly indisponible: string
+      }
+    }
     readonly annulation: {
       readonly bouton: string
       readonly motifLibelle: string
@@ -701,7 +738,7 @@ export type Dictionnaire = {
     readonly commande: (numero: string) => string
     readonly artiste: (nom: string) => string
     readonly delai: (min: number, max: number) => string
-    readonly etats: { readonly confirmee: string; readonly priseEnCharge: string; readonly expediee: string; readonly livree: string; readonly enAttente: string; readonly annulee: string }
+    readonly etats: { readonly confirmee: string; readonly priseEnCharge: string; readonly expediee: string; readonly livree: string; readonly retournee: string; readonly enAttente: string; readonly annulee: string }
     readonly attente: string
     /** « J'ai reçu l'œuvre » (story 8.4, FR-29) : constat de la livraison par l'acheteur. */
     readonly reception: {
@@ -715,6 +752,46 @@ export type Dictionnaire = {
       readonly parLEquipe: string
       readonly erreurs: { readonly introuvable: string; readonly etatInvalide: string; readonly preuveRequise: string; readonly indisponible: string }
     }
+    /** « Signaler un problème » et état de la réclamation (story 8.5, FR-30, FR-15) : aucune durée, frais ni remboursement promis (OQ-2, OQ-4). */
+    readonly reclamation: {
+      readonly bouton: string
+      readonly titre: string
+      readonly aide: string
+      readonly motifLibelle: string
+      readonly motifs: { readonly abimee: string; readonly non_conforme: string; readonly changement_avis: string }
+      readonly descriptionLibelle: string
+      readonly descriptionAide: string
+      readonly photosLibelle: string
+      readonly photosAide: string
+      readonly continuer: string
+      readonly annuler: string
+      readonly question: string
+      readonly confirmer: string
+      readonly retour: string
+      readonly enCours: string
+      readonly reussi: string
+      readonly deja: string
+      readonly delaiEchu: string
+      readonly etats: { readonly ouverte: string; readonly acceptee: string; readonly refusee: string }
+      readonly motifRefus: (motif: string) => string
+      readonly remboursement: { readonly demande: string; readonly effectue: string }
+      readonly erreurs: {
+        readonly motif: string
+        readonly descriptionRequise: string
+        readonly descriptionTropLongue: string
+        readonly descriptionTropCourte: string
+        readonly photosTrop: string
+        readonly photoType: string
+        readonly photoPoids: string
+        readonly photoEnvoi: string
+        readonly photosInvalides: string
+        readonly introuvable: string
+        readonly etatInvalide: string
+        readonly delaiEchu: string
+        readonly dejaTraitee: string
+        readonly indisponible: string
+      }
+    }
     readonly frise: {
       readonly titre: string
       readonly etapes: {
@@ -724,6 +801,7 @@ export type Dictionnaire = {
         readonly expediee: string
         readonly livraison: string
         readonly livree: string
+        readonly retournee: string
         readonly annulee: string
       }
       readonly faite: (date: string | null) => string
@@ -1093,6 +1171,34 @@ export type Dictionnaire = {
         readonly intro: (numero: string, artiste: string) => string
         readonly introSansArtiste: (numero: string) => string
         readonly ligne: (titre: string) => string
+        readonly suite: string
+        readonly signaler: string
+        readonly boutonSignaler: string
+      }
+      /** E-mails de réclamation (story 8.5) : aucune durée, frais ni remboursement promis (OQ-2, OQ-4). */
+      readonly reclamationAcceptee: {
+        readonly sujet: (numero: string) => string
+        readonly intro: (numero: string) => string
+        readonly ligne: (titre: string) => string
+        readonly suite: string
+      }
+      readonly reclamationRefusee: {
+        readonly sujet: (numero: string) => string
+        readonly intro: (numero: string) => string
+        readonly ligne: (titre: string) => string
+        readonly messageEquipe: string
+        readonly suite: string
+      }
+      readonly retourArtiste: {
+        readonly sujet: (numero: string) => string
+        readonly intro: (numero: string) => string
+        readonly ligne: (titre: string) => string
+        readonly suite: string
+      }
+      readonly alerteReclamation: {
+        readonly sujet: (numero: string) => string
+        readonly intro: (numero: string) => string
+        readonly bouton: string
         readonly suite: string
       }
       readonly alerteConfirmee: {
@@ -1870,7 +1976,7 @@ export const fr = {
       expedition: 'Expédition en retard',
       enRetard: { prise_en_charge_en_retard: 'Prise en charge en retard', expedition_en_retard: 'Expédition en retard' },
     },
-    etats: { confirmee: 'Confirmée, à prendre en charge', prise_en_charge: 'Prise en charge', expediee: 'Expédiée', livree: 'Livrée', annulee: 'Annulée' },
+    etats: { confirmee: 'Confirmée, à prendre en charge', prise_en_charge: 'Prise en charge', expediee: 'Expédiée', livree: 'Livrée', retournee: 'Retournée', annulee: 'Annulée' },
     champs: {
       livreeLe: 'Livrée le',
       livraisonSource: 'Constatée par',
@@ -1927,6 +2033,58 @@ export const fr = {
     remboursements: {
       demande: (montant: string) => `Demandé, ${montant}`,
       effectue: (montant: string) => `Effectué, ${montant}`,
+    },
+    reclamation: {
+      titre: 'Réclamations',
+      ouvertes: 'Réclamations à traiter',
+      aucune: 'Aucune réclamation à traiter.',
+      champs: {
+        motif: 'Motif',
+        description: 'Description de l’acheteur',
+        photos: 'Photos',
+        etat: 'Réclamation',
+        motifRefus: 'Motif du refus',
+        decideLe: 'Décidée le',
+        retourRecuLe: 'Retour reçu le',
+        montantCommande: 'Montant de la commande',
+        emailAcheteur: 'E-mail de l’acheteur :',
+      },
+      emailAcheteurAide: 'Écrivez à l’acheteur pour organiser le retour. Cette adresse n’est montrée que pour une réclamation acceptée.',
+      motifs: { abimee: 'Œuvre arrivée abîmée', non_conforme: 'Œuvre non conforme à l’annonce', changement_avis: 'Changement d’avis' },
+      etats: { ouverte: 'Ouverte', acceptee: 'Acceptée, retour attendu', refusee: 'Refusée' },
+      photo: (n: number) => `Photo ${n}`,
+      accepter: 'Accepter le retour',
+      accepterConfirmer: (numero: string) => `Accepter le retour de la commande ${numero} ? L’acheteur et l’artiste sont prévenus par e-mail. Rien n’est remboursé avant la réception du retour.`,
+      refuser: 'Refuser',
+      motifLibelle: 'Motif du refus',
+      motifAide: 'De 10 à 500 caractères. L’acheteur le lit sur sa page de suivi et dans son e-mail. Un refus est définitif.',
+      retourBouton: 'Retour reçu',
+      retourIntro: 'Enregistrez la réception du retour. Le remboursement demandé est celui de la commande, sauf montant plus bas.',
+      montantLibelle: 'Montant à rembourser, en euros (facultatif)',
+      montantAide: (total: string) => `Laissez vide pour le montant de la commande (${total}). Un montant partiel est possible, jamais au-delà.`,
+      continuer: 'Continuer',
+      confirmerRetour: (numero: string) => `Enregistrer la réception du retour de la commande ${numero} ? Un remboursement est demandé et la commande passe en « Retournée ».`,
+      confirmerRefus: (numero: string) => `Refuser la réclamation de la commande ${numero} ? L’acheteur est prévenu par e-mail, avec votre motif.`,
+      oui: 'Oui, confirmer',
+      non: 'Non',
+      enCours: 'Enregistrement…',
+      succes: { acceptee: 'Le retour est accepté : l’acheteur et l’artiste sont prévenus.', refusee: 'La réclamation est refusée : l’acheteur est prévenu.', retour: 'Le retour est enregistré et le remboursement est demandé.' },
+      deja: 'Cette décision est déjà enregistrée.',
+      erreurs: {
+        obligatoire: 'Saisissez le motif du refus.',
+        trop_court: 'Le motif doit faire au moins 10 caractères.',
+        trop_long: 'Le motif doit faire 500 caractères au plus.',
+        montant: 'Saisissez un montant en euros, par exemple 120 ou 120,50.',
+        montant_depasse: 'Le montant dépasse celui de la commande ou n’est pas valide.',
+      },
+      refus: {
+        acces_refuse: 'Vous n’avez pas accès à cette action.',
+        introuvable: 'Cette réclamation est introuvable.',
+        etat_invalide: 'Cette réclamation ne peut plus recevoir cette décision.',
+        motif_invalide: 'Le motif n’est pas valide.',
+        montant_depasse: 'Le montant dépasse celui de la commande ou n’est pas valide : rien n’a été enregistré.',
+        indisponible: 'L’action n’a pas pu être enregistrée. Réessayez dans un instant.',
+      },
     },
     annulation: {
       bouton: 'Annuler la commande',
@@ -2143,7 +2301,7 @@ export const fr = {
     artiste: (nom: string) => `Artiste : ${nom}`,
     delai: (min: number, max: number) =>
       min === max ? `Délai de livraison estimé : ${min} jour${min > 1 ? 's' : ''}` : `Délai de livraison estimé : ${min} à ${max} jours`,
-    etats: { confirmee: 'Confirmée', priseEnCharge: 'Prise en charge par l’artiste', expediee: 'Expédiée', livree: 'Livrée', enAttente: 'En attente de confirmation', annulee: 'Annulée' },
+    etats: { confirmee: 'Confirmée', priseEnCharge: 'Prise en charge par l’artiste', expediee: 'Expédiée', livree: 'Livrée', retournee: 'Retournée', enAttente: 'En attente de confirmation', annulee: 'Annulée' },
     attente: 'Votre paiement n’est pas encore constaté par l’équipe : un e-mail vous préviendra.',
     reception: {
       bouton: 'J’ai reçu l’œuvre',
@@ -2161,6 +2319,49 @@ export const fr = {
         indisponible: 'Votre réception n’a pas pu être enregistrée. Réessayez dans un instant.',
       },
     },
+    reclamation: {
+      bouton: 'Signaler un problème',
+      titre: 'Signaler un problème',
+      aide: 'Décrivez ce qui ne va pas : l’équipe Errancy lira votre message. L’artiste ne le voit pas.',
+      motifLibelle: 'Motif',
+      motifs: { abimee: 'L’œuvre est arrivée abîmée', non_conforme: 'L’œuvre ne correspond pas à l’annonce', changement_avis: 'J’ai changé d’avis' },
+      descriptionLibelle: 'Description',
+      descriptionAide: 'De 10 à 1 000 caractères.',
+      photosLibelle: 'Photos (facultatif)',
+      photosAide: 'Jusqu’à 3 images, 5 Mo au plus chacune. Seule l’équipe Errancy les voit.',
+      continuer: 'Continuer',
+      annuler: 'Annuler',
+      question: 'Envoyer ce signalement à l’équipe ? Il ne pourra pas être modifié, et une seule réclamation est possible par commande.',
+      confirmer: 'Oui, envoyer',
+      retour: 'Revenir au formulaire',
+      enCours: 'Envoi…',
+      reussi: 'Merci : votre signalement est envoyé à l’équipe.',
+      deja: 'Un signalement est déjà en cours d’examen pour cette commande.',
+      delaiEchu: 'Le délai pour signaler un problème sur cette commande est écoulé. Écrivez-nous : nous étudierons votre situation.',
+      etats: {
+        ouverte: 'Votre signalement est en cours d’examen par l’équipe.',
+        acceptee: 'Votre signalement est accepté. L’équipe vous écrit pour la suite.',
+        refusee: 'Votre signalement n’a pas été retenu.',
+      },
+      motifRefus: (motif: string) => `Message de l’équipe : ${motif}`,
+      remboursement: { demande: 'Un remboursement est demandé.', effectue: 'Le remboursement est effectué.' },
+      erreurs: {
+        motif: 'Choisissez un motif.',
+        descriptionRequise: 'Décrivez le problème.',
+        descriptionTropCourte: 'Décrivez le problème en quelques mots (10 caractères au moins) : une seule réclamation est possible par commande.',
+        descriptionTropLongue: 'La description est trop longue (1 000 caractères au plus).',
+        photosTrop: 'Vous pouvez joindre 3 photos au plus.',
+        photoType: 'Seules les images sont acceptées.',
+        photoPoids: 'Chaque photo doit peser 5 Mo au plus.',
+        photoEnvoi: 'Une photo n’a pas pu être envoyée. Réessayez dans un instant.',
+        photosInvalides: 'Une photo n’a pas été acceptée. Retirez-la ou choisissez-en une autre.',
+        introuvable: 'Cette commande n’est pas accessible depuis ce lien.',
+        etatInvalide: 'Cette commande ne peut pas faire l’objet d’un signalement pour le moment.',
+        delaiEchu: 'Le délai pour signaler un problème sur cette commande est écoulé.',
+        dejaTraitee: 'Un signalement a déjà été traité pour cette commande.',
+        indisponible: 'Votre signalement n’a pas pu être envoyé. Réessayez dans un instant.',
+      },
+    },
     frise: {
       titre: 'Étapes de la commande',
       etapes: {
@@ -2170,6 +2371,7 @@ export const fr = {
         expediee: 'Expédiée',
         livraison: 'Livraison prévue',
         livree: 'Livrée',
+        retournee: 'Retournée',
         annulee: 'Commande annulée',
       },
       faite: (date: string | null) => (date ? `Faite le ${date}` : 'Faite'),
@@ -2452,6 +2654,33 @@ export const fr = {
         introSansArtiste: (numero: string) => `Votre commande ${numero} est livrée.`,
         ligne: (titre: string) => `– « ${titre} »`,
         suite: 'Merci pour votre confiance. Une question sur votre œuvre ? Écrivez-nous en indiquant le numéro de la commande.',
+        signaler: 'Un problème avec l’œuvre reçue ? Vous pouvez le signaler depuis votre page de suivi.',
+        boutonSignaler: 'Signaler un problème',
+      },
+      reclamationAcceptee: {
+        sujet: (numero: string) => `Commande ${numero} : votre signalement est accepté`,
+        intro: (numero: string) => `Nous avons étudié votre signalement sur la commande ${numero} et nous l’acceptons.`,
+        ligne: (titre: string) => `– « ${titre} »`,
+        suite: 'L’équipe Errancy vous écrira pour la suite. Vous pouvez suivre l’état de votre commande à tout moment.',
+      },
+      reclamationRefusee: {
+        sujet: (numero: string) => `Commande ${numero} : réponse à votre signalement`,
+        intro: (numero: string) => `Nous avons étudié votre signalement sur la commande ${numero} et nous ne pouvons pas y donner suite.`,
+        ligne: (titre: string) => `– « ${titre} »`,
+        messageEquipe: 'Le message de l’équipe :',
+        suite: 'Une question ? Écrivez-nous en indiquant le numéro de la commande.',
+      },
+      retourArtiste: {
+        sujet: (numero: string) => `Commande ${numero} : un retour est accepté`,
+        intro: (numero: string) => `L’équipe a accepté le retour de la commande ${numero}.`,
+        ligne: (titre: string) => `– « ${titre} »`,
+        suite: 'L’équipe vous écrira pour organiser la suite. Les coordonnées de l’acheteur ne figurent pas dans ce message.',
+      },
+      alerteReclamation: {
+        sujet: (numero: string) => `Signalement sur la commande ${numero}`,
+        intro: (numero: string) => `Un acheteur vient de signaler un problème sur la commande ${numero}.`,
+        bouton: 'Ouvrir les commandes',
+        suite: 'Le nom, le message et les photos de l’acheteur ne figurent pas dans ce message.',
       },
       alerteConfirmee: {
         sujet: (numero: string) => `Commande ${numero} confirmée`,

@@ -77,3 +77,16 @@ export async function lireNumeroCommandeAvecPassage(commandeId: string): Promise
   if (!commande || !commande.passageId) return null
   return { numero: commande.numero, etat: commande.etat as EtatCommande }
 }
+
+/**
+ * Réclamation lue à l'envoi d'un e-mail (story 8.5) : la commande, son état et, pour un refus, le motif écrit par
+ * l'équipe (lu par l'acheteur). Jamais la description ni les photos de l'acheteur dans un e-mail de décision.
+ */
+export async function lireReclamationPourCourriel(reclamationId: string): Promise<{ commandeId: string; numero: string; etat: 'ouverte' | 'acceptee' | 'refusee'; motifRefus: string | null } | null> {
+  const r = await prisma.reclamation.findUnique({
+    where: { id: reclamationId },
+    select: { commandeId: true, etat: true, motifRefus: true, commande: { select: { numero: true, passageId: true } } },
+  })
+  if (!r || !r.commande.passageId) return null
+  return { commandeId: r.commandeId, numero: r.commande.numero, etat: r.etat, motifRefus: r.motifRefus }
+}

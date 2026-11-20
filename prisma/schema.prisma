@@ -490,6 +490,8 @@ enum EtatCommande {
   expediee
   // Story 8.4 : livraison constatée (par l'acheteur ou par l'équipe).
   livree
+  // Story 8.5 : retour de l'œuvre reçu après une réclamation acceptée.
+  retournee
   annulee
   // Ancienne commande (table Order) recopiée : sans ligne figée, hors des sommes dues.
   historique
@@ -564,6 +566,11 @@ model Commande {
   livraisonPar              String?
   preuveLivraison           String?
   retourAvant               DateTime?              @db.Timestamptz(3)
+  // Story 8.5 : réclamation de l'acheteur (une seule par commande) ; réception du retour par l'équipe
+  // (`retourRecuPar` = id de l'utilisateur, sans clé étrangère).
+  reclamation               Reclamation?
+  retourRecuLe              DateTime?              @db.Timestamptz(3)
+  retourRecuPar             String?
   // Commande historique seulement (recopie de l'ancienne table Order, supprimée par la story 7.9 ; le script de
   // recopie n'est plus que dans l'historique git, voir docs/migrations.md).
   ordreHistoriqueId         String?          @unique
@@ -672,6 +679,50 @@ model Incident {
 enum EtatRemboursement {
   demande
   effectue
+}
+
+// Story 8.5 (FR-30, FR-15) : motif choisi par l'acheteur et état de sa réclamation.
+enum MotifReclamation {
+  abimee
+  non_conforme
+  changement_avis
+}
+
+enum EtatReclamation {
+  ouverte
+  acceptee
+  refusee
+}
+
+// Une seule réclamation par commande (décision 4A) : un refus est définitif. Écrite seulement par le module
+// commandes ; visible de l'équipe et de l'acheteur (état et motif de refus), jamais de l'artiste.
+model Reclamation {
+  id          String             @id @default(cuid())
+  commande    Commande           @relation(fields: [commandeId], references: [id], onDelete: Restrict)
+  commandeId  String             @unique
+  motif       MotifReclamation
+  description String             @db.Text
+  etat        EtatReclamation    @default(ouverte)
+  motifRefus  String?            @db.Text
+  // Id de l'utilisateur de l'équipe qui a décidé (sans clé étrangère) et quand.
+  decidePar   String?
+  decideLe    DateTime?          @db.Timestamptz(3)
+  photos      PhotoReclamation[]
+  createdAt   DateTime           @default(now()) @db.Timestamptz(3)
+
+  @@index([etat])
+}
+
+// Photos jointes par l'acheteur (jusqu'à 3, décision 1A), visibles de l'équipe seulement.
+model PhotoReclamation {
+  id            String      @id @default(cuid())
+  reclamation   Reclamation @relation(fields: [reclamationId], references: [id], onDelete: Cascade)
+  reclamationId String
+  url           String
+  publicId      String      @unique
+  createdAt     DateTime    @default(now()) @db.Timestamptz(3)
+
+  @@index([reclamationId])
 }
 
 model RemboursementCommande {
